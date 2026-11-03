@@ -120,3 +120,94 @@ def test_frame_aligned_candidate_is_not_restricted_to_original_requested_scope_t
     data = make_load()(ctx)
     assert data.requested_range["end_sec"] == span["end_ms"] / 1000
     assert data.analysis_source_ref == "fixed-analysis"
+
+
+def test_preview_candidate_is_detached_and_frame_eligibility_uses_case_currentness():
+    from daesingo.case.service import candidates_from_events
+    ctx, case, _, _, make_load = bound_input()
+    events = fixtures()[1].candidates
+    case.stage = "SEARCHING"
+    case.receive_candidates(candidates_from_events([c.model_dump(mode="json") for c in events]), job_id="generation")
+    case.select_top_ranked()
+    data = make_load()(ctx)
+    assert data.frames_current is True
+    assert data.generation_job_id == "generation"
+    assert data.candidate.span.representative_ms == events[0].span.representative_ms
+    assert data.thumbnail_candidates == ()  # no Case Top-3 helper connected
+    for candidate in case.candidates: candidate.selected = False
+    stale = make_load()(ctx)
+    assert stale.frames_current is False
+    assert data.candidate.candidate_id == case.observation_inputs[ctx.job_id]["candidate_id"]
+
+
+def test_case_selected_thumbnail_ids_are_validated_and_detached():
+    from daesingo.case.service import candidates_from_events
+    ctx, case, _, _, make_load = bound_input()
+    case.stage = "SEARCHING"
+    case.receive_candidates(candidates_from_events([c.model_dump(mode="json") for c in fixtures()[1].candidates]), job_id="generation")
+    case.select_top_ranked()
+    load = make_load()
+    calls = []
+    def select(actual_case, source, events):
+        calls.append(source["generation_job_id"])
+        return [events[0].candidate_id]
+    load.thumbnail_candidates = select
+    data = load(ctx)
+    assert calls == ["generation"] and data.thumbnail_candidates == (data.candidate,)
+
+
+@pytest.mark.parametrize("ids", [["foreign"], ["foreign"] * 4, ["duplicate", "duplicate"]])
+def test_invalid_case_thumbnail_selection_fails_closed(ids):
+    from daesingo.case.service import candidates_from_events
+    ctx, case, _, _, make_load = bound_input()
+    case.stage = "SEARCHING"
+    case.receive_candidates(candidates_from_events([c.model_dump(mode="json") for c in fixtures()[1].candidates]), job_id="generation")
+    case.select_top_ranked()
+    load = make_load()
+    load.thumbnail_candidates = lambda *args: ids
+    with pytest.raises(ValueError): load(ctx)
+
+
+@pytest.mark.parametrize("mode", ["generation", "stale", "settled"])
+def test_ineligible_frame_job_does_not_ask_case_for_thumbnails(mode):
+    from daesingo.case.service import candidates_from_events
+    ctx, case, _, _, make_load = bound_input()
+    case.stage = "SEARCHING"
+    case.receive_candidates(candidates_from_events([c.model_dump(mode="json") for c in fixtures()[1].candidates]), job_id="generation")
+    case.select_top_ranked()
+    if mode == "generation":
+        case.job_records.append({**case.job_records[0], "job_id": "next-generation"})
+        case.settled_jobs["next-generation"] = "REFLECTED"
+    elif mode == "stale": case.candidates[0].stale_revision = True
+    else: case.settle_job(ctx.job_id, "STOPPED_WAITING")
+    load = make_load()
+    load.thumbnail_candidates = lambda *args: pytest.fail("ineligible frame job selected thumbnails")
+    assert load(ctx).frames_current is False
+
+
+@pytest.mark.parametrize("mode", ["rank", "run", "timeline", "revision", "stale", "not_in_case", "span"])
+def test_each_thumbnail_must_belong_to_current_case_generation(mode):
+    from daesingo.case.service import candidates_from_events
+    ctx, case, _, _, make_load = bound_input()
+    events = [c.model_dump(mode="json") for c in fixtures()[1].candidates]
+    extra = deepcopy(events[0])
+    extra.update(candidate_id="candidate-extra", rank=2)
+    case.stage = "SEARCHING"
+    case.receive_candidates(candidates_from_events(events + [extra]), job_id="generation")
+    case.select_top_ranked()
+    if mode == "rank": extra["rank"] = 4
+    elif mode == "run": extra["run_id"] = "run-foreign"
+    elif mode == "timeline": extra["span"]["timeline_id"] = "timeline-foreign"
+    elif mode == "revision": extra["span"]["timeline_revision"] += 1
+    elif mode == "stale": case.candidates[-1].stale_revision = True
+    elif mode == "not_in_case": case.candidates.pop()
+    elif mode == "span": case.candidates[-1].span["end_ms"] += 1
+    load = make_load()
+    original = load.reader
+    def reader(conn, kind, refs):
+        value = original(conn, kind, refs)
+        if kind == "COARSE_SEARCH": value["candidate_events"].append(deepcopy(extra))
+        return value
+    load.reader = reader
+    load.thumbnail_candidates = lambda *args: ["candidate-extra"]
+    with pytest.raises(ValueError): load(ctx)

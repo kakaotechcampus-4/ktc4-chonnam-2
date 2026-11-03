@@ -4,7 +4,7 @@ from daesingo.case.store_mysql import MySQLCaseRepository
 from daesingo.case.stored_observation import stored_adapter_factory
 from daesingo.evidence import attachment_constraint
 from daesingo.case.timeline_source import RecordingSequentialTimelineSource
-from daesingo.common.jobs.produced import ProducedReader
+from daesingo.worker.produced_reader import worker_produced_reader
 from daesingo.common.jobs.read_port import read_executions
 from daesingo.recording import RecordingFacts, RecordingService, ConnectionRecordingRepository
 from daesingo.worker.case_reflector import CaseReflector
@@ -12,7 +12,7 @@ from daesingo.case.exhaustion_adapter import CaseExhaustionReceiver
 
 
 def stored_case_store(conn, *, storage_root, reader=None):
-    reader = reader if reader is not None else ProducedReader()
+    reader = reader if reader is not None else worker_produced_reader()
     facts = RecordingFacts(ConnectionRecordingRepository(conn, storage_root=storage_root))
     return CaseStore(repository=MySQLCaseRepository(), conn=conn, executions=read_executions,
         adapter_factory=stored_adapter_factory(reader=reader, executions=read_executions, recording=facts,
@@ -22,7 +22,7 @@ def stored_case_store(conn, *, storage_root, reader=None):
 class StoredCaseReflector:
     def __init__(self, *, storage_root=None, startup=None):
         self.storage_root, self.startup = storage_root, startup
-        self.reader = ProducedReader()
+        self.reader = worker_produced_reader()
 
     def reflect(self, conn, incoming):
         root = self.storage_root if self.storage_root is not None else self.startup.config.media_root

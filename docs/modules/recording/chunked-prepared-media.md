@@ -36,6 +36,78 @@ Refs [#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452),
 청크 상한은 전송 working set을 제한하기 위한 내부 값이며 처리량/동시 지원 수의 최적값 주장이 아니다.
 command guard의 검사용 escaping도 청크 단위 추가 할당을 한다. driver allocation peak 자체는 측정하지 않았다.
 
+### Prepared metadata의 정확한 숫자 표현 — 2026-11-03 후속
+
+실제100초 재현에서 새 metadata를 JSON으로 저장·조회하는 동안 `timeline_range.end_sec`가
+`100.00000033333333`에서 `100.00000033333332`로 바뀌어 같은 모델의 불변성 대조가 거부됐다.
+양쪽 타입은 float이며 인접한 float의1ULP 차이를 직접 확인했다. 작은 합성 재현만의 추정에서
+실제 입력의 계측으로 확인한 후 수정했다.
+
+`analysis_source`/`incident_clip` 행만 내부 payload를
+`{"__recording_prepared_metadata__":{"version":1,"json":"<original model JSON>"}}`
+형태로 저장한다. 내부 JSON 문자열의 숫자는 MySQL의 숫자 parser에 다시 전달되지 않는다.
+읽기 경계 `_get`/`_models`에서 원래 모델 dictionary를 복원하므로 public Contract의 number 타입,
+원래 float 값·duration·timeline/provenance와 `stable_media` fingerprint 입력은 유지된다.
+정확한 모델 동등성 검사는 그대로이며1ULP라도 다른 값의 재등록은 계속 거부한다.
+epsilon·반올림·형식 검증 삭제·시간축 수정은 없다.
+
+version/type/외부·내부 key 형태가 잘못된 envelope와 중복 JSON key·비정상 숫자는 거부한다.
+metadata-only 등록과 content 연결도 같은 표현을 사용한다. 기존 native JSON dictionary는 그대로 읽고
+동일 ref 재등록 때 갱신하지 않는다. 이미 legacy 값이 바뀐 경우 원래 값을 추측해 복구하지 않는다.
+DDL/migration·BLOB/manifest/chunk 형식·서비스 interface는 바꾸지 않았다.
+
+**읽기 호환성:** 새 코드는 기존 raw payload를 읽지만, 이 envelope를 모르는 이전 코드(#544 포함)는
+신규 prepared metadata를 읽을 수 없다. schema revision이 같다는 것만으로 rollback 호환성을 보장하지 않는다.
+운영 적용·rollback은 실행하지 않았으며 승인된 release/code rollback 대상 검토가 필요하다.
+측정·RED/GREEN·실제 검증 근거는 [후속 기록](../../runtime/experiments/2026-11-03-metadata-publish-fix.md)을 따른다.
+
+### 배포·rollback에 사용할 revision 조건
+
+청크 저장과 metadata envelope는 **서로 다른 읽기 호환성 경계**다. schema head가 같거나
+같은 public Contract를 사용한다는 이유로 구버전 reader를 안전하다고 판단하지 않는다.
+아래는 revision의 **필요조건**이며 실제 배포/rollback 승인이나 운영 데이터 점검 결과가 아니다.
+
+| 대상 데이터에 존재하는 형식 | revision에 필요한 reader | 제외할 revision |
+| --- | --- | --- |
+| legacy BLOB + native metadata만 있음이 확인됨 | 실제 schema heads·legacy descriptor/BLOB·job/case 행을 해석하는 검증된 코드 | 새 형식 부재만으로 과거 revision을 승인하지 않음. 이미 적용된 `recording_0002` 등 실제 schema와의 호환도 필요 |
+| 신규 청크 + native metadata | `recording_0002` schema, version1 manifest·청크 분할 조회·detached stream과 legacy 읽기를 모두 지원 | 청크를 모르는 revision. 신규 media 행의 legacy content가 NULL이므로 기존 BLOB reader로 대체 불가 |
+| 신규 metadata envelope 있음 | `__recording_prepared_metadata__` version1을 정확히 decode하고 legacy native metadata도 읽는 코드. metadata-only 행에도 필요 | envelope를 모르는 revision. 청크 reader만 있는 #544/#546 코드도 제외 |
+| 청크와 envelope 모두 있음 | 위 두 reader 조건을 **모두** 충족하고 실제 schema/job/data에 검증된 revision | 둘 중 하나라도 모르는 revision |
+
+확인한 코드 기준점은 다음과 같다.
+
+- 청크 구현은 #544 merge `52585e38c073e48ea312c9b6510870b4bcac4d92`에 포함된다.
+  이는 기능을 확인할 기준점이며 모든 후속 revision의 호환성이나 운영 known-good 상태를 자동 보장하지 않는다.
+- 현재 checkout HEAD `fb40402676f7712fb86e67c468fb1c50f327bfed`는 #546 merge이며 청크 reader는 있지만
+  `prepared_metadata.py`와 envelope decode 연결은 포함하지 않는다. **이 HEAD를 새 metadata 지원 revision으로
+  배포하거나, envelope 발행 후 rollback 대상으로 승인하면 안 된다.**
+- 새 표현을 지원하는 후보는 이 수정의 codec와 repository encode/decode 연결을 모두 포함하고 기능이 유지된
+  **향후 커밋의 검증된40자 SHA**여야 한다. 지금은 미커밋이므로 해당 SHA·배포 image digest는 아직 없다.
+  로컬 실험의 source ro mount/집계 hash·브랜치 이름·기존 image ID는 그 배포 revision을 대신하지 않는다.
+
+실제 선택에는 기존 [release/job 호환 승인](../../runtime/rt14-public-deployment.md#5-release-job-호환-승인-checklist)과
+[controller](../../../deploy/ec2.py)의 조건도 함께 적용한다.
+
+1. 배포 candidate와 rollback candidate 각각의 정확한 commit SHA·immutable image digest·config tuple을 식별하고,
+   실제 schema heads와 **그 시점의** media/job/case 데이터 형식에 대한 호환 근거를 승인 기록에 연결한다.
+   운영 형식의 존재/부재는 이번에 조회하지 않았다. 불명확하면 구버전 사용을 승인하지 않는다.
+2. 기존 `schema.json`이 있는 환경에 배포할 때 `schema_parent`는 그 현재 schema authority revision과 일치해야 한다.
+   이 release revision과 Alembic의 `recording_0002` 문자열은 별개다. metadata 수정은 DDL을 추가하지 않으므로
+   Alembic head만으로 envelope 읽기 호환성을 판정할 수 없다.
+3. `rollback_targets`에는 위 표와 job 호환 조건을 만족한 **검증된 revision SHA만** 넣는다.
+   controller는 deploy 시 기존 current revision이 candidate의 rollback_targets에 포함돼야 하고,
+   rollback 시 current/previous 중 선택한 exact release가 현재 schema authority의 rollback_targets에 있어야 한다.
+   오래된 release의 과거 목록으로 현재 schema authority를 대체하지 않는다.
+4. 현재 current가 새 형식을 읽지 못한다면 이를 rollback_targets에 허위로 넣어 deploy guard를 통과시키지 않는다.
+   호환 조건을 만족하는 revision/승인된 전이 경로가 확보되지 않으면 **배포를 보류**한다.
+   previous/known-good라는 이름만으로 같은 DB에 대한 안전한 rollback이 되지 않는다.
+5. 승인된 `backup_reference`와 job/kind/payload·schema 호환 검토를 함께 보존한다. backup 존재나 job drain만으로
+   이미 발행된 청크/envelope를 구버전 코드가 읽게 되지는 않는다. `recording_0002`는 forward-only이며
+   schema downgrade·데이터 삭제·자동 restore를 code rollback의 우회 수단으로 사용하지 않는다.
+
+이번 변경에서 운영 deploy/rollback/복원·image publish는 실행하지 않았고 사용할 운영 revision도 승인하지 않았다.
+신규 데이터 발행 후 **기존 코드로의 rollback이 안전하다는 주장은 하지 않는다**.
+
 ## 실패 원자성·stream 수명
 
 caller가 outer transaction을 소유한다. 청크·manifest·case link publish는 nested SAVEPOINT로 묶고
