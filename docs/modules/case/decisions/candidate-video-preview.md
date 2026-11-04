@@ -24,6 +24,28 @@
 - HTTP는 `video/mp4`, `inline`, `private, no-store`, `Accept-Ranges: bytes`를 반환한다. 단일 closed/open/suffix byte range는 206, 불가능한 range는 416이다. 지원하지 않는 multipart/잘못된 문법의 Range는 무시하고 200으로 응답한다. transaction·저장 stream은 응답 전 닫는다. 기존 다운로드 API는 변경하지 않는다.
 - Web은 native video controls·playsInline·preload=metadata를 사용한다. 자동 재생은 하지 않는다. 재생 준비 버튼과 「이 장면으로 다시 준비」는 분리한다. 한 영상이 재생되면 같은 비교 화면의 다른 영상은 멈춘다. 생성 실패·브라우저 재생 실패는 카드 안에 안내하고 다른 후보는 계속 쓸 수 있다.
 - 후보 preview job도 running_jobs에 포함해 기존 polling을 사용하지만 신고자료 진행 화면 전환과 선택 제한에서는 제외한다.
+- **READY는 「만들어 저장까지 끝났다」는 뜻이다. 「지금 읽을 수 있다」는 뜻이 아니다(2026-11-05 유소연, §2-1).**
+
+### 2-1. 저장된 미리보기가 손상된 경우 (2026-11-05)
+
+[서어진 실제 통합 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554#issuecomment-6629742662) RC-07에서 저장 chunk가 없어지거나 변조되면, 다운로드는 404 `http.ref_unavailable`인데 view는 READY로 남는다는 것을 찾았다. 다시 요청해도 READY라 새 job을 만들지 않는다.
+
+**그대로 둔다.**
+
+- `video_preview.status`는 preview job 결과(`SUCCEEDED` + `incident_clip_ref`)에서 투영하고, 저장소를 읽지 않는다. 신고용 영상(`package.artifact_ref`)과 번호판 이미지(`package.plate_image_ref`)도 같다 — ReportPackage에서 투영하고, 저장소가 손상되면 ref는 남고 `/assets`가 404 `ref_unavailable`이다.
+- 저장된 clip이 없어지는 것은 사용자 흐름이 아니라 운영 사고다. 런타임 cleanup(`common/storage/cleanup.py`)은 업로드 staging과 recording 임시 파일만 지우고, MySQL chunk에 저장된 clip은 지우지 않는다.
+- 손상되면 그 카드만 「영상을 재생할 수 없어요」가 된다. 신고자료 · 선택 · 다른 후보에는 영향이 없고, 자동으로 다시 만들지 않는다(RC-07에서 확인).
+- 테스트 계획의 「가짜 READY 없음」은 「만들지 못했는데 READY인 경우는 없다」로 읽는다.
+
+**고르지 않은 것**
+
+| 안 | 고르지 않은 이유 |
+| --- | --- |
+| READY에서도 다시 요청을 받아 새 job을 만든다 | case는 재생 실패가 저장소 손상인지 일시 네트워크 · 브라우저 실패인지 구분할 수 없다. 재생 실패 때마다 다시 인코딩하게 된다. web 변경도 필요하다. |
+| view를 만들 때 저장소를 확인한다 | web은 `GET /view`를 2초마다 부른다. CaseView는 job 결과만 투영한다는 원칙과도 맞지 않는다. |
+| API가 읽기에 실패하면 case에 FAILED로 기록한다 | GET에 부작용이 생기고, case 행 잠금이 command · T2 반영과 부딪힌다. |
+
+**재검토 조건:** 운영에서 손상이 실제로 보일 때, 또는 저장된 preview clip을 지우는 정책(만료 등)이 생길 때. 그때는 web이 `ref_unavailable`일 때만 「다시 준비」를 보이고 case가 READY에서도 다시 요청을 받는 안을 다시 본다.
 
 ## 3. 고른 이유
 
@@ -44,8 +66,7 @@
 [#554](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554) 리뷰에서 나온 것이다. 이 문서에서는 아직 정하지 않는다.
 
 - **미리보기가 쓰는 stream 기준(case).** `request_preview`는 case의 모든 원본 VIDEO stream을 고정해 `resolve_span`에 넘긴다. 신고용 clip은 Fine이 고른 stream만 쓴다. 전방 · 후방이 같이 올라온 case라면 둘이 다른 화면일 수 있다. 정철원님에게 `resolve_span` 동작을 확인 요청한 상태다.
-- **손상된 미리보기 파일이 READY로 남는 것(case).** 저장된 bytes가 손상되면 사용자는 「영상을 재생할 수 없어요」만 보고, 다시 요청해도 READY라 새로 만들지 않는다([서어진 실제 통합 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554#issuecomment-6629742662) 발견 1).
-- **recording · API(정철원):** `open_incident_video`의 `OSError` 500, Range 요청마다 share lock · MP4 전체 메모리 적재, 세대가 바뀐 뒤 도착한 preview job의 실패 종류(`RUNTIME_HANDLER_ERROR`, 같은 검증 발견 2).
+- **recording · API(정철원):** `open_incident_video`의 `OSError` 500, Range 요청마다 share lock · MP4 전체 메모리 적재, 세대가 바뀐 뒤 도착한 preview job의 실패 종류(`RUNTIME_HANDLER_ERROR`, [서어진 실제 통합 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554#issuecomment-6629742662) 발견 2).
 
 ## 6. 검증
 
