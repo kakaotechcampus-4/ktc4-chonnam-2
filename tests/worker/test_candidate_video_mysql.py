@@ -31,12 +31,13 @@ KIND = "CANDIDATE_VIDEO_PREVIEW"
 VOLATILE = {"case_rev", "running_jobs"}
 
 
-def _client(monkeypatch, tmp_path):
+def _client(monkeypatch, tmp_path, *, raise_server_exceptions=True):
     from fastapi.testclient import TestClient
     from daesingo.api.app import create_app
     from daesingo.api.bootstrap import bootstrap as api_bootstrap
     monkeypatch.setenv("DAESINGO_ENV_FILE", str(tmp_path / "peer.env"))
-    return TestClient(create_app(startup=api_bootstrap(revision="test", stream=StringIO())))
+    return TestClient(create_app(startup=api_bootstrap(revision="test", stream=StringIO())),
+                      raise_server_exceptions=raise_server_exceptions)
 
 
 def _view(client, case_id):
@@ -90,6 +91,22 @@ def _settle_evidence(queue, startup, root, case_id):
         request_cancel(conn, [j["job_id"] for j in case.job_records if j["kind"] in {"PLATE_READ", "OVERLAY_TIME_READ"}])
         queued = conn.execute(sa.select(job_execution.c.kind).where(job_execution.c.status == "QUEUED")).scalars().all()
     assert queued == [], queued
+
+
+def _settle_with_readouts(queue, tmp_path, startup, root):
+    """Finish the selected clip and both readouts (offline OCR, real worker path) so the Case is idle."""
+    import multiprocessing
+    from tests.e2e_runtime.production_processes import worker_peer
+    _run(queue, startup, root, {"INCIDENT_CLIP_BUILD"}, 1)
+    for _ in range(2):
+        with queue.connect() as conn:
+            kind = conn.scalar(sa.select(job_execution.c.kind).where(job_execution.c.status == "QUEUED")
+                .order_by(job_execution.c.available_at, job_execution.c.execution_id).limit(1))
+        assert kind in {"PLATE_READ", "OVERLAY_TIME_READ"}, kind
+        incoming, outgoing = multiprocessing.Pipe()
+        worker_peer(outgoing, str(tmp_path / "peer.env"), "clip_readout_ok", kind)
+        result = incoming.recv()
+        assert "error" not in result and result["terminals"][0]["status"] == "SUCCEEDED", result
 
 
 @pytest.fixture
@@ -329,3 +346,207 @@ def test_rc02_crash_before_t1_rebuilds_once_then_t2_replay_does_not(queue, tmp_p
         preview = next(c for c in _view(client, case_id)["candidates"] if c["rank"] == 2)["video_preview"]
         assert preview["status"] == "READY"
     assert queue.pool.checkedout() == 0
+
+
+def _ready(queue, tmp_path, monkeypatch, *, count=2, rank=2, raise_server_exceptions=True):
+    """Seed a case whose rank-``rank`` preview is READY; returns an open API client too."""
+    case_id, root, _, startup = prepare(queue, tmp_path, monkeypatch, frame_candidates=count)
+    _settle_evidence(queue, startup, root, case_id)
+    client = _client(monkeypatch, tmp_path, raise_server_exceptions=raise_server_exceptions).__enter__()
+    target = next(c["candidate_id"] for c in _view(client, case_id)["candidates"] if c["rank"] == rank)
+    assert _request(client, case_id, target).status_code < 300
+    _run(queue, startup, root, {KIND}, 1)
+    preview = next(c for c in _view(client, case_id)["candidates"] if c["rank"] == rank)["video_preview"]
+    assert preview["status"] == "READY"
+    return client, case_id, root, startup, preview["clip_ref"]
+
+
+@pytest.mark.parametrize("damage", ["chunks_missing", "chunk_changed", "disconnect", "pool"])
+@pytest.mark.mysql_check("candidate_video", "storage_damage")
+def test_rc07_stored_clip_damage_is_bounded_and_never_regenerates(queue, tmp_path, monkeypatch, damage):
+    from daesingo.recording import mysql_repository as repo
+    client, case_id, root, startup, clip_ref = _ready(queue, tmp_path, monkeypatch, raise_server_exceptions=False)
+    with client:
+        jobs_before = len(_jobs(queue))
+        condition = sa.and_(repo.chunks.c.kind == "incident_clip", repo.chunks.c.entry_key == repo._key(clip_ref))
+        with queue.begin() as conn:
+            if damage == "chunks_missing":
+                assert conn.execute(repo.chunks.delete().where(condition)).rowcount >= 1
+            if damage == "chunk_changed":
+                first = conn.execute(sa.select(repo.chunks.c.content).where(condition, repo.chunks.c.chunk_index == 0)).scalar_one()
+                changed = bytes([first[0] ^ 0xFF]) + first[1:]
+                conn.execute(repo.chunks.update().where(condition, repo.chunks.c.chunk_index == 0).values(content=changed))
+        url = f"/cases/{case_id}/candidate-videos/{clip_ref}"
+        held = []
+        if damage == "disconnect":  # the API's own connection is killed mid-read (same as test_assets_mysql)
+            original = RecordingService.open_incident_video
+            def killed(self, ref):
+                identity = self._repository._connection.exec_driver_sql("SELECT CONNECTION_ID()").scalar_one()
+                with queue.connect() as other:
+                    other.exec_driver_sql(f"KILL CONNECTION {identity}")
+                return original(self, ref)
+            monkeypatch.setattr(RecordingService, "open_incident_video", killed)
+        if damage == "pool":
+            engine = client.app.state.composition.engine
+            held = [engine.connect() for _ in range(engine.pool.size() + engine.pool._max_overflow)]
+        try:
+            response = client.get(url)
+        finally:
+            for conn in held:
+                conn.close()
+        monkeypatch.undo() if damage == "disconnect" else None
+        if damage in {"disconnect", "pool"}:
+            assert client.get(url).status_code == 200, "next read recovers"
+        view = _view(client, case_id)
+    status = next(c for c in view["candidates"] if c["rank"] == 2)["video_preview"]["status"]
+    print("RC07", damage, response.status_code, response.text[:120].replace("\n", " "), "view", status)
+    assert response.status_code in {404, 503}, (response.status_code, response.text[:200])
+    assert "Traceback" not in response.text and str(root) not in response.text
+    assert len(_jobs(queue)) == jobs_before, "no automatic regeneration"
+
+
+@pytest.mark.mysql_check("candidate_video", "source_lost")
+def test_rc07_source_lost_before_build_fails_card_not_stuck(queue, tmp_path, monkeypatch):
+    case_id, root, _, startup = prepare(queue, tmp_path, monkeypatch, frame_candidates=2)
+    _settle_evidence(queue, startup, root, case_id)
+    with _client(monkeypatch, tmp_path) as client:
+        before = _view(client, case_id)
+        rank2 = next(c["candidate_id"] for c in before["candidates"] if c["rank"] == 2)
+        assert _request(client, case_id, rank2).status_code < 300
+        sources = list((root / "source").iterdir())
+        assert len(sources) == 1
+        sources[0].unlink()  # the uploaded original disappears before the worker builds the preview
+        _run(queue, startup, root, {KIND}, 1)
+        after = _view(client, case_id)
+        assert _request(client, case_id, rank2).status_code < 300  # explicit retry is still offered
+    preview = next(c for c in after["candidates"] if c["rank"] == 2)["video_preview"]
+    jobs = _jobs(queue, KIND)
+    print("RC07 source", [(j["status"], j["failure_kind"]) for j in jobs], "view", preview["status"])
+    assert jobs[0]["status"] == "FAILED" and preview["status"] == "FAILED"
+    assert len(jobs) == 2 and jobs[1]["status"] == "QUEUED"
+    assert _stable(after) == _stable(before)
+    assert queue.pool.checkedout() == 0
+
+
+@pytest.mark.mysql_check("candidate_video", "stale_generation")
+def test_rc06_new_generation_isolates_late_preview(queue, tmp_path, monkeypatch):
+    import multiprocessing
+    from daesingo.case import command
+    from tests.e2e_runtime.production_processes import worker_peer
+    case_id, root, _, startup = prepare(queue, tmp_path, monkeypatch, frame_candidates=3)
+    _settle_evidence(queue, startup, root, case_id)
+    original = command._HANDLERS["EDIT_HINT"]
+    # This state shows no 「설명 고치기」 exit; open only that screen gate. The generation change itself is real.
+    monkeypatch.setitem(command._HANDLERS, "EDIT_HINT", lambda case, payload, view, **kw: original(
+        case, payload, {**view, "notices": [*view["notices"], {"actions": ["EDIT_HINT"]}]}, **kw))
+    with _client(monkeypatch, tmp_path) as client:
+        old = _view(client, case_id)
+        old_rank2 = next(c["candidate_id"] for c in old["candidates"] if c["rank"] == 2)
+        assert _request(client, case_id, old_rank2).status_code < 300
+        view = _view(client, case_id)
+        edit = client.post(f"/cases/{case_id}/commands", json={"case_id": case_id, "expected_case_rev": view["case_rev"],
+                                                                "kind": "EDIT_HINT", "payload": {"description": ""}})
+        assert edit.status_code < 300, edit.text
+        # The old preview job is claimed first and finishes (or refuses) after the generation moved on.
+        _run(queue, startup, root, {KIND}, 1)
+        old_job = _jobs(queue, KIND)[0]
+        produced = []
+        with queue.begin() as conn:
+            if old_job["produced"]:
+                from daesingo.common.jobs.produced import ProducedReader
+                produced = [ProducedReader()(conn, KIND, tuple(old_job["produced"]))["incident_clip_ref"]]
+        mid = _view(client, case_id)
+        assert old_rank2 not in {c["candidate_id"] for c in mid["candidates"]}
+        assert all(c["video_preview"]["clip_ref"] is None for c in mid["candidates"])
+        for ref in produced:
+            assert client.get(f"/cases/{case_id}/candidate-videos/{ref}").status_code == 404
+        # The new generation's Coarse runs and its candidates can be previewed normally.
+        incoming, outgoing = multiprocessing.Pipe()
+        worker_peer(outgoing, str(tmp_path / "peer.env"), "clip_frames_3", "COARSE_SEARCH")
+        assert "error" not in incoming.recv()
+        new = _view(client, case_id)
+        new_rank2 = next(c for c in new["candidates"] if c["rank"] == 2)
+        response = _request(client, case_id, new_rank2["candidate_id"])
+        print("RC06 old", old_job["status"], old_job["failure_kind"], "produced", produced,
+              "new stage", new["stage"], "new rank2", new_rank2["video_preview"], "request", response.status_code)
+        assert response.status_code < 300, response.text
+        _run(queue, startup, root, {KIND}, 1)
+        latest = next(c for c in _view(client, case_id)["candidates"] if c["rank"] == 2)["video_preview"]
+    assert latest["status"] == "READY" and latest["clip_ref"] not in produced
+
+
+@pytest.mark.mysql_check("candidate_video", "commit_unknown")
+def test_rc03_t1_commit_response_lost_keeps_one_receipt(queue, tmp_path, monkeypatch, counted):
+    from daesingo.common.config import DbSettings
+    from daesingo.common.db import create_worker_engine
+    from mysql_fault_proxy import CommitResponseProxy
+    builds, encodes = counted
+    case_id, root, _, startup = prepare(queue, tmp_path, monkeypatch, frame_candidates=2)
+    _settle_evidence(queue, startup, root, case_id)
+    builds.clear(); encodes.clear()
+    with _client(monkeypatch, tmp_path) as client:
+        rank2 = next(c["candidate_id"] for c in _view(client, case_id)["candidates"] if c["rank"] == 2)
+        assert _request(client, case_id, rank2).status_code < 300
+        with CommitResponseProxy(queue.url.host, queue.url.port) as proxy:
+            engine = create_worker_engine(DbSettings(url=queue.url.set(host="127.0.0.1", port=proxy.port)
+                .update_query_dict({"ssl_disabled": "true"}).render_as_string(hide_password=False)))
+            armed = []
+            def arm(conn, cursor, sql, *args):
+                if not armed and sql.upper().startswith("INSERT INTO PRODUCED_OBJECTS"):
+                    armed.append(True); proxy.arm()
+            sa.event.listen(engine, "after_cursor_execute", arm)
+            try:
+                _run(queue, startup, root, {KIND}, 1, engine=engine)
+                redeliver_once(engine, StoredCaseReflector(storage_root=root), sleep=lambda s: None)
+                dropped = proxy.commit_ok_dropped
+            finally:
+                sa.event.remove(engine, "after_cursor_execute", arm)
+                engine.dispose()
+        preview = next(c for c in _view(client, case_id)["candidates"] if c["rank"] == 2)["video_preview"]
+    assert armed and dropped == 1
+    assert len(builds) == len(encodes) == 1
+    assert preview["status"] == "READY"
+    with queue.begin() as conn:
+        assert conn.scalar(sa.select(sa.func.count()).select_from(produced_objects)
+                           .where(produced_objects.c.job_kind == KIND)) == 1
+    rows = _jobs(queue, KIND)
+    assert len(rows) == 1 and rows[0]["status"] == "SUCCEEDED" and rows[0]["case_applied_at"] is not None
+
+
+@pytest.mark.mysql_check("candidate_video", "parallel_fine")
+def test_db08_preview_alongside_pending_fine_does_not_block_or_add_followups(queue, tmp_path, monkeypatch):
+    import multiprocessing
+    from tests.e2e_runtime.production_processes import worker_peer
+    case_id, root, _, startup = prepare(queue, tmp_path, monkeypatch, frame_candidates=3)
+    _settle_with_readouts(queue, tmp_path, startup, root)
+    with _client(monkeypatch, tmp_path) as client:
+        view = _view(client, case_id)
+        by_rank = {c["rank"]: c["candidate_id"] for c in view["candidates"]}
+        reselect = client.post(f"/cases/{case_id}/commands", json={"case_id": case_id, "expected_case_rev": view["case_rev"],
+            "kind": "SELECT_OTHER_CANDIDATE", "payload": {"candidate_id": by_rank[2]}})
+        assert reselect.status_code < 300, reselect.text
+        fine = [j for j in _jobs(queue, "FINE_VERIFY") if j["status"] == "QUEUED"]
+        assert len(fine) == 1
+        preview = _request(client, case_id, by_rank[3])
+        print("DB08 request while Fine queued", preview.status_code, preview.json().get("error"))
+        assert preview.status_code < 300, preview.text
+        kinds_before = sorted(j["kind"] for j in _jobs(queue) if j["kind"] != KIND)
+        # This harness worker only serves previews, so park the Fine row while it runs (claim is kind-agnostic).
+        fine_row = job_execution.c.execution_id == fine[0]["execution_id"]
+        with queue.begin() as conn:
+            conn.execute(job_execution.update().where(fine_row).values(
+                available_at=sa.text("DATE_ADD(NOW(6), INTERVAL 1 HOUR)")))
+        _run(queue, startup, root, {KIND}, 1)
+        with queue.begin() as conn:
+            conn.execute(job_execution.update().where(fine_row).values(available_at=fine[0]["available_at"]))
+        assert sorted(j["kind"] for j in _jobs(queue) if j["kind"] != KIND) == kinds_before, "preview T2 issued follow-ups"
+        assert [j["status"] for j in _jobs(queue, "FINE_VERIFY") if j["job_id"] == fine[0]["job_id"]] == ["QUEUED"]
+        # The waiting Fine still runs and the selected candidate's clip build follows as usual.
+        incoming, outgoing = multiprocessing.Pipe()
+        worker_peer(outgoing, str(tmp_path / "peer.env"), "clip_frames_3", "FINE_VERIFY")
+        assert "error" not in incoming.recv()
+        after = _view(client, case_id)
+    assert next(c for c in after["candidates"] if c["rank"] == 2)["selected"]
+    assert next(c for c in after["candidates"] if c["rank"] == 3)["video_preview"]["status"] == "READY"
+    clip_jobs = [j for j in _jobs(queue, "INCIDENT_CLIP_BUILD") if j["status"] == "QUEUED"]
+    assert len(clip_jobs) == 1, "selected candidate's clip build was issued after Fine"

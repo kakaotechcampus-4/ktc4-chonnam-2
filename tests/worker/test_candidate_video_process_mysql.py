@@ -162,3 +162,90 @@ def test_http01_04_rc01_tcp_api_process_ranges_ownership_and_restart(queue, tmp_
         _stop(api)
     assert _counts(queue) == before
     print("tcp pids", first_pid, api.pid, "sha256", digest, "bytes", size)
+
+
+def _hanging_preview_worker(env_file, marker):
+    """Child process: a real worker that blocks inside the preview encode until it is killed."""
+    import io
+    from pathlib import Path
+    from threading import Event
+    from daesingo.common.db import create_worker_engine
+    from daesingo.recording import LocalIncidentMaterializer
+    from daesingo.worker.bootstrap import bootstrap
+    from daesingo.worker.case_composition import StoredCaseReflector
+    from daesingo.worker.composition import compose_worker
+    from daesingo.worker.composition_root import compose_registry
+    os.environ["DAESINGO_ENV_FILE"] = env_file
+    startup = bootstrap(revision="test", stream=io.StringIO())
+    engine = create_worker_engine(startup.config.db)
+    def hang(materializer, *args):
+        Path(marker).write_text(str(os.getpid()), encoding="utf-8")
+        time.sleep(600)
+    LocalIncidentMaterializer.materialize = hang
+    registry = compose_registry(engine=engine, startup=startup)
+    compose_worker(engine=engine, startup=startup, registry=registry, stop=Event(),
+                   reflector=StoredCaseReflector(startup=startup)).run()
+
+
+@pytest.mark.mysql_check("candidate_video", "process_kill")
+def test_rc02_worker_process_killed_mid_encode_recovers_in_new_process(queue, tmp_path, monkeypatch):
+    import multiprocessing
+    from daesingo.common.jobs.redelivery import redeliver_once
+    from daesingo.common.jobs.sweep import sweep_expired
+    from daesingo.worker.case_composition import StoredCaseReflector
+    from threading import Event
+    from daesingo.worker.composition import compose_worker
+    from daesingo.worker.composition_root import compose_registry
+    from tests.e2e_runtime.production_processes import worker_peer
+    case_id, root, _, startup = prepare(queue, tmp_path, monkeypatch, frame_candidates=2)
+    _settle_evidence(queue, startup, root, case_id)
+    env_file = str(tmp_path / "peer.env")
+    with _client(monkeypatch, tmp_path) as client:
+        rank2 = next(c["candidate_id"] for c in _view(client, case_id)["candidates"] if c["rank"] == 2)
+        assert _request(client, case_id, rank2).status_code < 300
+    mp = multiprocessing.get_context("spawn")
+    marker = tmp_path / "encoding.pid"
+    child = mp.Process(target=_hanging_preview_worker, args=(env_file, str(marker)))
+    child.start()
+    try:
+        deadline = time.monotonic() + 90
+        while not marker.exists():
+            assert child.is_alive() and time.monotonic() < deadline, "child never reached the encode"
+            time.sleep(.2)
+        killed_pid = int(marker.read_text(encoding="utf-8"))
+        child.kill()  # hard kill mid-encode: no T1, no cleanup code runs
+        child.join(30)
+    finally:
+        if child.is_alive():
+            child.kill(); child.join()
+    with queue.begin() as conn:
+        old = conn.execute(sa.select(job_execution).where(job_execution.c.kind == KIND)).mappings().one()
+        assert old["status"] == "RUNNING" and old["produced"] == [] and old["case_applied_at"] is None
+        conn.execute(job_execution.update().where(job_execution.c.execution_id == old["execution_id"]).values(
+            lease_expires_at=sa.text("DATE_SUB(NOW(6), INTERVAL 1 SECOND)")))
+        settings = compose_worker(engine=queue, startup=startup, registry=compose_registry(engine=queue, startup=startup),
+                                  stop=Event(), reflector=StoredCaseReflector(storage_root=root)).settings
+        outcome = sweep_expired(conn, old["execution_id"], settings)
+        assert outcome.reason == "RETRIED"
+        conn.execute(job_execution.update().where(job_execution.c.execution_id == outcome.retry_execution_id)
+                     .values(available_at=sa.func.now(6)))
+    incoming, outgoing = mp.Pipe()
+    second = mp.Process(target=worker_peer, args=(outgoing, env_file, "clip", KIND))
+    second.start(); outgoing.close()
+    try:
+        assert incoming.poll(120), "second worker did not report"
+        result = incoming.recv()
+    finally:
+        second.join(30)
+    assert "error" not in result, result
+    assert result["pid"] not in {killed_pid, os.getpid()} and result["terminals"] == [{"status": "SUCCEEDED", "failure_kind": None}]
+    assert result["clip_calls"] == 1 and result["pool_checkedout"] == 0
+    redeliver_once(queue, StoredCaseReflector(storage_root=root), sleep=lambda s: None)
+    rows = [dict(r) for r in queue.connect().execute(sa.select(job_execution).where(job_execution.c.kind == KIND)
+            .order_by(job_execution.c.attempt)).mappings()]
+    assert [(r["attempt"], r["status"]) for r in rows] == [(1, "STALE"), (2, "SUCCEEDED")]
+    with _client(monkeypatch, tmp_path) as client:
+        preview = next(c for c in _view(client, case_id)["candidates"] if c["rank"] == 2)["video_preview"]
+        assert preview["status"] == "READY"
+        assert client.get(f"/cases/{case_id}/candidate-videos/{preview['clip_ref']}").status_code == 200
+    print("killed pid", killed_pid, "recovered pid", result["pid"])
