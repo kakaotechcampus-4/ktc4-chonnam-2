@@ -221,18 +221,6 @@ def build_view_from_adapter(
     snapshot = _inputs_for(case, adapter)
     executions = executions or []
     visual_verify_status = representative_execution_status(case.job_records, executions, "FINE_VERIFY")
-    search_job = jobs.latest_job_record(case, "COARSE_SEARCH")
-    search_execution = max(
-        (execution for execution in executions
-         if search_job is not None and execution["job_id"] == search_job["job_id"]),
-        key=lambda execution: execution["attempt"],
-        default=None,
-    )
-    search_input_unsupported = (
-        search_execution is not None
-        and search_execution["status"] == "FAILED"
-        and search_execution.get("failure_kind") == "RECORDING_UNSUPPORTED_MEDIA"
-    )
     view = build_case_view(
         case,
         evidence_record=snapshot.evidence_record,
@@ -257,7 +245,7 @@ def build_view_from_adapter(
         analysis_timed_out=case.analysis_timed_out,
         clip_build_failed=selected_clip_failed(case),
         analysis_range_too_long=case.analysis_range_too_long,
-        search_input_unsupported=search_input_unsupported,
+        search_input_unsupported=case.search_input_unsupported,
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
         hint_unclear=case.hint_unclear,
@@ -516,7 +504,8 @@ def derive_notices(
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
     - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
-      evidence 유무와 무관하다.
+      evidence 유무와 무관하다. 그 실패가 지원하지 않는 영상이면(`search_input_unsupported`, #542) 다시 찾아도
+      같으므로 action이 없다.
     - `recording.analysis_range_too_long` — 같은 조건에서 그 실패가 분석 범위 상한 초과일 때(`analysis_range_too_long`, #452).
       `search.candidate_search_failed` 대신 붙는다. 다시 찾아도 같으므로 action이 없다.
     - `case.analysis_stopped` — `stage=SEARCHING`이고 진행 상태 `coarse_search`가 `PARTIAL`일 때(사용자 중단, 8-9).
@@ -571,8 +560,11 @@ def derive_notices(
     derived = []
     # 후보 탐색 실패는 evidence 유무와 무관하게 알린다 — 실패를 「결과 없음」으로 보이지 않게 한다.
     if any(s["step"] == "coarse_search" and s["state"] == "FAILED" for s in view.get("progress", [])):
-        search_notice = ANALYSIS_RANGE_TOO_LONG_NOTICE if analysis_range_too_long else CANDIDATE_SEARCH_FAILED_NOTICE
-        derived.append({**search_notice, "actions": []} if search_input_unsupported else search_notice)
+        if analysis_range_too_long:
+            derived.append(ANALYSIS_RANGE_TOO_LONG_NOTICE)
+        else:
+            derived.append({**CANDIDATE_SEARCH_FAILED_NOTICE, "actions": []} if search_input_unsupported
+                           else CANDIDATE_SEARCH_FAILED_NOTICE)
     if view.get("stage") == "SEARCHING" and any(
         s["step"] == "coarse_search" and s["state"] == "PARTIAL" for s in view.get("progress", [])
     ):

@@ -1,117 +1,97 @@
-from dataclasses import replace
+"""지원하지 않는 영상으로 탐색이 실패하면 「다시 찾기」를 싣지 않는다(#542).
 
+같은 입력으로 다시 찾아도 또 실패하고 유료 호출만 나간다 — #452 `analysis_range_too_long`과 같은 기준이다. 실패 이유는
+반영 때 `outcome.failure_kind`로 정해 aggregate에 남긴다(#452와 같은 방식). CaseView 조회 때 실행 기록에서 다시 계산하지
+않는다.
+"""
 import pytest
 
-from daesingo.case import command, jobs, service
-from tests.case.test_result_reflection import _outcome, _reflect, _store_searching
+from daesingo.case import command, service
+from daesingo.case.store_state import from_row, to_row
+from tests.case.test_result_reflection import _coarse_failed_with, _outcome, _reflect, _store_searching
 
 
-@pytest.mark.parametrize(
-    ("failure_kind", "expected_actions"),
-    [
-        ("RECORDING_UNSUPPORTED_MEDIA", []),
-        ("SEARCH_PROVIDER_FAILED", ["RETRY_SEARCH"]),
-        (None, ["RETRY_SEARCH"]),
-    ],
-)
-def test_failed_search_retry_follows_the_terminal_reason(
-    failure_kind: str | None, expected_actions: list[str],
-) -> None:
-    # Given: a real Case result reflection and reload, with a Runtime read port.
-    store, case_id = _store_searching()
-    outcome = replace(
-        _outcome(store, case_id, "COARSE_SEARCH", status="FAILED"),
-        failure_kind=failure_kind,
-    )
-    executions = [{"job_id": outcome.job_id, "attempt": 1,
-                   "status": "FAILED", "failure_kind": failure_kind}]
-    store.executions = lambda _conn, _ids: executions
-    _reflect(store, outcome)
-
-    # When: the API-facing read path reloads the persisted Case.
-    view = service.get_view(case_id, store=store)
-
-    # Then: unsupported input stays a failure without offering another paid retry.
-    notice = next(n for n in view["notices"] if n["code"] == "search.candidate_search_failed")
-    assert notice["actions"] == expected_actions
-    assert view["stage"] == "SEARCHING"
-    assert view["candidates"] == []
-    assert view["running_jobs"] == []
-    assert view["package"] is None
+def _search_failed_notice(view: dict) -> dict:
+    return next(n for n in view["notices"] if n["code"] == "search.candidate_search_failed")
 
 
-def test_a_new_attempt_does_not_reuse_an_older_unsupported_reason() -> None:
-    # Given: an earlier attempt rejected media, but the latest failure is transient.
-    store, case_id = _store_searching()
-    outcome = _outcome(store, case_id, "COARSE_SEARCH", status="FAILED")
-    store.executions = lambda _conn, _ids: [
-        {"job_id": outcome.job_id, "attempt": 1, "status": "FAILED",
-         "failure_kind": "RECORDING_UNSUPPORTED_MEDIA"},
-        {"job_id": outcome.job_id, "attempt": 2, "status": "FAILED",
-         "failure_kind": "SEARCH_PROVIDER_FAILED"},
-    ]
-    _reflect(store, outcome)
-
-    # When: the current failure is projected.
-    view = service.get_view(case_id, store=store)
-
-    # Then: the old attempt must not remove the valid transient retry.
-    notice = next(n for n in view["notices"] if n["code"] == "search.candidate_search_failed")
-    assert notice["actions"] == ["RETRY_SEARCH"]
-
-
-def test_redelivery_of_unsupported_input_does_not_create_more_jobs() -> None:
-    # Given: the unsupported execution has already been applied once.
-    store, case_id = _store_searching()
-    outcome = replace(
-        _outcome(store, case_id, "COARSE_SEARCH", status="FAILED"),
-        failure_kind="RECORDING_UNSUPPORTED_MEDIA",
-    )
-    store.executions = lambda _conn, _ids: [
-        {"job_id": outcome.job_id, "attempt": 1, "status": "FAILED",
-         "failure_kind": "RECORDING_UNSUPPORTED_MEDIA"},
-    ]
-    _reflect(store, outcome)
-    records_before = store.get_case(case_id).job_records
-
-    # When: Runtime delivers the same terminal execution again.
-    result = _reflect(store, outcome)
-
-    # Then: delivery is idempotent, and the same-input retry is still unavailable.
-    assert result.status == "ALREADY_APPLIED"
-    assert store.get_case(case_id).job_records == records_before
-    assert jobs.latest_job_record(store.get_case(case_id), "COARSE_SEARCH")["job_id"] == outcome.job_id
-    notice = next(n for n in service.get_view(case_id, store=store)["notices"]
-                  if n["code"] == "search.candidate_search_failed")
-    assert notice["actions"] == []
-
-
-@pytest.mark.parametrize(
-    ("failure_kind", "accepted"),
-    [("RECORDING_UNSUPPORTED_MEDIA", False), ("SEARCH_PROVIDER_FAILED", True)],
-)
-def test_direct_retry_command_follows_the_terminal_reason(failure_kind: str, accepted: bool) -> None:
-    # Given: a failed search whose terminal reason is projected from the Runtime read port.
-    store, case_id = _store_searching()
-    outcome = replace(
-        _outcome(store, case_id, "COARSE_SEARCH", status="FAILED"),
-        failure_kind=failure_kind,
-    )
-    store.executions = lambda _conn, _ids: [
-        {"job_id": outcome.job_id, "attempt": 1, "status": "FAILED", "failure_kind": failure_kind},
-    ]
-    _reflect(store, outcome)
-    jobs_before = len(store.get_case(case_id).job_records)
-
-    # When: a client sends RETRY_SEARCH directly, bypassing the screen's buttons.
-    result = command.execute_command({
+def _retry(store, case_id):
+    return command.execute_command({
         "case_id": case_id,
         "expected_case_rev": store.get_case(case_id).case_rev,
         "kind": "RUN_NOTICE_ACTION",
         "payload": {"notice_code": "search.candidate_search_failed", "action": "RETRY_SEARCH"},
     }, store=store)
 
-    # Then: unsupported input gets no new paid search; a transient failure keeps its retry.
+
+@pytest.mark.parametrize(
+    ("failure_kind", "expected_actions"),
+    [("RECORDING_UNSUPPORTED_MEDIA", []), ("SEARCH_PROVIDER_FAILED", ["RETRY_SEARCH"])],
+)
+def test_failed_search_retry_follows_the_reflected_failure_kind(failure_kind, expected_actions):
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, failure_kind)
+
+    view = service.get_view(case_id, store=store)
+
+    assert _search_failed_notice(view)["actions"] == expected_actions
+    assert view["stage"] == "SEARCHING"
+    assert view["candidates"] == []
+    assert view["running_jobs"] == []
+
+
+def test_unsupported_input_does_not_depend_on_execution_rows():
+    # 실행 기록 조회가 비어 있어도(읽기 포트 없음 · 다른 job의 기록) 반영 때 정한 이유를 쓴다.
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, "RECORDING_UNSUPPORTED_MEDIA")
+    store.executions = lambda _conn, _ids: []
+
+    assert _search_failed_notice(service.get_view(case_id, store=store))["actions"] == []
+
+
+def test_a_later_failure_overwrites_the_reason():
+    # 일시 실패 → 다시 찾기 → 미지원 입력이면 그때부터 다시 찾기가 없다. 실패마다 이유를 덮어쓴다.
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, "SEARCH_PROVIDER_FAILED")
+    assert _retry(store, case_id).response["ok"] is True
+
+    _coarse_failed_with(store, case_id, "RECORDING_UNSUPPORTED_MEDIA", execution_id="exec_2")
+
+    assert _search_failed_notice(service.get_view(case_id, store=store))["actions"] == []
+
+
+def test_unsupported_input_survives_store_round_trip():
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, "RECORDING_UNSUPPORTED_MEDIA")
+
+    assert from_row(to_row(store.get_case(case_id))).search_input_unsupported is True
+
+
+def test_redelivery_of_unsupported_input_does_not_create_more_jobs():
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, "RECORDING_UNSUPPORTED_MEDIA")
+    outcome = _outcome(store, case_id, "COARSE_SEARCH", status="FAILED")
+    records_before = store.get_case(case_id).job_records
+
+    result = _reflect(store, outcome)
+
+    assert result.status == "ALREADY_APPLIED"
+    assert store.get_case(case_id).job_records == records_before
+    assert _search_failed_notice(service.get_view(case_id, store=store))["actions"] == []
+
+
+@pytest.mark.parametrize(
+    ("failure_kind", "accepted"),
+    [("RECORDING_UNSUPPORTED_MEDIA", False), ("SEARCH_PROVIDER_FAILED", True)],
+)
+def test_direct_retry_command_follows_the_reflected_failure_kind(failure_kind, accepted):
+    # 화면 버튼을 거치지 않고 RETRY_SEARCH를 바로 보내도 미지원 입력이면 새 유료 탐색을 내지 않는다.
+    store, case_id = _store_searching()
+    _coarse_failed_with(store, case_id, failure_kind)
+    jobs_before = len(store.get_case(case_id).job_records)
+
+    result = _retry(store, case_id)
+
     assert result.response["ok"] is accepted
     coarse = [r for r in store.get_case(case_id).job_records if r["kind"] == "COARSE_SEARCH"]
     if accepted:
@@ -122,3 +102,4 @@ def test_direct_retry_command_follows_the_terminal_reason(failure_kind: str, acc
         assert result.appended_job_records == []
         assert len(store.get_case(case_id).job_records) == jobs_before
         assert len(coarse) == 1
+
