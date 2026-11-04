@@ -62,6 +62,12 @@ def load_experiment(path):
 
 
 def validate_selection(first, count, seconds, experiment, *, recording_only=False):
+    if experiment is not None and experiment.resource_profile == 'full15-512m':
+        from recording_full_input import finite_decimal
+        if (type(first) is not int or type(count) is not int or (first, count) != (1, 15)
+                or finite_decimal(seconds)*1000 > experiment.max_duration_ms):
+            raise ValueError('FULL_FIFTEEN_EXPLICIT_PROFILE_REQUIRED')
+        return
     if any(type(v) is not int for v in (first, count, seconds)):
         raise ValueError('INPUT_PROFILE_INVALID')
     if recording_only:
@@ -100,13 +106,16 @@ def require_recording_result(report):
 
 
 def logical_coverage(placements, seconds):
+    requested = Decimal(str(seconds))
+    if not requested.is_finite() or requested <= 0:
+        raise ValueError('PLACEMENT_INVALID_REQUEST')
     offset = Decimal(0)
     for item in placements:
         start, end = Decimal(str(item['start'])), Decimal(str(item['end']))
         if not start.is_finite() or not end.is_finite() or start != offset or end <= start:
             raise ValueError('PLACEMENT_GAP_OVERLAP_OR_ORDER')
         offset = end
-    if offset < seconds:
+    if offset < requested:
         raise ValueError('PLACEMENT_INSUFFICIENT_COVERAGE')
     return {'requested_sec': seconds, 'placed_end_sec': str(offset), 'logical_gap_overlap_count': 0,
             'capture_continuity': 'UNKNOWN', 'order_basis': 'protected_manifest_explicit_placement'}
@@ -486,7 +495,8 @@ def request_boundary(cfg, media, source, timeline_id, deadline, report, events, 
 
     provider._client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(
         with_raw_response=SimpleNamespace(parse=stop))))
-    original_url, original_dumps = provider_module._video_data_url, provider_module.json.dumps
+    original_url, original_json = provider_module._video_data_url, provider_module.json
+    original_dumps = original_json.dumps
 
     def url(*args, **kwargs):
         check()
@@ -505,7 +515,10 @@ def request_boundary(cfg, media, source, timeline_id, deadline, report, events, 
             report['guard_json_bytes'] = len(value)
             return value
 
-    provider_module._video_data_url, provider_module.json.dumps = url, dumps
+    # provider 전용 참조만 교체한다. 공유 json.dumps를 바꾸면 CPU journal의
+    # serializer가 이 계측 hook으로 재진입해 phase/snapshot 재귀가 생긴다.
+    provider_module._video_data_url = url
+    provider_module.json = SimpleNamespace(**{**vars(original_json), 'dumps': dumps})
     try:
         report['request_guard'] = 'FAIL'
         with diag.measure(events, 'search_request_boundary'):
@@ -519,14 +532,15 @@ def request_boundary(cfg, media, source, timeline_id, deadline, report, events, 
         if report['sdk_entry_count'] != 1:
             raise RuntimeError('SDK_ENTRY_COUNT_MISMATCH')
     finally:
-        provider_module._video_data_url, provider_module.json.dumps = original_url, original_dumps
+        provider_module._video_data_url, provider_module.json = original_url, original_json
 
 
 def run(args, *, cpu_observer=None):
     """CPU observer는 감독자가 실제 runner/DB leaf reader를 연결할 때만 사용한다."""
     if cpu_observer is None:
         return _run(args)
-    if not getattr(args, 'recording_only', False):
+    if not getattr(args, 'recording_only', False) and not (
+            getattr(args, 'coarse_270p_crf28', False) and getattr(args, 'full_input', False)):
         raise ValueError('CPU_OBSERVER_REQUIRES_RECORDING_ONLY')
     from recording_cpu_quota_probe import observe_measurements
     with observe_measurements(diag, cpu_observer):
@@ -735,8 +749,13 @@ def _run(args):
                 if getattr(args, 'explicit_placement_path', None):
                     from recording_ec2_entry import placement_gate
                     expected = json.loads(Path(args.explicit_placement_path).read_text())
-                    stage = 'smoke' if args.seconds == 10 else 'representative'
+                    stage = 'full' if experiment and experiment.resource_profile == 'full15-512m' else (
+                        'smoke' if args.seconds == 10 else 'representative')
                     placement_gate(expected[stage], report['placements'], stage)
+                if experiment and experiment.resource_profile == 'full15-512m':
+                    from recording_full_input import require_full_scope
+                    require_full_scope(report['placements'], args.seconds)
+                    report['full_input_scope'] = 'PASS_ALL_FIFTEEN_EXACT_ENDPOINT'
                 report['timeline_coverage'] = logical_coverage(report['placements'], args.seconds)
                 timeline = service.create_relative_timeline_from_placements(placements)
                 resolution = service.resolve_span(dict(timeline_id=timeline.timeline_id, revision=timeline.revision),

@@ -27,6 +27,8 @@ class ProbeBudget:
             return cls(name, 1280, 1100, 512, 1024, 6144, 2048)
         if name == 'coarse-1200-384m':
             return cls(name, 2176, 1900, 896, 2048, 8192, 3072)
+        if name == 'full15-512m':
+            return cls(name, 3072, 2560, 1280, 2560, 8192, 4096)
         raise ValueError('BUDGET_UNKNOWN_PROFILE')
 
     def validate_experiment(self, output_bytes, duration_ms, timeout_sec):
@@ -35,9 +37,11 @@ class ProbeBudget:
         if self.profile == 'legacy':
             valid = (50331648 <= output_bytes <= 256*MIB and 240000 <= duration_ms <= 1200000
                      and 900 <= timeout_sec <= 3600)
-        else:
+        elif self.profile == 'coarse-1200-384m':
             # 한쪽 한도만 올리는 조합은 허용하지 않는다.
             valid = (output_bytes, duration_ms, timeout_sec) == (384*MIB, 1200000, 3000)
+        else:
+            valid = (output_bytes, duration_ms, timeout_sec) == (512*MIB, 1584174, 3600)
         if not valid:
             raise ValueError('BUDGET_COORDINATED_EXPERIMENT_REQUIRED')
 
