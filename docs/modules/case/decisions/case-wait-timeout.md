@@ -1,6 +1,6 @@
 # case 대기 timeout — 타이머 없이 마감을 계산하고, 늦은 결과는 반영하지 않는다
 
-> **상태: 결정 · 구현(탐색 `COARSE_SEARCH`만)** · 결정일 2026-10-13 · 갱신 2026-10-26(web · Runtime 확인 반영) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-9(`../design-refinement-w7-baseline.md`), `timeout-fallback.md`(잠정값 · 「진행 중인 Job은 강제 취소하지 않는다」), `stop-analysis.md`(같은 guard), `running-jobs-derivation.md`(정산 사유 `STOPPED_WAITING`), Runtime Tech Spec §12.2 · Provisional Baseline §3.2(RD-04b), #291(`runtime.retry.after_case_stopped_count` 의미)
+> **상태: 결정 · 구현(탐색 `COARSE_SEARCH`만)** · 결정일 2026-10-13 · 준비 여유 추가 2026-11-04(#452, §3-8 · 잠정값 PM 확인 대기) · 갱신 2026-10-26(web · Runtime 확인 반영) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-9(`../design-refinement-w7-baseline.md`), `timeout-fallback.md`(잠정값 · 「진행 중인 Job은 강제 취소하지 않는다」), `stop-analysis.md`(같은 guard), `running-jobs-derivation.md`(정산 사유 `STOPPED_WAITING`), Runtime Tech Spec §12.2 · Provisional Baseline §3.2(RD-04b), #291(`runtime.retry.after_case_stopped_count` 의미)
 > 「얼마나 기다린 뒤 부분 결과로 넘어가는가」와 「그때 어떤 job을 유지 · 취소하는가」는 case 소유다(`timeout-fallback.md`). 실행 상한 값(`AnalysisScope.budget.max_latency_sec`)은 그 문서와 #149 A안이 정했고 여기서 다시 정하지 않는다.
 
 ## 1. 목표 · 범위
@@ -13,7 +13,8 @@
 ## 2. 흐름
 
 ```
-마감 = JobRecord.requested_at + scope.budget.max_latency_sec + 30초
+마감 = JobRecord.requested_at + min(scope.budget.max_latency_sec + 30초 + 분석 범위 길이 × 2, 60분)
+      (실행 상한 + 30초보다 짧아지지 않는다 — §3-8)
 
 [get_view]        마감이 지난 job은 기다리지 않는 것으로 계산 — 저장하지 않음
 [command]         case 잠금 → 마감 지난 job을 STOPPED_WAITING 정산 → 검사 · 처리 → 성공하면 함께 저장
@@ -31,11 +32,16 @@
 6. **notice는 `case.analysis_timed_out`을 새로 둔다**(INFO · non-blocking · `actions:[RETRY_SEARCH]`, `message_key: notice.analysis_timed_out`). 출구는 중단과 같지만 원인이 사용자가 아니라 code를 나눈다 — 같은 code면 web이 「중단했습니다」라고 말하게 된다. 둘 중 하나만 붙고, 마지막 탐색 job의 정산 사유를 따른다. 규칙 원문은 CaseView 계약 B§7 `notices[].code` 행. 문구와 버튼은 web이 확인했다(2026-10-24 신유민, [#358 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/358)) — 버튼은 새 라벨 없이 기존 `RETRY_SEARCH`의 「다시 찾기」다. 영상 전체를 다시 보는 동작이라 「이어서 찾기」보다 사실에 맞다(`core-user-flow.md` §7 현재 범위).
 7. **command는 잠근 직후 정산한다.** 사용자가 본 timeout 화면의 「다시 찾기」(`RUN_NOTICE_ACTION`)가 같은 기준으로 검사되고, 성공하면 그 정산도 저장된다. 마감이 지난 뒤 `STOP_ANALYSIS`는 기다리는 탐색 job이 없어 `not_allowed`다.
 
+8. **긴 입력은 준비 여유를 더 기다린다(2026-11-04, [#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)).** 마감 기산점이 발주 시각이라 Recording 분석 영상 준비도 마감 안에 든다(§4). EC2에서 120초 입력의 준비만 177.61초였고(#561), 26분 입력은 Search가 시작되기 전에 마감이 지난다. 그래서 마감에 **분석 범위 길이(그 job AnalysisScope의 `TIMELINE_RELATIVE` 범위 합) × 2**를 더하고, 전체 대기는 **60분**을 넘지 않게 한다(`domain.SEARCH_WAIT_PREP_FACTOR` · `SEARCH_WAIT_MAX_SEC`).
+   - **Search 실행 상한(`budget.max_latency_sec` 150초)은 그대로다.** 이 값은 Search `RunDeadline`도 정한다(#149 A안). 늘어난 시간은 Search가 아니라 준비 시간이라 case 대기에만 더한다.
+   - **잠정값.** 계수 2.0은 EC2 1회 측정(약 1.5배)에 여유를 둔 값, 60분은 26분 입력(약 1560 × 2 + 180 ≈ 55분)이 들어가는 값이다. PM 확인 대기([#452 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6625340748)). 배포 머신 26분 실측이 나오면 다시 본다.
+   - 짧은 입력은 거의 같다(10초 입력 180 → 200초). 상한에 걸려도 지금처럼 `case.analysis_timed_out`으로 끝난다 — 무한 대기는 없다.
+
 ## 4. 알려진 한계
 
 - **시계.** 마감은 `requested_at`(발주한 process의 시계)과 판정하는 process의 시계를 비교한다. API · Worker container 시계가 어긋나면 그만큼 마감이 밀리거나 당겨진다. lease처럼 DB `NOW(6)`(Runtime B-L6)를 쓰지 않는다 — case 행에 그 시각이 없다. 수 초 차이는 30초 여유 안에 든다.
 - **재시도와의 관계.** Worker가 죽으면 attempt 2는 마지막 heartbeat 뒤 최대 ~82초에 시작한다(Baseline §3.2). 탐색이 길면 attempt 2는 마감 뒤에 끝나 반영되지 않는다. Runtime이 이미 case 확인을 받은 관계다(RD-04b).
-- **Recording 준비 시간이 마감에 들어간다**(2026-10-29, #452). 마감 기산점이 `requested_at`이라 큐 대기와 Recording 분석 영상 준비가 모두 150 + 30초 안에 든다. Search 실행 시계(`RunDeadline`)는 Search 호출부터 센다. 19분 26초 입력은 준비에만 240.8~285.2초가 걸려 Search 시작 전에 마감이 지났다. 기산점은 지금 바꾸지 않고 재측정 뒤 다시 본다 — `long-analysis-range.md` §2-6 · §3.
+- ~~**Recording 준비 시간이 마감에 들어간다**(2026-10-29, #452).~~ → 2026-11-04 준비 여유로 대응(§3-8). 아래는 당시 기록이다. 마감 기산점이 `requested_at`이라 큐 대기와 Recording 분석 영상 준비가 모두 150 + 30초 안에 든다. Search 실행 시계(`RunDeadline`)는 Search 호출부터 센다. 19분 26초 입력은 준비에만 240.8~285.2초가 걸려 Search 시작 전에 마감이 지났다. 기산점은 지금 바꾸지 않고 재측정 뒤 다시 본다 — `long-analysis-range.md` §2-6 · §3.
 - **클립 분할 전 값.** 지금 탐색은 클립 1개다. 분할하면 `timeout-fallback.md`의 「150초 × 클립 수」를 scope 예산으로 넘기는 방식에 따라 이 계산도 바뀐다.
 
 ## 5. 미결 (채우지 않는다)
@@ -52,6 +58,8 @@
 | `get_view`가 정산을 저장 | 읽기 경로가 쓰기 transaction을 갖게 된다. 계산이 같으므로 저장은 다음 쓰기에 맡겨도 화면이 같다 |
 | `case.analysis_stopped`를 그대로 쓴다 | 사용자가 누르지 않았는데 「중단했다」고 말하게 된다 |
 | timeout 때 Runtime 중단 요청 | `timeout-fallback.md`가 이미 하지 않기로 했다 — 비용이 나간 호출을 버리지 않는다 |
+| 긴 입력에 탐색 예산(`max_latency_sec`)을 늘린다(#452) | Search 실행 상한까지 같이 늘어난다(#149 A안 단일 권위). 늘어난 시간은 준비 시간이라 Search 합의 없이 바꿀 이유가 없다 |
+| 마감을 설정값(env)으로 열어 배포가 넣는다(#452) | 값의 소유가 흐려지고, 짧은 입력도 같은 시간을 기다리게 된다 |
 | 마감 기준을 실행 시작 시각으로 | Runtime 실행 기록이 있어야 하고, 시작조차 못 한 job(큐 적체 · Worker 부재)은 끝없이 기다린다 |
 
 ## 7. 테스트

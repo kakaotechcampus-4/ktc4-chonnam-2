@@ -106,6 +106,11 @@ ANALYSIS_JOB_KINDS = ("HINT_EXTRACT", "COARSE_SEARCH")
 
 # case 대기 = 실행 상한 + 큐 대기 여유 — 단서 구조화 대기(`decisions/start-analysis.md` §3-5)와 같은 여유다.
 SEARCH_WAIT_QUEUE_MARGIN_SEC = 30.0
+# Recording 분석 영상 준비 여유 — 마감 기산점이 발주 시각이라 준비 시간도 마감 안에 든다(#452). 분석 범위 길이 × 계수를
+# 더하고, 전체 대기는 상한을 넘지 않는다. 잠정값: EC2 120초 입력 준비 177.61초(약 1.5배, #561 1회)에 여유를 둔 2.0,
+# 26분 입력(약 55분)이 들어가는 60분. Search 실행 상한(`budget.max_latency_sec`)은 바꾸지 않는다.
+SEARCH_WAIT_PREP_FACTOR = 2.0
+SEARCH_WAIT_MAX_SEC = 3600.0
 
 
 @dataclass
@@ -356,7 +361,8 @@ class CaseAggregate:
         return self.settled_jobs[records[-1]["job_id"]]
 
     def wait_deadline(self, record: dict[str, Any]) -> datetime | None:
-        """case가 이 job의 결과를 기다리는 마감 — 발주 시각 + 실행 상한 + 큐 대기 여유(`decisions/case-wait-timeout.md`).
+        """case가 이 job의 결과를 기다리는 마감 — 발주 시각 + 실행 상한 + 큐 대기 여유 + 준비 여유, 전체 상한 있음
+        (`decisions/case-wait-timeout.md`).
         지금은 `COARSE_SEARCH`만 마감이 있다. 실행 상한은 그 job의 AnalysisScope `budget.max_latency_sec`이고(#149 A안 —
         단일 권위), scope를 모르면 마감을 지어내지 않는다(`None`)."""
         if record["kind"] != "COARSE_SEARCH":
@@ -364,7 +370,11 @@ class CaseAggregate:
         scope = self.analysis_scopes.get(record.get("scope_ref") or "")
         if scope is None:
             return None
-        limit = scope["budget"]["max_latency_sec"] + SEARCH_WAIT_QUEUE_MARGIN_SEC
+        base = scope["budget"]["max_latency_sec"] + SEARCH_WAIT_QUEUE_MARGIN_SEC
+        # 준비 여유는 타임라인 상대 범위만 센다 — 절대 시각 범위(동기 경로 · fixture)는 지금처럼 여유 없이 둔다.
+        range_sec = sum(r["end_ms"] - r["start_ms"] for r in scope["time_ranges"]
+                        if r.get("kind") == "TIMELINE_RELATIVE") / 1000
+        limit = max(base, min(base + range_sec * SEARCH_WAIT_PREP_FACTOR, SEARCH_WAIT_MAX_SEC))
         return datetime.fromisoformat(record["requested_at"]) + timedelta(seconds=limit)
 
     def stop_waiting_expired(self, now: datetime) -> list[str]:
