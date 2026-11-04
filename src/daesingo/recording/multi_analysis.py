@@ -13,6 +13,38 @@ from .probe import _snapshot
 from .analysis_limits import remaining_bytes, check_output_size, check_output, read_output, checkpoint
 
 
+def _metadata_seam_correction(inputs, parts, tolerance):
+    """등록된 전체 길이의 반올림으로 입증되는 seam 차이만 정확히 합산한다."""
+    def projected(part, span):
+        if part.source_bounds is None:
+            return False
+        start, end = part.source_bounds
+        shift = Fraction(str(span.timeline_range.start_sec)) - Fraction(str(span.source_range.start_sec))
+        return (part.timeline_range.start_sec == float(shift + start)
+                and part.timeline_range.end_sec == float(shift + end))
+
+    correction = Fraction(0)
+    for (source, _, span), (_, _, following), left, right in zip(inputs, inputs[1:], parts, parts[1:]):
+        if (source.duration_sec is None or not projected(left, span) or not projected(right, following)
+                or right.source_bounds[0] != 0 or following.source_range.start_sec != 0
+                or span.timeline_range.end_sec != following.timeline_range.start_sec
+                or not left.source_frames or left.frames != left.source_frames):
+            continue
+        start, end = left.source_bounds
+        metadata = Fraction(str(source.duration_sec))
+        # 전체 source endpoint이며, 검증된 frame 길이와 투영이 같아야 한다.
+        # 임의의 작은 gap, 부분 trim, encoder drift는 이 근거로 인정하지 않는다.
+        if (Fraction(str(span.source_range.end_sec)) != metadata
+                or end != left.source_end
+                or end - start != left.source_frames[-1][0] + left.source_frames[-1][1]
+                or (metadata * 1000000).denominator != 1
+                or Fraction(int(end * 1000000 + Fraction(1, 2)), 1000000) != metadata
+                or abs(end - metadata) > tolerance):
+            continue
+        correction += end - metadata
+    return correction
+
+
 def materialize_chain(engine, inputs, profile_ref):
     try:
         snapshots = [_snapshot(source.path) for source, _, _ in inputs]
@@ -51,9 +83,11 @@ def materialize_chain(engine, inputs, profile_ref):
             expected.extend((offset + at, length) for at, length in p.frames)
             offset += p.frames[-1][0] + p.frames[-1][1]
         timeline_range = TimeRange(start_sec=parts[0].timeline_range.start_sec, end_sec=parts[-1].timeline_range.end_sec)
-        # 여러 seam의 오차가 누적돼도 전체 허용 폭을 늘리지 않는다.
+        # tolerance는 늘리지 않는다. metadata 반올림의 정확한 signed 차이만
+        # 별도 보존식에 넣고, 근거 없는 누적 이동은 기존 전체 상한으로 거부한다.
         timeline_length = Fraction(str(timeline_range.end_sec)) - Fraction(str(timeline_range.start_sec))
-        if abs(offset - timeline_length) > tolerance:
+        correction = _metadata_seam_correction(inputs, parts, tolerance)
+        if abs(offset - timeline_length - correction) > tolerance:
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결 coverage와 Timeline 길이가 일치하지 않습니다")
         with TemporaryDirectory(prefix="recording-chain-", dir=engine._temp_root) as work:
             root = Path(work)
