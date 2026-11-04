@@ -498,3 +498,45 @@ it('결과 화면에서 고친 제목은 command 없이 화면에만 남고, 「
   await findByText('끼어들기 신고')
   expect(m.sendCommand).not.toHaveBeenCalled()
 })
+
+// 하위 화면(다른 후보 · 번호판 · 시각 · 근거)은 브라우저 기록에 한 칸씩 남는다 — 브라우저 뒤로가기도 결과 화면으로 돌아온다
+// 「다른 장면이었나요?」는 신고 상황 응답 전 화면에 있다
+const WITH_OTHER = {
+  ...AWAITING,
+  candidates: [...AWAITING.candidates, { ...AWAITING.candidates[0], candidate_id: 'cand_other', selected: false }],
+}
+const backTo = async (findByText: (t: RegExp) => Promise<HTMLElement>) => {
+  act(() => history.back())
+  await findByText(/다른 장면이었나요\?/)
+}
+
+it('결과 화면에서 「다른 장면이었나요?」로 연 다른 후보 화면은 브라우저 뒤로가기로 결과 화면에 돌아온다', async () => {
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText, getByRole } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(getByRole('heading', { name: '다른 후보' })).toBeTruthy()
+  await backTo(findByText)
+})
+
+it('화면 안 「뒤로」로 닫으면 브라우저 기록도 한 칸 돌아가 빈칸이 남지 않는다', async () => {
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(history.state?.sub).toBe(1)
+  fireEvent.click(getByLabelText('뒤로'))
+  await findByText(/다른 장면이었나요\?/)
+  await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
+  // 다시 열어도 깊이는 1이다 — 닫은 칸 위에 쌓이지 않는다
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(history.state?.sub).toBe(1)
+})
+
+it('다른 후보를 고르면 하위 화면이 닫히고 쌓인 기록도 함께 정리된다', async () => {
+  const { m, api } = setup({ get: WITH_OTHER })
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
+  const { findByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  fireEvent.click(getAllByText('이 장면으로 다시 준비')[0])
+  await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
+  await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
+})

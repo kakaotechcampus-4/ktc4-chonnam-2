@@ -101,11 +101,11 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   // 보낼 command가 없는 동작은 화면이 사용 불가와 이유를 보인다
   const canRun = (action: Action) => !!INPUT_SUB[action] || SENDABLE.has(action)
   const reselect = (candidateId: string) => {
-    setSubs([])
+    closeAll()
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
   }
   const editHint = (description: string) => {
-    setSubs([])
+    closeAll()
     setSituation(description) // 진행 화면이 새 설명을 보인다
     setStartedAt(Date.now())
     run({ kind: 'EDIT_HINT', payload: { description } })
@@ -117,12 +117,29 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     back()
     run({ kind: 'EDIT_EVENT_TIME', payload: { value } })
   }
+  // 하위 화면은 브라우저 기록에 한 칸씩 남긴다 — 브라우저 뒤로가기도 화면 안 「뒤로」처럼 하나씩 닫는다.
+  // 기록 칸의 깊이(history.state.sub)가 기준이고, 화면은 그 깊이만큼만 하위 화면을 남긴다.
+  const depth = () => (history.state as { sub?: number } | null)?.sub ?? 0
+  useEffect(() => {
+    const onPop = () => setSubs((s) => (s.length > depth() ? s.slice(0, depth()) : s))
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
   const open = (sub: Sub) => {
     rememberOpener()
+    history.pushState({ sub: subs.length + 1 }, '', location.href)
     setSubs((s) => [...s, sub])
     setArriving(false)
   }
-  const back = () => setSubs((s) => s.slice(0, -1))
+  // 기록 칸이 있을 때만 기록을 되돌린다 — 없는데 되돌리면 대신고 밖으로 나간다
+  const back = () => {
+    setSubs((s) => s.slice(0, -1))
+    if (depth() > 0) history.back()
+  }
+  const closeAll = () => {
+    setSubs([])
+    if (depth() > 0) history.go(-depth())
+  }
   const sub = subs[subs.length - 1]
   const mainRef = useRef<HTMLElement>(null)
   const rememberOpener = useScreenFocus(mainRef, `${kind}-${subs.join('/')}`, subs.length)
