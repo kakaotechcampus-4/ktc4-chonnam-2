@@ -951,6 +951,14 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   .rs .rs-copy-check path { animation: rs-copy-draw .32s ease-out .1s both !important; }
 }
 
+/* 위치 칸 지도(LocationMap) — 카카오 지도. 아래 한 줄로 어느 위치인지(GPS · 내 위치) 말한다 */
+/* 너비·비율은 동영상 칸의 장면(.res-frame, 480 · 16:9)과 맞춘다 — 안내 글 길이에 따라 지도 폭이 바뀌지 않게 */
+.res-map { width: min(100%, 480px); margin: 12px 0 0; }
+.res-map-canvas { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--rs-r-media); overflow: hidden; background: var(--rs-fill); }
+.res-map-note { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
+.res-map-empty { margin-top: 12px; }
+.res-map-empty .rs-btn { gap: 6px; }
+
 @media (max-width: 960px) {
   .res-situation { grid-template-columns: minmax(0, 1fr); }
   .res-situation > .res-frame { grid-row: auto; }

@@ -713,10 +713,10 @@ Web artifact staging (releases/<SHA>/web 배치 · 식별값 확인)
 
 Web Owner의 별도 승인을 Gate blocker로 두지 않는다. 구현 리뷰에서 아래만 확인한다.
 
-- **SPA fallback:** Web에는 client router가 없다. 화면은 query string(`?api` · `?api&case=<id>` · `?dev`)으로 고른다(`apps/web/src/App.tsx`). 깊은 경로 fallback이 필요 없다.
+- **SPA fallback:** Web에는 client router가 없다. 화면은 query string(`?case=<id>` · `?demo` · `?cases` · `?dev`)으로 고른다(`apps/web/src/App.tsx`). 깊은 경로 fallback이 필요 없다.
 - **base path:** root(`/`)에서 서빙하면 Vite 기본 `base`로 충분하다.
 - **API URL · env:** 상대 경로이므로 same-origin이면 env가 필요 없다. Vite `server.proxy`는 개발 서버 전용이므로 production에서는 proxy가 `/cases*`를 api로 넘긴다.
-- **진입 화면:** query 없이 열면 mock fixture 시연 흐름(`DemoFlow`)이고, 실제 API 흐름은 `?api`다. `?dev`는 snapshot viewer다. 제출 URL을 어느 진입으로 둘지는 후속 이슈 P0 「샘플 · 사용 안내」에서 Web Owner와 정한다.
+- **진입 화면:** query 없이 열면 실제 API 흐름(`ApiFlow`)이고(#535), `?case=<id>`는 만들어 둔 case를 이어 본다. mock fixture 시연 흐름(`DemoFlow`)은 `?demo`, 시연 경우 고르기는 `?cases`, snapshot viewer는 `?dev`다. 예전 주소 `?api` · `?api&case=<id>`도 호환용으로 그대로 실제 흐름을 연다.
 - **bundle 내용:** `data/mock/case` · `data/real/case` fixture가 bundle에 들어간다(`apps/web/src/contracts/fixtures.ts`). 이미 공개 저장소에 있는 파일이지만 공개 서비스 security review 때 함께 본다.
 
 ## 14. RT-14 범위와 공개 운영 hardening 경계

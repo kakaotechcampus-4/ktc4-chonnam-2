@@ -51,6 +51,10 @@ python scripts/check_contract_fixtures.py
 
 **알려진 한계:** ADR에서 확정되지 않은 값(recording `failure.kind` 값 집합 · `AnalysisSource` profile 값 목록 · stale 표시 필드명)은 fixture에 없거나 `EXAMPLE_*` 자리표시자이고 검사기는 모양만 본다. 실패 run의 `JobExecution.status` 매핑은 W04 잔여로 Pending이라 검사하지 않는다. `span-resolution/v1` payload에는 `failure` 규칙을 적용하지 않는다(재해석 규칙 미정). 출력의 PASS는 「계약 규칙을 코드로 옮겼을 때 fixture가 만족한다」는 뜻이며 구현 통합·E2E·Owner 수락 증거가 아니다.
 
+## `recording_ec2_package.py` · `recording_ec2_host.py` — Linux 격리 Recording 준비
+
+고정 source 패키지와 보호 입력 전송 계획을 만들고, Linux 호스트에서 운영 target 배제·예산·인증된 새 DB·유한 감독/소유 정리를 연결한다. 실제 EC2 실행은 별도 점검 승인 대상이다. [한국어 단계별 실행 절차](../docs/runtime/experiments/2026-11-03-ec2-recording-probe-runbook.md)와 [로컬 검증 범위](../docs/runtime/experiments/2026-11-03-ec2-recording-probe-validation.md)를 따른다. 로컬 image ID/Windows source 경로를 서버에 복제하지 않는다.
+
 ## CI
 
 `.github/workflows/boundary-check.yml`이 PR(`develop`·`main` 대상)과 `develop` push에서 **두 검사기를 모두** 돌린다 — `check_boundaries.py`(모듈 경계 · 계약 정합성) 다음에 `check_contract_fixtures.py`(계약 예시 · fixture 의미). 둘 중 하나라도 실패하면 workflow가 실패한다. 새 action이나 외부 dependency는 쓰지 않는다(`actions/checkout` + `actions/setup-python`만).

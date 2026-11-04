@@ -10,6 +10,7 @@ import {
 import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, jobLabel, noticeMessage, sourceLabel } from '../contracts/labels'
 import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
 import { PENDING_TEXT } from '../components/DisplayRow'
+import { LocationMap } from '../components/LocationMap'
 import { StatusBadge } from '../components/StatusBadge'
 import { ArrivingCar } from '../components/ArrivingCar'
 import { FrameSlot } from '../components/FrameSlot'
@@ -192,7 +193,8 @@ export function ResultScreen(props: {
       const url = URL.createObjectURL(await res.blob())
       const a = document.createElement('a')
       a.href = url
-      a.download = 'daesingo_report.mp4'
+      // 받은 시각을 붙여 여러 번 받아도 (1)이 붙지 않게 한다. sv-SE는 '2026-11-03 13:53:03' 형식
+      a.download = `daesingo_clip_${new Date().toLocaleString('sv-SE').replace(' ', '_').replace(/[-:]/g, '')}.mp4`
       a.click()
       // 바로 해제하면 일부 브라우저(Firefox · Safari)에서 저장이 취소된다
       setTimeout(() => URL.revokeObjectURL(url), 1000)
@@ -438,6 +440,7 @@ export function ResultScreen(props: {
                 <span>{noticeMessage(keywordMissing.message_key)}</span>
               </p>
             )}
+            {ev && <LocationMap coord={ev.location_display.coord} />}
           </Item>
 
           <Item label="제목">

@@ -16,7 +16,7 @@ import { useScreenFocus } from './screenFocus'
 import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
-// 실제 HTTP API(`?api`)로 도는 흐름 — 시연(DemoFlow)과 같은 화면을 쓰고, 어느 화면인가는 CaseView가 정한다.
+// 실제 HTTP API로 도는 흐름(기본 진입) — 시연(DemoFlow)과 같은 화면을 쓰고, 어느 화면인가는 CaseView가 정한다.
 // 로컬에 둔 것은 사용자가 고른 파일 · 입력한 설명 · 열어 둔 하위 화면뿐이다(web-stack.md 확정 4).
 // 화면 → command 연결은 `contract-case-command.md`를, 요청 · 재시도 규칙은 `contract-http-api.md` §6을 따른다.
 
@@ -133,7 +133,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const mainRef = useRef<HTMLElement>(null)
   const rememberOpener = useScreenFocus(mainRef, `${kind}-${subs.join('/')}`, subs.length)
 
-  const newReport = () => location.assign(`${location.pathname}?api`)
+  const newReport = () => location.assign(location.pathname)
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
 
   return (
