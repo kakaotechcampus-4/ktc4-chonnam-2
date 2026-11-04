@@ -10,7 +10,7 @@
 - 후보·세대·span에 묶인 진행 중/성공 요청을 재사용한다. 실패는 해당 카드에서만 재요청한다.
 - 기존 Recording 생성 기능을 재사용하고, 저장 MP4를 현재 Case 및 원본 소유권 확인 뒤 inline/Range로 조회한다. 기존 다운로드와 thumb_ref 의미는 유지했다.
 - native controls, 인라인 재생, 한 화면 한 영상, 준비·실패·브라우저 오류와 재시도 UI를 제공한다.
-- CaseView v1.11 호환 확장 및 command/HTTP/디자인 명세를 함께 갱신했다.
+- CaseView v1.12 호환 확장 및 command/HTTP/디자인 명세를 함께 갱신했다.
 
 ## 확인한 결과
 

@@ -31,7 +31,7 @@ from daesingo.case.labels import (
 )
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.11"
+CONTRACT_VERSION = "case-view/v1.12"
 
 _PROGRESS_STEPS = (
     "file_intake",
