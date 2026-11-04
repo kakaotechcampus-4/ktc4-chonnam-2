@@ -124,6 +124,7 @@ def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, stor
         case.record_candidate_search_failure(
             job_id=outcome.job_id,
             range_too_long=outcome.failure_kind == "RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED",
+            unsupported_input=outcome.failure_kind == "RECORDING_UNSUPPORTED_MEDIA",
         )
         return
     content = reader(store.conn, outcome.kind, outcome.produced)

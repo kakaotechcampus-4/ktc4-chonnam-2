@@ -238,7 +238,8 @@ def test_production_unsupported_terminal_receipt_and_projection(
                 for n in view["notices"]
                 if n["code"] == "search.candidate_search_failed"
             ]
-            assert notice["actions"] == ["RETRY_SEARCH"]
+            # 같은 입력으로 다시 찾아도 결과가 같아 「다시 찾기」를 싣지 않는다(#542).
+            assert notice["actions"] == []
         else:
             assert case.observation_outcomes[terminal["job_id"]]["status"] == "FAILED"
             assert len(view["candidates"]) == 1

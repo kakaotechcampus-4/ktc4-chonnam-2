@@ -23,6 +23,7 @@ _STATE_FIELDS = (
     "candidate_search_failed",
     "scene_search_progress",
     "analysis_range_too_long",
+    "search_input_unsupported",
     "candidate_generation",
     "settled_jobs",
     "processed_executions",
