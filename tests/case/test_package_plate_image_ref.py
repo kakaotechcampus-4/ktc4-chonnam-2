@@ -1,4 +1,4 @@
-"""CaseView `package.plate_image_ref` — 번호판 이미지 다운로드 주소(#569, `case-view/v1.10` 호환 확장).
+"""CaseView `package.plate_image_ref` — 번호판 이미지 다운로드 주소(#569, `case-view/v1.11`).
 
 `ReportPackage.assets.plate_image_ref.ref`를 그대로 옮긴다. evidence는 PLATE_IMAGE가
 AVAILABLE일 때만 이 키를 싣으므로, 키가 없으면(번호판 못 읽음 · 생성 실패 · 생성 중) `null`이다."""
