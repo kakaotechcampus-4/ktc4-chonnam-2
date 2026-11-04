@@ -3,6 +3,8 @@ import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LocationMap, MAP_GPS_NOTE, MAP_ME_FAILED, MAP_ME_NOTE, MAP_PLACE_NOTE, placeMatched, placeNotFound, placeQuery } from '../components/LocationMap'
 import { loadKakaoMaps, searchPlace } from '../components/kakaoMap'
+import { SNAPSHOTS } from '../contracts/fixtures'
+import { ResultScreen } from '../screens/ResultScreen'
 
 vi.mock('../components/kakaoMap', () => ({
   kakaoMapKey: vi.fn(() => 'test-key'),
@@ -141,4 +143,18 @@ describe('위치 지도 (LocationMap)', () => {
       expect(placeQuery(null)).toBeNull()
     })
   })
+})
+
+it('결과 화면: 서버 검색어가 있어도 사용자가 위치를 고치면 고친 글로 지도를 찾는다', async () => {
+  vi.mocked(searchPlace).mockResolvedValue(null)
+  const happy = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  const ev = happy.evidence!
+  const view = { ...happy, evidence: { ...ev, location_display: { ...ev.location_display, coord: null, search_keyword: '광주 상무지구 상무중앙로 사거리' } } }
+  const props = { view, onCandidates: vi.fn(), onPlate: vi.fn(), onDetails: vi.fn(), onAction: vi.fn(), canRun: () => true }
+  const r = render(<ResultScreen {...props} />)
+  await act(async () => {})
+  expect(searchPlace).toHaveBeenLastCalledWith(maps, '광주 상무지구 상무중앙로 사거리')
+  r.rerender(<ResultScreen {...props} edits={{ location: '운천역 사거리' }} />)
+  await act(async () => {})
+  expect(searchPlace).toHaveBeenLastCalledWith(maps, '운천역 사거리')
 })
