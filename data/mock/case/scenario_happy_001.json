@@ -1034,6 +1034,7 @@
           }
         },
         "artifact_ref": "da_h001_report_video",
+        "plate_image_ref": "da_h001_plate_image",
         "capabilities": [
           "DOWNLOAD_ASSETS",
           "COPY_FIELDS",
@@ -1520,6 +1521,7 @@
           }
         },
         "artifact_ref": "da_h001_report_video",
+        "plate_image_ref": "da_h001_plate_image",
         "capabilities": [
           "DOWNLOAD_ASSETS",
           "COPY_FIELDS",
