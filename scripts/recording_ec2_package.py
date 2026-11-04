@@ -14,6 +14,7 @@ SCRIPTS = {
     'recording_probe_budget.py', 'recording_capacity_probe.py',
     'recording_ec2_package.py', 'recording_ec2_host.py', 'recording_ec2_entry.py',
     'recording_full_input.py',
+    'recording_probe_session.py',
 }
 ROOT_FILES = {'pyproject.toml', 'uv.lock', 'README.md', 'LICENSE', 'docker/runtime.py'}
 

@@ -57,6 +57,8 @@ python scripts/check_contract_fixtures.py
 
 `recording_full_input.py`는 기존 보호 manifest와 원본15개를 읽기 전용으로 대조하고 전체 소수초 logical scope·익명 fixture·보호 전송계획을 새 디렉터리에 작성한다. 파일 복사·encode·DB·Docker·provider·전송은 하지 않는다. 기존 EC2 하네스의 명시적 `full15-512m` profile·`full` stage와 미해결 제품/Owner 조건은 [전체15개 준비 runbook](../docs/runtime/experiments/2026-11-04-full15-e2e-preparation-runbook.md)을 따른다. 기존 `inputs` subcommand는 여전히2개용이므로 전체 입력 준비에 사용하지 않는다.
 
+`recording_probe_session.py`는 #452 전체15개 Coarse 준비 측정의 파일 stdio·유한 host/복구 감독과 systemd unit/독립 복구 진입점을 제공한다. 실제 실행 전 조건과 로컬 검증 한계는 [준비시간 측정 runbook](../docs/runtime/experiments/2026-11-05-coarse-preparation-measurement-runbook.md)을 따른다. `full_search_prepare_budget_ms=900000`은 명시적 격리 full/270p mode에만 적용하며 운영 Search150초·Case 정책을 바꾸지 않는다.
+
 ## CI
 
 `.github/workflows/boundary-check.yml`이 PR(`develop`·`main` 대상)과 `develop` push에서 **두 검사기를 모두** 돌린다 — `check_boundaries.py`(모듈 경계 · 계약 정합성) 다음에 `check_contract_fixtures.py`(계약 예시 · fixture 의미). 둘 중 하나라도 실패하면 workflow가 실패한다. 새 action이나 외부 dependency는 쓰지 않는다(`actions/checkout` + `actions/setup-python`만).
