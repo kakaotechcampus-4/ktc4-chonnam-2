@@ -12,6 +12,7 @@ import { CandidateCompare, DetailsCheck, PlateCheck, TimeEdit } from './SubScree
 import { acceptView } from '../state/resultModel'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 import { useScreenFocus } from './screenFocus'
+import { useSubStack } from './subStack'
 
 // 시연용 흐름 — Figma 하단 작업 영역의 Main · Details · Failed 열(After 제외).
 // 화면은 사용자 행동(파일 선택·버튼)과 작업 상태 변화로만 넘어간다.
@@ -348,7 +349,7 @@ function withTime(view: CaseView, time: string | null): CaseView {
 export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   const [caseKey, setCaseKey] = useState('main')
   const [main, setMain] = useState<Main>({ kind: 'upload', state: 'idle' })
-  const [subs, setSubs] = useState<Sub[]>([])
+  const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [files, setFiles] = useState<File[]>([])
   const [situation, setSituation] = useState('')
   const [plate, setPlate] = useState<string | null>(null)
@@ -389,7 +390,7 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   // 새 진행은 새 초안이다 — 직접 입력한 번호판도 넘기지 않는다(#173).
   const start = (run: Run, expect: { caseRev: number; candidateId: string | null } = { caseRev: 0, candidateId: null }) => {
     expected.current = expect
-    setSubs([])
+    closeAll()
     setReturnY([])
     setPlate(null)
     setTime(null)
@@ -399,7 +400,7 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   const newReport = () => {
     setUploadLeaving(false)
     setMain({ kind: 'upload', state: 'idle' })
-    setSubs([])
+    closeAll()
     setReturnY([])
     setPlate(null)
     setTime(null)
@@ -412,10 +413,9 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   const open = (sub: Sub) => {
     rememberOpener()
     setReturnY((y) => [...y, window.scrollY])
-    setSubs((s) => [...s, sub])
+    openSub(sub)
     setArriving(false)
   }
-  const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
   const done = main.kind === 'done' ? main.run : null
   const doneView = done && withTime(withPlate(done.view, plate), time)

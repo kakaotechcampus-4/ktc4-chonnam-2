@@ -13,6 +13,7 @@ import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen, type ReportEdits } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
 import { useScreenFocus } from './screenFocus'
+import { useSubStack } from './subStack'
 import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
@@ -47,7 +48,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const [edited, setEdited] = useState<{ key: string; edits: ReportEdits }>({ key: '', edits: {} })
   const edits = edited.key === draftKey ? edited.edits : {}
   const [situation, setSituation] = useState('')
-  const [subs, setSubs] = useState<Sub[]>([])
+  const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [unsupported, setUnsupported] = useState(false)
 
@@ -61,7 +62,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     if (!state.caseId) return
     const url = new URL(location.href)
     url.searchParams.set('case', state.caseId)
-    history.replaceState(null, '', url)
+    history.replaceState(history.state, '', url) // 하위 화면 기록 깊이(subStack)는 그대로 둔다
   }, [state.caseId])
 
   // 자동차 출발 — [영상에서 찾아보기]를 누른 뒤 진행 화면이 실제로 열리는 순간부터 업로드 화면 겉모습
@@ -117,28 +118,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     back()
     run({ kind: 'EDIT_EVENT_TIME', payload: { value } })
   }
-  // 하위 화면은 브라우저 기록에 한 칸씩 남긴다 — 브라우저 뒤로가기도 화면 안 「뒤로」처럼 하나씩 닫는다.
-  // 기록 칸의 깊이(history.state.sub)가 기준이고, 화면은 그 깊이만큼만 하위 화면을 남긴다.
-  const depth = () => (history.state as { sub?: number } | null)?.sub ?? 0
-  useEffect(() => {
-    const onPop = () => setSubs((s) => (s.length > depth() ? s.slice(0, depth()) : s))
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [])
   const open = (sub: Sub) => {
     rememberOpener()
-    history.pushState({ sub: subs.length + 1 }, '', location.href)
-    setSubs((s) => [...s, sub])
+    openSub(sub)
     setArriving(false)
-  }
-  // 기록 칸이 있을 때만 기록을 되돌린다 — 없는데 되돌리면 대신고 밖으로 나간다
-  const back = () => {
-    setSubs((s) => s.slice(0, -1))
-    if (depth() > 0) history.back()
-  }
-  const closeAll = () => {
-    setSubs([])
-    if (depth() > 0) history.go(-depth())
   }
   const sub = subs[subs.length - 1]
   const mainRef = useRef<HTMLElement>(null)

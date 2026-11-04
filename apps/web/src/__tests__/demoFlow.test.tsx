@@ -726,3 +726,17 @@ it('결과 화면에서 제목·신고 내용·위치·발생 시각을 고치�
   expect(text()).toContain('상무대로 교차로')
   expect(text()).toContain('09:10:11')
 })
+
+it('시연에서도 하위 화면은 브라우저 뒤로가기로 결과 화면에 돌아온다', async () => {
+  const { text, wait, getByText, answer } = start('main')
+  wait()
+  fireEvent.click(getByText('영상에서 찾아보기'))
+  wait()
+  answer()
+  fireEvent.click(getByText('어떻게 정했는지'))
+  expect(history.state?.sub).toBe(1)
+  vi.useRealTimers()
+  act(() => history.back())
+  await vi.waitFor(() => expect(text()).toContain('신고자료가 준비됐어요'))
+  expect(text()).not.toContain('어떻게 정했는지 확인')
+})

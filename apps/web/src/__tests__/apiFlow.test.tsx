@@ -540,3 +540,21 @@ it('다른 후보를 고르면 하위 화면이 닫히고 쌓인 기록도 함�
   await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
   await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
 })
+
+it('결과 없음에서 연 「설명 고치기」도 브라우저 뒤로가기로 결과 없음 화면에 돌아온다', async () => {
+  const { m, api } = setup({ get: { ...EMPTY, description: '흰 차' } })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('설명 고치기'))
+  expect(getByLabelText('어떤 상황이었나요?')).toBeTruthy()
+  act(() => history.back())
+  await findByText(/말씀하신 장면을 찾지 못했어요/)
+  expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('하위 화면을 연 채 새로고침해 남은 기록 깊이는 처음 열 때 0으로 맞춘다', async () => {
+  history.replaceState({ sub: 1 }, '', '/?api')
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText(/다른 장면이었나요\?/)
+  expect(history.state?.sub).toBe(0)
+})
