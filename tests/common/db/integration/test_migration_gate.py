@@ -23,6 +23,9 @@ from exhaustion_acceptance import EXHAUSTION_CHECKS, EXHAUSTION_PARAMETERS
 from produced_acceptance import PRODUCED_CHECKS, PRODUCED_PARAMETERS
 from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
 from asset_acceptance import ASSET_CHECKS, ASSET_PARAMETERS
+# Independent copy of the gate list: tests/worker/test_candidate_video_mysql.py (#554).
+CANDIDATE_VIDEO_CHECKS = tuple(("candidate_video", s) for s in (
+    "counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1", "tcp_process"))
 from observability_acceptance import OBSERVABILITY_CHECKS, OBSERVABILITY_PARAMETERS
 
 pytestmark = pytest.mark.mysql
@@ -233,7 +236,7 @@ def test_actual_report_rejects_each_missing_migration_check(tmp_path):
     for role, scenario in [*( ("migration", scenario) for scenario in MIGRATION_CHECKS),
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
-                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS, *CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS, *UPLOAD_CHECKS, *PRODUCED_CHECKS, *FRAME_CHECKS, *ASSET_CHECKS, *OBSERVABILITY_CHECKS,
+                           *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS, *CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS, *UPLOAD_CHECKS, *PRODUCED_CHECKS, *FRAME_CHECKS, *ASSET_CHECKS, *OBSERVABILITY_CHECKS, *CANDIDATE_VIDEO_CHECKS,
                            *((role, scenario) for role, scenario, parameter in (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))]:
         removed = {item["nodeid"] for item in report["collected"]
                    if any(c["role"] == role and c["scenario"] == scenario for c in item.get("checks", []))}
