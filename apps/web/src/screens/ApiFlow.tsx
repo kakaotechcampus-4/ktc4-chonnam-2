@@ -302,6 +302,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             canRun={canRun}
             arriving={arriving}
             videoHref={cid && view.package?.artifact_ref ? api.assetUrl(cid, view.package.artifact_ref) : undefined}
+            plateImageHref={cid && view.package?.plate_image_ref ? api.assetUrl(cid, view.package.plate_image_ref) : undefined}
             frameSrc={frameSrc}
           />
         )
