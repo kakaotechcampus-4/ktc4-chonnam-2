@@ -15,8 +15,11 @@ import {
 import { selectScreen } from '../state/selectScreen'
 import { ProgressPanel } from '../components/ProgressPanel'
 import { VideoThumb } from '../components/VideoThumb'
-import { SearchFx } from '../components/SearchFx'
+import { softwareRendering } from '../components/driving/DrivingPreview'
 import carTop from '../assets/car/car-top.webp'
+
+// 주행 게임을 빌드에서 끈다(`VITE_DRIVING_GAME=off`). 끄면 진입 버튼이 없고 Three.js도 불러오지 않는다.
+const DRIVING_ON = import.meta.env.VITE_DRIVING_GAME !== 'off'
 
 // Figma 02_Main_Flow · 02_Retry_Flow · 02_Fail_Flow. 세 프레임은 같은 틀이고
 // 단계 상태(progress)와 알림(notices)만 다르다 — 둘 다 CaseView에서 온다.
@@ -49,6 +52,8 @@ export function FlowScreen(props: {
 }): JSX.Element {
   const screen = selectScreen(props.view)
   const [enter] = useState(() => (props.pushIn ? 'rs-push-in' : 'rs-enter'))
+  // CPU로 3D를 그리는 환경(원격 데스크톱·가상 머신)에서는 게임 진입을 숨긴다 — 화면을 열 때 한 번만 본다.
+  const [driveable] = useState(() => DRIVING_ON && !softwareRendering())
   const rootRef = useRef<HTMLDivElement>(null)
   // 「영상에서 찾아보기」가 사라져 포커스가 갈 곳을 잃으면 진행 화면이 받는다(보이는 요소).
   useEffect(() => {
@@ -176,9 +181,11 @@ export function FlowScreen(props: {
 
       <div className="flow-main">
         <VideoThumb
+          key={`${props.view.case_id}:${representative?.name ?? ''}`}
           file={representative instanceof File ? representative : null}
           name={representative?.name ?? props.files[0]?.name ?? ''}
-          overlay={running === 'coarse_search' && <SearchFx />}
+          // 분석을 기다리는 동안(PROGRESS)이면 단계와 상관없이 연다 — 단계 사이에 RUNNING이 잠깐 없어도 닫지 않는다.
+          canDrive={driveable && screen.kind === 'PROGRESS' && screen.blocking.length === 0}
         />
 
         {props.files.length > 1 && (

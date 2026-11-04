@@ -56,7 +56,7 @@
 
 ### 기술 스택 (확정)
 
-Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Queue · ffmpeg/ffprobe · AWS · Desktop Web 우선(모바일 반응형은 MVP 제외). 안전신문고 자동 제출 API는 연동하지 않는다.
+Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Queue · ffmpeg/ffprobe · AWS · React 19/Vite 6 웹 앱(선택형 주행 게임에 Three.js 0.160.1) · Desktop Web 우선(모바일 반응형은 MVP 제외). 안전신문고 자동 제출 API는 연동하지 않는다.
 
 ## 레포 구성
 
