@@ -40,7 +40,7 @@ it('requesting a preview does not select a candidate', () => {
 
 it('preparing preview keeps candidate selection enabled and shows local status', () => {
   const screen = render(<CandidatesScreen view={view([candidate(1), candidate(2, 'PREPARING')])} onPreview={vi.fn()} onSelect={vi.fn()} videoSrc={videoSrc} />)
-  expect(screen.getByRole('status').textContent).toContain('영상 준비 중')
+  expect(screen.getByText('영상 준비 중')).toBeTruthy()
   expect(screen.getByRole('button', { name: '이 장면으로 다시 준비' }).hasAttribute('disabled')).toBe(false)
 })
 
@@ -150,4 +150,48 @@ it('labels the result video slot as a candidate preview, not the report video', 
     ? { ...c, video_preview: { status: 'READY' as const, clip_ref: 'clip1' } } : c) })
   expect(r.container.querySelector('video')?.getAttribute('src')).toBe('/video/clip1')
   expect(r.getByText('후보 미리보기')).toBeTruthy()
+})
+
+it('keeps focus and announces when a requested preview becomes ready', () => {
+  const at = (s: 'NOT_REQUESTED' | 'PREPARING' | 'READY') => <CandidatesScreen view={view([candidate(1, s)])} onPreview={vi.fn()} videoSrc={videoSrc} />
+  const screen = render(at('NOT_REQUESTED'))
+  const button = screen.getByRole('button', { name: /영상 보기/ })
+  button.focus()
+  screen.rerender(at('PREPARING'))
+  expect(document.activeElement?.textContent).toBe('영상 준비 중')
+  const live = screen.getByRole('status')
+  expect(live.textContent).toBe('')
+  screen.rerender(at('READY'))
+  expect(screen.getByRole('status')).toBe(live) // 새 알림 칸이면 스크린 리더가 읽지 않는다
+  expect(document.activeElement?.tagName).toBe('VIDEO')
+  expect(screen.getByRole('status').textContent).toBe('영상이 준비됐어요')
+})
+
+it('does not pull focus from elsewhere when a preview becomes ready', () => {
+  const at = (s: 'PREPARING' | 'READY') => <><button type="button">다른 곳</button><CandidatesScreen view={view([candidate(1, s)])} onPreview={vi.fn()} videoSrc={videoSrc} /></>
+  const screen = render(at('PREPARING'))
+  screen.getByRole('button', { name: '다른 곳' }).focus()
+  screen.rerender(at('READY'))
+  expect(document.activeElement?.textContent).toBe('다른 곳')
+})
+
+it('moves focus to the retry button and announces when preparing fails', () => {
+  const at = (s: 'NOT_REQUESTED' | 'PREPARING' | 'FAILED') => <CandidatesScreen view={view([candidate(1, s)])} onPreview={vi.fn()} videoSrc={videoSrc} />
+  const screen = render(at('NOT_REQUESTED'))
+  screen.getByRole('button', { name: /영상 보기/ }).focus()
+  screen.rerender(at('PREPARING'))
+  expect(document.activeElement?.textContent).toBe('영상 준비 중')
+  screen.rerender(at('FAILED'))
+  const retry = document.activeElement!
+  expect(retry.getAttribute('aria-label')).toBe('1번 후보 영상 다시 준비')
+  expect(document.getElementById(retry.getAttribute('aria-describedby')!)?.textContent).toBe('영상을 준비하지 못했어요.')
+  expect(screen.getByRole('status').textContent).toBe('')
+})
+
+it('focuses the player again after reloading a clip the browser could not play', () => {
+  const screen = render(<CandidatesScreen view={view([candidate(1, 'READY')])} videoSrc={videoSrc} />)
+  fireEvent.error(screen.container.querySelector('video')!)
+  expect(document.activeElement?.textContent).toBe('다시 불러오기')
+  fireEvent.click(screen.getByRole('button', { name: '다시 불러오기' }))
+  expect(document.activeElement?.tagName).toBe('VIDEO')
 })
