@@ -1,6 +1,7 @@
 """지원하지 않는 영상으로 탐색이 실패하면 「다시 찾기」를 싣지 않는다(#542).
 
-같은 입력으로 다시 찾아도 또 실패하고 유료 호출만 나간다 — #452 `analysis_range_too_long`과 같은 기준이다. 실패 이유는
+같은 입력으로 다시 찾아도 또 실패한다 — 같은 미지원 입력의 불필요한 재준비 · 재발주를 막는다. Runtime이 Search 호출 전에 거부하므로
+유료 호출이 나간다고 보지 않는다. #452 `analysis_range_too_long`과 같은 기준이다. 실패 이유는
 반영 때 `outcome.failure_kind`로 정해 aggregate에 남긴다(#452와 같은 방식). CaseView 조회 때 실행 기록에서 다시 계산하지
 않는다.
 """
@@ -85,7 +86,7 @@ def test_redelivery_of_unsupported_input_does_not_create_more_jobs():
     [("RECORDING_UNSUPPORTED_MEDIA", False), ("SEARCH_PROVIDER_FAILED", True)],
 )
 def test_direct_retry_command_follows_the_reflected_failure_kind(failure_kind, accepted):
-    # 화면 버튼을 거치지 않고 RETRY_SEARCH를 바로 보내도 미지원 입력이면 새 유료 탐색을 내지 않는다.
+    # 화면 버튼을 거치지 않고 RETRY_SEARCH를 바로 보내도 미지원 입력이면 새 탐색을 발주하지 않는다.
     store, case_id = _store_searching()
     _coarse_failed_with(store, case_id, failure_kind)
     jobs_before = len(store.get_case(case_id).job_records)
