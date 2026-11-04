@@ -172,4 +172,5 @@
 .candidate-video-actions { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--R); padding: var(--R); text-align: center; color: var(--ink-2); }
 .candidate-video-actions > span { background: var(--panel); border-radius: var(--R); padding: var(--R); font-size: calc(15px * var(--font-scale)); }
 .candidate-video-actions .btn { gap: var(--R); }
+.candidate-video-live { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .candidate-video-player { display: block; width: 100%; max-width: 100%; height: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: var(--video); }
