@@ -1,6 +1,6 @@
 # 후보 영상 실제 MySQL 통합 검증 — 2026-11-04
 
-[실제 통합 테스트 계획](../superpowers/plans/2026-11-03-candidate-video-real-test-plan.md)의 항목을 실제 MySQL로 실행한 결과다. [11/3 기록](candidate-video-integration-2026-11-03.md)은 메모리 저장소였고, 이 기록이 그 공백을 채운다. **실제 통합 전체 완료나 배포 준비 완료는 아니다** — 아래 NOT_RUN을 보라.
+[실제 통합 테스트 계획](../superpowers/plans/2026-11-03-candidate-video-real-test-plan.md)의 항목을 실제 MySQL로 실행한 결과다. [11/3 기록](candidate-video-integration-2026-11-03.md)은 메모리 저장소였고, 이 기록이 그 공백을 채운다. **배포 준비 완료를 뜻하지 않는다** — 아래 NOT_RUN을 보라.
 
 ## 환경
 
@@ -50,8 +50,24 @@
 - 합성 원본은 1초 · 64×48이라 미리보기는 0.2초다. 길이 · 화질 판단에는 쓰지 않는다.
 - 이 브랜치의 Python 전체 회귀(api · case · worker · recording · readout · deploy)는 Windows에서 83 failed. 같은 83개가 깨끗한 develop에서도 실패한다(deploy 쉘 · FFmpeg export). 새 실패는 없다.
 
+## 실제 영상 · 실제 AI 흐름 (Owner 승인, 상한 ₩500)
+
+하네스 없이 운영 구성으로 1회씩 실행했다: 이번 실행 전용 DB에 migration → `python -m daesingo.api` 프로세스 → Worker `main()` 프로세스 → Caddy가 빌드한 Web과 `/cases*`를 함께 서비스 → 브라우저에서 업로드부터 진행. Search는 실제 `gemini-4-argon`(argon tenant)이다. Analysis는 baseline v1(480p · 4분), Incident는 현재 적용값(720p · CRF 20)이다.
+
+**OCR만 대체했다.** 운영 PaddleOCR은 Docker 이미지의 모델 캐시(`/opt/daesingo/paddlex`)를 전제로 해서 이 PC에서는 Worker가 시작 단계에서 실패한다. 그래서 `main()`이 받는 `readout_provider_factory`로 테스트용 오프라인 판독기를 넣었다. 번호판 · 시각 값은 실제 판독 결과가 아니다.
+
+| 영상 | 결과 | 확인한 것 |
+| --- | --- | --- |
+| `20260620_141927_EVT_1.avi`(실제 블랙박스, 신호위반) | 후보 1개, Fine OBSERVED → 결과 화면 | 결과 화면의 단일 후보 입구에서 미리보기 생성 · 재생(1280×720, 3.5초, 중간 탐색). 미리보기 뒤 후속 job 0 |
+| `YT_0001_C09.mp4`(실선 차로변경) | 후보 2개, 1순위 NOT_OBSERVED → 위반 미관찰 화면 | 두 후보 미리보기 생성 · 재생(10초 · 5.5초, 720p), 1번 재생 시 2번 정지. 미리보기 2개는 Fine을 발주하지 않았다. 「이 장면으로 다시 준비」를 누른 뒤에야 Fine → clip → 판독이 이어지고 「신고자료를 준비하고 있어요」로 넘어갔다 |
+
+- 실제 AI 비용: 입력 29,621 · 출력 2,112토큰 ≈ **₩114**(argon 단가). 미리보기는 AI를 호출하지 않는다.
+- 두 실행 모두 브라우저 콘솔 오류 0.
+- 미리보기 job은 6초 안팎에 끝났다(로컬 Windows, 짧은 영상). 긴 영상의 생성 시간은 재지 않았다.
+
 ## NOT_RUN
 
-- 실제 블랙박스 영상 · live provider 전체 흐름, Linux 호스트 실행, 정식 MySQL 게이트(원격 CI에서 확인)
+- 운영 PaddleOCR이 들어간 배포 이미지로의 실행(위 대체 참고), Linux 호스트 실행
+- 5분 이상 실제 영상에서의 미리보기 생성 시간
 
 증거(스크린샷 · 로그)는 로컬 `.omo/evidence/candidate-video-real/run1/`에 있고 커밋하지 않는다. 브라우저 구동 스크립트도 이번 실행에만 썼다.
