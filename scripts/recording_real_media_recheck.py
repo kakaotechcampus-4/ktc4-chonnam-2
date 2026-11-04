@@ -535,6 +535,67 @@ def request_boundary(cfg, media, source, timeline_id, deadline, report, events, 
         provider_module._video_data_url, provider_module.json = original_url, original_json
 
 
+def search_preparation_budget(config, *, full, coarse):
+    """#452 격리 측정만 허용한다. 운영/Case/request 예산 설정이 아니다."""
+    value = config.get('full_search_prepare_budget_ms', 150000)
+    if type(value) is not int or value not in (150000, 900000):
+        raise ValueError('FINITE_SEARCH_PREPARATION_BUDGET_REQUIRED')
+    if value != 150000 and (not full or not coarse or config.get('probe_profile') != 'full15-512m'):
+        raise ValueError('FULL_COARSE_PREPARATION_ONLY')
+    return value
+
+
+def probe_search(search_media, cfg, media_input, source, timeline_id, report, events, check, phase, *,
+                 preparation_budget_ms=150000, coarse_270p=False, clock=time.monotonic):
+    from daesingo.search.execution import RunDeadline
+    if preparation_budget_ms not in (150000, 900000) or type(preparation_budget_ms) is not int:
+        raise ValueError('FINITE_SEARCH_PREPARATION_BUDGET_REQUIRED')
+    if preparation_budget_ms != 150000 and not coarse_270p:
+        raise ValueError('FULL_COARSE_PREPARATION_ONLY')
+    report['search_config'] = {'source_cap': cfg.max_materialized_source_bytes,
+        'media_cap': cfg.max_inline_media_bytes, 'request_cap': cfg.max_inline_request_bytes,
+        'fingerprint': cfg.fingerprint, 'budget_ms': 150000,
+        'preparation_budget_ms': preparation_budget_ms, 'request_guard_budget_ms': 150000}
+    deadline = RunDeadline(clock, preparation_budget_ms)
+    original_copy, original_encode = search_media._materialize, search_media._run_ffmpeg_encode
+
+    def copy(*a, **kw):
+        check()
+        with diag.measure(events, 'search_source_copy') as event:
+            result = original_copy(*a, **kw)
+            event['bytes'] = result.actual_byte_size
+            if result.sha256 != report['expected_sha256']:
+                raise ValueError('SEARCH_SOURCE_HASH_MISMATCH')
+            return result
+
+    def encode(*a, **kw):
+        check()
+        return measure_search_encode(events, original_encode, *a, **kw)
+
+    search_media._materialize, search_media._run_ffmpeg_encode = copy, encode
+    report.update(search_media='FAIL', search_prepare_completed=False)
+    started = clock()
+    try:
+        with phase('search_prepare'), (coarse_encode_override(search_media, CoarseOverride(270, 28), report)
+                if coarse_270p else nullcontext()):
+            with search_media.MediaPreparer(cfg).prepare_coarse(media_input, deadline) as media:
+                # MediaPreparer yield는 encode 종료 + media guard + duration probe 뒤다.
+                check()
+                report.update(search_media='PASS', search_prepare_completed=True,
+                    search_prepare_wall_sec=clock()-started, search_media_bytes=media.byte_size,
+                    search_media_duration_sec=media.duration_sec)
+                report['coarse_output'] = inspect_coarse_output(search_media, media, deadline)
+                request_deadline = deadline if preparation_budget_ms == 150000 else RunDeadline(clock, 150000)
+                with phase('search_request'):
+                    request_boundary(cfg, media, source, timeline_id, request_deadline, report, events, check)
+    finally:
+        if not report['search_prepare_completed']:
+            report['search_prepare_failed_elapsed_sec'] = clock()-started
+        report['search_prepare_peak_sampled_cgroup_bytes'] = max((s['cgroup_bytes']
+            for s in report.get('samples', []) if s.get('phase') == 'search_prepare'), default=None)
+        search_media._materialize, search_media._run_ffmpeg_encode = original_copy, original_encode
+
+
 def run(args, *, cpu_observer=None):
     """CPU observer는 감독자가 실제 runner/DB leaf reader를 연결할 때만 사용한다."""
     if cpu_observer is None:
@@ -556,6 +617,10 @@ def _run(args):
                        recording_only=getattr(args, 'recording_only', False))
     if getattr(args, 'recording_only', False) and getattr(args, 'coarse_270p_crf28', False):
         raise ValueError('RECORDING_ONLY_EXCLUDES_SEARCH')
+    preparation_budget_ms = search_preparation_budget({
+        'probe_profile': experiment.resource_profile if experiment else 'legacy',
+        'full_search_prepare_budget_ms': getattr(args, 'search_prepare_budget_ms', 150000)},
+        full=getattr(args, 'full_input', False), coarse=getattr(args, 'coarse_270p_crf28', False))
     import resource
     import sqlalchemy as sa
     import daesingo.recording
@@ -565,7 +630,6 @@ def _run(args):
     from daesingo.recording.observability import capture_materialization
     from daesingo.search import media as search_media
     from daesingo.search.config import GeminiSearchConfig
-    from daesingo.search.execution import RunDeadline
     from alembic import command as migration
     from alembic.config import Config
     import subprocess
@@ -846,38 +910,11 @@ def _run(args):
                 report['detached_strict_decode'] = 'PASS'
             if not getattr(args, 'recording_only', False):
                 cfg = GeminiSearchConfig()
-                report['search_config'] = {'source_cap': cfg.max_materialized_source_bytes,
-                    'media_cap': cfg.max_inline_media_bytes, 'request_cap': cfg.max_inline_request_bytes,
-                    'fingerprint': cfg.fingerprint, 'budget_ms': 150000}
-                deadline = RunDeadline(time.monotonic, 150000)
-                original_copy, original_encode = search_media._materialize, search_media._run_ffmpeg_encode
-
-                def copy(*a, **kw):
-                    with diag.measure(events, 'search_source_copy') as event:
-                        result = original_copy(*a, **kw)
-                        event['bytes'] = result.actual_byte_size
-                        if result.sha256 != report['expected_sha256']:
-                            raise ValueError('SEARCH_SOURCE_HASH_MISMATCH')
-                        return result
-
-                def encode(*a, **kw):
-                    return measure_search_encode(events, original_encode, *a, **kw)
-
-                search_media._materialize, search_media._run_ffmpeg_encode = copy, encode
-                report['search_media'] = 'FAIL'
-                try:
-                    with phase('search_prepare'), (coarse_encode_override(search_media, CoarseOverride(270, 28), report)
-                            if getattr(args, 'coarse_270p_crf28', False) else nullcontext()):
-                        with search_media.MediaPreparer(cfg).prepare_coarse(search_media.MediaInput(
-                                view, 'video/mp4', source.byte_size, source.duration_sec), deadline) as media:
-                            report['search_media'] = 'PASS'
-                            report['search_media_bytes'] = media.byte_size
-                            report['search_media_duration_sec'] = media.duration_sec
-                            report['coarse_output'] = inspect_coarse_output(search_media, media, deadline)
-                            with phase('search_request'):
-                                request_boundary(cfg, media, source, timeline.timeline_id, deadline, report, events, sampler.check)
-                finally:
-                    search_media._materialize, search_media._run_ffmpeg_encode = original_copy, original_encode
+                probe_search(search_media, cfg, search_media.MediaInput(
+                    view, 'video/mp4', source.byte_size, source.duration_sec),
+                    source, timeline.timeline_id, report, events, sampler.check, phase,
+                    preparation_budget_ms=preparation_budget_ms,
+                    coarse_270p=getattr(args, 'coarse_270p_crf28', False))
                 report['max_stream_read'] = view.max_read
             detached.close()
             report['stream_closed'] = detached.closed

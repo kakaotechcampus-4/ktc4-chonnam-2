@@ -25,13 +25,16 @@ def stage_settings(config, stage):
     profile = config.get('probe_profile', 'legacy')
     if profile not in ('legacy', 'full15-512m') or stage not in STAGES:
         raise ValueError('EXPLICIT_PROBE_PROFILE_REQUIRED')
+    from recording_real_media_recheck import search_preparation_budget
+    preparation_ms = search_preparation_budget(config, full=profile == 'full15-512m',
+        coarse=config.get('full_probe_mode') == 'coarse_270p_stop_before_send')
     if stage == 'full':
         if profile != 'full15-512m':
             raise ValueError('FULL_PROFILE_REQUIRED')
         return {'profile': profile, 'runner_mib': 3072, 'output_bytes': 512*MIB,
-                'duration_ms': 1584174, 'timeout_sec': 3600}
+                'duration_ms': 1584174, 'timeout_sec': 3600, 'search_prepare_budget_ms': preparation_ms}
     return {'profile': 'legacy', 'runner_mib': 1280, 'output_bytes': 96*MIB,
-            'duration_ms': 240000, 'timeout_sec': 900}
+            'duration_ms': 240000, 'timeout_sec': 900, 'search_prepare_budget_ms': 150000}
 
 PARENT_MEMORY_COMMAND = r'''
 p=/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)
@@ -469,6 +472,7 @@ class LinuxSupervisor(Supervisor):
                     'db_host': ip, 'db_cgroup': cg, 'image_id': runner_id,
                     'resource_profile': self.settings['profile'],
                     'full_probe_mode': self.config.get('full_probe_mode', 'recording_only'),
+                    'search_prepare_budget_ms': self.settings['search_prepare_budget_ms'],
                     'preflight_parent_ids': [p['identity'] for p in parent_memory]})
         runner_json(directory/'config.json', {'experiment_id': self.owner, 'max_output_bytes': self.settings['output_bytes'],
                     'max_duration_ms': self.settings['duration_ms'], 'run_timeout_sec': self.settings['timeout_sec'],
