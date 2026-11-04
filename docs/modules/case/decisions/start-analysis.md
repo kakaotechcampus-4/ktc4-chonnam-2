@@ -1,6 +1,6 @@
 # 분석 시작(`START_ANALYSIS`) — command · 단서 반영 · 첫 탐색 발주
 
-> **상태: 결정 · 구현**(`case/analysis_start.py`, 2026-10-07 `4b9f7f7f`) · 결정일 2026-10-07 · RC 다중 영상 범위 2026-11-01(#510, §3-1) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-1(`../design-refinement-w7-baseline.md`), case-command Draft §11(`../contracts/contract-case-command.md`), #247 H-2 · H-3 · H-5, #210 · #277(search 단서 구조화 함수), #313(여러 영상 · 탐지 유형 의견 수렴)
+> **상태: 결정 · 구현**(`case/analysis_start.py`, [PR #315](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/315)) · 결정일 2026-10-07 · RC 다중 영상 범위 2026-11-01(#510, §3-1) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-1(`../design-refinement-w7-baseline.md`), case-command Draft §11(`../contracts/contract-case-command.md`), #247 H-2 · H-3 · H-5, #210 · #277(search 단서 구조화 함수), #313(여러 영상 · 탐지 유형 의견 수렴)
 > Draft §11이 이미 정한 것(빈 설명 · 실패 notice 없음 · `case_rev` 유지 · `HINT_EXTRACT` 이름 · CaseView `description`)은 다시 정하지 않는다. 이 문서는 Draft §11의 **미결 2 · 3 · 4**와 여러 영상 처리를 정하고, 구현 범위를 적는다. 규칙 원문은 구현 때 case-command 계약 정식 판본으로 옮긴다.
 
 ## 1. 목표 · 성공 기준
