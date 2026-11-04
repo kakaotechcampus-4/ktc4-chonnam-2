@@ -24,7 +24,7 @@ export function FailedScreen(props: {
   // 버튼은 한 줄에 모으되, 누르면 어느 notice의 동작인지(code)도 함께 넘긴다(RUN_NOTICE_ACTION).
   const actions = blocking.flatMap((n) => n.actions.filter(isAction).map((a) => ({ code: n.code, a })))
   const others = props.onSelect ? props.view.candidates.filter((c) => !c.selected).length : 0
-  const hasPlayback = !!props.videoSrc && props.view.candidates.some((c) => c.video_preview)
+  const hasPlayback = !!props.videoSrc && props.view.candidates.some((c) => c.video_preview && c.video_preview.status !== 'UNAVAILABLE')
   return (
     <div className="rs rs-screen state-page failed">
       <p className="state-context">신고자료</p>

@@ -24,7 +24,7 @@ export function NotObservedScreen(props: {
   onEditHint?: (description: string) => void
 } & CandidatePlayback): JSX.Element {
   const others = props.view.candidates.filter((c) => !c.selected).length
-  const hasPlayback = !!props.videoSrc && props.view.candidates.some((c) => c.video_preview)
+  const hasPlayback = !!props.videoSrc && props.view.candidates.some((c) => c.video_preview && c.video_preview.status !== 'UNAVAILABLE')
   const r = props.restyled
   const code = 'evidence.visual_event_not_observed'
   const { onAction, canRun } = props

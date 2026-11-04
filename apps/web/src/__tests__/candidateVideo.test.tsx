@@ -5,6 +5,8 @@ import { createApi } from '../api/client'
 import type { Candidate, CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
+import { FailedScreen } from '../screens/FailedScreen'
+import { NotObservedScreen } from '../screens/NotObservedScreen'
 import { selectScreen } from '../state/selectScreen'
 
 const base = SNAPSHOTS.find((s) => s.view.evidence !== null)!.view
@@ -78,6 +80,18 @@ it('uses the selected evidence frame as the video poster when its thumbnail is a
   const screen = render(<CandidatesScreen view={current} frameSrc={(ref) => `/frame/${ref}`} onPreview={vi.fn()} />)
   expect(screen.getByRole('img', { name: '1번 후보 장면' }).getAttribute('src')).toBe(`/frame/${current.evidence?.preview_ref}`)
   expect(screen.getByRole('button', { name: '1번 후보 영상 보기' })).toBeTruthy()
+})
+
+it.each([
+  ['not observed', NotObservedScreen],
+  ['failed', FailedScreen],
+])('%s screen hides the playback area when every preview is unavailable', (_, Screen) => {
+  const only = (status: 'UNAVAILABLE' | 'NOT_REQUESTED') => ({ ...base, candidates: [candidate(1, status)], running_jobs: [] })
+  const hidden = render(<Screen view={only('UNAVAILABLE')} videoSrc={videoSrc} onPreview={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
+  expect(hidden.container.querySelector('.cand')).toBeNull()
+  cleanup()
+  const shown = render(<Screen view={only('NOT_REQUESTED')} videoSrc={videoSrc} onPreview={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
+  expect(shown.container.querySelector('.cand')).not.toBeNull()
 })
 
 it('keeps playback available when its poster cannot be loaded', () => {
