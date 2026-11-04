@@ -17,7 +17,10 @@ from recording_ec2_package import verify_files
 
 
 def placement_gate(expected, actual, stage):
-    ids = ['input-02'] if stage == 'smoke' else ['input-01', 'input-02']
+    if stage not in ('smoke', 'representative', 'full'):
+        raise ValueError('EXPLICIT_PLACEMENT_STAGE_REQUIRED')
+    ids = [f'input-{n:02}' for n in range(1, 16)] if stage == 'full' else (
+        ['input-02'] if stage == 'smoke' else ['input-01', 'input-02'])
     if [p['id'] for p in expected] != ids or actual != expected:
         raise ValueError('EXPLICIT_PLACEMENT_MISMATCH')
     offset = Decimal(0)
@@ -25,7 +28,10 @@ def placement_gate(expected, actual, stage):
         if p['video_index'] != 0 or Decimal(str(p['start'])) != offset:
             raise ValueError('EXPLICIT_PLACEMENT_GAP_OR_STREAM')
         offset = Decimal(str(p['end']))
-    if offset < (10 if stage == 'smoke' else 120):
+    if stage == 'full':
+        from recording_full_input import require_full_scope
+        require_full_scope(expected, expected[-1]['end'])
+    elif offset < (10 if stage == 'smoke' else 120):
         raise ValueError('EXPLICIT_PLACEMENT_SHORT')
 
 
@@ -200,6 +206,8 @@ def run(connection):
     import daesingo.search.config
     import daesingo.search.execution
     import psutil
+    from recording_probe_budget import ProbeBudget
+    budget = ProbeBudget.from_profile(connection.get('resource_profile', 'legacy'))
     if not psutil.Process().is_running() or not validate_environments():
         raise ValueError('DEPENDENCY_IMPORT_OR_MIGRATION_GRAPH_FAILED')
     if any(os.environ.get(k) for k in ('GEMINI_API_KEY', 'ELICE_ML_API_KEY', 'OPENAI_API_KEY',
@@ -224,7 +232,7 @@ def run(connection):
     if os.sched_getaffinity(0) != affinity:
         raise ValueError('CPU_AFFINITY_MISMATCH')
     initial = {a: bridge.limits(p) for a, p in leaves.items()}
-    for actor, quota, memory in (('runner', connection['quota'], 1280), ('db', '.5', 512)):
+    for actor, quota, memory in (('runner', connection['quota'], budget.runner_hard_mib), ('db', '.5', 512)):
         bridge.require_limits(initial[actor], quota, memory)
     # hierarchy()의 기존 2.5core 가정 대신 관측한 운영 비교 quota만 요구한다.
     original_parent = bridge.require_parent_limits
@@ -244,8 +252,8 @@ def run(connection):
             for a, value in values.items():
                 parent_memory_gate(memory_now[a], parent_memory[a])
                 leaf_scope_gate(value, initial[a])
-                if (value['memory_current'] >= (1100 if a == 'runner' else 440)*1024**2
-                        or (value['memory_peak'] or 0) >= (1100 if a == 'runner' else 440)*1024**2
+                if (value['memory_current'] >= (budget.runner_soft_mib if a == 'runner' else 440)*1024**2
+                        or (value['memory_peak'] or 0) >= (budget.runner_soft_mib if a == 'runner' else 440)*1024**2
                         or value['memory_events'] is None
                         or any(value['memory_events'].get(k, 0) for k in ('oom', 'oom_kill', 'oom_group_kill'))):
                     raise ValueError('CGROUP_MEMORY_STOP')
@@ -261,17 +269,29 @@ def run(connection):
                         LocalAnalysisMaterializer({})._run(['ffprobe', '-version'])
                     status = 'PASS_LINUX_ACCEPTANCE'
                 else:
+                    full = connection['tag'] == 'full'
+                    search = full and connection.get('full_probe_mode') == 'coarse_270p_stop_before_send'
+                    scope = json.loads(Path('/fixture/manifest.private.json').read_text()).get('full_scope') if full else None
                     args = SimpleNamespace(manifest='/fixture/manifest.private.json', output='/evidence/recording.private.json',
                         db_host=connection['db_host'], schema='probe', code_sha=manifest['product_revision'],
                         image_id=connection['image_id'], first=2 if connection['tag'] == 'smoke' else 1,
-                        count=1 if connection['tag'] == 'smoke' else 2, seconds=10 if connection['tag'] == 'smoke' else 120,
-                        experimental_config='/evidence/config.json', recording_only=True, coarse_270p_crf28=False,
+                        count=15 if full else (1 if connection['tag'] == 'smoke' else 2),
+                        seconds=float(scope['requested_sec']) if full else (10 if connection['tag'] == 'smoke' else 120),
+                        experimental_config='/evidence/config.json', recording_only=not search, coarse_270p_crf28=search,
+                        full_input=full,
                         explicit_placement_path='/fixture/placements.private.json')
                     if runner.run(args, cpu_observer=observer):
                         raise ValueError('RECORDING_FAILED')
                     details = json.loads(Path(args.output).read_text())
                     runner.require_recording_result(details)
-                    status = 'PASS_RECORDING_ONLY'
+                    if full and details.get('full_input_scope') != 'PASS_ALL_FIFTEEN_EXACT_ENDPOINT':
+                        raise ValueError('FULL_SCOPE_RESULT_REQUIRED')
+                    if search:
+                        if details.get('status') != 'PASS_STOP_BEFORE_SEND' or details.get('sdk_entry_count') != 1:
+                            raise ValueError('FULL_OFFLINE_SEARCH_REQUIRED')
+                        status = 'PASS_STOP_BEFORE_SEND'
+                    else:
+                        status = 'PASS_RECORDING_ONLY'
         if not events or any(e['status'] != 'PASS' for e in events):
             raise ValueError('CPU_PHASE_FAILED')
         collect()

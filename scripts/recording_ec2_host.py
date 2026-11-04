@@ -18,7 +18,20 @@ from recording_cpu_quota_supervisor import Supervisor, require_inspect, write_ne
 from recording_probe_budget import ProbeBudget, MIB
 from recording_ec2_package import verify_files, sha
 
-STAGES = ('acceptance', 'smoke', 'representative')
+STAGES = ('acceptance', 'smoke', 'representative', 'full')
+
+
+def stage_settings(config, stage):
+    profile = config.get('probe_profile', 'legacy')
+    if profile not in ('legacy', 'full15-512m') or stage not in STAGES:
+        raise ValueError('EXPLICIT_PROBE_PROFILE_REQUIRED')
+    if stage == 'full':
+        if profile != 'full15-512m':
+            raise ValueError('FULL_PROFILE_REQUIRED')
+        return {'profile': profile, 'runner_mib': 3072, 'output_bytes': 512*MIB,
+                'duration_ms': 1584174, 'timeout_sec': 3600}
+    return {'profile': 'legacy', 'runner_mib': 1280, 'output_bytes': 96*MIB,
+            'duration_ms': 240000, 'timeout_sec': 900}
 
 PARENT_MEMORY_COMMAND = r'''
 p=/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)
@@ -78,19 +91,27 @@ def positive(value):
     return value
 
 
-def resource_gate(policy, available, free, growth, db_data, *, start=True):
+def resource_gate(policy, available, free, growth, db_data, *, start=True, budget=None, output_cap=96*MIB):
+    budget = budget or ProbeBudget.from_profile('legacy')
     reserve = max(700*MIB, positive(policy['memory_reserve_bytes']))
     disk_reserve = max(4096*MIB, positive(policy['disk_reserve_bytes']))
-    required = 1280*MIB + 512*MIB + 512*MIB + reserve
+    required = (budget.runner_hard_mib + budget.db_hard_mib + budget.collector_reserve_mib)*MIB + reserve
     if any(type(n) is not int or n < 0 for n in (available, free, growth, db_data)):
         raise ValueError('RESOURCE_OBSERVATION_INVALID')
     # 중단 기준과 시작 기준을 구분하고 정책 reserve는 줄이지 않는다.
     if available < (required if start else reserve):
         raise ValueError('HOST_MEMORY_BUDGET_STOP')
-    if free < disk_reserve or growth >= 2048*MIB or db_data >= 1024*MIB:
+    if free < disk_reserve or growth >= budget.disk_growth_mib*MIB or db_data >= budget.db_data_mib*MIB:
         raise ValueError('HOST_DISK_BUDGET_STOP')
-    if start and (free < disk_reserve+2048*MIB or db_data+288*MIB >= 1024*MIB):
+    if start and (free < disk_reserve+budget.disk_growth_mib*MIB
+                  or db_data+3*output_cap >= budget.db_data_mib*MIB):
         raise ValueError('HOST_START_DISK_BUDGET_STOP')
+    if start and budget.profile == 'full15-512m':
+        needed = budget.requirements(output_cap, 64*MIB)
+        if (needed['temp_candidate_bytes'] >= budget.temp_soft_mib*MIB
+                or needed['runner_candidate_bytes'] >= budget.runner_soft_mib*MIB
+                or growth+needed['disk_growth_candidate_bytes'] > budget.disk_growth_mib*MIB):
+            raise ValueError('HOST_COORDINATED_BUDGET_STOP')
     return {'start_required_bytes': required, 'host_reserve_bytes': reserve,
             'disk_reserve_bytes': disk_reserve, 'available_bytes': available, 'free_bytes': free}
 
@@ -142,12 +163,19 @@ def runner_json(path, value):
     Path(path).chmod(0o444)
 
 
-def input_gate(directory, manifest):
+def input_gate(directory, manifest, *, full=False):
     directory = Path(directory).resolve(strict=True)
     records = manifest['files']
-    if [r['fixture_id'] for r in records] != ['input-01', 'input-02']:
-        raise ValueError('TWO_EXPLICIT_INPUTS_REQUIRED')
-    expected = {'input-01.mp4', 'input-02.mp4'}
+    ids = [f'input-{n:02}' for n in range(1, 16)] if full else ['input-01', 'input-02']
+    if [r['fixture_id'] for r in records] != ids:
+        raise ValueError('EXACT_EXPLICIT_INPUTS_REQUIRED')
+    if full:
+        from recording_full_input import require_full_scope
+        scope = manifest['full_scope']
+        require_full_scope(scope['placements'], scope['requested_sec'])
+        if scope['total_bytes'] != sum(r['bytes'] for r in records) or scope['max_duration_ms'] != 1584174:
+            raise ValueError('FULL_INPUT_SCOPE_MISMATCH')
+    expected = {n+'.mp4' for n in ids}
     if {p.name for p in directory.iterdir()} != expected:
         raise ValueError('ONLY_MINIMAL_INPUT_FILES_ALLOWED')
     for r in records:
@@ -287,6 +315,7 @@ class LinuxSupervisor(Supervisor):
         self.source, self.root = Path(source).resolve(), Path(evidence).resolve()
         self.owner, self.policy, self.config = owner, policy, config
         self.created, self.stage_name, self.cleanup_deadline = [], None, None
+        self.settings = stage_settings(config, 'acceptance')
         self.budget = replace(ProbeBudget.from_profile('legacy'),
                               host_reserve_mib=(max(700*MIB, policy['memory_reserve_bytes'])+MIB-1)//MIB)
         self.runner_image = image_reference(config['runner_image'], local=local)
@@ -311,7 +340,9 @@ class LinuxSupervisor(Supervisor):
             self.operational_guard()
         runner = self.names(self.stage_name)['runner'] if self.stage_name else None
         if ('container', runner) in self.created:
-            require_inspect(self.inspect('container', runner), self.owner, self.quota, 1280, self.cpuset)
+            require_inspect(self.inspect('container', runner), self.owner, self.quota, self.settings['runner_mib'], self.cpuset)
+        if self.stage_name and (self.root/self.stage_name/'recording.private.abort').exists():
+            raise ValueError('RUNNER_SOFT_RESOURCE_STOP')
         disks = {}
         for path in (self.root, self.source, self.config['docker_root'], *self.config.get('additional_disk_paths', [])):
             key = str(Path(path).stat().st_dev)
@@ -328,7 +359,8 @@ class LinuxSupervisor(Supervisor):
             write_new(origin, now)
         growth = disk_growth(json.loads(origin.read_text())['disks'], disks)
         self.log('host.private.jsonl', {**now, 'growth_bytes': growth, 'stage': self.stage_name})
-        return resource_gate(self.policy, now['available_ram_bytes'], free, growth, db_data, start=start)
+        return resource_gate(self.policy, now['available_ram_bytes'], free, growth, db_data, start=start,
+                             budget=self.budget, output_cap=self.settings['output_bytes'])
 
     def db_metrics(self, name):
         result = super().db_metrics(name)
@@ -351,6 +383,11 @@ class LinuxSupervisor(Supervisor):
     def stage(self, tag, fixture=None, inputs=None):
         if tag not in STAGES:
             raise ValueError('STAGE_NOT_ALLOWED')
+        self.settings = stage_settings(self.config, tag)
+        self.budget = replace(ProbeBudget.from_profile(self.settings['profile']),
+                              host_reserve_mib=(max(700*MIB, self.policy['memory_reserve_bytes'])+MIB-1)//MIB)
+        if self.config.get('full_probe_mode', 'recording_only') not in ('recording_only', 'coarse_270p_stop_before_send'):
+            raise ValueError('FULL_OFFLINE_MODE_REQUIRED')
         self.stage_name = tag
         previous_stage(self.root, tag)
         attempt = self.root/(tag+'-stage.private.json')
@@ -430,9 +467,12 @@ class LinuxSupervisor(Supervisor):
         cg = self.docker('exec', names['db'], 'cat', '/proc/self/cgroup', timeout=8).stdout.decode()
         runner_json(directory/'connection.private.json', {'tag': tag, 'quota': self.quota, 'cpus': self.config['cpus'],
                     'db_host': ip, 'db_cgroup': cg, 'image_id': runner_id,
+                    'resource_profile': self.settings['profile'],
+                    'full_probe_mode': self.config.get('full_probe_mode', 'recording_only'),
                     'preflight_parent_ids': [p['identity'] for p in parent_memory]})
-        runner_json(directory/'config.json', {'experiment_id': self.owner, 'max_output_bytes': 96*MIB,
-                    'max_duration_ms': 240000, 'run_timeout_sec': 900, 'resource_profile': 'legacy'})
+        runner_json(directory/'config.json', {'experiment_id': self.owner, 'max_output_bytes': self.settings['output_bytes'],
+                    'max_duration_ms': self.settings['duration_ms'], 'run_timeout_sec': self.settings['timeout_sec'],
+                    'resource_profile': self.settings['profile']})
         mounts = [*self.readonly_mount(self.source, '/repo'), *self.readonly_mount(credential, '/credential.json'),
                   '--mount', f'type=bind,source={directory},target=/evidence',
                   '--mount', f'type=volume,source={names["work"]},target=/work']
@@ -443,7 +483,8 @@ class LinuxSupervisor(Supervisor):
             mounts += self.readonly_mount(Path(inputs).resolve(), '/inputs')
         self.create('container', names['runner'], ['create', '--name', names['runner'], '--label', 'owner='+self.owner,
             '--network', names['network'], '--cgroupns', 'host', '--cpus', self.quota, '--cpuset-cpus', self.cpuset,
-            '--memory', '1280m', '--memory-swap', '1280m', '--pids-limit', '128', '--read-only', '--pull=never',
+            '--memory', str(self.settings['runner_mib'])+'m', '--memory-swap', str(self.settings['runner_mib'])+'m',
+            '--pids-limit', '128', '--read-only', '--pull=never',
             '--restart', 'no', '--user', '10001:10001', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
             '--log-driver', 'local', '--log-opt', 'max-size=1m', '--log-opt', 'max-file=2',
             '--tmpfs', '/tmp:rw,size=100663296,mode=1777', '--workdir', '/repo',
@@ -451,7 +492,7 @@ class LinuxSupervisor(Supervisor):
             '-e', 'PYTHONPATH=/repo/src:/repo/scripts', '-e', 'TMPDIR=/work', *mounts,
             '--entrypoint', 'python', self.runner_image, '-B', '/repo/scripts/recording_ec2_entry.py', '/evidence/connection.private.json'])
         actual = self.owned('container', names['runner'])
-        require_inspect(actual, self.owner, self.quota, 1280, self.cpuset)
+        require_inspect(actual, self.owner, self.quota, self.settings['runner_mib'], self.cpuset)
         if (actual['Image'] != runner_id or actual['HostConfig']['PortBindings']
                 or not actual['HostConfig']['ReadonlyRootfs'] or actual['HostConfig']['CgroupnsMode'] != 'host'
                 or any(m['RW'] for m in actual['Mounts'] if m['Destination'] in ('/repo', '/inputs', '/fixture', '/credential.json'))):
@@ -459,9 +500,12 @@ class LinuxSupervisor(Supervisor):
         write_new(directory/'actual.private.json', {'runner': actual['HostConfig'], 'db': db['HostConfig'],
                     'runner_image_id': runner_id, 'mysql_image_id': mysql_id, 'manifest_sha256': sha((self.source/'manifest.json').read_bytes())})
         self.docker('start', names['runner'])
-        self.wait(names['runner'], time.monotonic()+(180 if tag == 'acceptance' else 930), db=names['db'])
+        self.wait(names['runner'], time.monotonic()+(180 if tag == 'acceptance' else self.budget.host_timeout_sec(
+            self.settings['timeout_sec'])), db=names['db'])
         result = json.loads((directory/'cpu.private.json').read_text())
         expected_status = 'PASS_LINUX_ACCEPTANCE' if tag == 'acceptance' else 'PASS_RECORDING_ONLY'
+        if tag == 'full' and self.config.get('full_probe_mode') == 'coarse_270p_stop_before_send':
+            expected_status = 'PASS_STOP_BEFORE_SEND'
         if result['status'] != expected_status or not result['hooks_restored']:
             raise ValueError('ENTRY_ACCEPTANCE_FAILED')
         if tag != 'acceptance':
@@ -473,7 +517,8 @@ class LinuxSupervisor(Supervisor):
         verify_files(self.source, manifest)
         if tag != 'acceptance':
             fixture_gate(fixture, self.config['input_identity'])
-            input_gate(inputs, json.loads((Path(fixture)/'manifest.private.json').read_text()))
+            input_gate(inputs, json.loads((Path(fixture)/'manifest.private.json').read_text()),
+                       full=self.config.get('probe_profile') == 'full15-512m')
 
 
 def main():
@@ -501,11 +546,13 @@ def main():
         raise ValueError('REVIEWED_MANIFEST_IDENTITY_REQUIRED')
     manifest = json.loads(manifest_data)
     config = manifest['config']
+    stage_settings(config, args.stage)
     if args.stage != 'acceptance':
         if not args.fixture or not args.inputs:
             raise ValueError('MINIMAL_INPUT_FIXTURE_REQUIRED')
         fixture_gate(args.fixture, config.get('input_identity'))
-        input_gate(args.inputs, json.loads((Path(args.fixture)/'manifest.private.json').read_text()))
+        input_gate(args.inputs, json.loads((Path(args.fixture)/'manifest.private.json').read_text()),
+                   full=config.get('probe_profile') == 'full15-512m')
     def capture(*argv):
         return bounded_capture(['docker', *argv], 15, root)
     lock = None
