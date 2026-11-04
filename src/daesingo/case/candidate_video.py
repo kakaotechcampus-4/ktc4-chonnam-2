@@ -4,9 +4,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from daesingo.case import jobs
 from daesingo.case.analysis_start import fingerprint
-from daesingo.case.domain import Candidate, CaseAggregate
+from daesingo.case.domain import CANDIDATE_VIDEO_PREVIEW, Candidate, CaseAggregate
 
-PREVIEW_KIND: Final = "CANDIDATE_VIDEO_PREVIEW"
+PREVIEW_KIND: Final = CANDIDATE_VIDEO_PREVIEW
 MAX_PREVIEW_RANK: Final = 3
 
 

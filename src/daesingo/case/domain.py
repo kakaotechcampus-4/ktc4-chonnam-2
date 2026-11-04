@@ -51,6 +51,22 @@ _FORWARD_EDGES: dict[str, str] = {
 }
 
 
+# 발주 입력(후보 · 세대 · span · clip ref)을 case state에 고정하는 JobRecord.kind 선언.
+# `jobs.py`가 이 모듈을 import하므로 kind 선언은 여기 둔다(`jobs.OBSERVATION_KINDS`는 같은 값).
+#
+# 선택 후보의 신고자료를 준비하는 관찰 kind(`decisions/incident-clip-observation-input.md` §4-1).
+# 준비 중 판단 · 빠진 관찰 재발주 · 저장 관찰 읽기는 이 집합만 본다.
+OBSERVATION_KINDS = frozenset({"FINE_VERIFY", "INCIDENT_CLIP_BUILD", "PLATE_READ", "OVERLAY_TIME_READ"})
+# 후보 영상 미리보기(`decisions/candidate-video-preview.md`). 입력은 고정하지만 관찰이 아니다 —
+# 신고자료 준비 · 재선택 제한 · export gate에 섞지 않는다.
+CANDIDATE_VIDEO_PREVIEW = "CANDIDATE_VIDEO_PREVIEW"
+# `observation_input`을 받는 kind.
+INPUT_PINNED_KINDS = OBSERVATION_KINDS | {CANDIDATE_VIDEO_PREVIEW}
+# 기다리던 job을 supersede할 때 kind · scope_ref에 더해 입력의 이 키까지 같아야 하는 kind.
+# 미리보기는 후보마다 따로 기다리므로 다른 후보의 요청을 대체하지 않는다.
+SUPERSEDE_INPUT_KEY: dict[str, str] = {CANDIDATE_VIDEO_PREVIEW: "candidate_id"}
+
+
 class InvalidTransition(Exception):
     pass
 
@@ -508,7 +524,7 @@ class CaseAggregate:
         if selected is None or generation is None:
             return False
         return any(
-            r["kind"] in {"FINE_VERIFY", "INCIDENT_CLIP_BUILD", "PLATE_READ", "OVERLAY_TIME_READ"}
+            r["kind"] in OBSERVATION_KINDS
             and (source := self.observation_inputs.get(r["job_id"])) is not None
             and source["candidate_id"] == selected
             and source["generation_job_id"] == generation
