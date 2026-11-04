@@ -55,6 +55,8 @@ python scripts/check_contract_fixtures.py
 
 고정 source 패키지와 보호 입력 전송 계획을 만들고, Linux 호스트에서 운영 target 배제·예산·인증된 새 DB·유한 감독/소유 정리를 연결한다. 실제 EC2 실행은 별도 점검 승인 대상이다. [한국어 단계별 실행 절차](../docs/runtime/experiments/2026-11-03-ec2-recording-probe-runbook.md)와 [로컬 검증 범위](../docs/runtime/experiments/2026-11-03-ec2-recording-probe-validation.md)를 따른다. 로컬 image ID/Windows source 경로를 서버에 복제하지 않는다.
 
+`recording_full_input.py`는 기존 보호 manifest와 원본15개를 읽기 전용으로 대조하고 전체 소수초 logical scope·익명 fixture·보호 전송계획을 새 디렉터리에 작성한다. 파일 복사·encode·DB·Docker·provider·전송은 하지 않는다. 기존 EC2 하네스의 명시적 `full15-512m` profile·`full` stage와 미해결 제품/Owner 조건은 [전체15개 준비 runbook](../docs/runtime/experiments/2026-11-04-full15-e2e-preparation-runbook.md)을 따른다. 기존 `inputs` subcommand는 여전히2개용이므로 전체 입력 준비에 사용하지 않는다.
+
 ## CI
 
 `.github/workflows/boundary-check.yml`이 PR(`develop`·`main` 대상)과 `develop` push에서 **두 검사기를 모두** 돌린다 — `check_boundaries.py`(모듈 경계 · 계약 정합성) 다음에 `check_contract_fixtures.py`(계약 예시 · fixture 의미). 둘 중 하나라도 실패하면 workflow가 실패한다. 새 action이나 외부 dependency는 쓰지 않는다(`actions/checkout` + `actions/setup-python`만).

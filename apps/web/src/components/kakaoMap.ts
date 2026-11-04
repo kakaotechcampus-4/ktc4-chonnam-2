@@ -16,11 +16,76 @@ export interface KakaoMap {
   setCenter(latlng: KakaoLatLng): void
 }
 
+// 장소 검색(services 라이브러리)에서 쓰는 만큼만. x = 경도, y = 위도(문자열)
+interface KakaoPlace {
+  place_name: string
+  address_name: string
+  road_address_name: string
+  x: string
+  y: string
+}
+
 export interface KakaoMaps {
   LatLng: new (lat: number, lng: number) => KakaoLatLng
   Map: new (el: HTMLElement, options: { center: KakaoLatLng; level: number }) => KakaoMap
   Marker: new (options: { position: KakaoLatLng; map: unknown }) => unknown
   load(callback: () => void): void
+  services: {
+    Places: new () => { keywordSearch(query: string, callback: (data: KakaoPlace[], status: string) => void): void }
+    Geocoder: new () => { addressSearch(query: string, callback: (data: KakaoAddress[], status: string) => void): void }
+    Status: { OK: string }
+  }
+}
+
+interface KakaoAddress {
+  address_name: string
+  x: string
+  y: string
+}
+
+// matched: 실제로 찾은 검색어. 「사거리」 등을 떼고 찾았으면 원래 글과 다르다 — 화면이 그대로 밝힌다
+export type FoundPlace = { lat: number; lon: number; name: string; address: string; matched: string }
+
+const CROSSING = /\s*(사거리|삼거리|오거리|교차로)$/
+const squash = (s: string) => s.replace(/\s+/g, '')
+
+// 장소 이름이 검색어의 낱말을 담고 있을 때만 받는다 — 「상무역 사거리」에 「풍금사거리」가 첫 결과로 오는 일이 있다
+function relevant(query: string, placeName: string): boolean {
+  const name = squash(placeName)
+  if (squash(query).includes(name)) return true
+  return query
+    .split(/\s+/)
+    .filter((w) => w.length >= 2 && !CROSSING.test(w))
+    .some((w) => name.includes(w))
+}
+
+function byAddress(maps: KakaoMaps, q: string): Promise<FoundPlace | null> {
+  return new Promise((resolve) =>
+    new maps.services.Geocoder().addressSearch(q, (data, status) => {
+      const a = status === maps.services.Status.OK ? data[0] : undefined
+      resolve(a ? { lat: Number(a.y), lon: Number(a.x), name: '', address: a.address_name, matched: q } : null)
+    }),
+  )
+}
+
+function byKeyword(maps: KakaoMaps, q: string): Promise<FoundPlace | null> {
+  return new Promise((resolve) =>
+    new maps.services.Places().keywordSearch(q, (data, status) => {
+      const p = status === maps.services.Status.OK ? data.find((d) => relevant(q, d.place_name)) : undefined
+      resolve(p ? { lat: Number(p.y), lon: Number(p.x), name: p.place_name, address: p.road_address_name || p.address_name, matched: q } : null)
+    }),
+  )
+}
+
+// 주소(도로명 · 지번) → 장소 이름 순으로 찾고, 없으면 끝의 「사거리 · 삼거리 · 교차로」를 떼고 한 번 더 찾는다.
+// 못 찾으면 null
+export async function searchPlace(maps: KakaoMaps, query: string): Promise<FoundPlace | null> {
+  const shorter = query.replace(CROSSING, '').trim()
+  for (const q of shorter && shorter !== query ? [query, shorter] : [query]) {
+    const found = (await byAddress(maps, q)) ?? (await byKeyword(maps, q))
+    if (found) return found
+  }
+  return null
 }
 
 declare global {
@@ -39,7 +104,7 @@ export function loadKakaoMaps(key: string): Promise<KakaoMaps> {
   if (loading) return loading
   loading = new Promise<KakaoMaps>((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false`
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false&libraries=services`
     script.async = true
     script.onload = () => {
       const maps = window.kakao?.maps

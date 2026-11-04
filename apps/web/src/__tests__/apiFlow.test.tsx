@@ -462,6 +462,16 @@ it('시각이 없어 묶음이 막힌 알림의 「시각 직접 입력」은 �
   expect(queryByText('한국 시간 기준으로 저장해요.')).toBeNull() // 결과 화면으로 돌아간다
 })
 
+it('시각 입력 화면의 날짜·시간 칸은 「한국 시간 기준」 안내를 설명으로 읽는다(#559)', async () => {
+  const { api } = setup({ get: RESULT })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('시각 수정하기'))
+  for (const name of ['날짜', '시간']) {
+    const id = getByLabelText(name).getAttribute('aria-describedby')!
+    expect(document.getElementById(id)?.textContent?.trim()).toBe('한국 시간 기준으로 저장해요.')
+  }
+})
+
 it('결과 화면 발생 시간의 「시각 수정하기」는 지금 값을 채운 입력 화면을 열고, 취소하면 보내지 않는다', async () => {
   const { m, api } = setup({ get: RESULT })
   const { findByText, getByLabelText, getByText } = render(<ApiFlow api={api} caseId="c1" />)

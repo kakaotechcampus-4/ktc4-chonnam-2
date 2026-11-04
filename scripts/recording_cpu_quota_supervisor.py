@@ -252,7 +252,7 @@ class Supervisor:
             elif parts and parts[0]=='VmRSS:':
                 value['rss_bytes']=int(parts[1])*1024
         self.log(self.stage_name+'-db.private.jsonl',value)
-        if (value['memory_current'] >= 440*MIB or value['db_data_bytes'] >= 1024*MIB
+        if (value['memory_current'] >= 440*MIB or value['db_data_bytes'] >= self.budget.db_data_mib*MIB
                 or value.get('event_oom',0) or value.get('event_oom_kill',0)):
             raise RuntimeError('DB_SOFT_OR_OOM_STOP')
         return value
@@ -433,7 +433,8 @@ class Supervisor:
                     if current['State']['Running']:
                         raise RuntimeError('CONTAINER_STILL_RUNNING')
                     logs=self.docker('logs',name)
-                    (self.root/(tag+'-'+('db' if name==expected['db'] else 'runner')+'-logs.private.txt')).write_bytes(logs.stdout+logs.stderr)
+                    role=next(key for key in ('db','runner','init') if name==expected[key])
+                    (self.root/(tag+'-'+role+'-logs.private.txt')).write_bytes(logs.stdout+logs.stderr)
                     self.log('final-state.private.jsonl',{'name':name,'state':{k:current['State'].get(k) for k in
                         ('Running','ExitCode','OOMKilled','StartedAt','FinishedAt')},'restart_count':current['RestartCount']})
                     self.docker('rm',name)
