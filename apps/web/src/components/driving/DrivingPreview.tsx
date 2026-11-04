@@ -4,6 +4,25 @@ import { PREVIEW_UNAVAILABLE } from '../../contracts/labels.flow'
 import type { DrivingScene } from './createDrivingScene.js'
 import './driving.css'
 
+/**
+ * True when WebGL is drawn by the CPU (SwiftShader, llvmpipe: remote desktops, VMs). There the game
+ * starves the page and `/view` polling slows to ~10s, so the entry is hidden. Browsers that hide the
+ * renderer name count as hardware.
+ */
+export function softwareRendering(): boolean {
+  if (typeof WebGLRenderingContext === 'undefined') return false
+  try {
+    const gl = document.createElement('canvas').getContext('webgl')
+    if (!gl) return false
+    const info = gl.getExtension('WEBGL_debug_renderer_info')
+    const name = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : ''
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
+    return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(name)
+  } catch {
+    return false
+  }
+}
+
 /** A browser-local waiting activity. It never reads or changes analysis state. */
 export function DrivingPreview({ active, onBack }: { active: boolean; onBack: () => void }) {
   const root = useRef<HTMLDivElement>(null)

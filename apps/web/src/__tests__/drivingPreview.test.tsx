@@ -2,7 +2,7 @@
 import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi, type MockInstance } from 'vitest'
-import { DrivingPreview } from '../components/driving/DrivingPreview'
+import { DrivingPreview, softwareRendering } from '../components/driving/DrivingPreview'
 import * as engine from '../components/driving/createDrivingScene.js'
 
 const dispose = vi.fn()
@@ -78,4 +78,17 @@ it('크게 보기에서 돌아가면 전체 화면을 먼저 종료한다', asyn
     Reflect.deleteProperty(document, 'fullscreenElement')
     Reflect.deleteProperty(document, 'exitFullscreen')
   }
+})
+
+it('CPU로 WebGL을 그리는 환경만 소프트웨어 렌더링으로 본다', () => {
+  const gl = (renderer: string) => ({ getExtension: (n: string) => (n === 'WEBGL_debug_renderer_info' ? { UNMASKED_RENDERER_WEBGL: 1 } : null), getParameter: () => renderer })
+  expect(softwareRendering()).toBe(false) // jsdom처럼 WebGL이 없는 환경
+  vi.stubGlobal('WebGLRenderingContext', class {})
+  const ctx = vi.spyOn(HTMLCanvasElement.prototype, 'getContext')
+  ctx.mockReturnValue(gl('ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)') as never)
+  expect(softwareRendering()).toBe(true)
+  ctx.mockReturnValue(gl('ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0)') as never)
+  expect(softwareRendering()).toBe(false)
+  ctx.mockReturnValue(null)
+  expect(softwareRendering()).toBe(false)
 })
