@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from daesingo.case import jobs, service
 from daesingo.case.search_progress import record_search_progress, search_progress_view
-from tests.case.test_case_wait_timeout import _searching, _requested_at
+from tests.case.test_case_wait_timeout import DEADLINE_SEC, _requested_at, _searching
 
 
 def setup_search():
@@ -42,7 +42,7 @@ def test_late_or_stale_worker_cannot_change_stopped_or_new_search():
         return record_search_progress(store, case_id, job["job_id"], "SEARCHING",
                                       **{"execution_id": "exec_1", "now": start, **overrides})
     assert not report(execution_id="old_execution")
-    assert not report(now=start + timedelta(seconds=180))
+    assert not report(now=start + timedelta(seconds=DEADLINE_SEC))
     assert report()
     case = store.load_for_update(case_id)
     case.settled_jobs[job["job_id"]] = "CANCELLED"
