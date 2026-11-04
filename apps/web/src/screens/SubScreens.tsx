@@ -230,13 +230,15 @@ export function TimeEdit(props: { view: CaseView; onBack: () => void; onSave: (v
       >
         <label className="rs-field">
           <span className="rs-label">날짜</span>
-          <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input type="date" className="field" aria-describedby="time-edit-hint" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label className="rs-field">
           <span className="rs-label">시간</span>
-          <input type="time" step={1} className="field" value={time} onChange={(e) => setTime(e.target.value)} />
+          <input type="time" step={1} className="field" aria-describedby="time-edit-hint" value={time} onChange={(e) => setTime(e.target.value)} />
         </label>
-        <span className="rs-hint">한국 시간 기준으로 저장해요.</span>
+        <span id="time-edit-hint" className="rs-hint">
+          한국 시간 기준으로 저장해요.
+        </span>
         <div className="rs-actions">
           <button type="submit" className="rs-btn pri" disabled={!date || !time}>
             저장
