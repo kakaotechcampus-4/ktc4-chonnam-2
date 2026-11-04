@@ -4,6 +4,7 @@
 
 ## 현재 결정
 
+- [coarse-270p-e2e-2026-11-04.md](coarse-270p-e2e-2026-11-04.md) — **잠정**: Coarse 준비 영상 270p · crf28(Fine 360p 유지). 11/5 약 26분 E2E 검증용 PM 승인, 「영상 밖 후보 0」 미달은 한계로 기록 (#452)
 - [external-ai-transfer-scope-2026-10-31.md](external-ai-transfer-scope-2026-10-31.md) — 외부 AI에는 360p 이하 · 무음 재인코딩 영상(Coarse 전체 timeline, Fine 후보 ±4초)과 사용자 문장만 보낸다. 원본 · 고화질 미전송, 최소 범위 원칙 적용 (#71 §3)
 - [search-structure-2026-10-28.md](search-structure-2026-10-28.md) — Search 구조 확정: argon Coarse 0.5배속 → argon Fine 0.25배속 + `fine-gore-v1`, CV · AI Hub 후보 미포함. 성능 판정(E5)은 미결
 - [decision-trace-2026-09-26.md](decision-trace-2026-09-26.md) — p4 종료, p3 기반 Search 전용 판단 근거 진단과 단계별 프롬프트 실험
