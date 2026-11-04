@@ -58,6 +58,10 @@
   - 영상 2개 이상: `create_relative_timeline_from_placements()`로 **등록 순서대로 이어 붙인다**(각 원본을 앞 원본 끝에서 시작, gap 없음). 파일마다 VIDEO 스트림 하나는 지금 real 경로(`real_e2e.py` `_unique_video_media_stream_ref`)와 같이 **VIDEO 스트림이 정확히 하나인지 검증**해 쓴다 — 고르지 않는다(정철원 확인 2026-09-21 「유일성 검증이지 임의 선택이 아니다」).
   - **좌표는 십진값으로 누적한다**(2026-10-28, [#421](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/421)). `Decimal(str(duration_sec))`로 더하고 placement에 넣을 때만 float로 바꾼다. float로 더하면 표현 오차(예: 5e-15초)로 placement가 원본보다 길어져 recording 길이 검증(`Decimal(str(...))` 비교)에 거부됐다. recording 검증은 그대로 둔다 — 실제 길이 초과는 계속 거부된다. 유효숫자 15자리 이하의 좌표(ffprobe 길이는 소수점 6자리)는 float 왕복에서 십진값 그대로다.
   - **이 순서 판단은 원래 recording 책임이다.** case가 임시로 대신하며, 판단은 이 구현 안에만 둔다. recording이 정렬(파일명 시각 · 전후방 겹침 · gap)을 맡게 되면 이 구현 하나만 바꾼다. recording에 작업을 요청하지 않는다(#313 의견 수렴).
+  - **RC 범위와 교체 조건(2026-11-01, [#510](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510)).** 정렬의 최종 책임은 recording이 맡기로 했다([정철원](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6547366917) · [PM](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6553548214)).
+    - **RC:** 이 임시 구현을 쓰되, 지원 입력을 **촬영 순서가 확인됐고 · 파일 사이 실제 gap이 없으며(연속 입력) · 사용할 카메라가 정해진** 경우로 제한한다. 임의 업로드 순서 · 실제 gap · 전후방 별도 파일의 시간 관계를 자동 복원한다고 말하지 않는다. 제품은 이 조건을 자동 검증 · 차단하지 않는다.
+    - **교체 조건:** recording이 실제 순서 · gap · overlap을 해석하는 공개 capability의 입력 · 실패 계약을 공개하면 이 구현을 그것으로 바꾼다. 일정은 정하지 않았다.
+    - **교체 범위:** 구현 클래스 하나 + 조립 지점(`api/composition.py` · `worker/case_composition.py`, 각 Owner 조율) + 테스트. port 시그니처 · fingerprint 공식 · 재시도 경로는 그대로다. 미정: 입력 추가 여부 · 카메라 선택을 누가 하는지 · 옛 sequential case 재처리. 기존 case는 자동 재계산하지 않는다([서어진 정리](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6556860866) · [정철원 수락](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6559421773)).
 - **영상 스트림 ref는 등록할 때 받아 둔다.** recording 공개 경로에서 스트림 종류(VIDEO/AUDIO)를 알 수 있는 곳은 등록 결과(`register_local_source()` → `RegisteredSource.media_streams`)뿐이다. 그래서 `service.record_source_registered(case_id, source_asset, *, media_streams=None, store)`가 선택 인자로 스트림 목록을 받아, case가 VIDEO가 정확히 하나면 그 ref를, 아니면 `None`을 원본과 함께 저장한다(`sources`). 인자를 빼는 기존 호출은 그대로 동작한다(`video_stream_ref=None`).
 - composition root가 구현을 주입한다. 테스트는 가짜 구현을 쓴다.
 
@@ -67,6 +71,7 @@
 3. 여러 파일 분석 입력은 recording(`prepare_analysis_source_from_resolution`)이 지원하지만 real 경로는 파일 1개로만 검증됐다.
 4. **한 파일 안에 VIDEO 스트림이 둘 이상**(전방 · 후방이 한 AVI)이면 스트림을 고를 기준이 없어 실패한다 — 지금 real 경로와 같은 한계다. 기본 카메라 선택 정책은 recording이 정하지 않았다(`multi-source-timeline.md`). **영상이 1개여도 같다** — 임시 구현이 발주 전에 막는다(composition root는 등록 때 `media_streams`를 넘겨야 한다). 실패는 §3-7 「타임라인을 만들지 못함」과 같이 처리한다.
 5. **부를 때마다 recording 타임라인이 새로 생긴다.** 같은 원본이어도 `timeline_id`가 달라져 `COARSE_SEARCH` fingerprint도 달라진다(재전달 · 재시도 때) — 재사용 캐시가 생기면 적중하지 않는다. recording 저장소가 case와 같은 transaction이 아니면 case rollback 뒤 타임라인이 고아로 남는다. recording의 case 타임라인 기능(또는 재사용 조회)이 생기면 함께 풀린다.
+6. **파일 사이에 실제 끊김이 있을 때 경계를 걸친 IncidentClip · 신고용 영상은 확인하지 않았다**(#510 「확인 필요」). #491 이후 A→B 경계를 걸친 clip을 만들 수 있지만, 이어 붙인 타임라인은 끊김을 모르므로 끊긴 두 장면이 이어진 영상처럼 보일 수 있다. RC 입력 제한(위)으로 피하고, 실제 영상으로는 재현하지 않았다.
 
 ### 3-2. 탐지 대상 유형 — 항상 4개 전부
 
