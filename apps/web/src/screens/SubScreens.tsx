@@ -122,7 +122,7 @@ export function PlateCheck(props: {
   const plateOk = PLATE_FORMAT.test(plateInput.replace(/\s/g, ''))
   const plateWrong = plateInput !== '' && !plateOk
   // 도는 job이 없으면 이미지는 더 오지 않는다(번호판을 못 읽으면 plate_preview_ref는 null로 끝난다) — 「준비 중」이라 하지 않는다
-  const pending = props.view.running_jobs.length > 0
+  const pending = props.view.running_jobs.some((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW')
   return (
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">

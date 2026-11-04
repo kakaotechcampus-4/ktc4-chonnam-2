@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react'
+import { useState, type JSX, type ReactNode } from 'react'
 import { Play } from 'lucide-react'
 import type { CandidateVideoPreview } from '../contracts/caseView'
 import { FrameSlot } from './FrameSlot'
@@ -16,6 +16,8 @@ export function CandidateVideo(props: {
   ordinal: number
   src?: string
   poster?: string
+  /** 포스터 이미지가 없을 때 그 자리에 둔다(없으면 포스터 칸을 비운다) */
+  placeholder?: ReactNode
   onRequest?: () => void
   busy?: boolean
 }): JSX.Element {
@@ -32,7 +34,9 @@ export function CandidateVideo(props: {
       : status === 'UNAVAILABLE' || !props.onRequest ? '이 후보의 미리보기를 볼 수 없어요.' : null
   return (
     <div className="candidate-video">
-      <FrameSlot className="candidate-video-poster" src={props.poster ?? null} alt={`${props.ordinal}번 후보 장면`} />
+      <FrameSlot className="candidate-video-poster" src={props.poster ?? null} alt={`${props.ordinal}번 후보 장면`}>
+        {props.placeholder}
+      </FrameSlot>
       <div className="candidate-video-actions">
         {message && <span role={preparing ? 'status' : undefined}>{message}</span>}
         {browserFailed ? (

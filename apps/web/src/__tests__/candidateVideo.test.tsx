@@ -7,6 +7,8 @@ import { SNAPSHOTS } from '../contracts/fixtures'
 import { CandidatesScreen } from '../screens/CandidatesScreen'
 import { FailedScreen } from '../screens/FailedScreen'
 import { NotObservedScreen } from '../screens/NotObservedScreen'
+import { ResultScreen } from '../screens/ResultScreen'
+import { PlateCheck } from '../screens/SubScreens'
 import { selectScreen } from '../state/selectScreen'
 
 const base = SNAPSHOTS.find((s) => s.view.evidence !== null)!.view
@@ -100,4 +102,52 @@ it('keeps playback available when its poster cannot be loaded', () => {
   fireEvent.error(screen.getByRole('img', { name: '1번 후보 장면' }))
   expect(screen.queryByRole('img', { name: '1번 후보 장면' })).toBeNull()
   expect(screen.getByRole('button', { name: '1번 후보 영상 보기' })).toBeTruthy()
+})
+
+// #554 web review (kim1034 · uminshin)
+const clipJob = { job_id: 'clip', kind: 'INCIDENT_CLIP_BUILD', label_key: 'job.incident_clip_build', status: 'RUNNING' } as const
+const previewJob = { job_id: 'preview', kind: 'CANDIDATE_VIDEO_PREVIEW', label_key: 'job.candidate_video_preview', status: 'RUNNING' } as const
+
+it('keeps the thumbnail placeholder text when a preview card has no poster yet', () => {
+  const noThumb = { ...candidate(2), thumb_ref: null }
+  const pending = render(<CandidatesScreen view={{ ...view([candidate(1), noThumb]), running_jobs: [clipJob] }}
+    frameSrc={(ref) => `/frame/${ref}`} onPreview={vi.fn()} />)
+  expect(pending.getByText('미리보기 준비 중')).toBeTruthy()
+  expect(pending.getByRole('button', { name: '2번 후보 영상 보기' })).toBeTruthy()
+  cleanup()
+  const done = render(<CandidatesScreen view={view([candidate(1), noThumb])} frameSrc={(ref) => `/frame/${ref}`} onPreview={vi.fn()} />)
+  expect(done.getByText('미리보기가 없어요')).toBeTruthy()
+})
+
+const awaiting = (status: 'UNAVAILABLE' | 'NOT_REQUESTED'): CaseView => ({
+  ...base, running_jobs: [],
+  candidates: [{ ...candidate(1, status), situation_confirmation: 'NOT_ASKED' }],
+  notices: [...base.notices, { code: 'case.situation_response_pending', severity: 'INFO', blocking: false,
+    message_key: 'notice.situation_response_pending', actions: [] }],
+})
+const result = (v: CaseView) => render(<ResultScreen view={v} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()}
+  onAction={vi.fn()} canRun={() => true} onRespond={vi.fn()} videoSrc={videoSrc} onPreview={vi.fn()} frameSrc={(ref) => `/frame/${ref}`} />)
+
+it('situation card keeps the evidence image when the preview is unavailable', () => {
+  const unavailable = result(awaiting('UNAVAILABLE'))
+  expect(unavailable.queryByText('이 후보의 미리보기를 볼 수 없어요.')).toBeNull()
+  expect(unavailable.getByRole('img', { name: '근거 장면' })).toBeTruthy()
+  cleanup()
+  expect(result(awaiting('NOT_REQUESTED')).getByRole('button', { name: '1번 후보 영상 보기' })).toBeTruthy()
+})
+
+it('plate check does not wait for images while only a preview job runs', () => {
+  const plate = (jobs: CaseView['running_jobs']) =>
+    render(<PlateCheck view={{ ...base, running_jobs: jobs, evidence: base.evidence && { ...base.evidence, preview_ref: null, plate_preview_ref: null } }} onBack={vi.fn()} />)
+  expect(plate([previewJob]).getByText('장면 이미지가 없어요')).toBeTruthy()
+  cleanup()
+  expect(plate([clipJob]).getByText('장면 이미지 준비 중')).toBeTruthy()
+})
+
+it('labels the result video slot as a candidate preview, not the report video', () => {
+  const happy = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  const r = result({ ...happy, candidates: happy.candidates.map((c) => c.selected
+    ? { ...c, video_preview: { status: 'READY' as const, clip_ref: 'clip1' } } : c) })
+  expect(r.container.querySelector('video')?.getAttribute('src')).toBe('/video/clip1')
+  expect(r.getByText('후보 미리보기')).toBeTruthy()
 })

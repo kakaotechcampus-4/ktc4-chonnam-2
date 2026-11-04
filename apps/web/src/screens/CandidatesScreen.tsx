@@ -2,7 +2,7 @@ import type { JSX } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { CandidateAxis } from '../components/CandidateAxis'
 import { CandidateVideo, type CandidatePlayback } from '../components/CandidateVideo'
-import { CandidateCard } from '../components/CandidateCard'
+import { CandidateCard, ThumbPlaceholder } from '../components/CandidateCard'
 import { HintRecall } from '../components/HintRecall'
 import { Panel } from '../components/Panel'
 
@@ -60,6 +60,7 @@ export function CandidatesScreen(props: {
                 <CandidateVideo preview={c.video_preview} ordinal={c.rank ?? i + 1}
                   src={c.video_preview.clip_ref && props.videoSrc ? props.videoSrc(c.video_preview.clip_ref) : undefined}
                   poster={src(c) ?? undefined}
+                  placeholder={<ThumbPlaceholder pending={pending} />}
                   onRequest={props.onPreview ? () => props.onPreview?.(c.candidate_id) : undefined}
                   busy={props.previewBusy} />
               )}

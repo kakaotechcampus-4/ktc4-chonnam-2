@@ -332,7 +332,8 @@ export function ResultScreen(props: {
             이 사건을 이렇게 정리했어요. <b>“{selected.observed}”</b>
           </p>
           {/* 근거 장면은 있을 때만 보인다. case는 사건 장면 준비 전 · 발급 실패 때 null을 준다(#446) */}
-          {candidateVideo ? <div className="res-frame">{candidateVideo}</div> :
+          {/* 미리보기를 볼 수 없는 후보면 근거 장면 이미지만 둔다 — 「볼 수 없어요」가 붙으면 이미지도 못 보는 것처럼 읽힌다(#554 리뷰) */}
+          {candidateVideo && selected?.video_preview?.status !== 'UNAVAILABLE' ? <div className="res-frame">{candidateVideo}</div> :
             <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />}
           {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
           <ul className="res-pending">
@@ -384,11 +385,15 @@ export function ResultScreen(props: {
             <Item label="동영상">
               <div className="res-video">
                 {/* 후보 영상 재생과 신고용 영상 다운로드는 각각의 준비 상태를 따른다 */}
-                <div className="res-frame">
-                  {candidateVideo || <>
-                    <Film size={26} strokeWidth={1.5} aria-hidden />
-                    <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
-                  </>}
+                {/* 왼쪽은 후보 미리보기(Search 구간 그대로)다. 시각을 새긴 신고용 영상은 오른쪽 다운로드로 받는다(#554 리뷰) */}
+                <div className="res-preview">
+                  <div className="res-frame">
+                    {candidateVideo || <>
+                      <Film size={26} strokeWidth={1.5} aria-hidden />
+                      <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                    </>}
+                  </div>
+                  {candidateVideo && <p className="res-preview-label">후보 미리보기</p>}
                 </div>
                 <div className="res-video-side">
                   {video === 'ready' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
