@@ -4,6 +4,9 @@ RECORDING_PARAMETERS = tuple(("recording", scenario, parameter) for scenario, pa
     *(("compatible_release", parameter) for parameter in (
         "new_analysis_source_content", "new_analysis_source_metadata",
         "new_incident_clip_content", "new_incident_clip_metadata",
+        "default_api_content", "default_api_metadata",
+        "default_worker_analysis_content", "default_worker_analysis_metadata",
+        "default_worker_incident_content", "default_worker_incident_metadata",
         "replay_analysis_source", "replay_incident_clip", "precision_content", "precision_metadata",
         "atomic_link", "packet", "facade_rollback", "attach_legacy", "attach_chunked", "corrupt_replay", "rr_current_legacy", "rr_current_chunked", "rr_current_metadata",
         "revision_analysis_source", "revision_incident_clip", "job_e50_bridge_final",

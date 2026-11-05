@@ -228,3 +228,7 @@ coarse/fine·base64/JSON, Case 대기/timeout·발주/병합, 실제 ingress bod
 
 기존 `recording_0001` seed→upgrade 데이터 보존은 명시적으로 남겼다. 현재 head 검사와 실패 주입 revision의
 부모만 `recording_0002`로 정합화했다. 과거 failure/downgrade 의미를 일괄 head 검사로 대체하지 않았다.
+
+## 고정 B 이후 최종 writer C 준비
+
+고정 B `ce0750d5a3317ad1c810783d67f8a05ba88bce08`의 reader·exact 비교·표현 보존·SAVEPOINT·RR을 유지하며 현재 C의 기본 신규 쓰기를 청크/envelope로 복귀한다. B는 작업 tree가 아닌 실제 고정 source로 대조한다. 현재 C release SHA/image와 실제 DB·원격 CI 성공은 아직 없으며 NOT_RUN이다. 실제 API/Worker 기본 경로 검사·전이 범위·검증 기록·Coarse600/종료 후150과 rollback 조건은 [C 준비 기록](../../runtime/final-writer-c.md)을 따른다.

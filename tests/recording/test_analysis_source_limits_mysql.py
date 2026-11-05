@@ -18,10 +18,10 @@ db = _db
 @pytest.mark.parametrize("write_format", ["legacy", "chunked"])
 def test_analysis_limit_insert_and_caller_transaction(db, tmp_path, mode, write_format):
     def adapter(conn, root):
-        # Keep B's real default facade path and C's explicit chunked obligation.
-        if write_format == "legacy":
+        # C exercises the real default facade; legacy remains an explicit policy.
+        if write_format == "chunked":
             return default_adapter(conn, root)
-        return MySQLRecordingRepository(conn, storage_root=root, prepared_write_format="chunked")
+        return MySQLRecordingRepository(conn, storage_root=root, prepared_write_format="legacy")
 
     engine, root = db
     path = root / "synthetic.avi"

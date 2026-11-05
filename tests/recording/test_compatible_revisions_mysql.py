@@ -1,4 +1,4 @@
-"""Real e50 -> B -> pinned C -> B, in independent Python processes on one test DB."""
+"""Pinned e50 -> pinned B -> current C -> pinned B on one disposable test DB."""
 import base64
 import io
 import json
@@ -12,16 +12,17 @@ import pytest
 
 from test_prepared_metadata_mysql import media, snapshot
 from test_ownership_reads import MP4
+from daesingo.recording.mysql_repository import _key
 
 pytestmark = pytest.mark.mysql
 ROOT = Path(__file__).parents[2]
 REVISIONS = {'e50': 'e50b2976ef4edc3a030cfc5b03a5206340dd917b',
-             'final': 'ceb6f5fa010f1f541179e9d3ab95aecd5a82d3cb'}
+             'bridge': 'ce0750d5a3317ad1c810783d67f8a05ba88bce08'}
 
 
 @pytest.fixture(scope='session')
 def releases(tmp_path_factory):
-    roots = {'bridge': ROOT}
+    roots = {'final': ROOT}
     prepared = os.environ.get('DAESINGO_COMPAT_SNAPSHOT_ROOT')
     for name, sha in REVISIONS.items():
         if prepared:
@@ -72,6 +73,7 @@ def test_actual_revisions_preserve_media_and_schema(mysql_engine, tmp_path, rele
     assert invoke(releases, 'bridge', url, root, 'migrate')['ok']
     with mysql_engine.connect() as conn:
         assert conn.exec_driver_sql('SELECT version_num FROM recording_alembic_version').scalar_one() == 'recording_0002'
+    assert invoke(releases, 'final', url, root, 'migrate')['ok']
     for revision in ('bridge', 'final', 'bridge', 'e50'):
         result = invoke(releases, revision, url, root, 'read', **args)
         assert result['ok'], result
@@ -81,17 +83,55 @@ def test_actual_revisions_preserve_media_and_schema(mysql_engine, tmp_path, rele
     args['media'][ref_field] += '-b'
     assert invoke(releases, 'bridge', url, root, 'write', **args)['ok']
     assert invoke(releases, 'e50', url, root, 'read', **args)['result']['content'] == args['content']
+    with mysql_engine.connect() as conn:
+        raw, blob = conn.exec_driver_sql(
+            'SELECT payload,content FROM recording_entry WHERE kind=%s AND entry_key=%s',
+            (kind, _key(args['media'][ref_field])),
+        ).one()
+        assert json.loads(raw) == args['media'] and blob == MP4
+        before_legacy = snapshot(conn)
+    # Current C must replay the real B row without converting its representation.
+    assert invoke(releases, 'final', url, root, 'write', **args)['ok']
+    assert invoke(releases, 'bridge', url, root, 'read', **args)['result']['content'] == args['content']
+    with mysql_engine.connect() as conn:
+        assert snapshot(conn) == before_legacy
     # Metadata-only B registration is a separate write path used by facades.
     args['media'][ref_field] += '-metadata'
     assert invoke(releases, 'bridge', url, root, 'write', metadata_only=True, **args)['ok']
     metadata = invoke(releases, 'e50', url, root, 'read', **args)
     assert metadata['ok'] and metadata['result'] == {'media': args['media'], 'content': None}
+    with mysql_engine.connect() as conn:
+        before_metadata = snapshot(conn)
+    assert invoke(releases, 'final', url, root, 'write', metadata_only=True, **args)['ok']
+    with mysql_engine.connect() as conn:
+        assert snapshot(conn) == before_metadata
     # C creates a new exact-float envelope/chunk ref. B must never rewrite it.
     args['media'] = media(kind).model_dump(mode='json')
     args['media'][ref_field] += '-c'
+    assert invoke(releases, 'final', url, root, 'write', metadata_only=True, **args)['ok']
+    with mysql_engine.connect() as conn:
+        raw = conn.exec_driver_sql(
+            'SELECT payload FROM recording_entry WHERE kind=%s AND entry_key=%s',
+            (kind, _key(args['media'][ref_field])),
+        ).scalar_one()
+        assert set(json.loads(raw)) == {'__recording_prepared_metadata__'}
+        before_metadata = snapshot(conn)
+    assert invoke(releases, 'bridge', url, root, 'read', **args)['result'] == {'media': args['media'], 'content': None}
+    assert invoke(releases, 'bridge', url, root, 'write', metadata_only=True, **args)['ok']
+    with mysql_engine.connect() as conn:
+        assert snapshot(conn) == before_metadata
     assert invoke(releases, 'final', url, root, 'write', **args)['ok']
     with mysql_engine.connect() as conn:
+        assert conn.exec_driver_sql(
+            'SELECT content FROM recording_entry WHERE kind=%s AND entry_key=%s',
+            (kind, _key(args['media'][ref_field])),
+        ).scalar_one() is None
+        assert conn.exec_driver_sql(
+            'SELECT COUNT(*) FROM recording_media_chunk WHERE kind=%s AND entry_key=%s',
+            (kind, _key(args['media'][ref_field])),
+        ).scalar_one() > 0
         before = snapshot(conn)
+    assert invoke(releases, 'bridge', url, root, 'write', metadata_only=True, **args)['ok']
     assert invoke(releases, 'bridge', url, root, 'write', **args)['ok']
     assert invoke(releases, 'bridge', url, root, 'read', **args)['result']['media'] == args['media']
     with mysql_engine.connect() as conn:
