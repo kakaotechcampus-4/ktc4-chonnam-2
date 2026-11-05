@@ -65,8 +65,15 @@
 
 [#554](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554) 리뷰에서 나온 것이다. 이 문서에서는 아직 정하지 않는다.
 
-- **미리보기가 쓰는 stream 기준(case).** `request_preview`는 case의 모든 원본 VIDEO stream을 고정해 `resolve_span`에 넘긴다. 신고용 clip은 Fine이 고른 stream만 쓴다. 전방 · 후방이 같이 올라온 case라면 둘이 다른 화면일 수 있다. 정철원님에게 `resolve_span` 동작을 확인 요청한 상태다.
-- **recording · API(정철원):** `open_incident_video`의 `OSError` 500, Range 요청마다 share lock · MP4 전체 메모리 적재, 세대가 바뀐 뒤 도착한 preview job의 실패 종류(`RUNTIME_HANDLER_ERROR`, [서어진 실제 통합 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554#issuecomment-6629742662) 발견 2).
+- **미리보기가 쓰는 stream 기준(case) — 정함(2026-11-05 서어진).** 미리보기는 Coarse 후보 구간을 보여 주는 것이고, 다중 카메라를 지원한다고 주장하지 않는다. 지금 case 타임라인에서는 미리보기의 stream 목록이 곧 한 카메라 체인이다.
+  - 원본 하나에 VIDEO가 2개 이상이면 `video_stream_ref`가 없고, 타임라인을 만들기 전에 막힌다(`timeline_source.py`, spec §3-1 한계 4).
+  - 원본마다 placement 하나에 ref 하나를 둔다. `request_preview`는 그 ref 전부를 넘기므로 Recording resolver의 「placement마다 VIDEO ref 하나」를 늘 만족한다([정철원 확인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554), 11/4).
+  - 전방 · 후방을 별도 파일로 올리면 앞뒤로 이어 붙는다(spec §3-1 한계 1). Fine · 신고용 clip도 같은 타임라인이라 미리보기만의 한계가 아니다. 신고용 clip의 Fine provenance 대조는 Fine 이후에만 할 수 있고, 미리보기는 Fine 전이라 하지 않는다.
+  - #510 Recording 정렬로 같은 시각에 여러 카메라가 놓이게 되면, Case가 고른 한 카메라 체인을 발주 입력 · 현재성 검사 · handler에 함께 넘기도록 다시 본다.
+- **recording · API:**
+  - `open_incident_video`의 `OSError` 500 — 고침(`4f343671`): 파일 부재 · 권한 오류도 경로를 숨긴 `UNAVAILABLE` → HTTP 404 `http.ref_unavailable`.
+  - 세대가 바뀐 뒤 도착한 preview job — 고침: `FAILED / RUNTIME_PREVIEW_NOT_CURRENT`로 기록해 진짜 오류(`RUNTIME_HANDLER_ERROR`)와 구분한다. 같은 세대 안의 입력 불일치는 그대로 `RUNTIME_HANDLER_ERROR`다([서어진 실제 통합 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554#issuecomment-6629742662) 발견 2).
+  - Range 요청마다 share lock 안에서 MP4 전체 적재 — 남음. 동시 Range와 같은 Case command · T2의 완료 · 잠금 해제, 오류 시 연결 반환을 실제 MySQL에서 확인해야 한다.
 
 ## 6. 검증
 
