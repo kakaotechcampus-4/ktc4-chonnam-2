@@ -25,8 +25,8 @@ EVENT = {
 }
 
 
-# 10초 타임라인의 마감 — 150 + 30 + 준비 여유 10 × 2
-DEADLINE_SEC = 200
+# 10초 타임라인의 마감 — 600(11/5 E2E 한정 탐색 예산, §3-9) + 30 + 준비 여유 10 × 2
+DEADLINE_SEC = 650
 
 
 class FakeTimelines:
@@ -91,7 +91,7 @@ def _deadline_sec(store: CaseStore, case_id: str) -> float:
 
 def test_deadline_is_requested_at_plus_scope_latency_queue_margin_and_preparation():
     store, case_id = _searching()
-    assert _deadline_sec(store, case_id) == 150 + 30 + 10 * 2 == DEADLINE_SEC
+    assert _deadline_sec(store, case_id) == 600 + 30 + 10 * 2 == DEADLINE_SEC
 
 
 def test_deadline_follows_the_scope_budget():
@@ -101,10 +101,19 @@ def test_deadline_follows_the_scope_budget():
 
 def test_long_input_gets_preparation_allowance_without_raising_the_search_budget():
     # #452 — Recording 준비 시간이 마감 안에 든다. 26분 입력은 준비 여유 26분 × 2를 더 기다린다.
-    store, case_id = _searching(duration_ms=1_560_000)
+    store, case_id = _searching(duration_ms=1_560_000, budget=InitialSearchBudget(max_latency_sec=150.0))
     assert _deadline_sec(store, case_id) == 150 + 30 + 1560 * 2
     scope = next(iter(store.get_case(case_id).analysis_scopes.values()))
-    assert scope["budget"]["max_latency_sec"] == 150  # Search 실행 상한은 그대로다
+    assert scope["budget"]["max_latency_sec"] == 150  # 준비 여유는 Search 실행 상한을 올리지 않는다
+
+
+def test_e2e_search_budget_still_fits_under_the_sixty_minute_cap():
+    # #452 11/5 E2E — 탐색 예산 600초면 26분 입력(1,584초)은 60분 상한에 걸린다. 발주 → Search 진입이
+    # 3600 − 630 = 2970초 안이어야 Search 600초를 다 쓴다(§3-9).
+    store, case_id = _searching(duration_ms=1_584_173)
+    assert _deadline_sec(store, case_id) == 3600
+    scope = next(iter(store.get_case(case_id).analysis_scopes.values()))
+    assert scope["budget"]["max_latency_sec"] == 600
 
 
 def test_wait_is_capped_at_sixty_minutes():

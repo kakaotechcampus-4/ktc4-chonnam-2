@@ -85,7 +85,7 @@ def test_initial_search_scope_shape():
         {"kind": "TIMELINE_RELATIVE", "timeline_ref": {"timeline_id": "tl_1", "revision": 1}, "start_ms": 0, "end_ms": 20_000}
     ]
     assert scope["target_event_types"] == list(a.TARGET_EVENT_TYPES)
-    assert scope["budget"] == {"max_cost_krw": 1000.0, "max_latency_sec": 150.0}
+    assert scope["budget"] == {"max_cost_krw": 1000.0, "max_latency_sec": 600.0}
     assert job["input_fingerprint"] == a.fingerprint(
         {"kind": "COARSE_SEARCH", "scope": {k: v for k, v in scope.items() if k != "scope_id"}}
     )
