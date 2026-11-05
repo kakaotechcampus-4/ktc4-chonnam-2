@@ -45,8 +45,8 @@
 ## 관찰
 
 - Caddy의 `header Cache-Control "no-store"`가 API 값에 덧붙어 응답이 `no-store, private, no-store`가 된다. 캐시 금지 의미는 유지되므로 바꾸지 않았다.
-- **저장 bytes 손상 뒤의 READY:** clip 내용이 소실 · 변조돼도 preview 상태는 Job 결과에서 투영되므로 READY로 남는다. 사용자는 「영상을 재생할 수 없어요」만 보고, 재요청은 READY라 새 job을 만들지 않는다. 운영 저장소 손상은 드물지만 계획의 「가짜 READY 없음」 기준에는 걸린다. case 쪽 판단이 필요하다.
-- **세대가 바뀐 뒤 거부된 preview:** 실패 종류가 `RUNTIME_HANDLER_ERROR`라 진짜 오류와 로그에서 구분되지 않는다. 동작(디코드 전 거부, 화면 격리)은 맞다.
+- **저장 bytes 손상 뒤의 READY:** clip 내용이 소실 · 변조돼도 preview 상태는 Job 결과에서 투영되므로 READY로 남는다. 사용자는 「영상을 재생할 수 없어요」만 보고, 재요청은 READY라 새 job을 만들지 않는다. 운영 저장소 손상은 드물지만 계획의 「가짜 READY 없음」 기준에는 걸린다. case 쪽 판단이 필요하다. → 후속: READY 유지로 정함(`0aad403b`, `decisions/candidate-video-preview.md` §2-1).
+- **세대가 바뀐 뒤 거부된 preview:** 실패 종류가 `RUNTIME_HANDLER_ERROR`라 진짜 오류와 로그에서 구분되지 않는다. 동작(디코드 전 거부, 화면 격리)은 맞다. → 후속: `RUNTIME_PREVIEW_NOT_CURRENT`로 구분(`68bd8886`).
 - 합성 원본은 1초 · 64×48이라 미리보기는 0.2초다. 길이 · 화질 판단에는 쓰지 않는다.
 - 이 브랜치의 Python 전체 회귀(api · case · worker · recording · readout · deploy)는 Windows에서 83 failed. 같은 83개가 깨끗한 develop에서도 실패한다(deploy 쉘 · FFmpeg export). 새 실패는 없다.
 

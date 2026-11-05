@@ -61,9 +61,9 @@
 | 신고용 clip(`INCIDENT_CLIP_BUILD`)을 재사용한다 | 신고용 clip은 선택 후보 하나에 대해 Fine 뒤에만 만들어진다(`incident-clip-observation-input.md`). 고르기 전에 여러 후보를 비교하는 데 쓸 수 없다. 신고용 영상(`REPORT_VIDEO_EXPORT`)은 상황 응답 뒤에 시각을 새겨 따로 만드는 다운로드 파일이라 더 늦다(`report-video-export.md`). |
 | 후보 전체로 넓힌다 | 다른 후보 화면용 썸네일을 상위 3개로 정한 #523과 범위를 맞춘다. 4위 이하로 보충하지 않는 것도 썸네일과 같다. |
 
-## 5. 남은 확인
+## 5. 리뷰 후속
 
-[#554](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554) 리뷰에서 나온 것이다. 이 문서에서는 아직 정하지 않는다.
+[#554](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554) 리뷰에서 나온 것이다. 정한 것 · 고친 것 · 남은 것을 항목마다 적는다.
 
 - **미리보기가 쓰는 stream 기준(case) — 정함(2026-11-05 서어진).** 미리보기는 Coarse 후보 구간을 보여 주는 것이고, 다중 카메라를 지원한다고 주장하지 않는다. 지금 case 타임라인에서는 미리보기의 stream 목록이 곧 한 카메라 체인이다.
   - 원본 하나에 VIDEO가 2개 이상이면 `video_stream_ref`가 없고, 타임라인을 만들기 전에 막힌다(`timeline_source.py`, spec §3-1 한계 4).
@@ -72,7 +72,7 @@
   - #510 Recording 정렬로 같은 시각에 여러 카메라가 놓이게 되면, Case가 고른 한 카메라 체인을 발주 입력 · 현재성 검사 · handler에 함께 넘기도록 다시 본다.
 - **recording · API:**
   - `open_incident_video`의 `OSError` 500 — 고침(`4f343671`): 파일 부재 · 권한 오류도 경로를 숨긴 `UNAVAILABLE` → HTTP 404 `http.ref_unavailable`.
-  - 세대가 바뀐 뒤 도착한 preview job — 고침: `FAILED / RUNTIME_PREVIEW_NOT_CURRENT`로 기록해 진짜 오류(`RUNTIME_HANDLER_ERROR`)와 구분한다. 같은 세대 안의 입력 불일치는 그대로 `RUNTIME_HANDLER_ERROR`다([서어진 실제 통합 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554#issuecomment-6629742662) 발견 2).
+  - 세대가 바뀐 뒤 도착한 preview job — 고침(`68bd8886`): `FAILED / RUNTIME_PREVIEW_NOT_CURRENT`로 기록해 진짜 오류(`RUNTIME_HANDLER_ERROR`)와 구분한다. 같은 세대 안의 입력 불일치는 그대로 `RUNTIME_HANDLER_ERROR`다([서어진 실제 통합 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554#issuecomment-6629742662) 발견 2).
   - Range 요청마다 share lock 안에서 MP4 전체 적재 — 남음. 동시 Range와 같은 Case command · T2의 완료 · 잠금 해제, 오류 시 연결 반환을 실제 MySQL에서 확인해야 한다.
 
 ## 6. 검증
