@@ -1,6 +1,6 @@
 # case 대기 timeout — 타이머 없이 마감을 계산하고, 늦은 결과는 반영하지 않는다
 
-> **상태: 결정 · 구현(탐색 `COARSE_SEARCH`만)** · 결정일 2026-10-13 · 준비 여유 추가 2026-11-04(#452, §3-8 · 잠정값 PM 확인 대기) · 갱신 2026-10-26(web · Runtime 확인 반영) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-9(`../design-refinement-w7-baseline.md`), `timeout-fallback.md`(잠정값 · 「진행 중인 Job은 강제 취소하지 않는다」), `stop-analysis.md`(같은 guard), `running-jobs-derivation.md`(정산 사유 `STOPPED_WAITING`), Runtime Tech Spec §12.2 · Provisional Baseline §3.2(RD-04b), #291(`runtime.retry.after_case_stopped_count` 의미)
+> **상태: 결정 · 구현(탐색 `COARSE_SEARCH`만)** · 결정일 2026-10-13 · 준비 여유 추가 2026-11-04(#452, §3-8 · 계수 2.0 · 상한 60분 PM 잠정 승인) · 탐색 예산 E2E 한정 예외 2026-11-05(#452, §3-9 · 일시) · 갱신 2026-10-26(web · Runtime 확인 반영) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-9(`../design-refinement-w7-baseline.md`), `timeout-fallback.md`(잠정값 · 「진행 중인 Job은 강제 취소하지 않는다」), `stop-analysis.md`(같은 guard), `running-jobs-derivation.md`(정산 사유 `STOPPED_WAITING`), Runtime Tech Spec §12.2 · Provisional Baseline §3.2(RD-04b), #291(`runtime.retry.after_case_stopped_count` 의미)
 > 「얼마나 기다린 뒤 부분 결과로 넘어가는가」와 「그때 어떤 job을 유지 · 취소하는가」는 case 소유다(`timeout-fallback.md`). 실행 상한 값(`AnalysisScope.budget.max_latency_sec`)은 그 문서와 #149 A안이 정했고 여기서 다시 정하지 않는다.
 
 ## 1. 목표 · 범위
@@ -25,7 +25,7 @@
 ## 3. 결정
 
 1. **타이머를 두지 않는다. case 행을 읽는 쪽이 마감을 계산한다.** CaseView 조립은 읽기라 저장하지 않고, case 행을 잠그는 command · T2 반영이 `STOPPED_WAITING`을 남긴다. Runtime에 새 주기 작업이나 port를 요청하지 않는다. T2가 끝내 오지 않아도(재시도가 끝난 `STALE`은 case에 전달되지 않는다 — Runtime worker README) 화면은 매 조회마다 같은 계산으로 멈춘 상태를 보인다.
-2. **마감 = 발주 시각 + 실행 상한 + 큐 대기 여유 30초.** 실행 상한은 그 job의 AnalysisScope `budget.max_latency_sec`(지금 150초)이다. 여유 30초는 단서 구조화 대기(`start-analysis.md` §3-5)와 같다. scope를 모르는 job에는 마감을 지어내지 않는다. 기준 시각은 `requested_at`이라 큐 대기도 마감에 든다 — 큐가 밀려 탐색이 시작되지 못하는 것도 사용자에게는 같은 기다림이다.
+2. **마감 = 발주 시각 + 실행 상한 + 큐 대기 여유 30초.** 실행 상한은 그 job의 AnalysisScope `budget.max_latency_sec`(일반 운영값 150초, 11/5 E2E 동안만 600초 — §3-9)이다. 여유 30초는 단서 구조화 대기(`start-analysis.md` §3-5)와 같다. scope를 모르는 job에는 마감을 지어내지 않는다. 기준 시각은 `requested_at`이라 큐 대기도 마감에 든다 — 큐가 밀려 탐색이 시작되지 못하는 것도 사용자에게는 같은 기다림이다.
 3. **마감 뒤 도착한 결과는 반영하지 않는다**(`NOT_APPLIED(STOPPED_WAITING)`). 정산된 job의 결과는 받지 않는다는 기존 guard(`stop-analysis.md` §3-7) 그대로다. #291에서 합의한 `runtime.retry.after_case_stopped_count`(attempt ≥ 2 ∧ `NOT_APPLIED(STOPPED_WAITING)`)가 이 경로를 센다. timeout 화면에서 결과가 저절로 바뀌지 않고, 사용자는 「다시 찾기」로 다시 시작한다.
 4. **실행은 취소하지 않는다.** `CommandResult.cancelled_job_ids`에 넣지 않는다 — `timeout-fallback.md` 「진행 중인 Job은 강제 취소하지 않고, case가 기다리는 것만 멈춘다」. 사용자 요청이 아니라 `case_rev`도 올리지 않는다(정산 기록은 `case_rev`와 무관, `running-jobs-derivation.md`).
 5. **화면은 중단과 같은 모양이다.** stage는 `SEARCHING`, `coarse_search`는 `PARTIAL`(B§10 불변조건 5 「사용자 중단 · case timeout처럼 case가 기다리기를 멈춘 job」). 상태는 저장하지 않고 계산한다(`CaseAggregate.analysis_timed_out` — 가장 나중 탐색 job의 정산 사유가 `STOPPED_WAITING`).
@@ -33,9 +33,17 @@
 7. **command는 잠근 직후 정산한다.** 사용자가 본 timeout 화면의 「다시 찾기」(`RUN_NOTICE_ACTION`)가 같은 기준으로 검사되고, 성공하면 그 정산도 저장된다. 마감이 지난 뒤 `STOP_ANALYSIS`는 기다리는 탐색 job이 없어 `not_allowed`다.
 
 8. **긴 입력은 준비 여유를 더 기다린다(2026-11-04, [#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)).** 마감 기산점이 발주 시각이라 Recording 분석 영상 준비도 마감 안에 든다(§4). EC2에서 120초 입력의 준비만 177.61초였고(#561), 26분 입력은 Search가 시작되기 전에 마감이 지난다. 그래서 마감에 **분석 범위 길이(그 job AnalysisScope의 `TIMELINE_RELATIVE` 범위 합) × 2**를 더하고, 전체 대기는 **60분**을 넘지 않게 한다(`domain.SEARCH_WAIT_PREP_FACTOR` · `SEARCH_WAIT_MAX_SEC`).
-   - **Search 실행 상한(`budget.max_latency_sec` 150초)은 그대로다.** 이 값은 Search `RunDeadline`도 정한다(#149 A안). 늘어난 시간은 Search가 아니라 준비 시간이라 case 대기에만 더한다.
-   - **잠정값.** 계수 2.0은 EC2 1회 측정(약 1.5배)에 여유를 둔 값, 60분은 26분 입력(약 1560 × 2 + 180 ≈ 55분)이 들어가는 값이다. PM 확인 대기([#452 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6625340748)). 배포 머신 26분 실측이 나오면 다시 본다.
+   - **Search 실행 상한(`budget.max_latency_sec` 150초)은 그대로다**(11/5 E2E 한정 예외는 §3-9). 이 값은 Search `RunDeadline`도 정한다(#149 A안). 늘어난 시간은 Search가 아니라 준비 시간이라 case 대기에만 더한다.
+   - **잠정값.** 계수 2.0은 EC2 1회 측정(약 1.5배)에 여유를 둔 값, 60분은 26분 입력(약 1560 × 2 + 180 ≈ 55분)이 들어가는 값이다. PM이 11/5 E2E용으로 잠정 승인했다([#564 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/564)). 일반 운영값으로 둘지는 미정이다. 배포 머신 26분 실측이 나오면 다시 본다.
    - 짧은 입력은 거의 같다(10초 입력 180 → 200초). 상한에 걸려도 지금처럼 `case.analysis_timed_out`으로 끝난다 — 무한 대기는 없다.
+
+9. **11/5 26분 E2E 동안만 첫 탐색 예산을 600초로 둔다(2026-11-05, [#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)). 일시 예외다.** EC2에서 15개 영상(1,584초)의 Coarse 준비만 173.77초가 걸려 Search `RunDeadline` 150초로는 완주할 수 없다. PM이 「통제된 E2E 검증에 한해 Search 실행 상한을 유한하게 늘린다」를 잠정 승인했고, Search가 600초(준비 220 + provider 약 170 + 재시도 1회 약 175초)를 제안했다.
+   - **값을 두는 곳:** `analysis_start.InitialSearchBudget.max_latency_sec` 기본값. 이 값은 첫 탐색 · 「다시 찾기」 · 단서 수정 재탐색의 `COARSE_SEARCH` scope에만 들어간다. Fine은 `observation.FINE_MAX_LATENCY_SEC`(70초)를 따로 써서 바뀌지 않는다.
+   - **설정값으로 열지 않는다.** 주입하려면 Runtime 소유 composition root(API · Worker)와 설정 키를 같이 바꿔야 하고, 두 경로가 같은 값을 읽는지도 따로 검증해야 한다. 일시 예외에 쓰기에는 범위가 크다.
+   - **그 revision에서는 짧은 입력도 600초다.** 길이에 따라 주지 않는다. Search가 끝나면 바로 반영되므로 실제로 늘어나는 것은 실패할 때의 최대 대기뿐이다. 통제된 E2E 환경이라 받아들인다.
+   - **60분 상한과의 관계:** 26분 입력은 `600 + 30 + 1,584 × 2`가 상한 3,600초에 걸린다. 발주 → Search 진입(Recording 준비 + 큐)이 **2,970초 안**이어야 Search 600초를 다 쓴다. EC2 하네스의 같은 구간은 2,448초였다(시험용 검증 포함, 제품 값 아님).
+   - **늦은 결과 · 재실행:** §3-3 그대로 반영하지 않는다. Runtime STALE 재실행은 Recording부터 다시 할 수 있어 60분 안에 끝난다는 근거가 없다 — 그 경우 `case.analysis_timed_out`으로 끝나고, 이것을 성공 경로로 세지 않는다.
+   - **되돌리기:** E2E 결과가 나오면 150초로 되돌린다. 긴 입력의 탐색 예산을 정식으로 정한다면, 하나의 값을 늘리는 대신 범위 길이에 따라 정하는 방식을 PM · Search와 다시 본다.
 
 ## 4. 알려진 한계
 
@@ -58,7 +66,7 @@
 | `get_view`가 정산을 저장 | 읽기 경로가 쓰기 transaction을 갖게 된다. 계산이 같으므로 저장은 다음 쓰기에 맡겨도 화면이 같다 |
 | `case.analysis_stopped`를 그대로 쓴다 | 사용자가 누르지 않았는데 「중단했다」고 말하게 된다 |
 | timeout 때 Runtime 중단 요청 | `timeout-fallback.md`가 이미 하지 않기로 했다 — 비용이 나간 호출을 버리지 않는다 |
-| 긴 입력에 탐색 예산(`max_latency_sec`)을 늘린다(#452) | Search 실행 상한까지 같이 늘어난다(#149 A안 단일 권위). 늘어난 시간은 준비 시간이라 Search 합의 없이 바꿀 이유가 없다 |
+| 긴 입력에 탐색 예산(`max_latency_sec`)을 늘린다(#452) | Search 실행 상한까지 같이 늘어난다(#149 A안 단일 권위). 늘어난 시간은 준비 시간이라 Search 합의 없이 바꿀 이유가 없다. 11/5 E2E는 Search 준비 자체가 150초를 넘어 PM · Search 합의로 일시 예외를 둔다(§3-9) |
 | 마감을 설정값(env)으로 열어 배포가 넣는다(#452) | 값의 소유가 흐려지고, 짧은 입력도 같은 시간을 기다리게 된다 |
 | 마감 기준을 실행 시작 시각으로 | Runtime 실행 기록이 있어야 하고, 시작조차 못 한 job(큐 적체 · Worker 부재)은 끝없이 기다린다 |
 
