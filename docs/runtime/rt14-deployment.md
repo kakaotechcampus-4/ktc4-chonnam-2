@@ -184,6 +184,8 @@ mysql UID 0400이다. Docker daemon이 파일을 bind하고 컨테이너가 정�
 
 ## 5. CI publish와 SSM 실행
 
+고정 과거 revision의 현재 publish 입력·제어/target 분리·검증 순서는 [고정 revision publish](rt14-fixed-revision-publish.md)를 따른다. 아래 기존 운영 준비와 deploy/rollback 계약은 유지하며, GITHUB_SHA-only publish 설명은 그 변경 전 경로다.
+
 일반 regression/mysql/test CI와 required-check 의미는 유지한다. 두 새 workflow는
 `workflow_dispatch`만 사용한다. OIDC 권한은 해당 job에만 있고 PR/fork에서 실행하지 않는다.
 checkout v4.3.1을 공식 tag ref로 확인한 commit에 pin했다. credential action은 사용하지 않는다.

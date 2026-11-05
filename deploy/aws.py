@@ -3,12 +3,15 @@
 OIDC stays in this process; temporary credentials are not written to GITHUB_ENV.
 AWS CLI is used with bounded captured output. No AWS call at import time.
 """
+import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import urllib.parse
@@ -17,6 +20,7 @@ import urllib.request
 REPOSITORY = "kakaotechcampus-4/ktc4-chonnam-2"
 REPOSITORY_ID = "1340154683"
 REGION = "ap-northeast-2"
+PUBLISH_IMAGE = "daesingo-rt14:verified"
 
 
 class DeployError(Exception):
@@ -151,13 +155,133 @@ def oidc(env):
     return authenticated
 
 
+def publish_revision(env):
+    revision = env.get("PUBLISH_REVISION", "")
+    require(bool(re.fullmatch(r"[0-9a-f]{40}", revision)), "publish_revision_required")
+    return revision
+
+
+def publish_paths(env):
+    root = Path(env["RUNNER_TEMP"]).resolve(strict=True)
+    return root / "rt14-publish-source", root / "rt14-publish.json"
+
+
+def tree_files(revision):
+    result = {}
+    for item in command(["git", "ls-tree", "-rz", revision]).split("\0"):
+        if not item:
+            continue
+        metadata, name = item.split("\t", 1)
+        mode, kind, digest = metadata.split()
+        require(kind == "blob" and mode in {"100644", "100755"}, "unsupported_source_entry")
+        result[name] = digest
+    require(bool(result), "empty_publish_source")
+    return result
+
+
+def source_files(source):
+    require(source.is_dir() and not source.is_symlink(), "publish_source_missing")
+    result = {}
+    for path in source.rglob("*"):
+        require(not path.is_symlink() and (path.is_dir() or path.is_file()), "unsafe_publish_source")
+        if path.is_file():
+            digest = hashlib.sha1(b"blob " + str(path.stat().st_size).encode() + b"\0")
+            with path.open("rb") as stream:
+                for block in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(block)
+            result[path.relative_to(source).as_posix()] = digest.hexdigest()
+    return result
+
+
+def archive_revision(revision):
+    try:
+        result = subprocess.run(["git", "archive", "--format=tar", revision],
+            capture_output=True, timeout=60, check=False)
+        require(result.returncode == 0, "publish_archive_failed")
+        return result.stdout
+    except (OSError, subprocess.SubprocessError):
+        raise DeployError("publish_archive_failed") from None
+
+
+def prepare_publish(env):
+    revision = publish_revision(env)
+    control = env["GITHUB_SHA"]
+    require(command(["git", "rev-parse", "HEAD"]).strip() == control, "control_checkout_mismatch")
+    require(command(["git", "cat-file", "-t", revision]).strip() == "commit", "target_commit_missing")
+    require(command(["git", "cat-file", "-t", revision + "^{tree}"]).strip() == "tree", "target_tree_missing")
+    command(["git", "merge-base", "--is-ancestor", revision, control])
+    quality_gate(env)
+    quality_gate(env, revision=revision)
+    tree = command(["git", "rev-parse", revision + "^{tree}"]).strip()
+    require(bool(re.fullmatch(r"[0-9a-f]{40}", tree)), "target_tree_missing")
+    files = tree_files(revision)
+    source, record = publish_paths(env)
+    require(not source.exists() and not record.exists(), "publish_state_exists")
+    source.mkdir(mode=0o700)
+    with tarfile.open(fileobj=io.BytesIO(archive_revision(revision)), mode="r:") as archive:
+        for member in archive.getmembers():
+            require(member.isfile() or member.isdir(), "unsafe_publish_archive")
+            require((source / member.name).resolve().is_relative_to(source), "unsafe_publish_archive")
+        archive.extractall(source, filter="data")
+    require(source_files(source) == files, "source_tree_mismatch")
+    data = {"control_revision": control, "target_revision": revision, "target_tree": tree, "files": files}
+    fd = os.open(record, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "w") as stream:
+        json.dump(data, stream)
+    print("rt14: publish_source_verified revision=" + revision + " tree=" + tree)
+
+
+def publish_state(env, *, image=False):
+    revision = publish_revision(env)
+    source, record = publish_paths(env)
+    require(not record.is_symlink(), "unsafe_publish_state")
+    data = json.loads(record.read_text())
+    require(data["control_revision"] == env["GITHUB_SHA"] and data["target_revision"] == revision,
+            "publish_context_mismatch")
+    require(data["target_tree"] == command(["git", "rev-parse", revision + "^{tree}"]).strip(),
+            "publish_context_mismatch")
+    require(data["files"] == tree_files(revision) == source_files(source), "source_tree_mismatch")
+    if image:
+        require(bool(re.fullmatch(r"sha256:[0-9a-f]{64}", data.get("image_id", ""))), "publish_image_missing")
+    return data
+
+
+def inspect_publish_image(revision, image):
+    items = json.loads(command(["docker", "image", "inspect", image]))
+    require(len(items) == 1, "publish_image_mismatch")
+    info = items[0]
+    require(bool(re.fullmatch(r"sha256:[0-9a-f]{64}", info.get("Id", ""))), "publish_image_mismatch")
+    require(info.get("Os") == "linux" and info.get("Architecture") == "amd64", "publish_platform_mismatch")
+    require(info["Config"].get("Labels", {}).get("org.opencontainers.image.revision") == revision,
+            "publish_revision_mismatch")
+    values = [value for value in info["Config"].get("Env", []) if value.startswith("DAESINGO_REVISION=")]
+    require(values == ["DAESINGO_REVISION=" + revision], "publish_revision_mismatch")
+    return info["Id"]
+
+
+def verify_publish_image(env):
+    data = publish_state(env)
+    data["image_id"] = inspect_publish_image(data["target_revision"], PUBLISH_IMAGE)
+    publish_paths(env)[1].write_text(json.dumps(data))
+    with open(env["GITHUB_OUTPUT"], "a") as stream:
+        stream.write("image_id=" + data["image_id"] + "\n")
+    print("rt14: publish_image_verified revision=" + data["target_revision"] + " image_id=" + data["image_id"])
+
+
 def publish(env):
+    data = publish_state(env, image=True)
+    revision, image_id = data["target_revision"], data["image_id"]
+    require(inspect_publish_image(revision, image_id) == image_id, "publish_image_mismatch")
     repo = env.get("ECR_REPOSITORY", "")
     require(bool(re.fullmatch(r"[a-z0-9]+(?:[._/-][a-z0-9]+)*", repo)))
     registry = env["AWS_ACCOUNT_ID"] + ".dkr.ecr." + REGION + ".amazonaws.com"
     # The approved repository must already exist and have immutable tags.
     details = aws(["ecr", "describe-repositories", "--repository-names", repo], env=env)["repositories"]
     require(len(details) == 1 and details[0]["imageTagMutability"] == "IMMUTABLE", "immutable_repository_required")
+    existing = aws(["ecr", "batch-get-image", "--repository-name", repo,
+                    "--image-ids", "imageTag=" + revision], env=env)
+    require(not existing.get("images") and len(existing.get("failures", [])) == 1
+            and existing["failures"][0].get("failureCode") == "ImageNotFound", "publish_tag_exists_or_unknown")
     auth = aws(["ecr", "get-authorization-token"], env=env)["authorizationData"]
     import base64
     require(len(auth) == 1 and auth[0]["proxyEndpoint"] == "https://" + registry, "registry_mismatch")
@@ -167,14 +291,16 @@ def publish(env):
         docker_env = {**env, "DOCKER_CONFIG": directory}
         command(["docker", "login", "--username", "AWS", "--password-stdin", registry],
                 input=password, env=docker_env)
-        tag = registry + "/" + repo + ":" + env["GITHUB_SHA"]
-        command(["docker", "tag", "daesingo-rt14:verified", tag], env=docker_env)
+        tag = registry + "/" + repo + ":" + revision
+        command(["docker", "tag", image_id, tag], env=docker_env)
         command(["docker", "push", tag], env=docker_env, timeout=900)
-    images = aws(["ecr", "describe-images", "--repository-name", repo,
-                  "--image-ids", "imageTag=" + env["GITHUB_SHA"]], env=env)["imageDetails"]
-    require(len(images) == 1)
-    image = registry + "/" + repo + "@" + images[0]["imageDigest"]
-    validate_image(image, env["AWS_ACCOUNT_ID"])
+        images = aws(["ecr", "describe-images", "--repository-name", repo,
+                      "--image-ids", "imageTag=" + revision], env=env)["imageDetails"]
+        require(len(images) == 1)
+        image = registry + "/" + repo + "@" + images[0]["imageDigest"]
+        validate_image(image, env["AWS_ACCOUNT_ID"])
+        command(["docker", "pull", "--platform", "linux/amd64", image], env=docker_env, timeout=900)
+        require(inspect_publish_image(revision, image) == image_id, "published_digest_mismatch")
     # The digest alone contains no account/registry identifier.
     print("rt14: image_verified sha256=" + image.rsplit(":", 1)[1])
 
@@ -213,11 +339,20 @@ def main(argv=None):
         env = dict(os.environ)
         trusted_context(env)
         require(env.get("AWS_REGION") == REGION, "region_missing_or_not_allowed")
-        require(args in (["authenticate"], ["publish"], ["deploy"], ["rollback"]))
+        require(args in (["authenticate"], ["prepare-publish"], ["publish-image"], ["publish"], ["deploy"], ["rollback"]))
         if args != ["authenticate"]:
             require(env.get("RT14_EXECUTION_ENABLED") == "true", "execution_not_enabled")
+        if args == ["prepare-publish"]:
+            prepare_publish(env)
+            return 0
+        if args == ["publish-image"]:
+            verify_publish_image(env)
+            return 0
         if args in (["publish"], ["deploy"]):
             quality_gate(env)
+        if args == ["publish"]:
+            quality_gate(env, revision=publish_revision(env))
+            publish_state(env, image=True)
         authenticated = oidc(env)
         if args == ["authenticate"]:
             print("rt14: identity_match")
