@@ -156,9 +156,15 @@ export function ResultScreen(props: {
   const shownReport = pkg?.report ?? null
   const report = shownReport && {
     title: edits.title ?? shownReport.title,
-    description: edits.description ?? shownReport.description,
+    // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다(#563 멘토 리뷰)
+    description:
+      edits.description ??
+      (edits.location !== undefined && shownLocation?.value
+        ? shownReport.description.split(shownLocation.value).join(edits.location)
+        : shownReport.description),
   }
-  const keyword = ev?.location_display.search_keyword ?? null
+  // 위치를 고쳤으면 검색어도 고친 글을 따른다 — 보이는 값·복사·지도가 같은 글을 쓴다(#563 멘토 리뷰)
+  const keyword = edits.location ?? ev?.location_display.search_keyword ?? null
   const hasForm = Boolean(pkg || ev)
   // 검색어를 못 만들었다는 안내는 위치 칸에 붙는 말이라 위 목록이 아니라 검색어 자리에 둔다
   // (버튼 없는 INFO라 옮겨도 잃는 것이 없다). 위치 칸이 없으면 위 목록에 남긴다.
@@ -431,7 +437,7 @@ export function ResultScreen(props: {
                 <span>{noticeMessage(keywordMissing.message_key)}</span>
               </p>
             )}
-            {ev && <LocationMap coord={ev.location_display.coord} query={edits.location ?? keyword ?? location?.value} />}
+            {ev && <LocationMap coord={ev.location_display.coord} query={keyword ?? location?.value} />}
           </Item>
 
           <Item label="제목">

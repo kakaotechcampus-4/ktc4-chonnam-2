@@ -726,3 +726,15 @@ it('결과 화면에서 제목·신고 내용·위치·발생 시각을 고치�
   expect(text()).toContain('상무대로 교차로')
   expect(text()).toContain('09:10:11')
 })
+
+it('위치를 고치면 검색어와 신고 내용의 위치도 고친 글로 복사된다', () => {
+  const happy = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  const view = { ...happy, evidence: { ...happy.evidence!, location_display: { ...happy.evidence!.location_display, search_keyword: '광주 상무지구 상무중앙로 사거리' } } }
+  const before = happy.evidence!.location_display.value!
+  expect(view.package!.report.description).toContain(before)
+  const { container } = render(<ResultScreen view={view} edits={{ location: '운천역 사거리' }} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
+  expect(container.querySelector('.res-keyword-v')!.textContent).toBe('운천역 사거리')
+  const description = container.querySelector('.res-report-text')!.textContent!
+  expect(description).toContain('운천역 사거리')
+  expect(description).not.toContain(before)
+})
