@@ -450,6 +450,8 @@ def test_rc06_new_generation_isolates_late_preview(queue, tmp_path, monkeypatch)
         # The old preview job is claimed first and finishes (or refuses) after the generation moved on.
         _run(queue, startup, root, {KIND}, 1)
         old_job = _jobs(queue, KIND)[0]
+        # A refused late preview is labelled as such, not as a handler crash.
+        assert old_job["status"] != "FAILED" or old_job["failure_kind"] == "RUNTIME_PREVIEW_NOT_CURRENT"
         produced = []
         with queue.begin() as conn:
             if old_job["produced"]:

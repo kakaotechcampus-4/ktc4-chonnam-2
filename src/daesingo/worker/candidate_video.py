@@ -28,6 +28,13 @@ class PreviewRequest(BaseModel):
     video_stream_refs: tuple[str, ...] = Field(min_length=1)
 
 
+NOT_CURRENT = 'RUNTIME_PREVIEW_NOT_CURRENT'
+
+
+class PreviewNotCurrent(ValueError):
+    """탐색 세대·후보가 바뀐 뒤 도착한 preview — 오류가 아니라 늦은 작업이라 실패 종류를 따로 둔다."""
+
+
 @dataclass(frozen=True, slots=True)
 class CandidateVideoInput:
     case_id: str
@@ -53,8 +60,9 @@ class CandidateVideoInputs:
         request = PreviewRequest.model_validate(store.observation_input(context.case_id, context.job_id))
         candidate = next((c for c in case.candidates if c.candidate_id == request.candidate_id), None)
         if (candidate is None or not eligible(case, candidate)
-                or request.generation_job_id != case.current_generation_job_id()
-                or request.span.model_dump() != candidate.span or request.span.end_ms <= request.span.start_ms):
+                or request.generation_job_id != case.current_generation_job_id()):
+            raise PreviewNotCurrent('preview candidate is no longer current')
+        if request.span.model_dump() != candidate.span or request.span.end_ms <= request.span.start_ms:
             raise ValueError('preview candidate binding mismatch')
         selected = tuple(s['video_stream_ref'] for s in case.sources if s.get('video_stream_ref'))
         if request.video_stream_refs != selected or len(set(selected)) != len(selected):
@@ -93,7 +101,10 @@ def candidate_video_registry(*, load, service_factory=None) -> KindRegistry:
 
     def invoke(context) -> HandlerResult:
         context.checkpoint()
-        data = load(context)
+        try:
+            data = load(context)
+        except PreviewNotCurrent:
+            return HandlerResult(status='FAILED', failure_kind=NOT_CURRENT)
         context.checkpoint()
         with service_factory(data) as recording:
             context.checkpoint()

@@ -129,3 +129,23 @@ def test_cancellation_is_not_swallowed_after_decode():
     ctx, registry, calls = dependencies(cancel=True)
     with pytest.raises(CancellationRequested): registry.dispatch(ctx)
     assert calls[-1] == 'close'
+
+
+@pytest.mark.parametrize('mode, kind', [
+    ('generation', 'RUNTIME_PREVIEW_NOT_CURRENT'),  # 새 탐색 세대 뒤 도착
+    ('candidate', 'RUNTIME_PREVIEW_NOT_CURRENT'),   # 후보가 현재 세대에 없음
+    ('stale', 'RUNTIME_PREVIEW_NOT_CURRENT'),       # 후보 구간이 낡음
+    ('span', 'RUNTIME_HANDLER_ERROR'),              # 같은 세대인데 입력이 어긋남 = 진짜 오류
+])
+def test_late_preview_failure_is_distinct_from_handler_error(mode, kind):
+    ctx, case, _, _, make = bound()
+    source = case.observation_inputs[ctx.job_id]
+    if mode == 'generation': source['generation_job_id'] = 'foreign'
+    if mode == 'candidate': source['candidate_id'] = 'foreign'
+    if mode == 'stale': case.candidates[0].stale_revision = True
+    if mode == 'span': source['span']['end_ms'] += 1
+    def no_decode(_data): pytest.fail('late preview must not open recording')
+    module = import_module('daesingo.worker.candidate_video')
+    registry = module.candidate_video_registry(load=make(), service_factory=no_decode)
+    result = validated_terminal(registry.dispatch(ctx), execution_id=ctx.execution_id)
+    assert (result.status, result.failure_kind) == ('FAILED', kind)
