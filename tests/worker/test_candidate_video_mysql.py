@@ -552,3 +552,79 @@ def test_db08_preview_alongside_pending_fine_does_not_block_or_add_followups(que
     assert next(c for c in after["candidates"] if c["rank"] == 3)["video_preview"]["status"] == "READY"
     clip_jobs = [j for j in _jobs(queue, "INCIDENT_CLIP_BUILD") if j["status"] == "QUEUED"]
     assert len(clip_jobs) == 1, "selected candidate's clip build was issued after Fine"
+
+
+@pytest.mark.mysql_check("candidate_video", "range_concurrency")
+def test_range_reads_hold_share_lock_briefly_and_never_strand_case_writes(queue, tmp_path, monkeypatch):
+    """Review 3 (정철원): each Range read loads the whole MP4 under the Case share lock.
+
+    While several seeks are inside that lock, a command and a T2 reflection on the same Case must
+    finish; failed reads must return their connection; per-request memory is recorded."""
+    import time
+    import tracemalloc
+    from concurrent.futures import ThreadPoolExecutor
+    client, case_id, root, startup, clip_ref = _ready(queue, tmp_path, monkeypatch, count=3, rank=2,
+                                                      raise_server_exceptions=False)
+    url = f"/cases/{case_id}/candidate-videos/{clip_ref}"
+    engine = client.app.state.composition.engine
+    hold, readers = 0.4, 6
+    original = RecordingService.open_incident_video
+    inside, failures = [], {"mode": None}
+    def slow(self, ref):
+        inside.append(time.monotonic())
+        time.sleep(hold)  # keep the share lock long enough that the writers below must wait on it
+        if failures["mode"] == "crash":
+            raise RuntimeError("injected read crash")
+        if failures["mode"] == "unavailable":
+            raise RecordingCapabilityError("UNAVAILABLE", "injected")
+        return original(self, ref)
+    with client:
+        full = client.get(url).content
+        size = len(full)
+        monkeypatch.setattr(RecordingService, "open_incident_video", slow)
+        ranges = [(i * size // readers, min(size - 1, (i + 1) * size // readers + 1023)) for i in range(readers)]
+        def seek(span):
+            response = client.get(url, headers={"Range": f"bytes={span[0]}-{span[1]}"})
+            return span, response.status_code, response.content
+        rank3 = next(c["candidate_id"] for c in _view(client, case_id)["candidates"] if c["rank"] == 3)
+        with ThreadPoolExecutor(readers) as pool:
+            futures = [pool.submit(seek, span) for span in ranges]
+            while len(inside) < readers // 2:
+                time.sleep(0.01)
+            started = time.monotonic()
+            command = _request(client, case_id, rank3)  # FOR UPDATE on the same Case
+            command_sec = time.monotonic() - started
+            started = time.monotonic()
+            _run(queue, startup, root, {KIND}, 1)  # T1 + T2 reflection on the same Case
+            t2_sec = time.monotonic() - started
+            results = [f.result(timeout=60) for f in futures]
+        assert command.status_code < 300, command.text
+        for (start, end), status, body in results:
+            assert status == 206 and body == full[start:end + 1]
+        assert next(c for c in _view(client, case_id)["candidates"] if c["rank"] == 3)["video_preview"]["status"] == "READY"
+        assert engine.pool.checkedout() == 0
+
+        # Failed reads (crash → 500, storage → 404) during concurrent seeks give every connection back.
+        for mode, expected in (("crash", 500), ("unavailable", 404)):
+            failures["mode"] = mode
+            with ThreadPoolExecutor(readers) as pool:
+                statuses = [r[1] for r in pool.map(seek, ranges)]
+            assert statuses == [expected] * readers, (mode, statuses)
+            assert engine.pool.checkedout() == 0, mode
+        failures["mode"] = None
+        assert client.get(url).status_code == 200, "reads recover after failures"
+
+        # Memory: every seek materialises the whole clip (plus the sliced response).
+        monkeypatch.setattr(RecordingService, "open_incident_video", original)
+        tracemalloc.start()
+        client.get(url, headers={"Range": "bytes=0-1023"})
+        single = tracemalloc.get_traced_memory()[1]
+        tracemalloc.reset_peak()
+        with ThreadPoolExecutor(readers) as pool:
+            list(pool.map(seek, ranges))
+        concurrent = tracemalloc.get_traced_memory()[1]
+        tracemalloc.stop()
+    print(f"RANGE clip={size}B readers={readers} hold={hold}s command={command_sec:.2f}s t2={t2_sec:.2f}s "
+          f"peak_single={single}B peak_{readers}x={concurrent}B")
+    # Writers waited at most for the readers in flight, never a lock-wait timeout.
+    assert command_sec < hold * readers + 5 and t2_sec < 60

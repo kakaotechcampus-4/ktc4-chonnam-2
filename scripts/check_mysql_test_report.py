@@ -35,7 +35,7 @@ REQUIRED_CHECKS = frozenset({
     *(('observability', s) for s in ('distribution','boundaries','transaction','catalog','privacy')),
     *(("api_asset", s) for s in ("read", "isolation", "exact_identity", "corruption", "transaction", "failure", "interruption", "send")),
     # #554 candidate video preview: tests/worker/test_candidate_video_mysql.py
-    *(("candidate_video", s) for s in ("counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1", "tcp_process", "commit_unknown", "parallel_fine", "storage_damage", "source_lost", "stale_generation", "process_kill")),
+    *(("candidate_video", s) for s in ("counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1", "tcp_process", "commit_unknown", "parallel_fine", "storage_damage", "source_lost", "stale_generation", "process_kill", "range_concurrency")),
     *(("api_frame", s) for s in ("read", "isolation", "concurrency", "connection", "failure", "transaction", "send_lifetime", "corrupt_scope", "exact_identity")),
     *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
         "commit_unknown", "reader", "process", "redelivery", "migration", "transaction", "receipt", "json")),

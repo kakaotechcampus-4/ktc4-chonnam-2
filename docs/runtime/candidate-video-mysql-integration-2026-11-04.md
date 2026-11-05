@@ -65,9 +65,28 @@
 - 두 실행 모두 브라우저 콘솔 오류 0.
 - 미리보기 job은 6초 안팎에 끝났다(로컬 Windows, 짧은 영상). 긴 영상의 생성 시간은 재지 않았다.
 
+## Range 동시성 (2026-11-05 추가, 정철원 리뷰 3)
+
+각 Range 요청은 Case share lock을 잡은 transaction 안에서 MP4 전체를 읽고, transaction이 끝난 뒤 route가 잘라 206을 낸다. 이 구조에서 같은 Case의 쓰기가 막히는지, 오류 때 연결이 돌아오는지를 실제 MySQL로 확인했다. 구조는 바꾸지 않았다.
+
+- 환경: Windows 11 호스트 · Python 3.12 · MySQL **8.4.13**(Docker, 이번 실행 전용 컨테이너) · API는 `TestClient`(같은 프로세스 ASGI). TCP API 프로세스 · Caddy 경유는 이번에 다시 돌리지 않았다.
+- 테스트: `test_range_reads_hold_share_lock_briefly_and_never_strand_case_writes`(`candidate_video` / `range_concurrency`, MySQL 게이트 필수 목록에 등록). 같은 실행에서 `test_candidate_video_mysql.py` · `test_candidate_video_process_mysql.py` 23/23 통과.
+
+| 확인 | 결과 |
+| --- | --- |
+| 읽기 6개가 lock 안에 머무는 동안(읽기마다 0.4초 지연 주입) 같은 Case에 command(`REQUEST_CANDIDATE_VIDEO_PREVIEW`, FOR UPDATE) | 0.50초에 완료. 진행 중인 읽기만큼 기다리고 lock wait timeout 없음 |
+| 같은 상황에서 Worker T1 · T2 반영 | 0.47초에 완료, 후보 3 READY |
+| 동시 Range 6개의 응답 | 모두 206, 바이트가 전체 파일의 해당 구간과 같음 |
+| 동시 읽기 중 예외(500) · 저장소 실패(404) | 각 6개 모두 기대 상태, 이후 `pool.checkedout() == 0`, 다음 요청 200 |
+
+**메모리 · 디스크(코드 기준).** 요청 하나가 저장 chunk(256 KiB 단위)를 임시 파일로 옮기며 SHA-256 · MP4를 검증하고(디스크 1×), 전체를 메모리로 읽고(1×), 응답 구간을 잘라 복사한다(구간 길이, 브라우저 첫 요청 `bytes=0-`이면 1×). 즉 동시 요청 수 × 클립 크기 × 최대 2배다. 합성 클립(5,494 B)에서 측정한 peak(1개 158 KB · 6개 753 KB)는 클립보다 요청 처리 비용이 커서 크기 판단에 쓰지 않는다.
+
+**판단.** 쓰기는 진행 중인 읽기 시간만큼만 기다린다. InnoDB는 기다리는 X lock이 있으면 새 S lock 요청도 그 뒤에서 기다리게 하므로 seek가 이어져도 쓰기가 굶지 않을 것으로 본다(InnoDB 동작 근거, 이번에 따로 측정하지 않음). 읽기 시간은 클립 크기에 비례하므로, 운영 크기의 미리보기에서 읽기 하나의 시간과 동시 seek 수가 커지면 이 대기도 커진다. 그때는 lock 밖에서 읽는 구조(소유권 · 현재성 확인만 lock 안)로 바꾼다.
+
 ## NOT_RUN
 
 - 운영 PaddleOCR이 들어간 배포 이미지로의 실행(위 대체 참고), Linux 호스트 실행
 - 5분 이상 실제 영상에서의 미리보기 생성 시간
+- 운영 크기 미리보기(720p · CRF 20)에서의 Range 읽기 시간 · 메모리 실측, TCP API 프로세스 · Caddy 경유 동시 Range
 
 증거(스크린샷 · 로그)는 로컬 `.omo/evidence/candidate-video-real/run1/`에 있고 커밋하지 않는다. 브라우저 구동 스크립트도 이번 실행에만 썼다.

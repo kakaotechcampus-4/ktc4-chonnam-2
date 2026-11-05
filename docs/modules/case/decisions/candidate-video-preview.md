@@ -73,7 +73,7 @@
 - **recording · API:**
   - `open_incident_video`의 `OSError` 500 — 고침(`4f343671`): 파일 부재 · 권한 오류도 경로를 숨긴 `UNAVAILABLE` → HTTP 404 `http.ref_unavailable`.
   - 세대가 바뀐 뒤 도착한 preview job — 고침(`68bd8886`): `FAILED / RUNTIME_PREVIEW_NOT_CURRENT`로 기록해 진짜 오류(`RUNTIME_HANDLER_ERROR`)와 구분한다. 같은 세대 안의 입력 불일치는 그대로 `RUNTIME_HANDLER_ERROR`다([서어진 실제 통합 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/554#issuecomment-6629742662) 발견 2).
-  - Range 요청마다 share lock 안에서 MP4 전체 적재 — 남음. 동시 Range와 같은 Case command · T2의 완료 · 잠금 해제, 오류 시 연결 반환을 실제 MySQL에서 확인해야 한다.
+  - Range 요청마다 share lock 안에서 MP4 전체 적재 — 실제 MySQL로 확인(2026-11-05), 구조는 그대로. 동시 Range 중 같은 Case command · T2가 진행 중인 읽기 시간만큼만 기다리고 끝나며, 오류 때 연결이 돌아온다. 요청마다 메모리는 클립 크기의 최대 2배다. 운영 크기 미리보기의 읽기 시간 · 메모리 실측은 NOT_RUN(`runtime/candidate-video-mysql-integration-2026-11-04.md` 「Range 동시성」).
 
 ## 6. 검증
 
