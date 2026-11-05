@@ -4,6 +4,7 @@ import { AppHeader } from '../components/AppHeader'
 import { isAction, type Action, type CaseView } from '../contracts/caseView'
 import { CircleAlert } from 'lucide-react'
 import { ACTION_LABELS, errorMessage, noticeMessage } from '../contracts/labels'
+import { forgetCase, rememberCase, rememberedCase } from '../state/lastCase'
 import { selectScreen } from '../state/selectScreen'
 import { useCaseFlow } from '../state/useCaseFlow'
 import { FailedScreen } from './FailedScreen'
@@ -36,7 +37,7 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_PLATE_IMAGE',
 ])
 
-export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Element {
+export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api)
   const { view } = state
@@ -51,8 +52,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [unsupported, setUnsupported] = useState(false)
 
-  // 주소의 case id로 이어간다. 새로 만든 case는 주소에 남겨 새로고침해도 이어진다.
-  // 경과 시간은 이어받은 시점부터 다시 센다 — CaseView에 시작 시각이 없다.
+  // 주소(또는 이 브라우저가 기억한) case id로 이어간다. 새로 만든 case는 주소와 브라우저에 남겨
+  // 새로고침하거나 창을 닫았다 와도 이어진다. 경과 시간은 이어받은 시점부터 다시 센다 — CaseView에 시작 시각이 없다.
   const { caseId } = props
   useEffect(() => {
     if (caseId) void resume(caseId)
@@ -63,6 +64,19 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     url.searchParams.set('case', state.caseId)
     history.replaceState(null, '', url)
   }, [state.caseId])
+  // 서버가 돌려준 case만 기억한다 — 없는 case 주소를 열어도 기억해 둔 내 case를 덮지 않는다
+  const seen = view?.case_id
+  useEffect(() => {
+    if (seen) rememberCase(seen)
+  }, [seen])
+  // 기억한 case가 서버에 없으면(보관 기간이 지나 지워짐 등) 잊는다. 주소 없이 이어받던 중이면 새 신고로 시작한다 —
+  // 사용자가 연 적 없는 「찾을 수 없어요」를 보이지 않는다.
+  const gone = state.error?.code === 'http.not_found'
+  useEffect(() => {
+    if (!gone) return
+    if (rememberedCase() === state.caseId) forgetCase()
+    if (props.remembered) location.assign(location.pathname)
+  }, [gone, state.caseId, props.remembered])
 
   // 자동차 출발 — [영상에서 찾아보기]를 누른 뒤 진행 화면이 실제로 열리는 순간부터 업로드 화면 겉모습
   // 복사본에서 차가 출발한다(시연과 같은 연출). 시작 요청이 실패해 진행 화면이 열리지 않으면 접는다.
@@ -127,7 +141,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const mainRef = useRef<HTMLElement>(null)
   const rememberOpener = useScreenFocus(mainRef, `${kind}-${subs.join('/')}`, subs.length)
 
-  const newReport = () => location.assign(location.pathname)
+  const newReport = () => {
+    forgetCase()
+    location.assign(location.pathname)
+  }
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
 
   return (

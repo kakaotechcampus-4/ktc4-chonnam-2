@@ -3,15 +3,18 @@ import { LOAD_ISSUES, SNAPSHOTS } from './contracts/fixtures'
 import { CaseScreen } from './screens/CaseScreen'
 import { ApiFlow } from './screens/ApiFlow'
 import { DemoFlow } from './screens/DemoFlow'
+import { rememberedCase } from './state/lastCase'
 
 // 기본은 실제 HTTP API로 도는 흐름이고, `?case=<id>`는 만들어 둔 case를 이어서 본다(예전 주소 `?api`도 그대로 열린다).
 // `?demo`는 mock fixture 시연 흐름, `?cases`는 시연에서 보여 줄 경우(실패·결과 없음 등)를 고르는 상자를 연다.
 // `?dev`는 스냅샷을 하나씩 넘겨 보는 증빙 화면이다.
+// 주소에 case가 없으면 이 브라우저가 마지막으로 연 case로 이어간다 — 창을 닫았다 와도 분석 · 결과가 이어진다.
 export function App(): JSX.Element {
   const params = new URLSearchParams(location.search)
   if (params.has('dev')) return <SnapshotViewer />
   if (params.has('demo') || params.has('cases')) return <DemoFlow casePicker={params.has('cases')} />
-  return <ApiFlow caseId={params.get('case')} />
+  const caseId = params.get('case')
+  return caseId ? <ApiFlow caseId={caseId} /> : <ApiFlow caseId={rememberedCase()} remembered />
 }
 
 // 1차 범위에 라우터·서버·로컬 상태 머신이 없다. 화면 전환은 「어느 스냅샷을
