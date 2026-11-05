@@ -112,6 +112,20 @@ Case/Worker 범위 대조: O..C에서 common jobs 프로토콜 파일과 `worker
 
 SQL 조회 전 client sample과 조회 후 server sample 사이의 지연이 중복 반영될 가능성은 **가설**이다. 실제 C baseline과 동일 노드의 정상/조회 전 지연 대조를 위한 별도 probe는 준비했으나 다음 절의 로컬 디스크 문제로 시작하지 못했다(**NOT_RUN**). 따라서 이1건은 **원인·B 인과관계 확인 필요**이며 원래 회귀10건 정산에 섞지 않는다. 관련 없는 Worker를 수정하거나 ±30ms assertion·skip·timeout을 완화하지 않았다. 원인 대조와 필요한 수정·독립 리뷰 후 동일 canonical 전체→strict→실제 보고서 변조 검증이 모두 성공해야 PR 차단을 해제한다.
 
+### PR #587 원격 CI — 고정 revision 누락 보완
+
+[python-tests run42011517523의 MySQL job127191459266](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42011517523/job/127191459266)의 실제 로그를 읽어 확인했다. PR HEAD는 `551350779e08bc79c5483c747474bd61ba3039dc`이며 Actions checkout은 PR merge ref `d166d78fc2f225ee850920bcc5c643583d868e52`다. checkout의 `fetch-depth: 1`과 실제 `git fetch --depth=1`이 기록돼 있다.
+
+canonical MySQL 결과는 **1271 passed / 6 setup errors / 4 collection skipped / 14793 deselected**, 1176.31초다.6개 모두 session fixture가 고정 O `e50b2976ef4edc3a030cfc5b03a5206340dd917b`를 `git archive`할 때 `fatal: not a tree object`로 실패했다. fixture에는 고정 C `ceb6f5fa010f1f541179e9d3ab95aecd5a82d3cb`도 필요하다. canonical 단계가 실패했으므로 원격 후속 strict JSON/JUnit·실제 보고서 변조는 **NOT_RUN**이며 required `test`도 실패했다. quality/regression job은 success다. 이것을 전체 MySQL gate 통과로 기록하지 않는다.
+
+이번 변경은 MySQL job의 checkout에만 `fetch-depth: 0`을 지정하고, 의존성 설치 전에 두 전체 SHA의 실제 commit·root tree와 archive 대상 `src`·`migrations` tree의 존재를 검사한다. 두 revision은 현재 로컬 HEAD의 조상임을 확인했다. 누락·잘못된 object type은 즉시 실패하며 skip·최신 소스 대체·별도 snapshot 주입은 추가하지 않는다. 다른 job·제품 코드·기존 호환성 assertion·timeout·strict gate는 변경하지 않는다.
+
+변경 검사는 YAML 파싱·MySQL checkout/사전검사 외 workflow 의미 동일성·fixture의 두 고정 SHA 일치·Git Bash 문법·`git diff --check`를 통과했다. workflow에서 추출한 실제 Bash 사전검사는 로컬의 두 고정 revision에서 성공했다. e50 누락·C 누락·commit 대신 blob·commit은 존재하지만 root tree가 없는4개 음성 대조는 모두 exit128로 거부했다. 마지막 대조는 기존 e50 commit object의 동일 bytes만 별도 임시 object directory에 복사해 실행했으며 새 commit/ref/index를 만들거나 원본 Git object를 수정하지 않았다. 첫 제한 실행의 MSYS 권한 오류는 별도 실행 권한으로 같은 검사를 재시도해 해소했으며 Ubuntu/Docker는 기동하지 않았다. 세부 결과는 Windows `.codex-scratch/compatible-release-b/pr587-workflow-checks.json`에 보존했다. 이 변경 검사를 전체 MySQL/원격 CI 통과로 대신하지 않는다.
+
+같은 원격 로그에서 `test_cancel_metrics_end_at_durable_commit_ack[retry] PASSED`를 확인했다. **이번 원격 실행 PASS와 기존 로컬 실패 원인 미확정은 별개**다. 앞선 로컬1276 passed/1 failed를 취소하거나 조회 전 지연 가설이 입증·해결됐다고 하지 않는다. 실제 C/B baseline 대조는 계속 **NOT_RUN**이다.
+
+원격 decoded job log는 Windows `.codex-scratch/compatible-release-b/pr587-mysql-55135077.log`에 보존했다. Ubuntu namespace8 내부 JSON/JUnit 미발견을 이 로그로 복구했다고 표시하지 않는다. 후속은 로컬 Docker/전체 테스트 환경을 재구축하지 않고 workflow와 사전검사만 검증한다. 수정 후 원격 CI·canonical MySQL·strict·실제 보고서 변조 재실행은 commit/push 전이므로 **NOT_RUN**이다. Draft PR 제출 가능과 병합·배포 준비 미완료를 계속 구분한다.
+
 ### 로컬 검증 환경 장애와 보존 상태
 
 추가 baseline probe를 준비하던 중 이번 작업이 만든 여러 격리 Docker image cache가 C: 실제 공간을 소진했다. 작성자가 호스트 여유 공간 대신 WSL 가상 `df`에 의존한 자원 관리 오류다. Ubuntu ext4에서 `emergency_ro`/I/O 오류를 확인했고, 추가 시험을 중단했다. 기존 volume·원본·보호 증거를 삭제하는 복구는 수행하지 않았다.
