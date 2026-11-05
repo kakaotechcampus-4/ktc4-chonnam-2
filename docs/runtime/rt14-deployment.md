@@ -256,8 +256,12 @@ sudo /usr/bin/python3 /opt/daesingo/controller/ec2.py deploy \
    Recording Analysis 6개와 Incident 3개를 검증한다. 비어 있는 운영 한도는 여기서 중단한다.
 5. 기존 writer를 stop하고 MySQL만 기동/healthy를 기다린다. live app이 쓰는 상태에서
    migration하지 않는다. grace는 기존 30초로 모든 handler 완료 보장이 아니다.
-6. app DB 연결의 실제 session packet과 `MAX_BYTES + packet_margin_bytes < packet`을
-   확인한다. margin은 측정·승인값이고 코드에 기본값을 두지 않는다.
+6. app DB 연결의 실제 session packet과 이미지 writer 형식에 맞는 한도를 확인한다.
+   legacy는 `MAX_BYTES + packet_margin_bytes < packet`, 새 chunked C′는 writer와
+   공유한 command budget·양수 chunk size 및 `budget + packet_margin_bytes < packet`을
+   요구한다. MAX_BYTES 양수·Recording 업무 한도와 실제 SQL guard는 유지한다.
+   고정 B/기존 C와의 차이는 [packet 조건](rt14-packet-compatibility-review.md)을 따른다.
+   margin은 측정·승인값이고 코드에 기본값을 두지 않는다.
 7. dirty와 별도 schema authority `schema.json`의 `migration_pending`을 fsync한 뒤
    migrate **단 한 번** 실행한다. nonzero/timeout은
    실패이며 API/Worker를 시작하지 않는다. forward-only이며 downgrade 없음.

@@ -41,6 +41,21 @@ def check_packet(maximum, packet, margin):
         raise ValueError("deployment_packet_margin")
 
 
+def check_prepared_packet(maximum, packet, margin):
+    from daesingo.recording import mysql_repository as repository
+    if type(maximum) is not int or maximum <= 0:
+        raise ValueError("deployment_packet_margin")
+    # Image release identity only. No CLI/env format override is accepted.
+    write_format = repository.PREPARED_WRITE_FORMAT
+    if write_format == "legacy":
+        check_packet(maximum, packet, margin)
+    elif write_format == "chunked":
+        budget, _ = repository.prepared_command_limits(packet, write_format=write_format)
+        check_packet(budget, packet, margin)
+    else:
+        raise ValueError("deployment_prepared_write_format")
+
+
 def deployment_smoke():
     for name in ("live", "ready"):
         with urllib.request.urlopen("http://127.0.0.1:8000/health/" + name, timeout=4) as response:
@@ -105,7 +120,7 @@ def main(argv=None):
             try:
                 with engine.connect() as conn:
                     packet = conn.scalar(text("SELECT @@SESSION.max_allowed_packet"))
-                check_packet(settings.analysis_limits.max_bytes, packet, int(args[1]))
+                check_prepared_packet(settings.analysis_limits.max_bytes, packet, int(args[1]))
             finally:
                 engine.dispose()
             return 0
