@@ -4,11 +4,92 @@
 
 **IN_PROGRESS · Refs #300 (RT-13(b))**
 
+### 2026-11-06 host 도구 file-backed 보완
+
+이번 변경은 `backup_compose.py`와 focused tests/docs만의 host 도구 변경이다. Dockerfile은
+이 도구를 image에 COPY하지 않는다. 게시된 B `ce0750d5a3317ad1c810783d67f8a05ba88bce08`
+및 C′ `70f1c47cbc7c08fa848d057687f7130047f1126c` source/image/digest를 변경하거나 재생성하지 않는다.
+controller·config·Coarse 600초/종료 후 150초 복귀 조건·#583도 변경하지 않는다.
+
+| 단계 | 새 처리와 유지한 guard |
+| --- | --- |
+| backup | Docker stdout을 private 임시 파일 fd로 받는다. 작은 heads/구분자만 제한해서 읽고, SQL 길이/hash 및 envelope 쓰기는 1MiB 단위다. 복사 중 길이/hash도 재검사한다. format1·O_EXCL/0600·flush/fsync 유지 |
+| restore 사전 검증 | header 64KiB 제한, 정확한 필드/정수 타입/database/heads·양수 size·전체 SQL hash/길이/EOF를 확인한다. SQL 검증 spool 완성 전에는 Compose 조회를 포함해 DB에 접촉하지 않는다 |
+| import/비교 | 검증 spool의 readonly fd를 stdin으로 전달한다. 재덤프는 별도 임시 파일로 받고 검증 SQL과 1MiB씩 실제 bytes 및 EOF를 비교한다. hash/rowcount만 같아서 PASS하지 않는다 |
+| DB guard | api/worker/migrate 정지, MySQL8.4, source routines/events 거부, target table/view/routine/event=0, container별 atomic lock, client 180초/host 호출 600초 유지 |
+| packet | 복원 mysql client `--max-allowed-packet=67108864`를 명시하고 help의 effective 값 및 target GLOBAL/SESSION을 모두 67108864와 대조한다. 확인 실패/불일치 시 import 전 거부. server SET·오류 무시·`--force` 없음 |
+| 정리 | 성공/실패/KeyboardInterrupt에 이번 실행의 spool만 정리한다. 실패 backup artifact는 생성 inode가 그대로인 경우만 지운다. caller replacement·기존 artifact·volume은 삭제하지 않는다. SIGKILL/전원 단절 자동 정리는 보장하지 않는다 |
+
+대형 경로에는 `capture_output`/`input=SQL bytes`/`read_bytes`/전체 SQL concat이 없다.
+Compose 상태의 작은 응답 capture는 유지한다. 기존 smoke의 작은 합성 fixture용 `pack/unpack`
+API만 1MiB 제한으로 유지하며 실제 backup/restore는 이 API를 호출하지 않는다.
+1MiB는 I/O 단위이고 전체 Python/CLI/MySQL RSS 상한이 아니다. spool은 private 0700 디렉터리에
+두고, source와 격리 target의 외부 writer 차단·host operation.lock·신뢰 artifact/도구의 소유권은
+운영자가 기존 절차대로 보장한다. SQL import 실패는 부분 DDL을 남길 수 있으므로 target을
+격리하고 조사한다. 도구는 빈 DB를 만들거나 실패 target을 비우지 않는다.
+
+#### source/heads와 새 측정의 결속
+
+host CLI의 `--source-root`는 필수다. 도구 checkout의 최신 heads를 e50에 적용하지 않는다.
+검증한 고정 commit/tree에서 `migrations/{case,runtime,recording}/versions`를 취득한 별도 source
+root를 사용하고, 각 파일의 SHA256·commit/tree·image identity와 함께 보호 증거에 기록한다.
+이 옵션은 임의 head override가 아니며 source 파일의 단일 migration head를 AST로 계산하고 실제
+DB prefix/artifact heads와 대조한다. source provenance/서명 인증 기능을 추가한 것은 아니다.
+
+| source revision | 실제 source의 case / recording / runtime heads |
+| --- | --- |
+| e50 `e50b2976ef4edc3a030cfc5b03a5206340dd917b` | case_0001 / recording_0001 / runtime_0006 |
+| B `ce0750d5a3317ad1c810783d67f8a05ba88bce08` | case_0001 / recording_0002 / runtime_0006 |
+| C′ `70f1c47cbc7c08fa848d057687f7130047f1126c` | case_0001 / recording_0002 / runtime_0006 |
+
+호스트 도구는 새 승인 revision/file hash로 고정하고 `--source-root`만 source별로 바꾼다.
+backup 및 target 재덤프의 현재 옵션 순서는 다음과 같으며 `--skip-extended-insert`를 유지한다.
+이 옵션은 청크 행을 하나의 큰 INSERT로 합치지 않도록 보호한다. 비밀 option-file 경로는
+아래 상수 lock 경로를 쓰며 password 값은 기록하지 않는다.
+
+```text
+mysqldump --defaults-extra-file=/tmp/daesingo-rt13-logical.lock/client.cnf --single-transaction --quick --skip-lock-tables --skip-add-locks --skip-comments --skip-dump-date --skip-add-drop-table --order-by-primary --hex-blob --skip-extended-insert --no-tablespaces --set-gtid-purged=OFF daesingo
+```
+
+기존 e50 도구의 운영 중 실측 `829309877B`/ceiling `1073741824B`는 기존 argv의 근거로
+보존한다. 새 옵션의 정확한 dump 길이·최종 일관 백업·복원 성공으로 재사용하지 않는다.
+후속 승인된 측정/backup/restore/re-dump에 **같은 새 도구 hash·dump argv 및 argv hash·CLI
+인수·source SHA/tree/migration 파일 hash·client/server 버전/packet·크기/ceiling·시점**을 결속한다.
+미커밋 도구 hash는 Draft 검토용이며 승인/배포 완료 증거가 아니다.
+
+#### 자원과 아직 실행하지 않은 검증
+
+backup 중 artifact 약 D+header와 transport spool 약 D+작은 prefix, restore 중 보존 artifact 외에
+검증 SQL spool D와 re-dump spool D가 동시에 필요하다. 각 spool은 context 종료 때 정리된다.
+과거 D 기준 활성 임시분 2D=1,658,619,754B는 계획 환산일 뿐 새 D의 상한이 아니다.
+기존 백업/media/target DB·index·redo·temp와 image pull/새 입력의 disk 예산은 별도로 유지한다.
+source 정지 후 A_stop 및 source 복귀 후 A_resume, source 서비스와 격리 target MySQL/HTTP
+검증의 동시 RAM을 다시 평가해야 한다. 전체 SQL의 2D/4D Python bytes 경로는 제거했지만
+client/server·page cache·작은 버퍼까지 포함한 RSS/IO peak를 측정한 것은 아니다.
+
+focused offline 검증은 mock transport와 작은 fake mysql/dump shell만 사용한다. 아래 과거
+actual acceptance는 당시 도구/데이터의 기록이며 새 도구의 성공으로 승격하지 않는다.
+**실제 현재 크기 artifact 복원·실제64MiB client/server 수용·MySQL byte-identical 재덤프·
+메모리 peak·disk peak·180초 내 대형 dump/import/re-dump·운영 DB/media write-stop 일관성은
+NOT_RUN**이다. 같은 옵션이라도 해당 실행 deadline 내 완료하지 못하면 실패로 다룬다.
+새 도구/인수/측정 결속 및 격리 target acceptance를 승인한 뒤에만 후속 운영 단계로 간다.
+
+이번 focused 회귀는 **94 passed / 실패0 / skip0**이며 backup 도구·기존 smoke 연결부와
+부정 경계 테스트를 포함한다. 파일 출력인 `CompletedProcess.stdout/stderr=None`에 기존
+acceptance 연결부가 `.decode()`를 호출한 독립 리뷰 P2는 해당 연결부만 보완했다.
+실제 nested adapter를 작은 fake 결과로 실행한 RED 1 failed / 6 passed 이후 수정했고,
+capture한 제어 출력의 비밀값 검사는 유지한다. SQL spool을 다시 capture하지 않는다.
+원본 e50/B/C′ Git commit/tree 및 실제 migration 파일별 hash를 읽고 source-root별
+file-transport 왕복을 따로 확인했다. 이는 실제 DB의 세 revision 복원 성공이 아니다.
+증거는 ignored `.codex-scratch/file-backed-backup/`의 JUnit/source binding/도구 binding에 둔다.
+독립 reviewer의 최초 P2는 수정 후 해결 판정을 받았고, 새 P1/P2 지적은 없었다.
+reviewer가 별도로 실행한 adapter focused 결과는 7 passed이며 실제 Docker/MySQL 실행은 아니다.
+
 ### 2026-10-31 운영 복구 준비 연결
 
 아래 로컬 구현/검증 이력은 보존한다. 운영 DB/media의 일관된 backup과 **별도 media 사본의 복원**은
-[RT-14 복구 acceptance 준비](rt14-recovery-acceptance.md)를 따른다. `backup_compose.py`는 dump를
-메모리에 수집하며 media 파일을 backup하지 않는다. 기존 `smoke_backup_restore.py`는 생성한
+[RT-14 복구 acceptance 준비](rt14-recovery-acceptance.md)를 따른다. 당시 `backup_compose.py`의 whole-memory
+경로는 아래 2026-11-06 host 도구 보완으로 대체한다. media 파일은 backup하지 않는다. 기존 `smoke_backup_restore.py`는 생성한
 테스트 DB volume을 교체하고 원래 media volume을 유지하므로 운영 project/volume에 적용하지 않는다.
 RT-13 DB 내부 lock은 RT-14 host `operation.lock`과 별개이며, 약 4GiB 운영 환경에서 자원 예산과
 source release의 heads를 확인하기 전 실제 dump/추가 MySQL/Paddle stack을 실행하지 않는다.
@@ -31,7 +112,7 @@ header와 SQL bytes를 담는다. 파일은 0600·exclusive create이며 기존 
 container 안의 atomic mkdir lock은 다른 artifact 디렉터리의 중복 실행도 거부한다.
 stale lock을 임의로 빼앗거나 삭제하지 않는다.
 
-restore는 envelope와 현재 release heads를 먼저 검사하고 table/view/routine/event가
+restore는 envelope와 명시한 source release heads를 먼저 검사하고 table/view/routine/event가
 없는 target만 허용한다. 실패를 무시하는 `--force`를 쓰지 않는다. import 뒤 heads와
 전체 schema/data re-dump bytes를 비교한 후에만 성공한다. 이 비교는 startup
 migration보다 먼저 끝나므로 migration이 restore 실패를 가리지 않는다.
@@ -58,13 +139,13 @@ baseline은 유지한다. `scripts/smoke_backup_restore.py`가 callback을 사�
 | quiescence | Compose app writer 정지. 실행자는 외부 writer/DDL도 막아야 함 |
 | artifact | private 디렉터리의 고정 `logical.rt13`, 0600; durable 값 포함, Git/공유 제외 |
 | integrity | length/SHA256와 release heads. 암호화/서명/악의적 교체 인증 아님. 신뢰하는 artifact만 입력 |
-| release | source의 모든 module head와 현재 script가 같아야 함. release 간 upgrade/rollback은 RT-14 |
+| release | `--source-root`의 실제 source migration heads와 DB/artifact가 같아야 함. host 도구 checkout의 heads와 분리. release 간 upgrade/rollback은 RT-14 |
 | proof | import exit 0 + heads + 전체 re-dump 동일성. API/Worker/media는 별도 actual acceptance |
 | cancel | DB client별 180초, host 호출 600초. host CLI 단절 후 remote exec가 잠시 계속될 수 있고 trap/deadline까지 lock 유지; 즉시 취소/rollback 보장 없음 |
 
 raw SQL은 integrity/DB identity 경계가 없어 envelope로 감쌌다. 물리 volume copy는
-승인된 logical 범위와 달라 구현하지 않았다. dump를 memory에 수집하므로 대용량
-운영 backup의 streaming/용량·보관 정책을 제공한다고 주장하지 않는다.
+승인된 logical 범위와 달라 구현하지 않았다. 아래 file-backed 보완은 용량·보관 정책이나
+현재 데이터의 실제 복원/자원 acceptance를 대신하지 않는다.
 
 ### Contract / Decision / Baseline 영향
 
@@ -92,7 +173,7 @@ private 디렉터리는 repo/build context 밖에 0700으로 준비한다. 아�
 
 ```sh
 docker compose --project-name "$PROJECT" stop api worker migrate
-python scripts/backup_compose.py backup --project "$PROJECT" --directory "$PRIVATE_DIRECTORY"
+python "$VERIFIED_HOST_TOOL" backup --project "$PROJECT" --directory "$PRIVATE_DIRECTORY" --source-root "$VERIFIED_RELEASE_SOURCE" --compose-file "$VERIFIED_COMPOSE_FILE"
 ```
 
 restore 대상은 별도로 준비한 **빈 disposable DB**여야 한다. 일반 예시에 기존
@@ -101,7 +182,7 @@ volume/DB 삭제 명령을 넣지 않는다. 기존 media volume을 유지하고
 순서대로 전달한다. 성공 확인 전 startup/수동 repair를 실행하지 않는다.
 
 ```sh
-python scripts/backup_compose.py restore --project "$PROJECT" --directory "$PRIVATE_DIRECTORY"
+python "$VERIFIED_HOST_TOOL" restore --project "$PROJECT" --directory "$PRIVATE_DIRECTORY" --source-root "$VERIFIED_RELEASE_SOURCE" --compose-file "$VERIFIED_COMPOSE_FILE"
 docker compose --project-name "$PROJECT" up -d api worker
 ```
 
