@@ -1,5 +1,9 @@
 # Prepared-media DB 청크 저장·분할 조회 구현 메모
 
+2026-11-05 후속: 호환 중간 release B의 기본 신규 쓰기는 legacy이고 reader는 두 형식을 유지한다.
+아래 청크 writer/과거 revision 기록과 구분한다. 제품 변경·검증·승인 한계는
+[호환 중간 release B](../../runtime/compatible-release-b.md)를 따른다.
+
 Refs [#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452),
 [#530](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/530),
 [#537](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/537).

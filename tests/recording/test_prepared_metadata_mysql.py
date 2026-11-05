@@ -62,7 +62,8 @@ def media(kind, end=100.00000033333333):
 
 
 def repo(conn, root):
-    return MySQLRecordingRepository(conn, storage_root=root, temp_root=root)
+    return MySQLRecordingRepository(conn, storage_root=root, temp_root=root,
+                                    prepared_write_format="chunked")
 
 
 def snapshot(conn):
