@@ -279,6 +279,7 @@ def run(connection):
                         seconds=float(scope['requested_sec']) if full else (10 if connection['tag'] == 'smoke' else 120),
                         experimental_config='/evidence/config.json', recording_only=not search, coarse_270p_crf28=search,
                         full_input=full,
+                        search_prepare_budget_ms=connection.get('search_prepare_budget_ms', 150000),
                         explicit_placement_path='/fixture/placements.private.json')
                     if runner.run(args, cpu_observer=observer):
                         raise ValueError('RECORDING_FAILED')

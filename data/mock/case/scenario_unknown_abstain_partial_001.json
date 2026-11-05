@@ -575,6 +575,7 @@
           "violation_expression"
         ],
         "artifact_ref": "da_u001_report_video",
+        "plate_image_ref": "da_u001_plate_image",
         "capabilities": [
           "DOWNLOAD_ASSETS",
           "COPY_FIELDS",

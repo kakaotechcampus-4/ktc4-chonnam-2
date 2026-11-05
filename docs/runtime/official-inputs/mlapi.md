@@ -1,9 +1,10 @@
 # 카테캠 2단계 ML API 환경
 
-**Status:** Input — 카테캠 2단계 운영 공지 요약 + 엘리스 공식 문서 확인 + 조직 Model Library 관측\
+**Status:** Input — 공식 입력 수집·정리 완료(2026-11-05), 미확정 외부 정책은 별도 EI 추적\
 **Source:** 카테캠 운영진 2단계 MLAPI 지원 공지(비공개) + 엘리스 AI Cloud 공식 문서 + 조직 Model Library 화면 + 1단계 ML API 사용 가이드(과거 기준 참고)\
-**Notice date:** 확인 필요  
+**Notice date:** 미확인 — 비공개 운영 공지의 정확한 게시일 근거가 없어 임의 기입하지 않음  
 **Captured:** 2026-10-02  
+**Reconciled:** 2026-11-05 — 현재 Search 선택·Runtime 후속 근거와 정합화  
 **Maintainer:** common/runtime — 김준영  
 **Router:** [Official Inputs](./README.md)
 
@@ -12,6 +13,8 @@
 > 이 문서는 외부 입력이며 결정이 아니다. 실제 provider/model 선택, retry/timeout, concurrency, 비용 guardrail 등 Runtime/Ops 결정은 별도 Spec/Decision에서 이 문서를 근거로 정한다.
 >
 > 본문은 운영진 공지·플랫폼 공식 문서·Model Library 관측을 다룬다. 대신고의 실제 proxy 호출 실험은 **§7 Related internal evidence의 링크로만 연결**하며, 실측값을 이 문서의 공식 조건으로 합치지 않는다. Search 실험은 Search 원문, Runtime 교차 실험은 Runtime experiments, 계약·결정은 각 Contract/Spec/Decision이 소유한다.
+>
+> **문서 정리 완료의 의미(2026-11-05):** 확보된 2단계 공지 요약·엘리스 공개 문서·2026-10-02 조직 Model Library 관측과 관련 근거 링크의 정리는 끝났다. 미확정 provider 정책(EI-01~EI-07)은 [Open Decision Register](../open-decision-register.md)의 External Inputs에서 별도 추적한다. 이 문서의 완료는 해당 정책 확인이나 Runtime capacity / Real E2E 검증 완료를 뜻하지 않는다.
 
 ## 1. 카테캠 2단계 지원 조건
 
@@ -126,7 +129,7 @@ Endpoint와 지원 API는 모델별 상세 정보를 기준으로 확인한다.
 
 ### 4.2 영상 입력에서 아직 확인할 것
 
-대신고 Search/Fine처럼 영상을 provider에 전달하는 경로는 **모델 선택 전에는 전역 계약으로 확정하지 않는다.**
+이 절의 모델 후보·미확정 항목은 **2026-10-02 조사 시점**의 기록이다. 그 이후 대신고 Search의 Coarse/Fine 운영 기본 모델은 **2026-10-27 Owner 결정으로 `gemini-4-argon`**으로 바뀌었다(§7.1). 그러나 특정 모델의 프로젝트 내 선택을 Elice Serverless 전체의 전역 계약으로 확장하지 않는다.
 
 이번 수집 페이지에서 `video` input modality가 명시된 후보는 Gemini 3.8 Flash, Gemini 3.5 Flash Lite, Gemini 3.1 Pro, GLM 5.3 Flash다. 이는 후보 확인이며 모델 추천이나 선택 결정이 아니다. **video modality 지원 확인 ≠ 대신고 MP4 전달 계약 확인**이다. 이미지·파일 전달 예제를 실제 video payload schema로 대체 해석하지 않는다.
 
@@ -145,7 +148,7 @@ concurrency / RPM / TPM
 provider 측 payload retention / logging / delete 정책
 ~~~
 
-이번 수집만으로 실제 video payload schema, file-size/duration/sampling, codec/container, timeout 및 구체 운영 한도를 확정하지 못했다. 이 값들은 Runtime provider adapter, timeout/retry, memory overhead, capacity smoke의 직접 입력이며, **사용 모델 선정과 API smoke test 이후** adapter 계약을 확정한다.
+이번 2026-10-02 수집만으로 실제 video payload schema, file-size/duration/sampling, codec/container, timeout 및 구체 운영 한도를 확정하지 못했다. 현재 선택 모델의 실제 호출·media transport에 관한 내부 근거는 §7.1의 Search Decision/실험에 있으며, provider의 공식 제한이나 운영 보장은 별도 확인이 필요하다. 미확정 외부 정책은 EI-01~EI-07, 실제 Runtime 부하·경로 검증은 §7.2의 P2/Real E2E에서 추적한다.
 
 ### 4.3 Serverless 모델 조사에서 확인된 공통 경계
 
@@ -197,24 +200,22 @@ Serverless 안에서는 별도 모델 제한 없음
 
 이는 외부 입력 확보이며 provider/model 채택이나 실제 API 동작 검증은 아니다.
 
-### 아직 Runtime/Ops 결정 또는 추가 확인이 필요한 것
+### 프로젝트 내 현재 선택 — 플랫폼의 공식 보장과 별개
 
-~~~text
-실제 사용할 provider / model
-모델별 Base URL / endpoint / request schema 및 실제 호환성
-video payload 전달 방식 / file-size / duration / sampling
-timeout
-retry/backoff
-RPM / TPM / concurrency
-codec / container
-실패·재시도 시 과금
-팀 usage 확인 방법 / provider usage SSOT
-₩120,000 크레딧의 환산·정산 기준
-payload retention / logging / delete
-예산 초과 시 복구 절차
-~~~
+- **Search Coarse/Fine:** 2026-10-27 [Search Owner 결정](../../modules/search/decisions/search-argon-model-2026-10-27.md)에 따라 `gemini-4-argon` · Elice OpenAI-compatible 경로를 기본 설정으로 사용한다.
+- **Intent/HINT_EXTRACT:** case 결정을 유지하여 `gemini-3.8-flash` · 별도 Flash 경로를 사용한다.
+- 위 항목은 **develop 코드 기본값과 Owner 결정**이다. 실제 AWS 배포 환경변수·실행 중 revision이 같은지는 배포/실험에서 별도 확인해야 하며, 이 문서에서 운영 배포 완료나 provider 보장으로 단정하지 않는다.
 
-미확정 외부 정책은 **운영진 문의**, 모델별 호환성과 과금 관측은 **선정 모델 API smoke**, 실제 부하·경로 검증은 **Runtime capacity / Real E2E**로 닫는다. 이 문서나 workflow에는 모델 선택 및 timeout/retry 숫자를 결정값으로 넣지 않는다.
+### 이 문서 밖에서 추적하는 미확정 항목
+
+| 구분 | 확인·결정할 내용 | 소유 경로 |
+| --- | --- | --- |
+| 외부 provider 정책 | timeout 보장, RPM/TPM/concurrency, video payload·duration·codec, 실패 과금, Key 삭제·복구, 정산 기준, retention/logging/delete | [Open Decision Register — EI-01~EI-07](../open-decision-register.md), 운영진 문의 및 모델별 smoke |
+| Search adapter / 모델별 실사용 | Base URL·request schema·media transport·usage normalization, 선택 모델 호환성 | [Search 결정·실험](../../modules/search/decisions/search-argon-model-2026-10-27.md) 및 §7.1 |
+| Runtime/Ops 정책 | retry/backoff, execution timeout, usage/cost 원장, budget 대응 | [Runtime Tech Spec](../runtime-tech-spec.md), [Ops Spec](../ops-spec.md), 관련 Decision |
+| 실제 운영 용량·안정성 | provider latency, working set, cleanup, capacity, Real E2E | [P2 capacity smoke plan](../experiments/elice-runtime-capacity-smoke-plan.md) 및 §7.2 |
+
+외부 정책은 운영진 문의 또는 모델별 관측으로, 내부 설정·성능은 해당 Owner의 실험/결정으로 닫는다. **확인되지 않은 수치를 이 문서의 공식 계약값으로 새로 만들지 않는다.** 본 문서의 공식 입력 정리 작업과 후속 구현·운영 검증의 완료 기준은 분리한다.
 
 ## 6. 공식 참고 자료
 
@@ -249,11 +250,13 @@ payload retention / logging / delete
 
 후속 [PR #231 — 모델별 경로 비교](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/231)와 [PR #237 — sol 이미지 Fine 조건 분리](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/237)는 2026-10-02 별도 모델 endpoint/transport의 실험이다. Flash probe의 이미지 처리·video 지원 관측을 Pro/GPT 경로에 그대로 적용하지 않는다. 세부 범위와 호출 mode는 각 PR의 Search experiment 원문으로 이동하며, 이 문서에서 최종 provider/model을 선택하지 않는다.
 
+- **2026-10-27 이후 현재 선택:** [Search argon 전환 결정](../../modules/search/decisions/search-argon-model-2026-10-27.md)에 따라 Coarse/Fine은 `gemini-4-argon`, Intent/HINT_EXTRACT는 `gemini-3.8-flash`로 구분된다. 모델·endpoint 채택과 성능/비용 근거는 Search Owner 문서가 소유한다. 2026-09~10 Flash probe를 현재 argon 경로의 provider 보장이나 실제 배포 증거로 일반화하지 않는다.
+
 ### 7.2 Runtime / UsageRecord / security로 이동
 
 - [Issue #153 — usage·pricing·config ownership 조사와 후속 합의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/153): provider 의미와 config validation은 Search adapter, config/secret 주입과 Final UsageRecord persistence는 Runtime 경계다. 가격표 숫자의 공용 SSOT는 별도 요구가 생길 때 공동 검토하며, 이 문서가 catalog 위치/schema를 정하지 않는다.
 - [UsageRecord Contract](../../architecture/contracts/contract-usage-record.md), [Runtime Tech Spec](../runtime-tech-spec.md) §11·§15: Final 원장 계약과 실행 시 usage/cost/pricing context 보존·주입 경계. #95 D3와 이후 reasoning 실험은 시점·호출 mode별 usage shape 관측이 다르므로 reasoning-specific field를 stable provider contract로 가정하지 않는다. Final 계약은 유지하며 실제 adapter normalization은 선정 모델/호출 경로 smoke에서 재확인한다. UsageRecord Contract의 과거 가격표 소유 문구는 #153 합의 기준으로 Contract 쪽에서 정합화했으며(2026-10-02, §5·§10), 이 문서는 Final Contract를 개정하지 않는다.
-- [PR #154 — Runtime input 승격 경계](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/154), [Runtime Experiments](../experiments/README.md), [P2 capacity smoke plan](../experiments/elice-runtime-capacity-smoke-plan.md), [Ops Spec](../ops-spec.md) §12·§16: inline request working set, ffmpeg/host 자원, cleanup/restart/reuse는 기존 P2에서 검증한다. Search probe 성공을 P2 완료나 Runtime baseline 보장으로 처리하지 않는다.
+- [PR #154 — Runtime input 승격 경계](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/154), [Runtime Experiments](../experiments/README.md), [P2 capacity smoke plan](../experiments/elice-runtime-capacity-smoke-plan.md), [2026-11-02 P2 정합성 감사](../reviews/runtime-p2-plan-audit-2026-11-02.md), [Ops Spec](../ops-spec.md) §12·§16: inline request working set, ffmpeg/host 자원, cleanup/restart/reuse는 P2가 추적한다. 2026-11-02 감사 기준 제한적 AWS Real E2E evidence는 있으나 P2 본격 capacity 측정은 계획 단계다. Search probe 성공을 P2 완료나 Runtime baseline 보장으로 처리하지 않는다.
 - [Pre-deploy security review](../../management/pre-deploy-security-review.md) §1·§3: `RemoteCopy` 미사용과 provider payload retention은 별개다. inline request logging/retention 확인은 기존 검수 경로를 따른다.
 
 기존 모듈 실측을 먼저 읽고 **현재 선택 모델·endpoint·호출 mode와 달라진 부분**을 smoke로 재확인한 뒤, Runtime 교차 실험 결과가 실제 운영 선택을 바꿀 때만 Tech/Ops Spec 또는 Decision/ADR로 승격한다.

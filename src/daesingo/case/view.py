@@ -1,7 +1,7 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.9` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.11` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
@@ -643,6 +643,11 @@ def _build_requirements_view(requirement_report: dict[str, Any] | None) -> dict[
     }
 
 
+def _plate_image_ref(assets: dict[str, Any]) -> str | None:
+    ref = assets.get("plate_image_ref")
+    return ref["ref"] if ref is not None else None
+
+
 def _build_package_view(report_package: dict[str, Any] | None, evidence_record: dict[str, Any] | None) -> dict[str, Any] | None:
     if report_package is None or evidence_record is None:
         return None
@@ -664,6 +669,9 @@ def _build_package_view(report_package: dict[str, Any] | None, evidence_record: 
         "report_fields": report_fields,
         "report_field_states": field_states,
         "artifact_ref": report_package["assets"]["report_video_ref"]["ref"],
+        # 번호판 이미지(#569) — evidence는 PLATE_IMAGE가 AVAILABLE일 때만 이 키를 싣는다.
+        # 번호판을 못 읽음 · 생성 실패 · 생성 중이면 키가 없고, 그때는 null이다.
+        "plate_image_ref": _plate_image_ref(report_package["assets"]),
         "capabilities": report_package["handoff"]["supported_actions"],
         "warnings": [],
         "unconfirmed_fields": unconfirmed,
