@@ -349,6 +349,28 @@ class OverlayTextParseTest(unittest.TestCase):
             with self.subTest(raw=raw):
                 self.assertIsNone(api._parse_overlay_text(raw, self.TZ))
 
+    def test_twelve_hour_clock_keeps_am_pm(self):
+        """12시간제 블랙박스(#575 데모 `04:17:34PM`) — AM/PM을 버리면 오후가 오전으로 확정된다."""
+        for raw, want in (("2026/10/26 04:17:34PM", "2026-10-26T16:17:34+09:00"),
+                          ("2026/10/26 04:17:34 PM", "2026-10-26T16:17:34+09:00"),
+                          ("2026/10/26 04:17:34pm 13.20", "2026-10-26T16:17:34+09:00"),
+                          ("2026/10/26 04:17:34AM", "2026-10-26T04:17:34+09:00"),
+                          ("2026/10/26 12:05:00PM", "2026-10-26T12:05:00+09:00"),
+                          ("2026/10/26 12:05:00AM", "2026-10-26T00:05:00+09:00"),
+                          ("2026-10-2604:17:34PM", "2026-10-26T16:17:34+09:00")):
+            with self.subTest(raw=raw):
+                self.assertEqual(api._parse_overlay_text(raw, self.TZ), want)
+
+    def test_twelve_hour_clock_rejects_impossible_hours(self):
+        for raw in ("2026/10/26 16:17:34PM", "2026/10/26 00:17:34AM"):
+            with self.subTest(raw=raw):
+                self.assertIsNone(api._parse_overlay_text(raw, self.TZ))
+
+    def test_letters_after_seconds_are_not_a_meridiem(self):
+        """`PMX`처럼 단어의 앞부분이면 AM/PM으로 읽지 않는다 — 24시간제 그대로다."""
+        self.assertEqual(api._parse_overlay_text("2026/10/26 16:17:34 PMX", self.TZ),
+                         "2026-10-26T16:17:34+09:00")
+
     def test_first_timestamp_wins_when_two_are_present(self):
         """어느 것이 프레임 시각인지 고를 근거가 여기 없다 — 판정을 숨기지 않고 앞의 것을 쓴다."""
         self.assertEqual(
