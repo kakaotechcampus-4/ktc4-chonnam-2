@@ -317,7 +317,7 @@ Actions에는 `rt14: operation_failed_or_unknown` 한 줄만, host에는 고정 
 | --- | --- | --- |
 | preflight | 소유 volume · project · MySQL digest · disk/memory reserve · 보호 config · Log Group retention · ECR pull · image 검사 · compose render · `deploy-config` | known-good 유지. 아무것도 멈추지 않았다 |
 | quiesce | `dirty.json`(quiescing)을 먼저 기록 → `compose stop api worker migrate` | writer가 멈춘 상태로 남는다. 자동 재시작 없음 |
-| mysql · packet | MySQL만 기동 · healthy → session `max_allowed_packet`이 `MAX_BYTES + packet_margin_bytes`보다 큰지 확인 | 같음 |
+| mysql · packet | MySQL만 기동 · healthy → session packet을 이미지 writer에 맞춰 검사: legacy는 전체 MAX_BYTES, 새 chunked C′는 공유 command budget·양수 chunk와 strict policy margin ([조건](rt14-packet-compatibility-review.md)) | 같음 |
 | migrate | `dirty.json` · `schema.json`을 `migration_pending`으로 기록 → migrate **단 한 번** | 새 deploy · rollback 모두 거부. 부분 DDL을 조사하고 forward repair 또는 검증된 restore |
 | start · health · smoke | `migration_complete` 기록 → api · worker recreate → 검증(§10) | host `current` 미갱신. 새 app이 떠 있을 수 있다. 명시적 rollback 판단(§9) |
 | 승격 | `previous.json` ← 이전 current, `current.json` ← 이번 release, `dirty.json` 삭제 | 중간에 끊기면 dirty와 current/previous를 대조 |

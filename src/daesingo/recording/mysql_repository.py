@@ -32,6 +32,24 @@ _PREPARED_KINDS = frozenset({'analysis_source', 'incident_clip'})
 PREPARED_WRITE_FORMAT = "chunked"
 
 
+def prepared_command_limits(packet, *, write_format, command_budget=None):
+    """Shared writer/startup calculation; actual rendered SQL is guarded too."""
+    if type(packet) is not int or packet <= 0:
+        raise ValueError("invalid prepared-media packet limit")
+    if write_format not in ("legacy", "chunked"):
+        raise ValueError("invalid prepared-media write format")
+    if command_budget is not None and (type(command_budget) is not int or command_budget <= COMMAND_ALLOWANCE):
+        raise ValueError("invalid prepared-media command budget")
+    # Reserve 64 KiB for packet/protocol slack and room for 2x binary escaping.
+    # Legacy keeps its whole-BLOB budget; chunked defaults to 1 MiB commands.
+    default_budget = packet - 64*1024 if write_format == "legacy" else 1024*1024
+    budget = min(command_budget or default_budget, packet - 64*1024)
+    size = min(MAX_CHUNK_BYTES, (budget-COMMAND_ALLOWANCE)//2)
+    if size <= 0:
+        raise ValueError("insufficient prepared-media command budget")
+    return budget, size
+
+
 metadata = sa.MetaData()
 entries = sa.Table(
     "recording_entry", metadata,
@@ -215,13 +233,8 @@ class MySQLRecordingRepository:
             identity(case_id)
         kind, ref = media_identity(media)
         packet = self._execute(sa.select(sa.literal_column("@@session.max_allowed_packet"))).scalar_one()
-        # Reserve 64 KiB for packet/protocol slack. Chunked writes cap commands
-        # at 1 MiB; legacy BLOB writes must fit the actual escaped packet budget.
-        default_budget = packet - 64*1024 if self._prepared_write_format == "legacy" else 1024*1024
-        budget = min(self._command_budget or default_budget, packet - 64*1024)
-        size = min(MAX_CHUNK_BYTES, (budget-COMMAND_ALLOWANCE)//2)
-        if size <= 0:
-            raise ValueError("insufficient prepared-media command budget")
+        budget, size = prepared_command_limits(packet, write_format=self._prepared_write_format,
+                                               command_budget=self._command_budget)
         with self._prepared_commands(budget), self._publish_savepoint():
             # A duplicate no-op is a current read/row lock even under RR; never
             # compare/transfer legacy content or overwrite immutable metadata.
