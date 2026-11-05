@@ -33,3 +33,18 @@ def test_video_read_missing_and_unavailable_are_distinct(media, tmp_path):
         repo._prepared_content.pop(('incident_clip', clip.incident_clip_ref))
         with pytest.raises(RecordingCapabilityError) as unavailable: reader.open_incident_video(clip.incident_clip_ref)
         assert unavailable.value.code == 'UNAVAILABLE'
+
+
+@pytest.mark.parametrize('failure', [FileNotFoundError('/media/clip.mp4'), PermissionError('/media/clip.mp4')])
+def test_video_read_storage_io_failure_is_unavailable(media, tmp_path, monkeypatch, failure):
+    service, repo, _, ref, video, _, _ = setup(media, tmp_path)
+    service._durable_prepared = True
+    with service:
+        clip = service.build_incident_clip(resolution(service, ref, video, 0.35, 1.26))
+    def broken(_ref): raise failure
+    monkeypatch.setattr(repo, 'get_prepared_content', broken)
+    with RecordingService(repo) as reader:
+        with pytest.raises(RecordingCapabilityError) as unavailable:
+            reader.open_incident_video(clip.incident_clip_ref)
+    assert unavailable.value.code == 'UNAVAILABLE'
+    assert unavailable.value.__cause__ is None and '/media' not in str(unavailable.value)

@@ -1014,7 +1014,7 @@ class RecordingService(RecordingExports):
             if (stored is None or len(stored[0]) != clip.byte_size or stored[1] != "video/mp4"
                     or actual_media_type(stored[0]) != "video/mp4"):
                 raise ValueError("invalid incident video content")
-        except ValueError:
+        except (ValueError, OSError):  # 파일 부재 · 권한 등 저장소 I/O 실패도 경로를 숨긴 UNAVAILABLE로
             raise RecordingCapabilityError("UNAVAILABLE", "incident video content unavailable") from None
         return OpenedAnalysisSource(BytesIO(stored[0]), "video/mp4", len(stored[0]))
 
