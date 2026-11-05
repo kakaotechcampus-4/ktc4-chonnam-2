@@ -29,7 +29,7 @@ from .prepared_metadata import encode_prepared_payload, decode_prepared_payload
 _PREPARED_KINDS = frozenset({'analysis_source', 'incident_clip'})
 # Release identity, not configuration. A final writer release changes this
 # default deliberately, with its own SHA/image/compatibility approval.
-PREPARED_WRITE_FORMAT = "legacy"
+PREPARED_WRITE_FORMAT = "chunked"
 
 
 metadata = sa.MetaData()
@@ -80,8 +80,8 @@ class _DatabaseFailure(Exception):
 
 
 class MySQLRecordingRepository:
-    # Release B expands readers before changing new writes. This is not an env
-    # knob: the final release must deliberately select chunked writes again.
+    # Release C selects chunked/envelope writes while retaining B's readers and
+    # replay guards. Release identity is not an environment toggle.
     _prepared_write_format = PREPARED_WRITE_FORMAT
 
     def __init__(self, connection: Connection, *, storage_root: str | Path, temp_root=None,

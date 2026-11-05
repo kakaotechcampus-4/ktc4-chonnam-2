@@ -1,4 +1,6 @@
-"""B's real MySQL write/read/replay contract; never uses production data."""
+"""C's explicit legacy guards; actual pinned B is tested in revision subprocesses."""
+import json
+
 import pytest
 import sqlalchemy as sa
 
@@ -15,6 +17,7 @@ def check(parameter):
 
 
 def repo(conn, root, **kwargs):
+    kwargs.setdefault('prepared_write_format', 'legacy')
     return MySQLRecordingRepository(conn, storage_root=root, temp_root=root, **kwargs)
 
 
@@ -22,7 +25,7 @@ def repo(conn, root, **kwargs):
     pytest.param(kind, flag, marks=check('new_'+kind+'_'+('metadata' if flag else 'content')))
     for kind in ('analysis_source', 'incident_clip') for flag in (False, True)
 ])
-def test_b_new_ref_is_e50_native_and_legacy(db, kind, metadata_only):
+def test_explicit_legacy_new_ref_is_native_and_legacy(db, kind, metadata_only):
     engine, root = db
     item = media(kind, 100.25)
     ref = getattr(item, kind+'_ref')
@@ -37,7 +40,6 @@ def test_b_new_ref_is_e50_native_and_legacy(db, kind, metadata_only):
             'SELECT payload,content FROM recording_entry WHERE kind=%s AND entry_key=%s',
             (kind, _key(ref)),
         ).one()
-        import json
         assert json.loads(payload) == item.model_dump(mode='json')
         assert content == (None if metadata_only else MP4)
         assert conn.exec_driver_sql('SELECT COUNT(*) FROM recording_media_chunk').scalar_one() == 0
@@ -46,7 +48,7 @@ def test_b_new_ref_is_e50_native_and_legacy(db, kind, metadata_only):
 
 @pytest.mark.parametrize('kind', [pytest.param(kind, marks=check('replay_'+kind))
                                 for kind in ('analysis_source', 'incident_clip')])
-def test_b_replay_c_preserves_envelope_chunks_and_exact_metadata(db, kind):
+def test_legacy_replay_preserves_envelope_chunks_and_exact_metadata(db, kind):
     engine, root = db
     item = media(kind)
     with engine.begin() as conn:
@@ -72,7 +74,7 @@ def test_b_replay_c_preserves_envelope_chunks_and_exact_metadata(db, kind):
 
 @pytest.mark.parametrize('metadata_only', [pytest.param(flag, marks=check('precision_'+('metadata' if flag else 'content')))
                                          for flag in (False, True)])
-def test_b_native_precision_mismatch_leaves_no_registration(db, metadata_only):
+def test_legacy_native_precision_mismatch_leaves_no_registration(db, metadata_only):
     engine, root = db
     with engine.begin() as conn:
         conn.exec_driver_sql("INSERT INTO recording_entry(kind,entry_key,payload) VALUES('sentinel','s','{}')")
@@ -89,7 +91,7 @@ def test_b_native_precision_mismatch_leaves_no_registration(db, metadata_only):
 
 
 @check('atomic_link')
-def test_b_case_link_failure_does_not_leak_blob_after_caller_commit(db):
+def test_legacy_case_link_failure_does_not_leak_blob_after_caller_commit(db):
     engine, root = db
     with engine.begin() as conn:
         conn.exec_driver_sql("CREATE TRIGGER reject_b_link BEFORE INSERT ON recording_entry FOR EACH ROW BEGIN IF NEW.kind='case_asset' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='rejected'; END IF; END")
@@ -102,7 +104,7 @@ def test_b_case_link_failure_does_not_leak_blob_after_caller_commit(db):
 
 
 @check('packet')
-def test_b_packet_guard_refuses_before_send_and_preserves_connection(db):
+def test_legacy_packet_guard_refuses_before_send_and_preserves_connection(db):
     from test_ownership_reads import padded_mp4
     engine, root = db
     content = padded_mp4(800000)
@@ -116,10 +118,10 @@ def test_b_packet_guard_refuses_before_send_and_preserves_connection(db):
 
 
 @check('facade_rollback')
-def test_b_production_facades_default_to_legacy_and_caller_rollback(db):
+def test_c_production_facades_default_to_chunked_and_caller_rollback(db):
     from daesingo.recording import ConnectionRecordingRepository, TransactionalRecordingRepository
     engine, root = db
-    item = media('analysis_source', 100.25)
+    item = media('analysis_source')
     with engine.begin() as conn:
         ConnectionRecordingRepository(conn, storage_root=root).add_analysis_source(item)
     def transaction(callback):
@@ -128,11 +130,15 @@ def test_b_production_facades_default_to_legacy_and_caller_rollback(db):
     facade = TransactionalRecordingRepository(transaction, storage_root=root, temp_root=root)
     facade.add_prepared_media(item, MP4)
     with engine.connect() as conn:
-        assert conn.exec_driver_sql('SELECT content FROM recording_entry WHERE kind="analysis_source"').scalar_one() == MP4
+        payload, content = conn.exec_driver_sql('SELECT payload,content FROM recording_entry WHERE kind="analysis_source"').one()
+        assert '__recording_prepared_metadata__' in json.loads(payload)
+        assert content is None
+        assert conn.exec_driver_sql('SELECT COUNT(*) FROM recording_media_chunk').scalar_one() > 0
+        assert facade.get_analysis_source(item.analysis_source_ref) == item
         before = snapshot(conn)
     with engine.connect() as conn:
         other = item.model_copy(update={'analysis_source_ref': 'rolled-back'})
-        repo(conn, root).add_prepared_media(other, MP4)
+        MySQLRecordingRepository(conn, storage_root=root).add_prepared_media(other, MP4)
         conn.rollback()
     with engine.connect() as conn:
         assert snapshot(conn) == before
@@ -140,7 +146,7 @@ def test_b_production_facades_default_to_legacy_and_caller_rollback(db):
 
 @pytest.mark.parametrize('metadata_format', [pytest.param(value, marks=check('attach_'+value))
                                            for value in ('legacy', 'chunked')])
-def test_b_attaches_content_without_rewriting_existing_metadata(db, metadata_format):
+def test_legacy_attaches_content_without_rewriting_existing_metadata(db, metadata_format):
     engine, root = db
     item = media('analysis_source', 100.25)
     with engine.begin() as conn:
@@ -153,7 +159,7 @@ def test_b_attaches_content_without_rewriting_existing_metadata(db, metadata_for
 
 
 @check('corrupt_replay')
-def test_b_replay_corrupt_c_chunks_fails_without_new_case_link(db):
+def test_legacy_replay_corrupt_chunks_fails_without_new_case_link(db):
     engine, root = db
     item = media('analysis_source')
     with engine.begin() as conn:
@@ -168,7 +174,7 @@ def test_b_replay_corrupt_c_chunks_fails_without_new_case_link(db):
 
 @pytest.mark.parametrize('storage_format', [pytest.param(value, marks=check('rr_current_'+value))
                                           for value in ('legacy', 'chunked', 'metadata')])
-def test_b_replay_reads_current_chunks_after_repeatable_read_snapshot(db, storage_format):
+def test_legacy_replay_reads_current_chunks_after_repeatable_read_snapshot(db, storage_format):
     engine, root = db
     item = media('analysis_source', 100.25)
     with engine.connect().execution_options(isolation_level='REPEATABLE READ') as replay:
