@@ -259,37 +259,23 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 원칙:
 
 - **제출 · 심사 · 발표 기간 동안 URL이 실제로 쓸 수 있어야 한다.** 이것이 공지의 요구다. 공지에는 심사가 끝나는 시점이 없다(`확인 필요`).
-- **팀 운영 목표는 같은 URL을 11/20까지 유지하는 것을 기본값으로 둔다.** 11/20은 공지 요구가 아니라 카테캠 AWS 제공 종료일이라는 외부 조건이다. EC2를 중지하면 공인 IPv4가 바뀌므로(§2-1) 주소를 유지하는 수단은 RD-14가 정한다(§2-2).
+- **공개 서비스 운영 종료 목표는 2026-11-20이다(2026-11-05 PM 결정).** 당일 카테캠 AWS 제공 종료를 넘겨 운영하지 않으며, 제공 기한·실제 비용·심사 조건이 더 짧으면 사전 안내 후 일찍 종료한다. 해당 날짜의 서비스 중단과 관리 데이터 삭제는 실제 운영 절차로 확인해야 한다. 기존 EIP·DNS·TLS 및 주소 안정성 운영은 RD-14(§2-2)를 따른다.
 - **EC2는 팀원 공유다**([`aws-environment.md`](./official-inputs/aws-environment.md) §1). 제출 뒤에는 서비스 중인 instance의 중지 · 재시작 · host 전역 변경(package 설치 등)을 운영 창에서만 한다. 전원 자동화 금지는 §2-1 「공유 EC2 전원 · host 변경 원칙」이다.
-- **공개 운영 방식은 RD-14(endpoint 구성)와 별도다.** 2026-11-05 PM이 §2-3-1의 A/C 정책과 개방 게이트를 승인했다. **실제 선택한 모드, 강제되는 비용 상한, 배포 게이트의 PASS 여부는 아직 미확정**이며 공개 전에 §2-4 보호와 §21 pre-deploy review를 수행한다. 카테캠 계정에서 상업적·유료 서비스 운영은 금지다(같은 문서 §3).
+- **공개 범위 정책은 2026-11-05 PM이 C 목표·A-1 대체로 결정했다**(아래 「공개 운영 모드 결정」). RD-14는 endpoint 배포를 소유하며 실제 사용자 영상 공개를 자동으로 승인하지 않는다. 금액 상한도 §2-4의 초기 제안값일 뿐 실제 provider 예산·차단 구현 및 테스트가 완료된 것은 아니다. 공개 전에 §21 및 [보안 검수표](../management/pre-deploy-security-review.md)를 실행한다. 카테캠 계정에서는 상업적·유료 서비스 운영을 하지 않는다.
 - **외부 체험은 §2-4의 보호 범위 안에서만 받는다.**
 - **제공 종료 전 데이터 처리.** 업로드 영상 · 파생물 · DB의 삭제 시점과 방법은 retention 미결(§14, #71)과 함께 정한다. 결정 전에는 「제공 종료와 함께 사라진다」고 가정하지 않는다.
 
-### 2-3-1. 공개 체험 A/C 모드 — 2026-11-05 PM 정책
+#### 공개 운영 모드 결정 (2026-11-05, PM)
 
-**정책 결정과 실행 완료를 구분한다.** 현재는 C를 목표로 하며, 실제 배포에 어떤 모드를 열지는 PM이 보안·비용·삭제·E2E의 **검증 자료를 보고 Go/No-Go**를 결정한다. 기존 [HTTP Contract §3.6](../architecture/contracts/contract-http-api.md#36-인증)은 `case_id`를 사실상의 접근 조건으로 두고 있으므로, 이를 C의 타 사용자 접근 격리 PASS 근거로 사용하지 않는다. 인증/인가 계약 변경이 필요하면 해당 Owner 승인 없이 이 Ops 문서에서 새 스키마·API를 정의하지 않는다.
-
-| 모드 | 공개 기능 | 개방 전에 실제 검증할 것 |
+| 모드 | 허용 범위 | 공개 전 조건·상태 |
 | --- | --- | --- |
-| **C: 제한형 무로그인 Public Beta (목표)** | 일반 사용자의 블랙박스 영상을 **Product Spec에서 E2E로 검증된 길이·크기·형식까지만** 업로드·분석 | 다른 익명 세션의 Case·원본·파생·결과·다운로드에 접근 불가, 안내·동의, 서버측 반복·동시성·과금 차단과 kill switch, 성공·실패·만료·중단 데이터 삭제 |
-| **A: 공식 샘플 한정 실제 E2E (대체)** | **공식적으로 허용한 샘플**로 실제 API·Worker·AI/provider 분석→후보 확인→신고자료·다운로드 체험. 미리 계산된 화면만 보여 주는 모드가 아님 | 서버가 공식 샘플만 실행되도록 입력 출처·허용 목록을 강제하고, 일반 파일 직접 API 업로드와 임의 유료 분석 요청을 차단. 샘플 실행에도 **서버측 비용·호출·동시성·긴급 중단·생성 데이터 보호** 적용. 프런트 업로드 버튼 숨김만으로는 미충족 |
+| **C — 목표** | 로그인 없이 URL 접근; 필요한 고지·동의 후 **업로드 권한이 있는 사용자 영상**의 제한적 분석 | 세션별 Case/원본/파생물/다운로드 접근 격리, provider 과금 강제 차단, 삭제 및 배포 실영상 E2E 검증 후 별도 Go 승인. **미승인** |
+| **A-1 — C 불가 시 대체** | **공식 승인·비식별 샘플에 한해 실제 AI 분석**. 임의 영상 업로드·임의 media 분석은 서버에서 차단 | 샘플 allowlist의 서버측 강제, 세션별 Case·입력 단서·결과 접근 보호, 유료 실행 한도·삭제·샘플 실제 E2E가 검증돼야 한다. **미승인** |
+| **둘 다 불가** | 실제 유료 분석 공개 보류 | 비실행 안내·사전 생성 결과 시연은 실제 분석과 구분해 별도 검토. 이를 A-1 성공으로 표시하지 않음 |
 
-**개방 게이트 (정책 기준, 2026-11-05 현재 `NOT_RUN`/미검증):**
-
-| 게이트 | 수용 기준 | 미달 시 |
-| --- | --- | --- |
-| **G1 외부 접근** | HTTPS·DNS·Web/API revision과 실제 외부 동선 smoke | A·C 모두 개방 불가 |
-| **G2 개인정보·접근 격리** | C는 서로 다른 세션 간 case/source/asset/결과 인가 검증 및 실제 업로드 고지·동의 | **C 금지**, 안전한 A 검토 |
-| **G3 비용·남용 보호** | 분석/재탐색/재판독 포함 서버측 수락·반복·동시성·전역 예산 차단과 kill switch. **A도 공식 샘플 전용 비용 보호가 필수** | 해당 모드 개방 금지 |
-| **G4 입력 범위** | 실제 배포 E2E가 통과한 영상 길이·용량·형식을 Web 고지 및 서버 사전 거부에 일치 | 더 짧은 검증 한도로 축소 또는 업로드 보류 |
-| **G5 보관·삭제** | C의 실제 원본·파생·DB가 완료/실패/중단/만료/재시작에서 정리되며 다른 사용자에게 노출 안 됨 | **C 금지**. A도 샘플 실행 생성물의 안전한 처리 필요 |
-| **G6 대표 샘플** | 출처·공개 권한·비식별 범위가 확인된 공식 샘플로 실제 배포 E2E 재현 | A·C의 체험 개방 보류 |
-| **G7 운영 인계** | 실제 예산/잔액·운영자·비상 차단·운영 기간·카테캠 자원 종료 및 삭제 절차 기록 | 운영 인계 전 개방 보류 |
-
-- G2·G3·G5의 C 필수 조건 중 하나라도 미달이면 **임의 실사용자 업로드를 허용하지 않고 A로 축소**한다. 그러나 A 자체의 샘플 강제·과금 통제 등도 실패했다면 **A 역시 자동 승인되지 않는다**.
-- 사용자 업로드는 **합산 총길이 최대 10분 목표**일 뿐 확정 지원 범위가 아니다. 10분 E2E 미달만으로 C 전체를 금지하지 않으며, 검증된 더 짧은 길이를 적용할 수 있다. Product Spec §3의 장시간 탐색 목표, #452의 26분 기술 E2E와 실제 공개 한도를 구분한다.
-- **최종 금액·횟수·동시성·보존 기간·서비스 공개/종료 시각은 미확정**이다. 운영 계정의 실제 잔액·provider 과금·EC2 부하·삭제 실측과 합의된 운영기간을 근거로 정한다. 추정 비용이나 제안된 수치를 하드캡 구현 완료로 표시하지 않는다.
-- [Pre-deploy Security Review](../management/pre-deploy-security-review.md)의 전체 판정과 Ops §2-4의 hardening 경계를 함께 적용한다. **정책 문서에 PASS를 적어 코드 구현이나 배포 acceptance를 대체하지 않는다.**
+- **공개 URL 접근과 유료 분석 수락은 별개**다. 웹 진입 허용은 임의 Case/API 호출 허가가 아니다. 현재 [HTTP API 인증 경계](../architecture/contracts/contract-http-api.md#36-인증)는 `case_id`를 아는 것을 사실상 접근 조건으로 두므로, 이를 사용자 간 격리의 검증 증거로 간주하지 않는다. A-1에서도 이 위험은 남는다.
+- 공식 기본 샘플은 **1~2분**짜리 사용·공개 권한이 확인된 영상 1~2개를 목표로 한다. 사용자 영상은 **최대 10분 지원 목표**지만, 실제 허용 길이/바이트는 배포 환경의 Recording → Search → Case → 신고자료 다운로드 E2E로 검증된 상한만 사용한다. 현재 확인된 초기 4분/48 MiB 설정은 [Recording 한도](../modules/recording/analysis-source-limits.md)에 있으며, 목표를 근거로 값을 변경하지 않는다.
+- 20분 이상 지원은 이후 확장·검증 목표이지 이번 공개 보장 범위가 아니다. 실제 Go/No-Go와 release revision·검증 증거는 §21에 기록한다. **이 문서 변경은 코드 구현, 설정 적용 또는 공개 승인으로 간주하지 않는다.**
 
 ### 2-4. 외부 체험 운영 보호 · 부하 시험
 
@@ -317,6 +303,25 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 - **Worker 증설로 해결하지 않는다.** §17 조건이 그대로다.
 - **운영 통제 절차가 필요하다.** 신규 분석만 일시 중단하고 기존 결과 조회 · 다운로드는 유지하는 방법을 공개 전에 정한다.
 - 새 HTTP status · 오류 코드 · 사용자 안내가 필요하면 HTTP Contract Owner와 Consumer(case · web)가 함께 정한다. 이 문서는 운영 요구만 정한다.
+
+#### 공개 체험 사용량·비용 제한안 (2026-11-05 PM 정책, 구현·승인 전)
+
+아래는 **초기 운영 제한안**이며 런타임에서 실제 강제되지 않는 한 지원 기능이나 검증 완료로 표시하지 않는다.
+
+| 항목 | 시작 목표값 | 필수 검증·비고 |
+| --- | --- | --- |
+| 세션별 사용 | 세션당 1일 업로드 최대 3회, 초기 분석 최대 3회 | 서버 발급 익명 세션 기준. 브라우저 로컬 상태만으로 집행 금지 |
+| IP별 사용 | IP당 1일 업로드·유료 분석 각각 최대 10회, 업로드는 시간당 최대 3회 | 공유 NAT를 고려하고 예외 해제·차단 수단 정의 |
+| 유료 반복 | 재탐색·재판독·처음 보는 후보 분석 등 추가 provider 호출을 유료 사용량에 합산, Case당 유료 재실행 최대 2회 | [#311](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/311)의 **MVP Case 내부 무제한 반복 결정은 유지**. 공개 운영 admission만 별도로 제한 |
+| 동시 실행 | 익명 세션당 유료 분석 최대 1건, 서비스 전체 유료 분석 수락 최대 2건 | Worker concurrency=1을 2로 늘린다는 뜻이 아님. queue·대기·거절 동작은 검증 후 설정 |
+| 일반 API | IP당 분당 60요청 검토 시작값 | 정상 Web polling에 영향 없는지 실측, 미확정 |
+| **Provider API 비용** | **일 20,000원 / 공개 기간 누적 100,000원 초기 상한안**, 분석 1건 약 1,000원 목표 | **최종 지출 승인 전**. 실제 계정 잔액·단가·retry·재실행 비용 확인. EC2·인프라 비용은 별도 |
+| 운영 중단 | 예산 소진·남용·보안 이상 시 신규 업로드/유료 분석/재실행 즉시 중단 | 조회·완료 산출물은 안전한 범위에서 유지; 실제 kill switch 동작 확인 |
+
+- **비용 상한은 공급자 호출 전에 서버 공유 상태에서 보수적으로 예약·차단해야 한다.** 사후 UsageRecord 집계, 프런트 버튼 제한, 공급자 알림만으로 hard cap을 충족했다고 보지 않는다. 계정/결제 책임자와 실제 운영 가능액을 대조하기 전에는 2만/10만원을 승인된 지출 예산으로 취급하지 않는다.
+- **모든 유료 경로**(초기 탐색·Fine·재탐색·재판독·다른 후보·실패 재시도)를 통제한다. 제한 초과는 가능한 한 비과금 상태에서 즉시 거절하고, Web에는 사용자가 이해할 수 있는 사유·재시도 안내를 제공한다. 새 오류 status/code는 [HTTP 계약](../architecture/contracts/contract-http-api.md) Owner와 합의 후 정한다.
+- **C와 A-1 모두** Case ID·영상 ref를 추측하거나 복사해 다른 세션에서 원본·프레임·다운로드·입력 단서를 볼 수 없는지 검증한다. 별도 로그인은 두지 않지만, 추측 불가능한 세션/Case 권한과 직접 URL 접근 검증은 필요하다. A-1은 공식 샘플 외 파일 등록과 API 우회 분석을 서버에서 거부해야 한다.
+- 모든 숫자는 승인·실측 후 변경할 수 있으나 운영 설정·프런트 안내·백엔드 검증값을 일치시킨다. 세션/IP 식별자는 최소한만 수집·보관한다. 구현 작업 범위와 담당 배정은 별도 합의한다.
 
 #### 부하 시험
 
@@ -797,27 +802,21 @@ Object Storage를 baseline 의무로 두지 않는다.
 
 ## 14. Retention / Cleanup
 
-현재 exact retention 일수는 미결이다.
+**2026-11-05 PM 운영 목표**를 정했다. 아래 기간은 사용자에게 약속할 **최대 보관 목표**이며, 배포 저장소·DB·실패/재시작 경로의 실제 삭제 구현과 검증은 아직 완료된 것으로 보지 않는다([#71](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/71), §21).
 
-금지:
+| 구분 | 보관 목표·삭제 경계 | 현재 상태 |
+| --- | --- | --- |
+| **사용자 기기 외부 원본**(`ExternalSourceRef`) | 사용자가 소유하는 원본은 서비스가 삭제하지 않음 | 기존 Contract 유지 |
+| **서비스 업로드 원본 복사본**(관리 source, staging 등) | 업로드 시점부터 **최대 24시간**, 처리·제출에 필요 없으면 조기 삭제 | 서버 저장 경로별 TTL·실제 삭제 검증 필요 |
+| **AnalysisSource·IncidentClip·DerivedAsset 등 파생물** | 생성 시점부터 **최대 7일**, 실패·취소·Case 삭제 및 종료 시 더 이른 파기 조건 검토 | 파일·DB 연결·orphan purge 검증 필요 |
+| **Case와 사용자별 입력·분석 결과 DB** | Case 생성 시점부터 **최대 7일** | 실제 참조·외부 파일 포함 삭제 검증 필요 |
+| **RemoteCopy / provider 내부 보관** | Provider의 지원 delete/expiry를 확인해 삭제 호출·상태 기록. 즉시 삭제 미지원 시 `PENDING_EXPIRY` 유지 | 외부 Provider 내부 삭제 시점을 자체 TTL로 보장하지 않음 |
+| **UsageRecord 및 운영 로그** | 영상·사용자 Case 보관기간과 분리. 운영 로그의 기존 RD-11a(CloudWatch 30일, host dual cache 20m × 5) 기준 유지 | 개인 정보·비밀값 비기록 검수 필요; UsageRecord retention은 별도 미결 |
 
-- 근거 없이 “7일”, “30일” 같은 숫자 선결
-- video asset retention과 UsageRecord retention 자동 동일시
-- 사용자 External Source까지 서비스 purge 대상처럼 취급
-
-결정해야 할 축:
-
-```text
-Managed Source Copy retention
-AnalysisSource retention
-IncidentClip retention
-DerivedAsset retention
-RemoteCopy expiry/delete
-UsageRecord retention
-log retention
-```
-
-각 값은 개인정보/재현성/비용/사용자 flow를 함께 보고 결정한다.
+- **2026-11-20 서비스 종료** 전에 새 업로드·유료 분석을 중단하고 서버가 관리하는 업로드 원본, 파생물, Case/사용자 DB 및 임시·orphan 파일의 안전한 삭제·잔여 확인을 수행한다. 최대 7일 보관 목표가 AWS 제공 종료일 이후까지 보관할 근거가 되지는 않는다. 사용자 데이터 삭제 완료 전 시스템 종료를 완료 처리하지 않는다.
+- 삭제는 업로드 실패·취소·재시도·재시작·기한 만료·서비스 종료를 포함해 검증한다. 미완료 삭제·provider expiry는 정확한 상태와 재시도/운영자 대응을 남긴다. 백업·로그·외부 Provider의 실제 보관 범위를 별도로 확인한다.
+- 실제 `purge_case()`·`DeletionReport`·provider adapter의 소유 경계는 변경하지 않는다. retention 값은 운영 정책이며, Domain Contract와 물리 구현을 이 문서만으로 바꾸지 않는다.
+- 세부 cleanup 구현·검증은 [#71](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/71)과 [Pre-deploy Security Review](../management/pre-deploy-security-review.md)를 따른다.
 
 ## 15. Provider 장애 운영
 
@@ -1070,6 +1069,25 @@ coverage는 미검증 경로를 찾는 보조지표로 사용하며 근거 없�
 
 상세 security checklist는 [`docs/management/pre-deploy-security-review.md`](../management/pre-deploy-security-review.md)를 따른다.
 
+### 21-1. 공개 모드 Go/No-Go (2026-11-05 정책, 현재 미검증)
+
+**정책 확정은 배포 승인·acceptance PASS가 아니다.** 실제 배포 revision, 실행 일시, 결과·증거 링크와 담당자 판단을 기록한 후 PM이 공개 모드를 승인한다.
+
+| Gate | 배포 전 확인할 사항 | 검증 담당 | 초기 판정 |
+| --- | --- | --- | --- |
+| G1 외부 접근 | 비회원 외부 HTTPS 접속, 샘플 제공, Web/API 같은 revision 확인 | Runtime·Web | 미검증 |
+| G2 권한·개인정보 | C: 다른 세션의 Case/source/derived/download 접근 불가, 고지·동의. A-1: 같은 접근 격리 및 **공식 샘플만 서버에서 허용** | Runtime·Case·Web | **C/A-1 모두 미검증** |
+| G3 비용·남용 | 세션/IP/반복·전역 유료 수락 상한, provider 요청 전 예산 강제 차단, 긴급 중단 | Runtime·Search | **C/A-1 모두 미검증** |
+| G4 검증 길이 | 실제 공개 환경의 E2E 성공 길이·바이트로 입력 상한 설정; 10분 목표 미충족 시 검증된 상한만 사용 | Runtime·Recording·Search | #452 검증 대기 |
+| G5 삭제 | 업로드 사본·파생·Case DB·임시 파일의 TTL/삭제, 실패·취소·재시작·종료 시 잔여 확인 | Runtime·Recording | **C/A-1 모두 미검증** |
+| G6 샘플 시연 | 허가·비식별 대표 샘플 1~2분의 실제 끝까지 분석·다운로드 및 사용자 안내 확인 | Demo·Web·Runtime | 미검증 |
+| G7 운영 인계 | provider 실제 예산 승인, 운영 종료 11/20, 중단·삭제 runbook, 비상 담당자·통신 수단 확정 | PM·Runtime | 일부 결정 / 미검증 |
+
+- **C 공개**는 G1~G7 중 필수조건을 모두 통과한 뒤 승인한다. G4의 10분 목표가 미달해도 검증된 더 짧은 상한이 명확하고 다른 필수조건을 통과하면 제한 C를 검토할 수 있다.
+- **A-1 대체**는 사용자 임의 영상의 업로드·분석을 서버에서 차단한 상태에서, G1·G2(샘플 격리 포함)·G3·G5·G6·G7을 별도 실증한 뒤에만 승인한다. A-1을 선택했다고 비용·삭제·권한 보호를 생략하지 않는다.
+- 두 모드 모두 불충족이면 공개 실분석을 중단한다. 사전 계산 결과나 정적 안내를 제공하더라도 실제 AI 분석처럼 표시하지 않는다.
+- 검증 항목의 Owner/판정은 [Pre-deploy Security Review](../management/pre-deploy-security-review.md)에, 서버 실행 증거는 해당 배포 실험·runbook에 기록한다. 기존 RT-14 endpoint acceptance만으로 본 Gate를 PASS로 승격하지 않는다.
+
 ## 22. Non-goals
 
 현재 baseline에서 일부러 만들지 않는다.
@@ -1098,7 +1116,7 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] health alert/restart threshold — `/health/live` · `/health/ready` 구현은 완료. RD-13c alert는 공개 운영 hardening 후속으로 넘겼다(2026-10-30 Gate)
 - [ ] disk working-set guardrail
 - [ ] Object Storage 사용 범위
-- [ ] Managed asset retention
+- [ ] Managed asset retention **구현·삭제 검증** — 원본 복사본 최대 24시간, 파생물·사용자 Case DB 최대 7일은 운영 목표로 결정(§14); 실제 adapter·TTL 미검증
 - [ ] UsageRecord retention
 - [ ] provider RemoteCopy cleanup 운영
 - [ ] P2 Runtime Capacity Smoke 수행 — #95 P0/P1 기반 concurrency=1 baseline, working set, cleanup, restart/reuse 관측
@@ -1110,12 +1128,12 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. rollback tip gate 변경 · 최초 배포 recovery runbook · rehearsal이 남았다
 - [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지다. 공개 배포의 외부 smoke(DNS · HTTPS · Web → API) 추가가 남았다([RT-14 배포 설계](./rt14-deployment-design.md) §10). 2026-10-31: 외부 smoke는 [공개 배포 Notes](rt14-public-deployment.md)로 구현됐고 검증자 PC에서 PASS했다. Caddy `/32` 제한 중 workflow 단계 smoke는 runner에서 403이라 공개 범위 확대 때 함께 정한다(§2-2)
 - [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** 공개 모델(same-origin · HTTPS · Caddy host 인프라 · release-bound Web artifact · SG 80/443만 · ~~DDNS 우선 · EIP 비필수~~ EIP + DuckDNS, updater는 백업)은 [RT-14 배포 설계](./rt14-deployment-design.md) §13, 2026-10-30 Gate 승인 · 2026-10-31 RD-14a 갱신. 2026-10-31 검증자 1명(`/32`) 제한 public acceptance PASS([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 공개 범위 확대가 남았다
-- [x] 공개 범위의 **A(공식 샘플 실제 E2E) / C(제한형 실사용자 업로드) 정책과 개방 조건** — 2026-11-05 PM 결정, §2-3-1. **정책 결정만 완료**
-- [ ] **실제 A/C 개방 판정** — §2-3-1 G1~G7 검증, 운영비/횟수/시간/보존 실운영값·공개 샘플·Web 안내·비상 중단 절차 확인
+- [x] **공개 운영 방향 결정**(2026-11-05) — C 제한형 Public Beta 목표, 미충족 시 A-1 공식 샘플 실분석 대체, 종료일 11/20(§2-3). **코드 구현·게이트 검증·실제 공개 승인은 아직 미완료**
+- [ ] C/A-1 실제 공개 Go/No-Go, 공식 샘플·사용 안내·권한 격리·예산 확인(§21-1)
 - [ ] 제출 뒤 배포본 hotfix 허용 여부 — 공지에 없음, 카테캠 확인 필요
-- [ ] 외부 체험 보호 상한 — 신규 분석 수락 · 동시 업로드 · 다운로드 메모리 · 운영 통제(신규 분석 일시 중단) 절차(§2-4). RT-14 Gate가 아니라 공개 운영 hardening 후속 이슈 범위
+- [ ] 외부 체험 보호 상한 **구현·실측** — 11/5 정책값(세션/IP/반복/동시 분석, provider 일 2만원·누적 10만원 *잠정*)은 §2-4. 실제 예산 승인·서버 admission·업로드/다운로드 보호·긴급 중단 절차는 미완료. RT-14 endpoint Gate와 분리
 - [ ] 외부 체험 부하 시험 실행과 결과 기록 — P2 다음 단계, 기준은 시험 전에 고정(§2-4). 공개 운영 hardening 후속 이슈 범위
-- [ ] 제출 → 발표(11/16) → AWS 종료(11/20) 운영 유지와 종료 시 데이터 삭제 — §2-3 · §14
+- [ ] **11/20 공개 운영 종료 실행 및 데이터 정리 검증** — 종료일은 결정됨. 발표(11/16)까지 가용성·일정/잔여 예산·종료 전 삭제 증거는 별도 확인(§2-3 · §14)
 - [x] 공유 EC2 전원 자동화 금지 — §2-1 「공유 EC2 전원 · host 변경 원칙」(2026-10-30 공유 사용 충돌 근거)
 - [ ] README 배포 절 · 환경 분리 서술 — 실제 배포 실행 뒤(§2-3 · §4-1)
 - [ ] 공개 전 pre-deploy security review 실행 — §21
