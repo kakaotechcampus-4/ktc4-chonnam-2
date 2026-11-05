@@ -38,7 +38,8 @@ def model(content=MP4, kind="analysis_source"):
 
 
 def repo(conn, root, **kwargs):
-    return MySQLRecordingRepository(conn, storage_root=root, temp_root=root, **kwargs)
+    return MySQLRecordingRepository(conn, storage_root=root, temp_root=root,
+                                    prepared_write_format="chunked", **kwargs)
 
 
 @check("bounded")

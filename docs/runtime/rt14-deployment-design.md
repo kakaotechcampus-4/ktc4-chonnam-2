@@ -94,7 +94,7 @@ RD-13c는 restart와 alert의 상태가 달라 두 줄로 나눴다. RD-14 안�
 | --- | --- | --- |
 | 수동 workflow 두 개. 둘 다 `workflow_dispatch` · repository와 repository ID · `refs/heads/develop`일 때만 job이 돈다. 배포 workflow는 Variable `RT14_EXECUTION_ENABLED == 'true'`도 요구한다 | `.github/workflows/rt14-oidc.yml` · `rt14-deploy.yml` | §4 · RD-12d |
 | OIDC token → STS 교환을 credential action 없이 직접 한다. 임시 자격증명을 `GITHUB_ENV` · output · artifact에 남기지 않고, 기대 account와 `ktc-github-deploy` assumed-role만 비교한다 | `deploy/aws.py` `oidc` · `verify_identity` | RD-12d |
-| publish: `--platform linux/amd64` build(`REVISION=$GITHUB_SHA`) → 같은 image로 media-preflight · readout-preflight · media acceptance(`--network none`) → 기존 repository가 `IMMUTABLE`인지 확인 → SHA tag push → `describe-images`로 digest 확인 | `rt14-deploy.yml` publish · `aws.py` `publish` | RD-12b |
+| publish: 검증된 `publish_revision` archive에서 amd64 build → image ID 고정 → 기존 Web/media/readout acceptance → IMMUTABLE·기존 tag 부재 확인 → target SHA tag push → registry digest/image ID 대조. 제어 code는 develop에 유지 ([상세](rt14-fixed-revision-publish.md)) | `rt14-deploy.yml` publish · `aws.py` publish 준비/검증/publish | RD-12b |
 | deploy · rollback: quality gate(§4) → ECR tag와 digest 대조 → `AWS-RunShellScript`에 `exec /usr/bin/python3 /opt/daesingo/controller/ec2.py <operation> --image … --revision … --config-id …` **한 줄**. delivery 60 s · 실행 1,200 s · runner 대기 1,500 s. `Success` **그리고** 정수 exit 0만 성공. stdout/stderr는 runner로 가져오지 않고, Run Command의 CloudWatch 출력도 끈다 | `aws.py` `remote` · `ssm_payload` · `wait_command` | RD-12d |
 | host controller는 image가 아니라 검토 뒤 root 소유로 설치한 `/opt/daesingo/controller/`에 있다. 배포 도중 자동 교체하지 않는다. image에는 `compose.yaml`만 들어 있고, controller가 그것을 꺼내 운영 값으로 render한다 | `deploy/ec2.py` `preflight` · `production_compose` · `Dockerfile` | 앞선 초안의 「image 안 `deploy.sh`」 폐기 |
 | controller 상태 파일: `operation.lock`(mkdir) · `dirty.json`(phase journal) · `schema.json`(schema authority) · `current.json` · `previous.json`(root 0600) · `approvals/<revision>.json` · `policy.json`(root 0400) | `ec2.py` `transition` · `main` | RD-12c · 12e |
@@ -143,7 +143,9 @@ dispatch 조건 (workflow if + trusted_context)
   그 SHA에 대한 push event의 python-tests · boundary-check 최신 run이 completed · success
 
 publish
-  build 대상 = GITHUB_SHA (= dispatch 시점 develop tip). ECR tag = 그 SHA
+  제어 workflow/publisher = GITHUB_SHA (= dispatch 시점 develop tip)
+  build 대상 = publish_revision (전체 commit SHA, 실제 Git tree와 ancestor 검사)
+  대상 자체 push CI/secret-scan도 필요. REVISION/Web/image/tag는 대상 SHA에 결속
 
 deploy · rollback — quality_gate(env, revision=RT14_REVISION) 추가
   GitHub compare <RT14_REVISION>...develop 의 status ∈ {ahead, identical}
@@ -152,7 +154,7 @@ deploy · rollback — quality_gate(env, revision=RT14_REVISION) 추가
   ECR에서 tag=<RT14_REVISION>의 digest == Secret RT14_IMAGE의 digest
 ```
 
-결과적으로 배포할 수 있는 revision은 **develop 이력에 있고, push CI가 성공했고, publish 때 develop tip이었던 commit**이다. PR CI만 통과한 commit이나 `main`에만 있는 merge commit은 거부된다.
+결과적으로 배포 target은 **develop 이력에 있고, 자체 push CI가 성공했으며, 신뢰된 develop 제어 경로에서 exact image로 검증·게시한 commit**이다. target이 publish 시점 tip일 필요는 없지만 제어 SHA의 기존 tip/CI 조건은 유지한다. PR CI만 통과한 commit이나 `main`에만 있는 merge commit은 거부된다.
 
 §9.3의 변경이 반영되면 rollback은 위 공통 tip 검사에서 빠지고 대상 revision 검사만 받는다.
 
@@ -315,7 +317,7 @@ Actions에는 `rt14: operation_failed_or_unknown` 한 줄만, host에는 고정 
 | --- | --- | --- |
 | preflight | 소유 volume · project · MySQL digest · disk/memory reserve · 보호 config · Log Group retention · ECR pull · image 검사 · compose render · `deploy-config` | known-good 유지. 아무것도 멈추지 않았다 |
 | quiesce | `dirty.json`(quiescing)을 먼저 기록 → `compose stop api worker migrate` | writer가 멈춘 상태로 남는다. 자동 재시작 없음 |
-| mysql · packet | MySQL만 기동 · healthy → session `max_allowed_packet`이 `MAX_BYTES + packet_margin_bytes`보다 큰지 확인 | 같음 |
+| mysql · packet | MySQL만 기동 · healthy → session packet을 이미지 writer에 맞춰 검사: legacy는 전체 MAX_BYTES, 새 chunked C′는 공유 command budget·양수 chunk와 strict policy margin ([조건](rt14-packet-compatibility-review.md)) | 같음 |
 | migrate | `dirty.json` · `schema.json`을 `migration_pending`으로 기록 → migrate **단 한 번** | 새 deploy · rollback 모두 거부. 부분 DDL을 조사하고 forward repair 또는 검증된 restore |
 | start · health · smoke | `migration_complete` 기록 → api · worker recreate → 검증(§10) | host `current` 미갱신. 새 app이 떠 있을 수 있다. 명시적 rollback 판단(§9) |
 | 승격 | `previous.json` ← 이전 current, `current.json` ← 이번 release, `dirty.json` 삭제 | 중간에 끊기면 dirty와 current/previous를 대조 |

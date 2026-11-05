@@ -184,6 +184,8 @@ mysql UID 0400이다. Docker daemon이 파일을 bind하고 컨테이너가 정�
 
 ## 5. CI publish와 SSM 실행
 
+고정 과거 revision의 현재 publish 입력·제어/target 분리·검증 순서는 [고정 revision publish](rt14-fixed-revision-publish.md)를 따른다. 아래 기존 운영 준비와 deploy/rollback 계약은 유지하며, GITHUB_SHA-only publish 설명은 그 변경 전 경로다.
+
 일반 regression/mysql/test CI와 required-check 의미는 유지한다. 두 새 workflow는
 `workflow_dispatch`만 사용한다. OIDC 권한은 해당 job에만 있고 PR/fork에서 실행하지 않는다.
 checkout v4.3.1을 공식 tag ref로 확인한 commit에 pin했다. credential action은 사용하지 않는다.
@@ -254,8 +256,12 @@ sudo /usr/bin/python3 /opt/daesingo/controller/ec2.py deploy \
    Recording Analysis 6개와 Incident 3개를 검증한다. 비어 있는 운영 한도는 여기서 중단한다.
 5. 기존 writer를 stop하고 MySQL만 기동/healthy를 기다린다. live app이 쓰는 상태에서
    migration하지 않는다. grace는 기존 30초로 모든 handler 완료 보장이 아니다.
-6. app DB 연결의 실제 session packet과 `MAX_BYTES + packet_margin_bytes < packet`을
-   확인한다. margin은 측정·승인값이고 코드에 기본값을 두지 않는다.
+6. app DB 연결의 실제 session packet과 이미지 writer 형식에 맞는 한도를 확인한다.
+   legacy는 `MAX_BYTES + packet_margin_bytes < packet`, 새 chunked C′는 writer와
+   공유한 command budget·양수 chunk size 및 `budget + packet_margin_bytes < packet`을
+   요구한다. MAX_BYTES 양수·Recording 업무 한도와 실제 SQL guard는 유지한다.
+   고정 B/기존 C와의 차이는 [packet 조건](rt14-packet-compatibility-review.md)을 따른다.
+   margin은 측정·승인값이고 코드에 기본값을 두지 않는다.
 7. dirty와 별도 schema authority `schema.json`의 `migration_pending`을 fsync한 뒤
    migrate **단 한 번** 실행한다. nonzero/timeout은
    실패이며 API/Worker를 시작하지 않는다. forward-only이며 downgrade 없음.

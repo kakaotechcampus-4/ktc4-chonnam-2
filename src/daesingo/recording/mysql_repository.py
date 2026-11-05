@@ -6,7 +6,7 @@ the caller ends its transaction, serializing same-stream frame identity creation
 """
 
 from collections.abc import Callable
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from decimal import Decimal
 import hashlib
 import json
@@ -27,6 +27,27 @@ from .chunked_media import MAX_CHUNK_BYTES, COMMAND_ALLOWANCE, checked_manifest,
 from .prepared_metadata import encode_prepared_payload, decode_prepared_payload
 
 _PREPARED_KINDS = frozenset({'analysis_source', 'incident_clip'})
+# Release identity, not configuration. A final writer release changes this
+# default deliberately, with its own SHA/image/compatibility approval.
+PREPARED_WRITE_FORMAT = "chunked"
+
+
+def prepared_command_limits(packet, *, write_format, command_budget=None):
+    """Shared writer/startup calculation; actual rendered SQL is guarded too."""
+    if type(packet) is not int or packet <= 0:
+        raise ValueError("invalid prepared-media packet limit")
+    if write_format not in ("legacy", "chunked"):
+        raise ValueError("invalid prepared-media write format")
+    if command_budget is not None and (type(command_budget) is not int or command_budget <= COMMAND_ALLOWANCE):
+        raise ValueError("invalid prepared-media command budget")
+    # Reserve 64 KiB for packet/protocol slack and room for 2x binary escaping.
+    # Legacy keeps its whole-BLOB budget; chunked defaults to 1 MiB commands.
+    default_budget = packet - 64*1024 if write_format == "legacy" else 1024*1024
+    budget = min(command_budget or default_budget, packet - 64*1024)
+    size = min(MAX_CHUNK_BYTES, (budget-COMMAND_ALLOWANCE)//2)
+    if size <= 0:
+        raise ValueError("insufficient prepared-media command budget")
+    return budget, size
 
 
 metadata = sa.MetaData()
@@ -77,8 +98,12 @@ class _DatabaseFailure(Exception):
 
 
 class MySQLRecordingRepository:
+    # Release C selects chunked/envelope writes while retaining B's readers and
+    # replay guards. Release identity is not an environment toggle.
+    _prepared_write_format = PREPARED_WRITE_FORMAT
+
     def __init__(self, connection: Connection, *, storage_root: str | Path, temp_root=None,
-                 command_budget=None):
+                 command_budget=None, prepared_write_format=PREPARED_WRITE_FORMAT):
         if connection.dialect.name != "mysql" or connection.closed:
             raise ValueError("recording requires an open MySQL Connection")
         self._connection = connection
@@ -93,6 +118,9 @@ class MySQLRecordingRepository:
         if command_budget is not None and (type(command_budget) is not int or command_budget <= COMMAND_ALLOWANCE):
             raise ValueError("invalid prepared-media command budget")
         self._command_budget = command_budget
+        if prepared_write_format not in ("legacy", "chunked"):
+            raise ValueError("invalid prepared-media write format")
+        self._prepared_write_format = prepared_write_format
         self._analysis_streams: dict[str, tuple[Callable[[], BinaryIO], str]] = {}
 
     def _execute(self, statement):
@@ -111,7 +139,7 @@ class MySQLRecordingRepository:
                               connection_invalidated=error.connection_invalidated) from None
 
     def _row(self, kind, identity, payload, content=None):
-        if kind in _PREPARED_KINDS:
+        if kind in _PREPARED_KINDS and self._prepared_write_format == "chunked":
             payload = encode_prepared_payload(payload)
         return {"kind": kind, "entry_key": _key(identity), "payload": payload, "content": content}
 
@@ -171,11 +199,14 @@ class MySQLRecordingRepository:
         if not immutable:
             self._write([row])
             return
-        stmt = insert(entries).values(row)
-        self._execute(stmt.on_duplicate_key_update(entry_key=entries.c.entry_key))
-        stored = self._get(kind, identity, lock=True)
-        if type(model).model_validate_json(json.dumps(stored["payload"])) != model:
-            raise ValueError("recording immutable identity conflicts with stored payload")
+        # Native MySQL JSON can change a float. Refuse that registration without
+        # leaving a row even if the caller catches the conflict and commits.
+        with self._publish_savepoint() if kind in _PREPARED_KINDS else nullcontext():
+            stmt = insert(entries).values(row)
+            self._execute(stmt.on_duplicate_key_update(entry_key=entries.c.entry_key))
+            stored = self._get(kind, identity, lock=True)
+            if type(model).model_validate_json(json.dumps(stored["payload"])) != model:
+                raise ValueError("recording immutable identity conflicts with stored payload")
 
     def add_source_asset(self, asset):
         self._put("source_asset", asset.source_asset_ref, asset)
@@ -202,12 +233,8 @@ class MySQLRecordingRepository:
             identity(case_id)
         kind, ref = media_identity(media)
         packet = self._execute(sa.select(sa.literal_column("@@session.max_allowed_packet"))).scalar_one()
-        # Reserve 64 KiB for packet/protocol slack; cap the ordinary SQL command
-        # budget at 1 MiB. Worst-case PyMySQL escaping doubles binary bytes.
-        budget = min(self._command_budget or 1024*1024, packet - 64*1024)
-        size = min(MAX_CHUNK_BYTES, (budget-COMMAND_ALLOWANCE)//2)
-        if size <= 0:
-            raise ValueError("insufficient prepared-media command budget")
+        budget, size = prepared_command_limits(packet, write_format=self._prepared_write_format,
+                                               command_budget=self._command_budget)
         with self._prepared_commands(budget), self._publish_savepoint():
             # A duplicate no-op is a current read/row lock even under RR; never
             # compare/transfer legacy content or overwrite immutable metadata.
@@ -223,12 +250,18 @@ class MySQLRecordingRepository:
                 if "version" in value:
                     checked_manifest(value)
                     previous_info = {key: value[key] for key in info}
+                    # Validate persisted chunks, not only their descriptor. The
+                    # detached reader verifies count/size/hash with bounded reads.
+                    opened = self._read_prepared_stream(m.ContractRef(kind=kind, ref=ref), current=True)
+                    with opened[0]:
+                        pass
                 else:
+                    legacy_manifest(value)
                     previous_info = value
                     # Check old bytes on the server, returning only small facts.
                     length, digest = self._execute(sa.select(sa.func.octet_length(entries.c.content),
                         sa.func.sha2(entries.c.content, 256)).where(
-                            entries.c.kind == kind, entries.c.entry_key == _key(ref))).one()
+                            entries.c.kind == kind, entries.c.entry_key == _key(ref)).with_for_update()).one()
                     if length != info["byte_size"] or digest != info["sha256"]:
                         raise ValueError("recording immutable identity conflicts with stored payload")
                 if previous_info != info:
@@ -237,14 +270,21 @@ class MySQLRecordingRepository:
                 # Metadata-only registrations can acquire content once. A legacy
                 # BLOB without its integrity descriptor is never silently replaced.
                 length = self._execute(sa.select(sa.func.octet_length(entries.c.content)).where(
-                    entries.c.kind == kind, entries.c.entry_key == _key(ref))).scalar_one()
+                    entries.c.kind == kind, entries.c.entry_key == _key(ref)).with_for_update()).scalar_one()
                 if length is not None:
                     raise ValueError("invalid recording stored content")
-                for index, offset in enumerate(range(0, len(content), size)):
-                    self._execute(insert(chunks).values(kind=kind, entry_key=_key(ref),
-                        chunk_index=index, content=content[offset:offset+size]))
-                manifest = {**info, "version": 1, "chunk_size": size,
-                            "chunk_count": (len(content)+size-1)//size}
+                if self._prepared_write_format == "legacy":
+                    # Existing metadata may already be an envelope. Update only
+                    # content, never its representation or canonical identity.
+                    self._execute(entries.update().where(entries.c.kind == kind,
+                        entries.c.entry_key == _key(ref)).values(content=content))
+                    manifest = info
+                else:
+                    for index, offset in enumerate(range(0, len(content), size)):
+                        self._execute(insert(chunks).values(kind=kind, entry_key=_key(ref),
+                            chunk_index=index, content=content[offset:offset+size]))
+                    manifest = {**info, "version": 1, "chunk_size": size,
+                                "chunk_count": (len(content)+size-1)//size}
                 self._immutable_write([self._row("prepared_content", [kind, ref], manifest)])
             if case_id is not None:
                 self._immutable_write([self._row("case_asset", [case_id, kind, ref],
@@ -311,22 +351,30 @@ class MySQLRecordingRepository:
         return {key: manifest[key] for key in ("byte_size", "sha256", "content_type")}
 
     def open_prepared_stream(self, ref):
-        row = self._get(ref.kind, ref.ref)
-        info = self._get("prepared_content", [ref.kind, ref.ref])
+        return self._read_prepared_stream(ref, current=False)
+
+    def _read_prepared_stream(self, ref, *, current):
+        # Replay has already locked the immutable media identity. Under RR,
+        # all integrity reads must share that current view, not an older snapshot.
+        def execute(statement):
+            return self._execute(statement.with_for_update() if current else statement)
+
+        row = self._get(ref.kind, ref.ref, lock=current)
+        info = self._get("prepared_content", [ref.kind, ref.ref], lock=current)
         if row is None or info is None:
             return None
         value = info["payload"]
         if "version" in value:
             manifest = checked_manifest(value)
             condition = sa.and_(chunks.c.kind == ref.kind, chunks.c.entry_key == _key(ref.ref))
-            count, low, high = self._execute(sa.select(sa.func.count(), sa.func.min(chunks.c.chunk_index),
+            count, low, high = execute(sa.select(sa.func.count(), sa.func.min(chunks.c.chunk_index),
                 sa.func.max(chunks.c.chunk_index)).where(condition)).one()
             if (count, low, high) != (manifest["chunk_count"], 0, manifest["chunk_count"]-1):
                 raise ValueError("invalid recording media chunks")
             def parts():
                 for index in range(count):
                     # Bound results even if a damaged row contains a giant BLOB.
-                    with self._execute(sa.select(sa.func.substring(chunks.c.content, 1, manifest["chunk_size"]+1),
+                    with execute(sa.select(sa.func.substring(chunks.c.content, 1, manifest["chunk_size"]+1),
                             sa.func.octet_length(chunks.c.content)).where(condition, chunks.c.chunk_index == index)) as result:
                         part = result.one_or_none()
                     if part is None or len(part[0]) != part[1]:
@@ -336,12 +384,12 @@ class MySQLRecordingRepository:
             # Legacy format is read in bounded substrings without a full BLOB row.
             manifest = legacy_manifest(value)
             condition = sa.and_(entries.c.kind == ref.kind, entries.c.entry_key == _key(ref.ref))
-            length = self._execute(sa.select(sa.func.octet_length(entries.c.content)).where(condition)).scalar_one()
+            length = execute(sa.select(sa.func.octet_length(entries.c.content)).where(condition)).scalar_one()
             if length != manifest["byte_size"]:
                 raise ValueError("invalid recording stored content")
             def parts():
                 for offset in range(0, length, MAX_CHUNK_BYTES):
-                    with self._execute(sa.select(sa.func.substring(entries.c.content, offset+1,
+                    with execute(sa.select(sa.func.substring(entries.c.content, offset+1,
                             min(MAX_CHUNK_BYTES, length-offset))).where(condition)) as result:
                         part = result.scalar_one()
                     yield part
