@@ -64,7 +64,8 @@ class GeminiSearchConfig:
     base_url: str = "https://mlapi.run/e1febb2a-0530-4f93-9ff4-ef844e185639/v1"
     # v3: 늘린 영상 전송(coarse 2 / fine 4 fps)·배속 안내·시각 환산. prepared_duration_ms 는 늘린 길이다.
     # v4: gemini-4-argon · argon tenant 경로 · Fine 분기부 문장(fine-gore-v1).
-    version: str = "gemini-search-v4"
+    # v5: Coarse 준비 영상 270p · crf28(#452). Fine은 그대로.
+    version: str = "gemini-search-v5"
 
     def __post_init__(self) -> None:
         try:
