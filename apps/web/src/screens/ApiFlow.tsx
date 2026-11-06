@@ -152,6 +152,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     location.assign(location.pathname)
   }
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
+  // 지워진 기억 case는 새 신고로 넘어가는 중이다 — 그 사이 「찾을 수 없어요」가 깜빡이지 않게 머리줄만 둔다
+  if (gone && props.remembered) return <AppHeader onNewReport={newReport} />
 
   return (
     <>

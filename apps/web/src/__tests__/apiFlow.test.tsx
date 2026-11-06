@@ -518,8 +518,9 @@ it('기억한 case가 서버에서 지워졌으면 잊는다 — 「찾을 수 �
   localStorage.setItem('daesingo.lastCase', 'old')
   const { m, api } = setup()
   m.getView.mockResolvedValue({ ok: false, status: 404, error: { code: 'http.not_found', message_key: 'http.not_found' }, caseView: null })
-  render(<ApiFlow api={api} caseId="old" remembered />)
+  const { queryByText } = render(<ApiFlow api={api} caseId="old" remembered />)
   await waitFor(() => expect(localStorage.getItem('daesingo.lastCase')).toBeNull())
+  expect(queryByText('진행 정보를 찾을 수 없어요')).toBeNull()
 })
 
 it('candidate video request and polling keep the failure comparison visible without selecting', async () => {
