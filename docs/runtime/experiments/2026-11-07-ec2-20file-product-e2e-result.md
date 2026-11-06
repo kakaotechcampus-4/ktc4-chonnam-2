@@ -60,6 +60,6 @@
 - **사용자 확인 필드:** `safety_report_type`, `location`, `violation_expression`이 미확인 상태다. Package READY는 실제 신고 제출 또는 법적 판단 완료가 아니다.
 - **Search 관측:** provider 호출·재시도 횟수, input/output token, 응답 종료 사유, 실제 비용은 이번 최종 조회에 없다. Job attempt 1을 provider 호출 1회로 환산하지 않는다.
 - **AWS 최소 안정성:** O1의 실행 구간별 자원·사용량 및 O6 필수 복구 경로는 이 단회 정상 E2E와 별도로 증거를 대조해야 한다. 백업 격리 복원을 Worker 장애 복구의 대체 근거로 쓰지 않는다.
-- **종료 설정:** [PM의 600초 승인 조건](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6650917486)에 따라 E2E 종료 후 Coarse 150초 복귀 PR과 임시 업로드 한도 원복을 팀 일정에 맞춰 처리한다. 이번 기록에서 설정을 변경하지 않았다.
+- **26분 검증과 복귀 시점:** 이번 20분 성공은 기존 15개·26분 검증의 종료를 뜻하지 않는다. 26분 검증을 이어갈 때는 [PM이 승인한 600초 조건](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6650917486)으로 진행하며, 이번 성공만을 근거로 먼저 150초로 복귀시키지 않는다. 검증 종료를 정한 뒤 합의대로 150초 복귀 PR과 임시 업로드 한도 원복을 진행한다. 승인 기간·범위를 추가로 연장해야 하면 PM과 별도 조율한다. 운영자가 전달한 후속 안내에 따라 같은 문제가 재발하면 재현 입력·순서·revision/config·기대 장면·실제 결과를 이슈로 남기고 무작정 반복하지 않는다. 이번 기록에서 설정을 변경하지 않았다.
 
 공개 업로드 허용 범위·동시 처리량·p95·장시간 안정성은 이 단회 성공으로 승인하지 않는다. 기존 [전체 15개 격리 준비 결과](2026-11-05-ec2-full15-coarse-preparation-result.md)는 provider 송신 직전 차단 실험이고, 이번 제품 E2E와 입력·측정 경계가 다르다.
