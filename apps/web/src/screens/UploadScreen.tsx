@@ -12,8 +12,9 @@ import { Puffs, SpeedLines, burst, seeded, type Puff, type Speed } from '../comp
 import { videoTime, videoTimeText, type VideoTime } from '../state/videoTime'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
-// 공개 운영 한도·원본 보관 안내 — 한도는 지금 검증된 기준값(recording analysis-source-limits). 배포에서 검증된 값이 나오면 이 줄만 바꾼다
-const LIMIT_TEXT = '영상 합계 4분 · 48MB까지 올릴 수 있어요. 올린 영상은 24시간 뒤 지워져요.'
+// 공개 운영 한도·원본 보관 안내 — 4분은 지금 배포의 분석 범위 상한(DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS=240000,
+// environment-and-deployment-config §3). 48 MiB는 변환한 분석 영상 한도라 업로드 크기로 적지 않는다. 배포 값이 바뀌면 이 줄만 바꾼다
+const LIMIT_TEXT = '영상 합계 4분까지 찾아볼 수 있어요. 올린 영상은 24시간 뒤 지워져요.'
 
 export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
 
