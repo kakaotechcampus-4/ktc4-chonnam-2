@@ -8,7 +8,7 @@ import { CandidatesScreen } from '../screens/CandidatesScreen'
 import { FailedScreen } from '../screens/FailedScreen'
 import { NotObservedScreen } from '../screens/NotObservedScreen'
 import { ResultScreen } from '../screens/ResultScreen'
-import { PlateCheck } from '../screens/SubScreens'
+import { DetailsCheck, PlateCheck } from '../screens/SubScreens'
 import { selectScreen } from '../state/selectScreen'
 
 const base = SNAPSHOTS.find((s) => s.view.evidence !== null)!.view
@@ -194,4 +194,28 @@ it('focuses the player again after reloading a clip the browser could not play',
   expect(document.activeElement?.textContent).toBe('다시 불러오기')
   fireEvent.click(screen.getByRole('button', { name: '다시 불러오기' }))
   expect(document.activeElement?.tagName).toBe('VIDEO')
+})
+
+// 「어떻게 정했는지」의 기준 후보 카드도 다른 후보 화면과 같은 장면 · 영상 미리보기를 보인다
+it('details page shows the basis candidate scene and video preview', () => {
+  const frameSrc = (ref: string) => `/frame/${ref}`
+  const basis = { ...candidate(1, 'READY'), thumb_ref: 'thumb1' }
+  const ready = render(<DetailsCheck view={view([basis, candidate(2, 'READY')])} onBack={vi.fn()} videoSrc={videoSrc} frameSrc={frameSrc} />)
+  const videos = ready.container.querySelectorAll('.details-scene video')
+  expect(videos).toHaveLength(1)
+  expect(videos[0].getAttribute('src')).toBe('/video/clip1')
+  expect(videos[0].getAttribute('poster')).toBe('/frame/thumb1')
+  cleanup()
+
+  const onPreview = vi.fn()
+  const idle = render(<DetailsCheck view={view([candidate(1)])} onBack={vi.fn()} videoSrc={videoSrc} onPreview={onPreview} />)
+  fireEvent.click(idle.getByRole('button', { name: /영상 보기/ }))
+  expect(onPreview).toHaveBeenCalledWith('c1')
+})
+
+it('details page without video preview still shows the basis scene image', () => {
+  const frameSrc = (ref: string) => `/frame/${ref}`
+  const basis = { ...candidateBase, candidate_id: 'c1', rank: 1, selected: true, thumb_ref: 'thumb1', video_preview: undefined }
+  const screen = render(<DetailsCheck view={view([basis])} onBack={vi.fn()} frameSrc={frameSrc} />)
+  expect(screen.container.querySelector('.details-scene img')?.getAttribute('src')).toBe('/frame/thumb1')
 })
