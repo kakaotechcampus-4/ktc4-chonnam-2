@@ -160,6 +160,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   'web.invalid_response': '서버 응답을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요.',
   'http.dependency_unavailable': '지금은 서버가 바빠요. 잠시 뒤 다시 시도해 주세요.',
   'http.not_found': '찾을 수 없는 신고예요. 「새 신고」로 다시 시작해 주세요.',
+  // 업로드 거절(http-api §3.4) — 한도 값은 서버 설정이라 숫자를 단정하지 않는다
+  'http.payload_too_large': '파일이 서버가 받을 수 있는 크기보다 커요. 더 짧은 영상을 골라 주세요.',
+  'http.source_rejected': '영상으로 열 수 없는 파일이에요. 다른 파일을 골라 주세요.',
   'case.command.stale_revision': '화면이 그 사이 바뀌었어요. 바뀐 화면에서 다시 눌러 주세요.',
   'case.command.not_allowed': '지금은 할 수 없는 동작이에요.',
   'case.command.invalid_value': '입력한 값을 받을 수 없어요. 다시 확인해 주세요.',

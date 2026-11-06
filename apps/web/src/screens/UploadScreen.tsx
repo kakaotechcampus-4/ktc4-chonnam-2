@@ -12,6 +12,8 @@ import { Puffs, SpeedLines, burst, seeded, type Puff, type Speed } from '../comp
 import { videoTime, videoTimeText, type VideoTime } from '../state/videoTime'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
+// 공개 운영 한도·원본 보관 안내 — 한도는 지금 검증된 기준값(recording analysis-source-limits). 배포에서 검증된 값이 나오면 이 줄만 바꾼다
+const LIMIT_TEXT = '영상 합계 4분 · 48MB까지 올릴 수 있어요. 올린 영상은 24시간 뒤 지워져요.'
 
 export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
 
@@ -140,8 +142,13 @@ export function UploadScreen(props: {
   onSearch: () => void
   /** 분석 시작 직후 화면이 빠지는 동안 — 자동차가 출발한다(누를 수 없는 복사본에서만 쓴다) */
   departing?: boolean
+  /** 서버가 거절한 이유(실패 때). 없으면 원인을 단정하지 않는 문구를 쓴다 */
+  failReason?: string
+  /** 실제 영상을 서버로 보내는 흐름(ApiFlow)만 — 분석 전 개인정보·외부 처리 안내에 동의해야 찾아보기가 된다 */
+  consent?: boolean
 }): JSX.Element {
   const situationId = useId()
+  const [agreed, setAgreed] = useState(false)
   const [over, setOver] = useState(false)
   const [pointerIn, setPointerIn] = useState(false)
   const [intro, setIntro] = useState(!introPlayed)
@@ -158,6 +165,7 @@ export function UploadScreen(props: {
     props.onFiles(picked)
   }
   const { state } = props
+  const ready = state === 'done' && (!props.consent || agreed)
 
   // 업로드가 끝나면 올라간 파일(건너뛴 파일 제외)의 촬영 시각을 읽는다. 파일 앞부분만 읽고 보내지 않는다.
   // 화면이 받은 목록에 없는 원본(이전 신고에서 고른 것)은 쓰지 않는다.
@@ -360,7 +368,9 @@ export function UploadScreen(props: {
                   {title}
                 </b>
                 {state === 'idle' && (
-                  <span className="rs-drop-note">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각 정보도 확인해요.</span>
+                  <span className="rs-drop-note">
+                    여러 파일도 한 번에 올릴 수 있어요. {LIMIT_TEXT}
+                  </span>
                 )}
                 {state === 'uploading' && (
                   // 칸 높이를 지키려고 업로드 중 파일 이름은 한 줄. 전체 이름은 완료 요약에 남는다.
@@ -368,8 +378,10 @@ export function UploadScreen(props: {
                     {names}
                   </span>
                 )}
-                {/* 원인(형식·손상·네트워크)을 단정하지 않는다 — 화면은 알 수 없다(#224 recording 리뷰) */}
-                {state === 'fail' && <span className="rs-drop-note">파일을 올리지 못했어요. 다시 골라 주세요.</span>}
+                {/* 원인은 서버가 알려 준 것만 쓴다 — 화면이 형식·손상·네트워크를 짐작하지 않는다(#224 recording 리뷰) */}
+                {state === 'fail' && (
+                  <span className="rs-drop-note">{props.failReason ?? '파일을 올리지 못했어요. 다시 골라 주세요.'}</span>
+                )}
               </div>
             )}
             <button
@@ -431,7 +443,13 @@ export function UploadScreen(props: {
 
       <div className="rs-group" style={{ '--i': 2 } as CSSProperties}>
         <label className="rs-field">
-          <span className="rs-label">어떤 상황이었나요?</span>
+          {/* 선택 입력이라는 것을 적기 전에 알린다 — 질문 바로 옆 */}
+          <span className="rs-label">
+            어떤 상황이었나요?{' '}
+            <span className="rs-label-opt" id={`${situationId}-hint`}>
+              비워 두셔도 괜찮아요.
+            </span>
+          </span>
           {/* 상황을 적을 때 「어제 오후 1시」 대신 실제 시각을 보도록 — 적는 칸 바로 위에 둔다 */}
           {vtime && (vtime.spans.length > 0 || vtime.unread > 0) && (
             <span className="rs-hint rs-vtime">
@@ -450,28 +468,43 @@ export function UploadScreen(props: {
             id={situationId}
             describedBy={`${situationId}-hint`}
           />
-          <span className="rs-hint" id={`${situationId}-hint`}>
-            비워 두셔도 영상에서 찾아볼게요.
-          </span>
         </label>
+        {/* 버튼은 label 밖(#509) */}
         <ExampleButton example={EXAMPLE} value={props.situation} onChange={props.onSituation} inputId={situationId} />
+
+        {props.consent && (
+          // 공개 운영 정책 §4 — 외부 AI 전송은 분석을 시작할 때 일어나므로 찾아보기 직전에 동의를 받는다.
+          // 원본 보관(24시간)은 업로드 칸 안내 문구로 올리기 전에 알린다
+          <div className="rs-consent">
+            <ul>
+              <li>찾아보기를 누르면 장면을 찾기 위해 영상 일부가 외부 AI 서비스로 전송돼요.</li>
+              <li>영상에는 번호판 · 얼굴 · 위치 같은 개인정보가 담길 수 있어요.</li>
+              <li>분석 결과와 신고자료는 7일 뒤 지워져요.</li>
+              <li>대신고는 신고를 대신 접수하거나 위반을 확정하지 않아요.</li>
+            </ul>
+            <label className="rs-consent-check">
+              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+              위 내용을 확인했고, 직접 찍었거나 올릴 권한이 있는 영상으로 찾아볼게요.
+            </label>
+          </div>
+        )}
 
         <div className="rs-actions">
           {/* disabled 대신 aria-disabled — Tab으로 닿아 못 누르는 이유가 읽힌다(#509 #5). 화면에는 업로드 칸이 상태를 보인다 */}
           <button
             type="button"
             className="rs-btn pri lg"
-            aria-disabled={state !== 'done'}
-            aria-describedby={state !== 'done' ? `${situationId}-why` : undefined}
+            aria-disabled={!ready}
+            aria-describedby={!ready ? `${situationId}-why` : undefined}
             onClick={() => {
-              if (state === 'done') props.onSearch()
+              if (ready) props.onSearch()
             }}
           >
             영상에서 찾아보기
           </button>
-          {state !== 'done' && (
+          {!ready && (
             <span id={`${situationId}-why`} className="sr-only">
-              {SEARCH_OFF_WHY[state]}
+              {state === 'done' ? '위 안내를 확인하고 체크해 주세요.' : SEARCH_OFF_WHY[state]}
             </span>
           )}
         </div>

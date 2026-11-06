@@ -72,6 +72,9 @@ it('영상을 고르면 올라가고, [영상에서 찾아보기]에서 상황 �
 
   fireEvent.change(getByRole('textbox'), { target: { value: '흰 SUV가 끼어들었어요' } })
   fireEvent.click(getByText('영상에서 찾아보기'))
+  expect(m.sendCommand).not.toHaveBeenCalled() // 개인정보·외부 처리 안내에 동의하기 전에는 시작하지 않는다
+  fireEvent.click(getByRole('checkbox'))
+  fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
   expect(m.sendCommand).toHaveBeenCalledWith('c1', 1, { kind: 'START_ANALYSIS', payload: { description: '흰 SUV가 끼어들었어요' } })
   expect(location.search).toContain('case=c1') // 새로고침해도 이어진다
@@ -101,6 +104,7 @@ it('시작 전에 이어받은 case는 서버에 있는 영상을 개수로 보�
   const { findByText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText('이미 올린 영상 1개')
   expect(getByText(/^업로드 완료/)).toBeTruthy()
+  fireEvent.click(getByText(/위 내용을 확인했고/))
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
   expect(m.uploadSource).not.toHaveBeenCalled()
@@ -209,6 +213,7 @@ it('[영상에서 찾아보기] 뒤 진행 화면이 열리면 업로드 겉모�
   const { container, getByText, findByText } = render(<ApiFlow api={api} />)
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
   await findByText(/^업로드 완료/)
+  fireEvent.click(getByText(/위 내용을 확인했고/))
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
   const ghost = container.querySelector('.rs-upload-exit')!
@@ -636,4 +641,12 @@ it('하위 화면을 연 채 새로고침해 남은 기록 깊이는 처음 열 
   const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText(/다른 장면이었나요\?/)
   expect(history.state?.sub).toBe(0)
+})
+
+it('서버가 업로드를 거절하면 그 이유를 업로드 칸에 보인다', async () => {
+  const { m, api } = setup()
+  m.uploadSource.mockResolvedValue({ ok: false, status: 413, error: { code: 'http.payload_too_large', message_key: 'http.payload_too_large' }, caseView: null })
+  const { container, findByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'big.mp4')] } })
+  expect(await findByText(/서버가 받을 수 있는 크기보다 커요/)).toBeTruthy()
 })

@@ -222,11 +222,14 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     const uploadState: UploadState = uploading ? 'uploading' : anyDone ? 'done' : uploads.length > 0 ? 'fail' : 'idle'
     const files = already > 0 ? [{ name: `이미 올린 영상 ${already}개` }] : uploads
     const skipped = uploads.filter((u) => u.status === 'FAILED').map((u) => u.name)
+    const failCode = uploads.find((u) => u.error)?.error
     return (
       <UploadScreen
         state={uploadState}
         files={files}
         skipped={skipped}
+        failReason={failCode ? errorMessage(failCode) : undefined}
+        consent
         situation={situation}
         onFiles={(picked) => void addFiles(picked)} // 올리는 중에 고른 파일은 store가 받지 않는다
         onSituation={setSituation}
