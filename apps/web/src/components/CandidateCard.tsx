@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import type { JSX, ReactNode } from 'react'
 import { Film } from 'lucide-react'
 import type { Candidate } from '../contracts/caseView'
 import { FrameSlot } from './FrameSlot'
@@ -19,21 +19,29 @@ import '../styles/candidates.css'
 //
 // 미리보기는 case가 내린 장면 ref(#523)를 이미지 주소로 바꾼 `src`로 그린다. 없거나 못 받으면 빈 자리를 두고,
 // 도는 작업이 없으면(`pending` 아님) 더 오지 않으므로 「준비 중」이라 하지 않는다(#506과 같은 원칙).
+// 후보 장면 이미지가 아직 없을 때의 자리 표시. 영상 미리보기 포스터에도 같은 것을 쓴다(#525 · #554 리뷰).
+export function ThumbPlaceholder(props: { pending?: boolean }): JSX.Element {
+  return <>
+    <Film className="cand-th-ico" size={24} strokeWidth={1.5} aria-hidden />
+    <span className="cand-th-note">{props.pending ? '미리보기 준비 중' : '미리보기가 없어요'}</span>
+  </>
+}
+
 export function CandidateCard(props: {
   candidate: Candidate
   ordinal: number
   selectedLabel?: string
   src?: string | null
   pending?: boolean
+  preview?: ReactNode
 }): JSX.Element {
   const c = props.candidate
   const stale = staleLabel(c.stale_revision_label_key)
   return (
     <div className={`cand${c.selected ? ' sel' : ''}`}>
-      <FrameSlot className="cand-th" src={props.src ?? null} alt={`${c.rank ?? props.ordinal}번 후보 장면`}>
-        <Film className="cand-th-ico" size={24} strokeWidth={1.5} aria-hidden />
-        <span className="cand-th-note">{props.pending ? '미리보기 준비 중' : '미리보기가 없어요'}</span>
-      </FrameSlot>
+      {props.preview ? <div className="cand-th">{props.preview}</div> : <FrameSlot className="cand-th" src={props.src ?? null} alt={`${c.rank ?? props.ordinal}번 후보 장면`}>
+        <ThumbPlaceholder pending={props.pending} />
+      </FrameSlot>}
       <div className="cand-b">
         <div className="cand-h">
           <span className="cnum">{c.rank ?? props.ordinal}</span>

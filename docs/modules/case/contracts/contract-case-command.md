@@ -309,3 +309,8 @@ evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른
 { "case_id": "case_e001", "expected_case_rev": 1, "kind": "EDIT_HINT",
   "payload": { "description": "6시 반쯤 빨간 트럭이 신호를 무시했어요" } }
 ```
+
+
+## 후보 영상 미리보기 command (2026-11-02 로컬 구현)
+
+`REQUEST_CANDIDATE_VIDEO_PREVIEW`의 payload는 `{candidate_id: string}` 하나다. 기존 expected_case_rev 검사와 200/202 응답을 사용한다. 모르는 후보는 unknown_target, 현재 세대 rank 1~3이 아니거나 stale·구간 없음·새 탐색 중이면 not_allowed다. 같은 후보의 진행 중/성공 요청은 새 job 없이 성공한다. 선택과 신고자료는 변경하지 않는다. 상세 정본: `docs/modules/case/decisions/candidate-video-preview.md`.

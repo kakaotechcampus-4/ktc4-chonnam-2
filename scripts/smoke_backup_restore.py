@@ -72,9 +72,10 @@ def backup_restore(context):
             execution_rows=before["job_execution"]["count"], identity_values="fingerprinted_all_rows")
         local_compose("stop", "api", "worker")
         def binary_run(command, **kwargs):
-            # Private SQL is captured as bytes, never printed or stored as RAW.
+            # SQL goes directly to a private file; check only captured control output.
             result = subprocess.run(command, env=context["env"], cwd=ROOT, **kwargs)
-            assert_no_secrets([result.stdout.decode(errors="replace"), result.stderr.decode(errors="replace")], context["secrets"])
+            assert_no_secrets([value.decode(errors="replace") for value in (result.stdout, result.stderr)
+                if value is not None], context["secrets"])
             return result
         tool = LogicalBackup(base, run=binary_run)
         artifact_dir = root / "artifact"

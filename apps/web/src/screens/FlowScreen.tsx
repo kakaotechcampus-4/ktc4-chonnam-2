@@ -34,6 +34,8 @@ const DRIVING_ON = import.meta.env.VITE_DRIVING_GAME !== 'off'
 // 단계 사이처럼 RUNNING이 잠깐 없을 때는 마지막으로 진행하던 단계를 그대로 두어 제목이
 // 흔들리지 않게 한다. 아직 한 단계도 시작하지 않았을 때만 전체 흐름 문구를 제목으로 쓴다.
 const TITLE_OUT_MS = 260
+// 분석은 서버에서 계속되고, 이 브라우저는 마지막 case를 기억한다(state/lastCase) — 창을 닫았다 와도 이어진다
+export const LEAVE_NOTE = '처리 중이에요. 창을 닫고 다른 작업을 하다 돌아오셔도 결과를 준비해 둘게요.'
 // 위에서 본 자동차(car-top.webp, 앞이 아래) 표시 크기 — 이미지 여백을 빼면 보이는 차는 약 23×49
 const CAR_H = 53
 
@@ -167,6 +169,7 @@ export function FlowScreen(props: {
             경과 시간 <span>{elapsed}</span>
           </p>
         </div>
+        <p className="flow-leave-note">{LEAVE_NOTE}</p>
         {/* 안내 한 줄 자리는 늘 비워 둔다 — 안내가 나타나거나 사라져도 아래 영상·단계 목록이
             밀리지 않는다. 문구가 길어 줄이 바뀌면 그만큼만 늘어난다(자르지 않음) */}
         <div className="flow-partial-slot">

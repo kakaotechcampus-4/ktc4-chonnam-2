@@ -65,7 +65,7 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | 경로 | 내용 |
 | --- | --- |
 | `apps/prototype/` | 흐름 프로토타입 (React 19 + Vite 6, 목데이터). **제품 코드 아님** |
-| `apps/web/` | 실제 웹 앱. `CaseView` 소비 화면·컴포넌트 구현 진행 중 (Owner: 신유민) — 자세한 현황은 `apps/web/README.md` |
+| `apps/web/` | 실제 웹 앱(React 19 · Vite 6). `/`는 실제 API 흐름 — 업로드 → 장면 찾기 → 후보 확인 → 번호판 · 발생 시각 확인 · 입력 → 신고자료 복사 · 다운로드. `/?demo`는 목데이터 시연. 테스트는 web을 바꾸는 PR마다 CI가 실행(Owner: 신유민) — 자세한 현황은 `apps/web/README.md` |
 | `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있다. `api`는 설정·로그 bootstrap, app factory·envelope·health·단일 process 실행, Case 생성·조회·command/enqueue·중단 배선, 원본 upload·저장 FrameRef·DerivedAsset HTTP와 분석 시작 timeline을 구현했다. `worker`는 claim/dispatch·T1/T2·heartbeat/cancel·STALE/retry·T2 재전달과 기본 Search handler/reader 조립을 구현했다(명시적 media profile 등 세부 조건·미결은 각 README와 RT-10(b) 기록 참조) |
 | `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
 | `data/` | 테스트 · 데모용 고정 데이터 — `mock/`(모듈별 계약 fixture · 시나리오), `real/`(실제 영상 E2E 산출 JSON) |
@@ -164,6 +164,8 @@ API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127
 ### 프로토타입에 대해
 
 `apps/prototype`은 **흐름 프로토타입**이다. 목데이터로 도는 10화면이고 백엔드·영상 파이프라인·AI 호출이 없다. 결과 없음 · 탐색 실패 · 범위 확장처럼 **실패 상태로 바로 점프하는 `ScenarioBar` 데모 컨트롤**이 들어 있다. 제품 코드가 아니므로 손대지 않는다.
+
+후보 비교 영상 미리보기는 현재 세대 rank 1~3을 대상으로 첫 요청 때 구간 MP4를 준비한다. 재생은 후보 선택과 분리되며 `GET /cases/{case_id}/candidate-videos/{clip_ref}`의 inline·Range 응답을 사용한다. 구현 범위·상태·검증 한계는 [후보 영상 미리보기 결정](docs/modules/case/decisions/candidate-video-preview.md)을 확인한다.
 
 실제 웹 앱은 `apps/web`에서 구현이 진행 중이다(`CaseView` 소비 화면·컴포넌트). 프로토타입을 얼마나 참고했는지·구조가 어떻게 다른지는 `web` Owner가 관리하는 [`apps/web/README.md`](apps/web/README.md)와 `docs/modules/web/`이 소유한다.
 

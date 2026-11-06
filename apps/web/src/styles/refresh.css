@@ -397,6 +397,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .flow-status { display: flex; align-items: center; gap: 8px; height: 24px; margin: 0; font-size: 15px; color: var(--rs-sub); }
 .flow-elapsed { margin: 0; font-size: 15px; color: var(--rs-sub); }
 .flow-elapsed span { color: var(--rs-ink); font-variant-numeric: tabular-nums; }
+.flow-leave-note { margin: 8px 0 0; font-size: 15px; color: var(--rs-sub); }
 .flow-status-mark { position: relative; flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--rs-line); transition: background-color .25s var(--rs-ease), border-color .25s var(--rs-ease); }
 .flow-status.is-running { color: var(--rs-ink); }
 .flow-status.is-running .flow-status-mark { border: 2px solid #e5e5ea; border-top-color: var(--rs-ink); animation: rs-spin 1s linear infinite; }
@@ -495,8 +496,16 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
   animation: rs-spin 1s linear infinite;
 }
 .rs.flow .timeline .tl-running .tl-label { font-weight: 650; }
-/* 진행 중인 행만 아주 연한 회색 면 — 경로 칸(왼쪽 40px) 밖, 상태 아이콘부터. 여럿이 진행 중이면 모두 칠한다 */
-.rs.flow .timeline .tl-running { background: linear-gradient(90deg, transparent 30px, var(--rs-fill) 30px); border-radius: 0 10px 10px 0; }
+/* 진행 중인 행은 회색 카드로 살짝 떠 보인다 — 경로 칸(왼쪽 30px) 밖, 상태 아이콘부터. 여럿이 진행 중이면 모두 띄운다.
+   ::before는 상태 아이콘이라 카드는 ::after에 그리고 글자 뒤(z-index -1)로 보낸다. 단계가 바뀌면 카드가 다음 행으로 옮겨 간다 */
+.rs.flow .timeline .tl-running { isolation: isolate; }
+.rs.flow .timeline .tl-running::after,
+.rs.flow .timeline .scene-search-step.tl-running::after {
+  content: ''; display: block; position: absolute; inset: 0 0 0 30px; z-index: -1;
+  border-radius: 12px; background: var(--rs-fill);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 16px rgba(0, 0, 0, .08);
+  animation: rs-fade-in .3s var(--rs-ease) both;
+}
 /* 세로 경로 — 경로 칸(40px) 가운데 얇은 회색 선, 단계마다 정류장 점(색이 바뀌지 않아 완료를 뜻하지 않음).
    위에서 본 같은 은색 자동차가 실제 진행 단계 옆에 서고, 단계가 바뀔 때만 이동한다(시간으로 움직이지 않음) */
 .flow-steps { position: relative; }
@@ -766,6 +775,8 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 }
 .res-video-side { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .res-video-cap { margin: 0; font-size: 15px; line-height: 1.55; color: var(--rs-ink); }
+.res-preview { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.res-preview-label { margin: 0; font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
 .res-video-side .res-link { margin-top: 6px; }
 
 /* 차량 번호 — 큰 번호판과 확인·수정 진입점을 한 칸에 */
@@ -947,6 +958,23 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-map-canvas { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--rs-r-media); overflow: hidden; background: var(--rs-fill); }
 .res-map-note { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
 .res-map-addr { display: block; margin-bottom: 2px; color: var(--rs-ink); }
+.res-map-hint { display: block; margin-top: 2px; }
+.res-map-reset { display: flex; margin-top: 6px; }
 .res-map-empty { margin-top: 12px; }
 .res-map-empty > .res-map-note:first-child { margin: 0 0 8px; }
 .res-map-empty .rs-btn { gap: 6px; }
+
+@media (max-width: 960px) {
+  .res-situation { grid-template-columns: minmax(0, 1fr); }
+  .res-situation > .res-frame { grid-row: auto; }
+  .res-situation > :not(.res-sec-head):not(.res-frame) { grid-column: 1; }
+}
+
+@media (max-width: 720px) {
+  .res-item { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .res-report { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+  .res-report .rs-btn { position: static; align-self: flex-end; order: 1; }
+  .res-handoff { grid-template-columns: minmax(0, 1fr); padding: 24px; }
+  .res-handoff .res-actions { justify-content: flex-start; }
+  .res-toast { position: static; }
+}

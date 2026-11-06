@@ -107,7 +107,7 @@ it('찾아보기 직후 진행 화면은 바로 열리고, 업로드 겉모습 �
   }
 })
 
-it('업로드 연출은 실제 상태를 따른다 — 빠른 완료면 카드·열린 문이 남지 않고, 파일을 바꾸면 처음부터 다시 한다', () => {
+it('업로드 연출은 실제 상태를 따른다 — 빠른 완료면 카드·열린 문이 남지 않는다', () => {
   vi.useFakeTimers()
   try {
     const a = [file('a.mp4')]
@@ -117,9 +117,16 @@ it('업로드 연출은 실제 상태를 따른다 — 빠른 완료면 카드·
     r.rerender(screen('done', a)) // 탑승 연출이 끝나기 전에 완료
     expect(r.container.querySelector('.rs-vcard')).toBeNull()
     expect(r.container.querySelector('.rs-drop.is-open')).toBeNull()
+  } finally {
+    vi.useRealTimers()
+  }
+})
 
+it('여러 파일이면 카드는 최대 3장이고, 실패하면 휠이 그 각도에서 멈춘다', () => {
+  vi.useFakeTimers()
+  try {
     const b = [file('b.mp4'), file('c.mp4'), file('d.mp4'), file('e.mp4')]
-    r.rerender(screen('uploading', b)) // 다시 선택으로 교체 — 카드는 최대 3장, 개수는 문구로
+    const r = render(screen('uploading', b)) // 개수는 문구로
     expect(r.container.querySelectorAll('.rs-vcard')).toHaveLength(3)
     act(() => vi.advanceTimersByTime(600))
     expect(r.container.querySelector('.rs-vcard')).toBeNull()
@@ -128,6 +135,26 @@ it('업로드 연출은 실제 상태를 따른다 — 빠른 완료면 카드·
     r.rerender(screen('fail', b))
     expect(r.container.querySelector('.upload.bg-off')).not.toBeNull()
     expect(r.container.querySelector('.rs-drop.is-spinning')).toBeNull() // 실패하면 그 각도에서 멈춤
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it('탑승·바퀴 연출은 첫 업로드에서 한 번만 — 파일마다 목록이 바뀌어도, 다시 골라 올려도 처음부터 하지 않는다', () => {
+  vi.useFakeTimers()
+  try {
+    const r = render(screen('uploading', [file('a.mp4'), file('b.mp4')]))
+    act(() => vi.advanceTimersByTime(600))
+    expect(r.container.querySelector('.rs-drop.is-spinning')).not.toBeNull()
+    r.rerender(screen('uploading', [file('a.mp4'), file('b.mp4')])) // 첫 파일이 끝나 목록이 새로 만들어짐
+    expect(r.container.querySelector('.rs-drop.is-spinning')).not.toBeNull() // 탑승부터 다시 하지 않는다
+    expect(r.container.querySelector('.rs-vcard')).toBeNull()
+    r.rerender(screen('done', [file('a.mp4'), file('b.mp4')]))
+    r.rerender(screen('uploading', [file('c.mp4')])) // 다시 선택
+    expect(r.container.querySelector('.rs-vcard')).toBeNull()
+    act(() => vi.advanceTimersByTime(600))
+    expect(r.container.querySelector('.rs-drop.is-spinning')).toBeNull()
+    expect(r.container.textContent).toContain('업로드 중')
   } finally {
     vi.useRealTimers()
   }

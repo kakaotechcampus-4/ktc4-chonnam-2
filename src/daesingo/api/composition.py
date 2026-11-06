@@ -190,6 +190,34 @@ class ApiComposition:
         # the transaction; only detached bytes and media type reach the route.
         return run_api_transaction(self.engine, operation)
 
+    def load_candidate_video(self, case_id: str, clip_ref: str):
+        from daesingo.case.candidate_video import contains_clip
+        validate_case_id(case_id)
+        def operation(conn):
+            case = self._store(conn).get_case(case_id)
+            if not contains_clip(case, clip_ref):
+                raise RecordingCapabilityError('UNKNOWN_REF', 'candidate video is not current')
+            with RecordingService(MySQLRecordingRepository(conn,
+                    storage_root=self.startup.config.media_root)) as recording:
+                try:
+                    clip = recording.get_incident_clip(clip_ref)
+                except RecordingCapabilityError as error:
+                    if error.code == 'NOT_FOUND':
+                        raise RecordingCapabilityError('UNAVAILABLE', 'candidate video metadata unavailable') from None
+                    raise
+                if not clip.source_provenance.asset_spans or any(
+                    not recording.owns_asset(case_id, ContractRef(kind='source_asset', ref=span.source_asset_ref))
+                    for span in clip.source_provenance.asset_spans
+                ):
+                    raise RecordingCapabilityError('UNKNOWN_REF', 'candidate video is not owned')
+                opened = recording.open_incident_video(clip_ref)
+                with opened.stream:
+                    content = opened.stream.read()
+                if not isinstance(content, bytes) or len(content) != opened.byte_size:
+                    raise RuntimeError('stored candidate video read is incomplete')
+                return content, opened.content_type
+        return run_api_transaction(self.engine, operation)
+
     def close(self):
         with self._lock:
             if self._closed:

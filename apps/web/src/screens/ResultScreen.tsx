@@ -14,6 +14,7 @@ import { LocationMap } from '../components/LocationMap'
 import { StatusBadge } from '../components/StatusBadge'
 import { ArrivingCar } from '../components/ArrivingCar'
 import { FrameSlot } from '../components/FrameSlot'
+import { CandidateVideo, type CandidatePlayback } from '../components/CandidateVideo'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
 
 // 03_Main_Result — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
@@ -43,6 +44,7 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
 }
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
 const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
+const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요'
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 // 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
@@ -69,6 +71,11 @@ const COUNT_ORDER: InfoState[] = [
 // 빨강은 실패(ERROR)에만, 주황은 확인이 필요한 경고(WARN)에만 쓴다. 안내(INFO)는 기본 색이다.
 function tone(n: Notice): 'fail' | 'review' | 'info' {
   return n.severity === 'ERROR' ? 'fail' : n.severity === 'WARN' ? 'review' : 'info'
+}
+
+export function withLocation(description: string, before: string | null | undefined, after: string | undefined): string {
+  if (after === undefined || !before) return description
+  return description.includes(before) ? description.split(before).join(after) : `${description}\n위치: ${after}`
 }
 
 interface Field {
@@ -101,18 +108,25 @@ export function ResultScreen(props: {
   onRespond?: (value: 'CONFIRMED' | 'USER_UNSURE') => void
   /** 신고용 영상을 받을 주소(API 모드). 없으면(시연) 다운로드 버튼을 막아 둔다 */
   videoHref?: string
-  /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
-  frameSrc?: (frameRef: string) => string
-}): JSX.Element {
+  /** 번호판 이미지를 받을 주소. 선택 첨부라 없으면(시연 · 아직 못 만듦) 버튼을 두지 않는다 */
+  plateImageHref?: string
+} & CandidatePlayback): JSX.Element {
   const { view } = props
   // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
-  const [downloadFailed, setDownloadFailed] = useState<string | null>(null)
+  const [downloadFailed, setDownloadFailed] = useState<string[]>([])
   const [downloading, setDownloading] = useState(false)
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const pkg = view.package
   const ev = view.evidence
   // 신고 상황은 결과 화면에서 묻는다(core-user-flow §20, #171 B-2). 응답 전에는 묶음이 없다.
   const selected = view.candidates.find((c) => c.selected)
+  const candidateVideo = selected?.video_preview && props.videoSrc && (
+    <CandidateVideo key={selected.candidate_id} preview={selected.video_preview} ordinal={selected.rank ?? 1}
+      src={selected.video_preview.clip_ref ? props.videoSrc(selected.video_preview.clip_ref) : undefined}
+      poster={frame(selected.thumb_ref ?? ev?.preview_ref) ?? undefined}
+      onRequest={props.onPreview ? () => props.onPreview?.(selected.candidate_id) : undefined}
+      busy={props.previewBusy} />
+  )
   const awaiting =
     selected?.situation_confirmation === 'NOT_ASKED' &&
     view.notices.some((n) => n.code === 'case.situation_response_pending')
@@ -156,9 +170,12 @@ export function ResultScreen(props: {
   const shownReport = pkg?.report ?? null
   const report = shownReport && {
     title: edits.title ?? shownReport.title,
-    description: edits.description ?? shownReport.description,
+    // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다(#563 멘토 리뷰).
+    // 원래 글이 신고문에 그대로 없으면(case가 다듬어 넣은 경우) 옛 위치를 조용히 복사하지 않게 고친 위치를 끝에 붙인다
+    description: edits.description ?? withLocation(shownReport.description, shownLocation?.value, edits.location),
   }
-  const keyword = ev?.location_display.search_keyword ?? null
+  // 위치를 고쳤으면 검색어도 고친 글을 따른다 — 보이는 값·복사·지도가 같은 글을 쓴다(#563 멘토 리뷰)
+  const keyword = edits.location ?? ev?.location_display.search_keyword ?? null
   const hasForm = Boolean(pkg || ev)
   // 검색어를 못 만들었다는 안내는 위치 칸에 붙는 말이라 위 목록이 아니라 검색어 자리에 둔다
   // (버튼 없는 INFO라 옮겨도 잃는 것이 없다). 위치 칸이 없으면 위 목록에 남긴다.
@@ -171,14 +188,15 @@ export function ResultScreen(props: {
   const ready = view.stage === 'READY' && !!pkg && !view.notices.some((n) => n.blocking)
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
-  const failedDownload = props.videoHref !== undefined && downloadFailed === props.videoHref
+  const failedDownload = props.videoHref !== undefined && downloadFailed.includes(props.videoHref)
   const canDownload = video === 'ready' && !!props.videoHref && !failedDownload && !downloading
   const videoHint =
     video !== 'ready' ? VIDEO_STATUS[video] : !props.videoHref ? NO_DOWNLOAD_LINK : failedDownload ? DOWNLOAD_FAILED : null
+  const plateFailed = props.plateImageHref !== undefined && downloadFailed.includes(props.plateImageHref)
+  const canDownloadPlate = !!props.plateImageHref && !plateFailed && !downloading
   // 링크로 열지 않고 받아서 저장한다 — 서버가 UNAVAILABLE을 돌려주면 화면이 알아야 한다. 파일 전체가 메모리에 올라간다.
   // 받는 동안은 버튼을 막아 두 번 받지 않게 한다.
-  const download = async () => {
-    const href = props.videoHref
+  const download = async (href: string | undefined, prefix: string, ext: string) => {
     if (!href) return
     setDownloading(true)
     try {
@@ -188,12 +206,12 @@ export function ResultScreen(props: {
       const a = document.createElement('a')
       a.href = url
       // 받은 시각을 붙여 여러 번 받아도 (1)이 붙지 않게 한다. sv-SE는 '2026-11-03 13:53:03' 형식
-      a.download = `daesingo_clip_${new Date().toLocaleString('sv-SE').replace(' ', '_').replace(/[-:]/g, '')}.mp4`
+      a.download = `${prefix}_${new Date().toLocaleString('sv-SE').replace(' ', '_').replace(/[-:]/g, '')}.${ext}`
       a.click()
       // 바로 해제하면 일부 브라우저(Firefox · Safari)에서 저장이 취소된다
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch {
-      setDownloadFailed(href)
+      setDownloadFailed((list) => [...list, href])
     } finally {
       setDownloading(false)
     }
@@ -326,7 +344,9 @@ export function ResultScreen(props: {
             이 사건을 이렇게 정리했어요. <b>“{selected.observed}”</b>
           </p>
           {/* 근거 장면은 있을 때만 보인다. case는 사건 장면 준비 전 · 발급 실패 때 null을 준다(#446) */}
-          <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />
+          {/* 미리보기를 볼 수 없는 후보면 근거 장면 이미지만 둔다 — 「볼 수 없어요」가 붙으면 이미지도 못 보는 것처럼 읽힌다(#554 리뷰) */}
+          {candidateVideo && selected?.video_preview?.status !== 'UNAVAILABLE' ? <div className="res-frame">{candidateVideo}</div> :
+            <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />}
           {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
           <ul className="res-pending">
             {['사건 유형', '신고 유형', '위반 내용'].map((label) => (
@@ -376,10 +396,16 @@ export function ResultScreen(props: {
           {!awaiting && (
             <Item label="동영상">
               <div className="res-video">
-                {/* 미리보기와 다운로드는 따로 판단한다 — 미리보기는 아직 열지 않았다 */}
-                <div className="res-frame">
-                  <Film size={26} strokeWidth={1.5} aria-hidden />
-                  <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                {/* 후보 영상 재생과 신고용 영상 다운로드는 각각의 준비 상태를 따른다 */}
+                {/* 왼쪽은 후보 미리보기(Search 구간 그대로)다. 시각을 새긴 신고용 영상은 오른쪽 다운로드로 받는다(#554 리뷰) */}
+                <div className="res-preview">
+                  <div className="res-frame">
+                    {candidateVideo || <>
+                      <Film size={26} strokeWidth={1.5} aria-hidden />
+                      <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                    </>}
+                  </div>
+                  {candidateVideo && <p className="res-preview-label">후보 미리보기</p>}
                 </div>
                 <div className="res-video-side">
                   {video === 'ready' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
@@ -389,7 +415,7 @@ export function ResultScreen(props: {
                     className="rs-btn sec sm"
                     aria-disabled={!canDownload}
                     onClick={() => {
-                      if (canDownload) void download()
+                      if (canDownload) void download(props.videoHref, 'daesingo_clip', 'mp4')
                     }}
                     aria-describedby={videoHint ? 'res-video-why' : undefined}
                   >
@@ -399,6 +425,26 @@ export function ResultScreen(props: {
                   {videoHint && (
                     <p id="res-video-why" className={`res-hint${video === 'failed' || failedDownload ? ' is-fail' : ''}`}>
                       {videoHint}
+                    </p>
+                  )}
+                  {/* 번호판 이미지는 선택 첨부라 못 만들어도 신고를 막지 않는다(core-user-flow) — 만들어졌을 때만 버튼을 둔다 */}
+                  {props.plateImageHref && (
+                    <button
+                      type="button"
+                      className="rs-btn sec sm"
+                      aria-disabled={!canDownloadPlate}
+                      onClick={() => {
+                        if (canDownloadPlate) void download(props.plateImageHref, 'daesingo_plate', 'png')
+                      }}
+                      aria-describedby={plateFailed ? 'res-plate-why' : undefined}
+                    >
+                      <Download size={16} strokeWidth={2} aria-hidden />
+                      번호판 이미지 다운로드
+                    </button>
+                  )}
+                  {plateFailed && (
+                    <p id="res-plate-why" className="res-hint is-fail">
+                      {PLATE_DOWNLOAD_FAILED}
                     </p>
                   )}
                   {others > 0 && (
@@ -431,7 +477,7 @@ export function ResultScreen(props: {
                 <span>{noticeMessage(keywordMissing.message_key)}</span>
               </p>
             )}
-            {ev && <LocationMap coord={ev.location_display.coord} query={edits.location ?? keyword ?? location?.value} />}
+            {ev && <LocationMap coord={ev.location_display.coord} query={keyword ?? location?.value} />}
           </Item>
 
           <Item label="제목">

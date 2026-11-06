@@ -118,7 +118,8 @@ def issue_missing_for_selected(case: CaseAggregate) -> list[dict[str, Any]]:
         return []
     mine = [
         r for r in case.job_records
-        if (source := case.observation_inputs.get(r["job_id"])) is not None
+        if r["kind"] in jobs.OBSERVATION_KINDS
+        and (source := case.observation_inputs.get(r["job_id"])) is not None
         and source["candidate_id"] == selected
         and source["generation_job_id"] == generation
     ]
