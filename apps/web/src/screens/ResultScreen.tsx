@@ -73,6 +73,11 @@ function tone(n: Notice): 'fail' | 'review' | 'info' {
   return n.severity === 'ERROR' ? 'fail' : n.severity === 'WARN' ? 'review' : 'info'
 }
 
+export function withLocation(description: string, before: string | null | undefined, after: string | undefined): string {
+  if (after === undefined || !before) return description
+  return description.includes(before) ? description.split(before).join(after) : `${description}\n위치: ${after}`
+}
+
 interface Field {
   value: string | null
   state: InfoState
@@ -165,12 +170,9 @@ export function ResultScreen(props: {
   const shownReport = pkg?.report ?? null
   const report = shownReport && {
     title: edits.title ?? shownReport.title,
-    // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다(#563 멘토 리뷰)
-    description:
-      edits.description ??
-      (edits.location !== undefined && shownLocation?.value
-        ? shownReport.description.split(shownLocation.value).join(edits.location)
-        : shownReport.description),
+    // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다(#563 멘토 리뷰).
+    // 원래 글이 신고문에 그대로 없으면(case가 다듬어 넣은 경우) 옛 위치를 조용히 복사하지 않게 고친 위치를 끝에 붙인다
+    description: edits.description ?? withLocation(shownReport.description, shownLocation?.value, edits.location),
   }
   // 위치를 고쳤으면 검색어도 고친 글을 따른다 — 보이는 값·복사·지도가 같은 글을 쓴다(#563 멘토 리뷰)
   const keyword = edits.location ?? ev?.location_display.search_keyword ?? null

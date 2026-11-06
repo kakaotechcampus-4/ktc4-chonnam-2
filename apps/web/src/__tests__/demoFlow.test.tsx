@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
 import { DemoFlow } from '../screens/DemoFlow'
-import { ResultScreen } from '../screens/ResultScreen'
+import { ResultScreen, withLocation } from '../screens/ResultScreen'
 import { StoppedScreen } from '../screens/StoppedScreen'
 
 beforeEach(() => vi.useFakeTimers())
@@ -773,4 +773,10 @@ it('브라우저 뒤로가기 뒤 앞으로가기를 눌러도 하위 화면을 
   expect(history.state?.sub).toBe(1)
   act(() => history.back())
   await vi.waitFor(() => expect(text()).not.toContain('어떻게 정했는지 확인'))
+})
+
+it('신고문에 원래 위치 글이 그대로 없으면 옛 위치를 두지 않고 고친 위치를 끝에 붙인다', () => {
+  expect(withLocation('A 앞에서 B가', 'A', 'C')).toBe('C 앞에서 B가')
+  expect(withLocation('A역 근처에서 B가', 'A 사거리', 'C')).toBe('A역 근처에서 B가\n위치: C')
+  expect(withLocation('그대로', 'A', undefined)).toBe('그대로')
 })
