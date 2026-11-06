@@ -8,6 +8,11 @@ on:
         required: true
         type: choice
         options: [publish, deploy, rollback, smoke]
+      publish_revision:
+        description: Full source commit SHA; required for publish only
+        required: false
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -22,8 +27,8 @@ jobs:
       contents: read
     uses: ./.github/workflows/secret-scan.yml
     with:
-      require_target: ${{ inputs.operation != 'publish' }}
-      target_revision: ${{ vars.RT14_REVISION }}
+      require_target: true
+      target_revision: ${{ format('{0}{1}', inputs.operation == 'publish' && inputs.publish_revision || '', inputs.operation != 'publish' && vars.RT14_REVISION || '') }}
 
   publish:
     needs: [secret-scan]
@@ -34,22 +39,37 @@ jobs:
       contents: read
       actions: read
       id-token: write
+    env:
+      PUBLISH_REVISION: ${{ inputs.publish_revision }}
+      AWS_REGION: ${{ vars.RT14_AWS_REGION }}
+      RT14_EXECUTION_ENABLED: ${{ vars.RT14_EXECUTION_ENABLED }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: false
+      - name: Verify control and target CI and prepare exact source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 deploy/aws.py prepare-publish
       - name: Build Linux amd64 image with shared FFmpeg and Paddle layers
         env:
           VITE_KAKAO_MAP_KEY: ${{ vars.RT14_KAKAO_MAP_JS_KEY }}
-        run: docker build --platform linux/amd64 --build-arg REVISION="$GITHUB_SHA" --build-arg VITE_KAKAO_MAP_KEY --tag daesingo-rt14:verified .
+        run: docker build --platform linux/amd64 --build-arg REVISION="$PUBLISH_REVISION" --build-arg VITE_KAKAO_MAP_KEY --tag daesingo-rt14:verified "$RUNNER_TEMP/rt14-publish-source"
+      - name: Pin exact target image identity before acceptance
+        id: publish_image
+        run: python3 deploy/aws.py publish-image
       - name: Exact image media and offline model acceptance
+        env:
+          PUBLISH_IMAGE_ID: ${{ steps.publish_image.outputs.image_id }}
         run: |
-          docker run --rm --network none daesingo-rt14:verified python /app/docker/web_artifact.py /app/web/dist "$GITHUB_SHA"
-          docker run --rm --network none daesingo-rt14:verified python /app/docker/runtime.py media-preflight
-          docker run --rm --network none daesingo-rt14:verified python /app/docker/runtime.py readout-preflight
-          docker run --rm --network none \
+          docker run --rm --network none --entrypoint /app/.venv/bin/python --env PYTHONOPTIMIZE=0 "$PUBLISH_IMAGE_ID" -I /app/docker/web_artifact.py /app/web/dist "$PUBLISH_REVISION"
+          docker run --rm --network none --entrypoint /app/.venv/bin/python --env PYTHONOPTIMIZE=0 "$PUBLISH_IMAGE_ID" -I /app/docker/runtime.py media-preflight
+          docker run --rm --network none --entrypoint /app/.venv/bin/python --env PYTHONOPTIMIZE=0 "$PUBLISH_IMAGE_ID" -I /app/docker/runtime.py readout-preflight
+          docker run --rm --network none --entrypoint /app/.venv/bin/python --env PYTHONOPTIMIZE=0 \
             --mount type=bind,source="$GITHUB_WORKSPACE/tests/deploy/media_acceptance.py",target=/opt/media-acceptance.py,readonly \
-            daesingo-rt14:verified python /opt/media-acceptance.py
+            "$PUBLISH_IMAGE_ID" -I /opt/media-acceptance.py
       - name: Publish verified image (captured registry output; no deployment)
         env:
           AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}

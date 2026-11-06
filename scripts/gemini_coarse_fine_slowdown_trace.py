@@ -290,6 +290,27 @@ def _patch_fine_height(height: int) -> None:
     media._run_ffmpeg_encode = encode
 
 
+def _patch_coarse_encode(height: int | None, crf: int | None) -> None:
+    # #452: Coarse 준비 영상만 높이·CRF를 바꾼다(Fine은 운영 360p·기본 CRF 유지). 운영 코드는 그대로.
+    from daesingo.search import media
+    original_encode, original_run = media._run_ffmpeg_encode, media._run_subprocess
+
+    def run_with_crf(args, deadline, **kw):
+        return original_run([*args[:-1], "-crf", str(crf), args[-1]], deadline, **kw)
+
+    def encode(*a, max_height: int, start_sec: float | None = None, **kw):
+        if start_sec is not None:  # Fine
+            return original_encode(*a, max_height=max_height, start_sec=start_sec, **kw)
+        if crf is not None:
+            media._run_subprocess = run_with_crf
+        try:
+            return original_encode(*a, max_height=height or max_height, start_sec=None, **kw)
+        finally:
+            media._run_subprocess = original_run
+
+    media._run_ffmpeg_encode = encode
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--env", default=DEFAULT_ENV)
@@ -307,7 +328,11 @@ def main() -> None:
                     help="video transport 의 Fine 프롬프트에 붙일 문장(gemini_fine_fp_variant_trace.VARIANTS 이름)")
     ap.add_argument("--fine-height", type=int, default=None,
                     help="Fine 준비 영상 최대 높이(운영 MediaPreparer 는 360 고정). 실험에서만 바꾼다")
+    ap.add_argument("--coarse-height", type=int, default=None, help="Coarse 준비 영상 최대 높이(운영 360). 실험 전용")
+    ap.add_argument("--coarse-crf", type=int, default=None, help="Coarse 준비 영상 libx264 CRF(운영 기본 23). 실험 전용")
     args = ap.parse_args()
+    if args.coarse_height or args.coarse_crf is not None:
+        _patch_coarse_encode(args.coarse_height, args.coarse_crf)
     if args.clips:
         CASES[:] = [c for c in CASES if c[0].startswith(tuple(args.clips.split(",")))]
 
@@ -349,6 +374,7 @@ def main() -> None:
             if args.out:  # 조건마다 저장해 중간에 끊겨도 남긴다
                 args.out.write_text(json.dumps({
                     "config": {"profiles": args.profiles, "transport": args.transport, "model": base_cfg.model, "fine_height": args.fine_height or 360,
+                               "coarse_height": args.coarse_height or 360, "coarse_crf": args.coarse_crf or 23,
                                "reasoning_efforts": efforts, "fine_variant": args.fine_variant,
                                "fine_padding_sec": base_cfg.fine_padding_sec},
                     "runs": runs}, ensure_ascii=False, indent=2), encoding="utf-8")

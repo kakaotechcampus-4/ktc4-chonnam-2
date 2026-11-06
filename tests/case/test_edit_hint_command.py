@@ -134,7 +134,7 @@ def test_blank_description_skips_extraction_and_searches_directly():
     assert saved.description == "   "
     assert saved.hints == _ALL_NULL
     scope = saved.analysis_scopes[result.appended_job_records[0]["scope_ref"]]
-    assert scope["budget"] == {"max_cost_krw": 1000.0, "max_latency_sec": 150.0}
+    assert scope["budget"] == {"max_cost_krw": 1000.0, "max_latency_sec": 600.0}
 
 
 def test_budget_is_the_same_as_first_search():

@@ -32,7 +32,9 @@ class InitialSearchBudget:
     """첫 탐색 예산(spec §3-3). `max_cost_krw`는 설정값 — composition root가 바꿔 넘길 수 있다."""
 
     max_cost_krw: float = 1000.0
-    max_latency_sec: float = 150.0
+    # 11/5 26분 E2E 한정 예외로 600초 — 일반 운영값은 150초이고 E2E 뒤 되돌린다
+    # (#452 PM 잠정 승인, `decisions/case-wait-timeout.md` §3-9). Fine(70초)은 바꾸지 않는다.
+    max_latency_sec: float = 600.0
 
 
 class AnalysisStartNotAllowed(Exception):

@@ -553,3 +553,63 @@ it.each(['result', 'not-observed', 'failed', 'awaiting'] as const)('a single can
   expect(screen.queryByRole('button', { name: /다른 후보/ })).toBeNull()
   expect(m.sendCommand).toHaveBeenCalledExactlyOnceWith('c1', 8, { kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW', payload: { candidate_id: 'only' } })
 })
+
+// 하위 화면(다른 후보 · 번호판 · 시각 · 근거)은 브라우저 기록에 한 칸씩 남는다 — 브라우저 뒤로가기도 결과 화면으로 돌아온다
+// 「다른 장면이었나요?」는 신고 상황 응답 전 화면에 있다
+const WITH_OTHER = {
+  ...AWAITING,
+  candidates: [...AWAITING.candidates, { ...AWAITING.candidates[0], candidate_id: 'cand_other', selected: false }],
+}
+const backTo = async (findByText: (t: RegExp) => Promise<HTMLElement>) => {
+  act(() => history.back())
+  await findByText(/다른 장면이었나요\?/)
+}
+
+it('결과 화면에서 「다른 장면이었나요?」로 연 다른 후보 화면은 브라우저 뒤로가기로 결과 화면에 돌아온다', async () => {
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText, getByRole } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(getByRole('heading', { name: '다른 후보' })).toBeTruthy()
+  await backTo(findByText)
+})
+
+it('화면 안 「뒤로」로 닫으면 브라우저 기록도 한 칸 돌아가 빈칸이 남지 않는다', async () => {
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(history.state?.sub).toBe(1)
+  fireEvent.click(getByLabelText('뒤로'))
+  await findByText(/다른 장면이었나요\?/)
+  await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
+  // 다시 열어도 깊이는 1이다 — 닫은 칸 위에 쌓이지 않는다
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(history.state?.sub).toBe(1)
+})
+
+it('다른 후보를 고르면 하위 화면이 닫히고 쌓인 기록도 함께 정리된다', async () => {
+  const { m, api } = setup({ get: WITH_OTHER })
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
+  const { findByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  fireEvent.click(getAllByText('이 장면으로 다시 준비')[0])
+  await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
+  await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
+})
+
+it('결과 없음에서 연 「설명 고치기」도 브라우저 뒤로가기로 결과 없음 화면에 돌아온다', async () => {
+  const { m, api } = setup({ get: { ...EMPTY, description: '흰 차' } })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('설명 고치기'))
+  expect(getByLabelText('어떤 상황이었나요?')).toBeTruthy()
+  act(() => history.back())
+  await findByText(/말씀하신 장면을 찾지 못했어요/)
+  expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('하위 화면을 연 채 새로고침해 남은 기록 깊이는 처음 열 때 0으로 맞춘다', async () => {
+  history.replaceState({ sub: 1 }, '', '/?api')
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText(/다른 장면이었나요\?/)
+  expect(history.state?.sub).toBe(0)
+})

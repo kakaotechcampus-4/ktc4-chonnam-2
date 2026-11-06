@@ -241,7 +241,7 @@ class MediaPreparer:
         media_input: MediaInput,
         deadline: RunDeadline,
     ) -> AbstractContextManager[PreparedMedia]:
-        """Materialize + probe + coarse_fps/360p/no-audio proxy, slowed to 1 frame per
+        """Materialize + probe + coarse_fps/270p/no-audio proxy, slowed to 1 frame per
         playback second; yield it; rmtree in finally.
 
         Temp dir is cleaned up on every exit — success, failure, timeout,
@@ -277,7 +277,10 @@ class MediaPreparer:
                 src_path,
                 coarse_path,
                 fps=cfg.coarse_fps,
-                max_height=360,
+                # #452: 26분 입력이 40 MiB 안에 들도록 Coarse만 270p · crf28(PM 잠정 승인, E2E 검증용).
+                # 근거 experiments/coarse-270p-quality-2026-11-04.md. Fine은 360p · 기본 CRF 유지.
+                max_height=270,
+                crf=28,
                 deadline=deadline,
             )
             _verify_output(coarse_path, max_inline)
@@ -415,8 +418,12 @@ def _run_ffmpeg_encode(
     deadline: RunDeadline,
     start_sec: float | None = None,
     end_sec: float | None = None,
+    crf: int | None = None,
 ) -> None:
-    """Encode src → dest as H.264 MP4, downscale-only, no audio, 1 frame per playback second."""
+    """Encode src → dest as H.264 MP4, downscale-only, no audio, 1 frame per playback second.
+
+    ``crf`` None이면 libx264 기본값(23).
+    """
     args = [_ffmpeg_path(), "-y"]
     if start_sec is not None:
         args += ["-ss", str(start_sec)]
@@ -430,6 +437,7 @@ def _run_ffmpeg_encode(
         f"fps={fps},{_scale_filter(max_height)},setpts=(PTS-STARTPTS)*{fps},fps=1",
         "-c:v",
         "libx264",
+        *(["-crf", str(crf)] if crf is not None else []),
         "-an",  # no audio
         "-movflags",
         "+faststart",
