@@ -495,12 +495,12 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
   animation: rs-spin 1s linear infinite;
 }
 .rs.flow .timeline .tl-running .tl-label { font-weight: 650; }
-/* 진행 중인 행은 회색 카드로 살짝 떠 보인다 — 경로 칸(왼쪽 30px) 밖, 상태 아이콘부터. 여럿이 진행 중이면 모두 띄운다.
+/* 진행 중인 행은 회색 카드로 살짝 떠 보인다 — 경로 칸(왼쪽 36px) 밖, 자동차와 겹치지 않게, 상태 아이콘부터. 여럿이 진행 중이면 모두 띄운다.
    ::before는 상태 아이콘이라 카드는 ::after에 그리고 글자 뒤(z-index -1)로 보낸다. 단계가 바뀌면 카드가 다음 행으로 옮겨 간다 */
 .rs.flow .timeline .tl-running { isolation: isolate; }
 .rs.flow .timeline .tl-running::after,
 .rs.flow .timeline .scene-search-step.tl-running::after {
-  content: ''; display: block; position: absolute; inset: 0 0 0 30px; z-index: -1;
+  content: ''; display: block; position: absolute; inset: 0 0 0 36px; z-index: -1;
   border-radius: 12px; background: var(--rs-fill);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 16px rgba(0, 0, 0, .08);
   animation: rs-fade-in .3s var(--rs-ease) both;
