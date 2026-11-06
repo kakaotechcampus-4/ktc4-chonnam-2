@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
 import { DemoFlow } from '../screens/DemoFlow'
-import { ResultScreen } from '../screens/ResultScreen'
+import { ResultScreen, withLocation } from '../screens/ResultScreen'
 import { StoppedScreen } from '../screens/StoppedScreen'
 
 beforeEach(() => vi.useFakeTimers())
@@ -727,6 +727,18 @@ it('결과 화면에서 제목·신고 내용·위치·발생 시각을 고치�
   expect(text()).toContain('09:10:11')
 })
 
+it('위치를 고치면 검색어와 신고 내용의 위치도 고친 글로 복사된다', () => {
+  const happy = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+  const view = { ...happy, evidence: { ...happy.evidence!, location_display: { ...happy.evidence!.location_display, search_keyword: '광주 상무지구 상무중앙로 사거리' } } }
+  const before = happy.evidence!.location_display.value!
+  expect(view.package!.report.description).toContain(before)
+  const { container } = render(<ResultScreen view={view} edits={{ location: '운천역 사거리' }} onCandidates={vi.fn()} onPlate={vi.fn()} onDetails={vi.fn()} onAction={vi.fn()} canRun={() => true} />)
+  expect(container.querySelector('.res-keyword-v')!.textContent).toBe('운천역 사거리')
+  const description = container.querySelector('.res-report-text')!.textContent!
+  expect(description).toContain('운천역 사거리')
+  expect(description).not.toContain(before)
+})
+
 it('시연에서도 하위 화면은 브라우저 뒤로가기로 결과 화면에 돌아온다', async () => {
   const { text, wait, getByText, answer } = start('main')
   wait()
@@ -761,4 +773,10 @@ it('브라우저 뒤로가기 뒤 앞으로가기를 눌러도 하위 화면을 
   expect(history.state?.sub).toBe(1)
   act(() => history.back())
   await vi.waitFor(() => expect(text()).not.toContain('어떻게 정했는지 확인'))
+})
+
+it('신고문에 원래 위치 글이 그대로 없으면 옛 위치를 두지 않고 고친 위치를 끝에 붙인다', () => {
+  expect(withLocation('A 앞에서 B가', 'A', 'C')).toBe('C 앞에서 B가')
+  expect(withLocation('A역 근처에서 B가', 'A 사거리', 'C')).toBe('A역 근처에서 B가\n위치: C')
+  expect(withLocation('그대로', 'A', undefined)).toBe('그대로')
 })
