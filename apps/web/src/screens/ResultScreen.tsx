@@ -14,6 +14,7 @@ import { LocationMap } from '../components/LocationMap'
 import { StatusBadge } from '../components/StatusBadge'
 import { ArrivingCar } from '../components/ArrivingCar'
 import { FrameSlot } from '../components/FrameSlot'
+import { CandidateVideo, type CandidatePlayback } from '../components/CandidateVideo'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
 
 // 03_Main_Result — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
@@ -104,9 +105,7 @@ export function ResultScreen(props: {
   videoHref?: string
   /** 번호판 이미지를 받을 주소. 선택 첨부라 없으면(시연 · 아직 못 만듦) 버튼을 두지 않는다 */
   plateImageHref?: string
-  /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
-  frameSrc?: (frameRef: string) => string
-}): JSX.Element {
+} & CandidatePlayback): JSX.Element {
   const { view } = props
   // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
   const [downloadFailed, setDownloadFailed] = useState<string[]>([])
@@ -116,6 +115,13 @@ export function ResultScreen(props: {
   const ev = view.evidence
   // 신고 상황은 결과 화면에서 묻는다(core-user-flow §20, #171 B-2). 응답 전에는 묶음이 없다.
   const selected = view.candidates.find((c) => c.selected)
+  const candidateVideo = selected?.video_preview && props.videoSrc && (
+    <CandidateVideo key={selected.candidate_id} preview={selected.video_preview} ordinal={selected.rank ?? 1}
+      src={selected.video_preview.clip_ref ? props.videoSrc(selected.video_preview.clip_ref) : undefined}
+      poster={frame(selected.thumb_ref ?? ev?.preview_ref) ?? undefined}
+      onRequest={props.onPreview ? () => props.onPreview?.(selected.candidate_id) : undefined}
+      busy={props.previewBusy} />
+  )
   const awaiting =
     selected?.situation_confirmation === 'NOT_ASKED' &&
     view.notices.some((n) => n.code === 'case.situation_response_pending')
@@ -330,7 +336,9 @@ export function ResultScreen(props: {
             이 사건을 이렇게 정리했어요. <b>“{selected.observed}”</b>
           </p>
           {/* 근거 장면은 있을 때만 보인다. case는 사건 장면 준비 전 · 발급 실패 때 null을 준다(#446) */}
-          <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />
+          {/* 미리보기를 볼 수 없는 후보면 근거 장면 이미지만 둔다 — 「볼 수 없어요」가 붙으면 이미지도 못 보는 것처럼 읽힌다(#554 리뷰) */}
+          {candidateVideo && selected?.video_preview?.status !== 'UNAVAILABLE' ? <div className="res-frame">{candidateVideo}</div> :
+            <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />}
           {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
           <ul className="res-pending">
             {['사건 유형', '신고 유형', '위반 내용'].map((label) => (
@@ -380,10 +388,16 @@ export function ResultScreen(props: {
           {!awaiting && (
             <Item label="동영상">
               <div className="res-video">
-                {/* 미리보기와 다운로드는 따로 판단한다 — 미리보기는 아직 열지 않았다 */}
-                <div className="res-frame">
-                  <Film size={26} strokeWidth={1.5} aria-hidden />
-                  <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                {/* 후보 영상 재생과 신고용 영상 다운로드는 각각의 준비 상태를 따른다 */}
+                {/* 왼쪽은 후보 미리보기(Search 구간 그대로)다. 시각을 새긴 신고용 영상은 오른쪽 다운로드로 받는다(#554 리뷰) */}
+                <div className="res-preview">
+                  <div className="res-frame">
+                    {candidateVideo || <>
+                      <Film size={26} strokeWidth={1.5} aria-hidden />
+                      <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                    </>}
+                  </div>
+                  {candidateVideo && <p className="res-preview-label">후보 미리보기</p>}
                 </div>
                 <div className="res-video-side">
                   {video === 'ready' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}

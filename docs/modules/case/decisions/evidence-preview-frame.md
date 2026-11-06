@@ -1,6 +1,8 @@
 # 근거 장면(`evidence.preview_ref`) — case가 선택 후보의 IncidentClip에서 FrameRef를 발급받아 채운다
 
 > **상태: 결정 · 구현(handler 발급 연결 [PR #527](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/527), 2026-11-03) · 배포본 표시 확인 전** · 2026-10-29 · 상위 3개 썸네일 범위 확대 2026-11-02(#523, §7) · Owner 정책 검토 2026-11-04(§7-6 · 7) · 발급 위치 확정 2026-10-30(정철원, [PR #470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470)) · 결정 추적 [#446](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/446) Case 확인 요청 6 · Search 답(4 · 5번, 서어진 2026-10-29) · 관련 `contract-source-asset-media-stream.md` §5.3 · `adr-data-contract-call-closure-2026-09-08.md`(「thumbnail 이미지 전달 방식」 Pending)
+>
+> **후보 영상 재생**(상위 3개 썸네일을 poster로 쓰고 그 위에 영상을 더함)은 `candidate-video-preview.md`(#554).
 
 ## 1. 문제
 

@@ -766,6 +766,8 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 }
 .res-video-side { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .res-video-cap { margin: 0; font-size: 15px; line-height: 1.55; color: var(--rs-ink); }
+.res-preview { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.res-preview-label { margin: 0; font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
 .res-video-side .res-link { margin-top: 6px; }
 
 /* 차량 번호 — 큰 번호판과 확인·수정 진입점을 한 칸에 */
@@ -952,3 +954,18 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-map-empty { margin-top: 12px; }
 .res-map-empty > .res-map-note:first-child { margin: 0 0 8px; }
 .res-map-empty .rs-btn { gap: 6px; }
+
+@media (max-width: 960px) {
+  .res-situation { grid-template-columns: minmax(0, 1fr); }
+  .res-situation > .res-frame { grid-row: auto; }
+  .res-situation > :not(.res-sec-head):not(.res-frame) { grid-column: 1; }
+}
+
+@media (max-width: 720px) {
+  .res-item { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .res-report { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+  .res-report .rs-btn { position: static; align-self: flex-end; order: 1; }
+  .res-handoff { grid-template-columns: minmax(0, 1fr); padding: 24px; }
+  .res-handoff .res-actions { justify-content: flex-start; }
+  .res-toast { position: static; }
+}

@@ -1,7 +1,8 @@
 import type { JSX } from 'react'
 import type { CaseView } from '../contracts/caseView'
 import { CandidateAxis } from '../components/CandidateAxis'
-import { CandidateCard } from '../components/CandidateCard'
+import { CandidateVideo, type CandidatePlayback } from '../components/CandidateVideo'
+import { CandidateCard, ThumbPlaceholder } from '../components/CandidateCard'
 import { HintRecall } from '../components/HintRecall'
 import { Panel } from '../components/Panel'
 
@@ -24,9 +25,7 @@ export function CandidatesScreen(props: {
   onSelect?: (candidateId: string) => void
   /** 기준 후보 태그 문구 — 신고자료가 없는 화면에서 바꾼다(CandidateCard) */
   selectedLabel?: string
-  /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 미리보기 자리만 둔다 */
-  frameSrc?: (frameRef: string) => string
-}): JSX.Element {
+} & CandidatePlayback): JSX.Element {
   const { onSelect, frameSrc } = props
   // 후보 장면은 thumb_ref(#523 상위 후보). 기준 후보는 아직 thumb_ref가 없으면 근거 장면(evidence.preview_ref, #470)을 쓴다
   const preview = props.view.evidence?.preview_ref ?? null
@@ -42,7 +41,12 @@ export function CandidatesScreen(props: {
       <HintRecall hints={props.view.hints} description={props.view.description} />
       <CandidateAxis view={props.view} />
       {onSelect && preparing && <p className="kv-src">지금 준비 중이라 끝난 뒤에 고를 수 있어요.</p>}
-      <div className="cands">
+      {props.view.candidates.length === 0 && <p className="kv-src">찾은 후보가 없어요.</p>}
+      <div className="cands" onPlayCapture={(event) => {
+        event.currentTarget.querySelectorAll('video').forEach((video) => {
+          if (video !== event.target && !video.paused) video.pause()
+        })
+      }}>
         {props.view.candidates.map((c, i) => {
           const card = (
             <CandidateCard
@@ -52,6 +56,14 @@ export function CandidatesScreen(props: {
               selectedLabel={props.selectedLabel}
               src={src(c)}
               pending={pending}
+              preview={c.video_preview && (props.videoSrc || props.onPreview) && (
+                <CandidateVideo preview={c.video_preview} ordinal={c.rank ?? i + 1}
+                  src={c.video_preview.clip_ref && props.videoSrc ? props.videoSrc(c.video_preview.clip_ref) : undefined}
+                  poster={src(c) ?? undefined}
+                  placeholder={<ThumbPlaceholder pending={pending} />}
+                  onRequest={props.onPreview ? () => props.onPreview?.(c.candidate_id) : undefined}
+                  busy={props.previewBusy} />
+              )}
             />
           )
           if (!onSelect) return card
@@ -59,7 +71,7 @@ export function CandidatesScreen(props: {
             <div key={c.candidate_id} className="cand-col">
               {card}
               {!c.selected && (
-                <button type="button" className="btn sm pri" disabled={preparing} onClick={() => onSelect(c.candidate_id)}>
+                <button type="button" className="btn sm pri" disabled={preparing || props.previewBusy} onClick={() => onSelect(c.candidate_id)}>
                   이 장면으로 다시 준비
                 </button>
               )}
