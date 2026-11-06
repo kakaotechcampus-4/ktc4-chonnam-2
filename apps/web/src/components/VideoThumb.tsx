@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { ChevronRight, Film } from 'lucide-react'
 import { PREVIEW_UNAVAILABLE, REPRESENTATIVE_VIDEO } from '../contracts/labels.flow'
+import { decodeAviFrame } from './aviFrame'
 import { DrivingPreview } from './driving/DrivingPreview'
 
 // 대표 영상의 정지 화면 한 장. 브라우저 안에서 원본 File로 임시 주소를 만들어 앞부분 한
@@ -12,6 +13,22 @@ import { DrivingPreview } from './driving/DrivingPreview'
 const SEEK_SEC = 1
 const GIVE_UP_MS = 4000
 const MAX_WIDTH = 960
+
+function snapshot(image: CanvasImageSource, w: number, h: number): string | null {
+  if (!w || !h) return null
+  const scale = Math.min(1, MAX_WIDTH / w)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(w * scale)
+  canvas.height = Math.round(h * scale)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+  try {
+    return canvas.toDataURL('image/jpeg', 0.82)
+  } catch {
+    return null
+  }
+}
 
 export function VideoThumb(props: {
   file: File | null
@@ -37,6 +54,23 @@ export function VideoThumb(props: {
   useEffect(() => {
     const file = props.file
     if (!file) return
+    // AVI는 <video>가 열지 못하므로 첫 영상 조각을 직접 디코드한다(#595). 캡처 지점은 첫 키프레임(0초)이다.
+    if (/\.avi$/i.test(file.name) || file.type === 'video/avi' || file.type === 'video/x-msvideo') {
+      let cancelled = false
+      decodeAviFrame(file).then(
+        (frame) => {
+          const src = frame && !cancelled ? snapshot(frame.image, frame.width, frame.height) : null
+          frame?.close()
+          if (cancelled) return
+          if (src) setShot({ file, src })
+          else setFailed(file)
+        },
+        () => !cancelled && setFailed(file),
+      )
+      return () => {
+        cancelled = true
+      }
+    }
     // 임시 주소를 못 만드는 환경(테스트용 jsdom 등)에서는 바로 대체 화면이다.
     if (typeof URL.createObjectURL !== 'function') {
       setFailed(file)
@@ -84,22 +118,8 @@ export function VideoThumb(props: {
     })
     video.addEventListener('seeked', () => {
       if (done) return
-      const w = video.videoWidth
-      const h = video.videoHeight
-      if (!w || !h) return fail()
-      const scale = Math.min(1, MAX_WIDTH / w)
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.round(w * scale)
-      canvas.height = Math.round(h * scale)
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return fail()
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      let src: string
-      try {
-        src = canvas.toDataURL('image/jpeg', 0.82)
-      } catch {
-        return fail()
-      }
+      const src = snapshot(video, video.videoWidth, video.videoHeight)
+      if (!src) return fail()
       release()
       setShot({ file, src })
     })
