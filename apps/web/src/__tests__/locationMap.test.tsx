@@ -219,6 +219,8 @@ describe('지도에서 핀을 옮겨 주변을 살펴본다', () => {
     expect([markers[0].pos.lat, markers[0].pos.lng]).toEqual([37.5, 127.0])
     expect(r.container.textContent).toContain(MAP_GPS_NOTE)
     expect(r.queryByText('처음 위치로 돌아가기')).toBeNull()
+    // 누른 버튼이 사라져도 초점이 body로 빠지지 않고 지도 안내 칸으로 간다(#577 리뷰)
+    expect(document.activeElement?.closest('.res-map-note')).not.toBeNull()
   })
 
   it('옮긴 자리의 주소를 못 찾으면 주소 없이 그렇다고 적는다', async () => {

@@ -45,6 +45,9 @@ export function LocationMap(props: { coord: { lat: number; lon: number } | null;
   const [moved, setMoved] = useState<Moved | null>(null)
   const el = useRef<HTMLDivElement>(null)
   const resetPin = useRef<(() => void) | null>(null)
+  // 「처음 위치로 돌아가기」를 누르면 그 버튼이 사라진다 — 초점이 body로 빠지지 않게 안내 칸으로 옮긴다
+  const caption = useRef<HTMLElement>(null)
+  const returning = useRef(false)
   // 지금 검색어에 대한 결과만 쓴다 — 위치를 고치면 옛 결과는 버린다
   const placeNow = place && place.query === query ? place : null
   const found = placeNow?.found ?? null
@@ -114,6 +117,12 @@ export function LocationMap(props: { coord: { lat: number; lon: number } | null;
     }
   }, [key, spot?.lat, spot?.lon]) // eslint-disable-line react-hooks/exhaustive-deps -- 좌표가 바뀔 때만
 
+  useEffect(() => {
+    if (!returning.current || movedNow) return
+    returning.current = false
+    caption.current?.focus()
+  })
+
   if (!key || broken) return null
   // 찾는 중에는 버튼을 먼저 띄웠다 지우지 않게 비워 둔다
   if (!spot && query && !placeNow) return null
@@ -149,6 +158,7 @@ export function LocationMap(props: { coord: { lat: number; lon: number } | null;
 
   const backToStart = () => {
     resetPin.current?.()
+    returning.current = true
     setMoved(null)
   }
 
@@ -167,7 +177,7 @@ export function LocationMap(props: { coord: { lat: number; lon: number } | null;
           </button>
         </figcaption>
       ) : (
-        <figcaption className="res-map-note">
+        <figcaption ref={caption} tabIndex={-1} className="res-map-note">
           {spot.kind === 'place' && found && (
             <span className="res-map-addr">
               카카오맵에서 확인한 주소 · {found.address}
