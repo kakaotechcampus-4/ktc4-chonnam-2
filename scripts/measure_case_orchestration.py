@@ -402,7 +402,8 @@ ACTIONS: dict[str, tuple[Callable[[Ctx], None], frozenset[str], Callable[[Ctx], 
     "RESELECT_CURRENT": (_select(_current), frozenset(), _always, 0),
     # 정책 표 2행: 2차 확인(필요시)+병렬 보강·증거 재조립, 1차 탐색은 절대 안 건드린다.
     "OTHER_CANDIDATE": (_select(_other), _EVERYTHING - {"coarse_search"},
-                        lambda ctx: ctx.case.stage not in ("EVIDENCE_REVIEW", "READY") or len(ctx.case.candidates) < 2, 1),
+                        lambda ctx: ctx.case.stage not in ("EVIDENCE_REVIEW", "READY") or len(ctx.case.candidates) < 2
+                        or ctx.case.preparing_selected_candidate(), 1),  # 11/6 재측정: reselect-while-preparing(10/24)
     # 상황 응답은 관찰을 다시 돌리지 않고 조립만 다시 한다(#203 — 같은 selection context의 관찰 재사용).
     "SITUATION_CONFIRMED": (_respond("CONFIRMED"), _ASSEMBLE_ONLY, _no_selection, 1),
     "SITUATION_UNSURE": (_respond("USER_UNSURE"), _ASSEMBLE_ONLY, _no_selection, 1),
@@ -425,6 +426,7 @@ _ALLOWED_EDGES = {
     ("SEARCHING", "CANDIDATE_REVIEW"), ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW"),
     ("EVIDENCE_REVIEW", "READY"), ("READY", "EVIDENCE_REVIEW"),
     ("EVIDENCE_REVIEW", "SEARCHING"), ("READY", "SEARCHING"),
+    ("CANDIDATE_REVIEW", "SEARCHING"),  # 11/6 재측정: check_regress_to_searching 허용 칸(후보 0개 → 다시 찾기)
 }
 
 
