@@ -949,6 +949,8 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-map-canvas { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--rs-r-media); overflow: hidden; background: var(--rs-fill); }
 .res-map-note { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
 .res-map-addr { display: block; margin-bottom: 2px; color: var(--rs-ink); }
+.res-map-hint { display: block; margin-top: 2px; }
+.res-map-reset { display: flex; margin-top: 6px; }
 .res-map-empty { margin-top: 12px; }
 .res-map-empty > .res-map-note:first-child { margin: 0 0 8px; }
 .res-map-empty .rs-btn { gap: 6px; }

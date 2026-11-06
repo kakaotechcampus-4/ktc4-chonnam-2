@@ -44,6 +44,7 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
 }
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
 const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
+const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요'
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 // 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
@@ -102,10 +103,12 @@ export function ResultScreen(props: {
   onRespond?: (value: 'CONFIRMED' | 'USER_UNSURE') => void
   /** 신고용 영상을 받을 주소(API 모드). 없으면(시연) 다운로드 버튼을 막아 둔다 */
   videoHref?: string
+  /** 번호판 이미지를 받을 주소. 선택 첨부라 없으면(시연 · 아직 못 만듦) 버튼을 두지 않는다 */
+  plateImageHref?: string
 } & CandidatePlayback): JSX.Element {
   const { view } = props
   // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
-  const [downloadFailed, setDownloadFailed] = useState<string | null>(null)
+  const [downloadFailed, setDownloadFailed] = useState<string[]>([])
   const [downloading, setDownloading] = useState(false)
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const pkg = view.package
@@ -177,14 +180,15 @@ export function ResultScreen(props: {
   const ready = view.stage === 'READY' && !!pkg && !view.notices.some((n) => n.blocking)
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
-  const failedDownload = props.videoHref !== undefined && downloadFailed === props.videoHref
+  const failedDownload = props.videoHref !== undefined && downloadFailed.includes(props.videoHref)
   const canDownload = video === 'ready' && !!props.videoHref && !failedDownload && !downloading
   const videoHint =
     video !== 'ready' ? VIDEO_STATUS[video] : !props.videoHref ? NO_DOWNLOAD_LINK : failedDownload ? DOWNLOAD_FAILED : null
+  const plateFailed = props.plateImageHref !== undefined && downloadFailed.includes(props.plateImageHref)
+  const canDownloadPlate = !!props.plateImageHref && !plateFailed && !downloading
   // 링크로 열지 않고 받아서 저장한다 — 서버가 UNAVAILABLE을 돌려주면 화면이 알아야 한다. 파일 전체가 메모리에 올라간다.
   // 받는 동안은 버튼을 막아 두 번 받지 않게 한다.
-  const download = async () => {
-    const href = props.videoHref
+  const download = async (href: string | undefined, prefix: string, ext: string) => {
     if (!href) return
     setDownloading(true)
     try {
@@ -194,12 +198,12 @@ export function ResultScreen(props: {
       const a = document.createElement('a')
       a.href = url
       // 받은 시각을 붙여 여러 번 받아도 (1)이 붙지 않게 한다. sv-SE는 '2026-11-03 13:53:03' 형식
-      a.download = `daesingo_clip_${new Date().toLocaleString('sv-SE').replace(' ', '_').replace(/[-:]/g, '')}.mp4`
+      a.download = `${prefix}_${new Date().toLocaleString('sv-SE').replace(' ', '_').replace(/[-:]/g, '')}.${ext}`
       a.click()
       // 바로 해제하면 일부 브라우저(Firefox · Safari)에서 저장이 취소된다
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch {
-      setDownloadFailed(href)
+      setDownloadFailed((list) => [...list, href])
     } finally {
       setDownloading(false)
     }
@@ -403,7 +407,7 @@ export function ResultScreen(props: {
                     className="rs-btn sec sm"
                     aria-disabled={!canDownload}
                     onClick={() => {
-                      if (canDownload) void download()
+                      if (canDownload) void download(props.videoHref, 'daesingo_clip', 'mp4')
                     }}
                     aria-describedby={videoHint ? 'res-video-why' : undefined}
                   >
@@ -413,6 +417,26 @@ export function ResultScreen(props: {
                   {videoHint && (
                     <p id="res-video-why" className={`res-hint${video === 'failed' || failedDownload ? ' is-fail' : ''}`}>
                       {videoHint}
+                    </p>
+                  )}
+                  {/* 번호판 이미지는 선택 첨부라 못 만들어도 신고를 막지 않는다(core-user-flow) — 만들어졌을 때만 버튼을 둔다 */}
+                  {props.plateImageHref && (
+                    <button
+                      type="button"
+                      className="rs-btn sec sm"
+                      aria-disabled={!canDownloadPlate}
+                      onClick={() => {
+                        if (canDownloadPlate) void download(props.plateImageHref, 'daesingo_plate', 'png')
+                      }}
+                      aria-describedby={plateFailed ? 'res-plate-why' : undefined}
+                    >
+                      <Download size={16} strokeWidth={2} aria-hidden />
+                      번호판 이미지 다운로드
+                    </button>
+                  )}
+                  {plateFailed && (
+                    <p id="res-plate-why" className="res-hint is-fail">
+                      {PLATE_DOWNLOAD_FAILED}
                     </p>
                   )}
                   {others > 0 && (
