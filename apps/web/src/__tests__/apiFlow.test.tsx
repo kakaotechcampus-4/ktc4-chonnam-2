@@ -499,6 +499,30 @@ it('결과 화면에서 고친 제목은 command 없이 화면에만 남고, 「
   expect(m.sendCommand).not.toHaveBeenCalled()
 })
 
+it('서버가 돌려준 case를 이 브라우저에 기억하고, 없는 case 주소를 열어도 기억은 덮지 않는다', async () => {
+  localStorage.clear()
+  const live = setup({ get: SEARCHING })
+  const a = render(<ApiFlow api={live.api} caseId="c1" />)
+  await a.findByText('분석 중단')
+  expect(localStorage.getItem('daesingo.lastCase')).toBe(SEARCHING.case_id)
+  a.unmount()
+
+  const gone = setup()
+  gone.m.getView.mockResolvedValue({ ok: false, status: 404, error: { code: 'http.not_found', message_key: 'http.not_found' }, caseView: null })
+  const b = render(<ApiFlow api={gone.api} caseId="other" />)
+  await b.findByText('진행 정보를 찾을 수 없어요')
+  expect(localStorage.getItem('daesingo.lastCase')).toBe(SEARCHING.case_id)
+})
+
+it('기억한 case가 서버에서 지워졌으면 잊는다 — 「찾을 수 없어요」 대신 새 신고로 시작한다', async () => {
+  localStorage.setItem('daesingo.lastCase', 'old')
+  const { m, api } = setup()
+  m.getView.mockResolvedValue({ ok: false, status: 404, error: { code: 'http.not_found', message_key: 'http.not_found' }, caseView: null })
+  const { queryByText } = render(<ApiFlow api={api} caseId="old" remembered />)
+  await waitFor(() => expect(localStorage.getItem('daesingo.lastCase')).toBeNull())
+  expect(queryByText('진행 정보를 찾을 수 없어요')).toBeNull()
+})
+
 it('candidate video request and polling keep the failure comparison visible without selecting', async () => {
   const c = SNAPSHOTS.flatMap((s) => s.view.candidates)[0]
   const initial = view({

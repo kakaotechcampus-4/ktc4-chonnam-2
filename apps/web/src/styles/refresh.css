@@ -397,6 +397,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .flow-status { display: flex; align-items: center; gap: 8px; height: 24px; margin: 0; font-size: 15px; color: var(--rs-sub); }
 .flow-elapsed { margin: 0; font-size: 15px; color: var(--rs-sub); }
 .flow-elapsed span { color: var(--rs-ink); font-variant-numeric: tabular-nums; }
+.flow-leave-note { margin: 8px 0 0; font-size: 15px; color: var(--rs-sub); }
 .flow-status-mark { position: relative; flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--rs-line); transition: background-color .25s var(--rs-ease), border-color .25s var(--rs-ease); }
 .flow-status.is-running { color: var(--rs-ink); }
 .flow-status.is-running .flow-status-mark { border: 2px solid #e5e5ea; border-top-color: var(--rs-ink); animation: rs-spin 1s linear infinite; }
