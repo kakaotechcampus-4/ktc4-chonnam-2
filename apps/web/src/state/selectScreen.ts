@@ -60,7 +60,7 @@ export function representativeJobs(jobs: RunningJob[]): RunningJob[] {
 export function selectScreen(view: CaseView): Screen {
   const blocking = view.notices.filter((n) => n.blocking)
   const info = view.notices.filter((n) => !n.blocking)
-  const jobs = representativeJobs(view.running_jobs)
+  const jobs = representativeJobs(view.running_jobs.filter((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW'))
   const base = { blocking, info, jobs }
 
   // 음성 결과도 evidence=null이라 값만으로는 조립 전과 구분되지 않는다. 계약이

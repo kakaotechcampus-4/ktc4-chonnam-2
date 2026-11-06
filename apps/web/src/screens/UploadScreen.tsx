@@ -181,11 +181,19 @@ export function UploadScreen(props: {
   }, [state, uploadedKey, props.departing])
   const timeText = vtime && videoTimeText(vtime)
 
-  // 연출 단계 — 실제 업로드 상태(state)와 따로 둔다. 업로드가 새로 시작될 때마다(파일 교체 포함)
-  // 처음부터 다시 하고, 업로드 중이 아니면 바로 지운다.
+  // 연출 단계 — 실제 업로드 상태(state)와 따로 둔다. 탑승 → 문 닫힘 → 바퀴는 이 화면의 첫 업로드에서 한 번만 한다.
+  // 파일마다 목록이 새로 만들어지거나 다시 골라 올려도 처음부터 하지 않는다. 업로드 중이 아니면 바로 지운다.
   const [phase, setPhase] = useState<Phase>(null)
+  const played = useRef(false)
+  const wasUploading = useRef(false)
   useEffect(() => {
-    if (state !== 'uploading') return setPhase(null)
+    if (state !== 'uploading') {
+      if (wasUploading.current) played.current = true
+      wasUploading.current = false
+      return setPhase(null)
+    }
+    wasUploading.current = true
+    if (played.current) return
     setPhase('boarding')
     const a = setTimeout(() => setPhase('closing'), BOARD_MS)
     const b = setTimeout(() => setPhase('wheel'), BOARD_MS + CLOSE_MS + HOLD_MS)
@@ -193,7 +201,7 @@ export function UploadScreen(props: {
       clearTimeout(a)
       clearTimeout(b)
     }
-  }, [state, props.files])
+  }, [state])
 
   // 장면의 폭(칸 너비)만 따라간다 — 높이는 설계값이라 칸이 접혀도 배율이 흔들리지 않는다.
   const scene = useRef<HTMLDivElement>(null)

@@ -14,7 +14,13 @@ import copy
 from datetime import datetime, timezone
 from typing import Any
 
-from daesingo.case.domain import CaseAggregate
+from daesingo.case.domain import (
+    CANDIDATE_VIDEO_PREVIEW,
+    INPUT_PINNED_KINDS,
+    OBSERVATION_KINDS as OBSERVATION_KINDS,
+    SUPERSEDE_INPUT_KEY,
+    CaseAggregate,
+)
 
 CONTRACT_VERSION = "job-record/v1"
 
@@ -32,11 +38,13 @@ JOB_KINDS = frozenset(
         # Fine 결과로 IncidentClip을 준비하는 발주 — Fine과 다른 실패 · 재실행 단위
         # (`decisions/incident-clip-observation-input.md` §4-2).
         "INCIDENT_CLIP_BUILD",
+        # 후보 영상 미리보기(`decisions/candidate-video-preview.md`, #554).
+        CANDIDATE_VIDEO_PREVIEW,
     }
 )
 
-# 발주 때 입력(후보 · 세대 · span · clip ref)을 case state에 고정하는 kind(같은 문서 §4-1).
-OBSERVATION_KINDS = frozenset({"FINE_VERIFY", "INCIDENT_CLIP_BUILD", "PLATE_READ", "OVERLAY_TIME_READ"})
+# 관찰 kind · 입력 고정 kind · supersede 키는 `domain.py`에 선언한다(순환 import 방지).
+# `OBSERVATION_KINDS`는 기존 import 경로(`jobs.OBSERVATION_KINDS`)를 위해 다시 내보낸다.
 
 
 def _now() -> str:
@@ -56,7 +64,7 @@ def issue_job(
     """`observation_input`은 관찰 kind만 받고 같은 case 저장에 append-only로 남는다(`incident-clip-observation-input.md` §4-1)."""
     if kind not in JOB_KINDS:
         raise ValueError(f"알 수 없는 JobRecord.kind: {kind!r} (등록된 kind: {sorted(JOB_KINDS)})")
-    if observation_input is not None and kind not in OBSERVATION_KINDS:
+    if observation_input is not None and kind not in INPUT_PINNED_KINDS:
         raise ValueError(f"관찰 kind가 아니라 observation_input을 받지 않는다: {kind!r}")
     if force_rerun:
         # 사용자가 명시적으로 재요청한 Job(재판독/재검색 등)은 그 자체가 새 "요청 시점 케이스
@@ -76,9 +84,17 @@ def issue_job(
         "requested_at": _now(),
     }
     # 같은 kind · scope_ref의 기다리던 job은 이 job으로 대체된다 — 대표 job은 가장 나중 job이다(A§10-7).
+    # `SUPERSEDE_INPUT_KEY`에 있는 kind는 입력의 그 키까지 같아야 대체한다.
+    input_key = SUPERSEDE_INPUT_KEY.get(kind)
     for prior in case.waiting_job_records():
-        if prior["kind"] == kind and prior["scope_ref"] == scope_ref:
-            case.settle_job(prior["job_id"], "SUPERSEDED")
+        if prior["kind"] != kind or prior["scope_ref"] != scope_ref:
+            continue
+        if input_key is not None and (
+            case.observation_inputs.get(prior["job_id"], {}).get(input_key)
+            != (observation_input or {}).get(input_key)
+        ):
+            continue
+        case.settle_job(prior["job_id"], "SUPERSEDED")
     case.record_job(job_record)
     if observation_input is not None:
         case.observation_inputs[job_record["job_id"]] = copy.deepcopy(observation_input)

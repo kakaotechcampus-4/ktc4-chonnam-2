@@ -8,7 +8,7 @@
 
 **Architecture Contract:** v4 §5-1 ⑪ `CaseView` · ⑫ `JobRecord`
 
-**Contract Version:** `job-record/v1` · `case-view/v1.11`
+**Contract Version:** `job-record/v1` · `case-view/v1.12`
 
 > **v1.10 로컬 구현 — 장면 찾기 세부 진행.** 선택 필드 `scene_search: {job_id, phase, search_started_at}`를 추가한다. `phase`는 `PREPARING | SEARCHING | ORGANIZING`, `search_started_at`은 최초 탐색 시작 ISO8601 시각 또는 `null`이다. 같은 job의 자동 재시도에는 단계와 최초 시각을 유지하고, 새 사용자 탐색에는 초기화한다. 완료·실패·중단 판단은 기존 `progress`와 `notices`가 우선한다. 구버전 응답처럼 이 필드가 없으면 web은 세부 진행률을 추정하지 않는다. 아래 v1.9 전체 예시에 이 선택 필드를 더한 호환 확장이다.
 
@@ -520,3 +520,12 @@ json
 - `candidates[].at_provenance_label_key`(string|null) 신설. `event_time_display.source_label_key` pass-through 가설은 fixture 전수 대조로 기각, case 소유의 독립 매핑표(`recording.filename_time`·`readout.overlay_ocr`·`recording.timeline_relative_only` 3종)로 대체.
 - §10 불변조건 14 추가 — raw/label_key authoritative 관계, 필드 항상 존재 원칙.
 - fixture 반영(`data/mock/case/` 7개 파일 14곳)은 이 v1.4 확정의 후속 작업으로 별도 진행한다.
+
+
+## v1.12 후보 영상 미리보기 (2026-11-02 로컬 구현 · 2026-11-05 판본 조정)
+
+> 처음에는 v1.11로 적었다. 같은 번호를 [#573](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/573)(`package.plate_image_ref`, 11/5 RC)도 쓰고 그쪽이 먼저 머지되므로, 이 변경은 v1.12로 옮긴다(2026-11-05 유소연).
+
+`candidates[].video_preview`는 `{status, clip_ref}`다. status는 `NOT_REQUESTED | PREPARING | READY | FAILED | UNAVAILABLE`, clip_ref는 READY일 때만 IncidentClip ref다. 이전 응답은 이 필드가 없을 수 있으며 Web은 재생 기능을 추정하지 않는다.
+
+열린 JobRecord.kind에 `CANDIDATE_VIDEO_PREVIEW`, label_key에 `job.candidate_video_preview`를 등재한다. `running_jobs`에 포함되어 polling하지만 신고자료 진행·재선택 제한의 관찰 job에는 포함되지 않는다. 미리보기 요청은 Fine·판독·export·선택을 변경하지 않는다. rank/세대/구간·재사용·실패 정책의 정본은 `docs/modules/case/decisions/candidate-video-preview.md`다.

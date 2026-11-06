@@ -14,6 +14,7 @@ import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen, type ReportEdits } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
 import { useScreenFocus } from './screenFocus'
+import { useSubStack } from './subStack'
 import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
@@ -48,7 +49,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   const [edited, setEdited] = useState<{ key: string; edits: ReportEdits }>({ key: '', edits: {} })
   const edits = edited.key === draftKey ? edited.edits : {}
   const [situation, setSituation] = useState('')
-  const [subs, setSubs] = useState<Sub[]>([])
+  const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [unsupported, setUnsupported] = useState(false)
 
@@ -62,7 +63,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     if (!state.caseId) return
     const url = new URL(location.href)
     url.searchParams.set('case', state.caseId)
-    history.replaceState(null, '', url)
+    history.replaceState(history.state, '', url) // 하위 화면 기록 깊이(subStack)는 그대로 둔다
   }, [state.caseId])
   // 서버가 돌려준 case만 기억한다 — 없는 case 주소를 열어도 기억해 둔 내 case를 덮지 않는다
   const seen = view?.case_id
@@ -115,11 +116,17 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   // 보낼 command가 없는 동작은 화면이 사용 불가와 이유를 보인다
   const canRun = (action: Action) => !!INPUT_SUB[action] || SENDABLE.has(action)
   const reselect = (candidateId: string) => {
-    setSubs([])
+    closeAll()
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
   }
+  const playback = {
+    videoSrc: cid ? (ref: string) => api.candidateVideoUrl(cid, ref) : undefined,
+    frameSrc,
+    onPreview: (candidateId: string) => run({ kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW', payload: { candidate_id: candidateId } }),
+    previewBusy: state.busy,
+  }
   const editHint = (description: string) => {
-    setSubs([])
+    closeAll()
     setSituation(description) // 진행 화면이 새 설명을 보인다
     setStartedAt(Date.now())
     run({ kind: 'EDIT_HINT', payload: { description } })
@@ -133,10 +140,9 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   }
   const open = (sub: Sub) => {
     rememberOpener()
-    setSubs((s) => [...s, sub])
+    openSub(sub)
     setArriving(false)
   }
-  const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
   const mainRef = useRef<HTMLElement>(null)
   const rememberOpener = useScreenFocus(mainRef, `${kind}-${subs.join('/')}`, subs.length)
@@ -254,7 +260,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
       case 'STOPPED':
         return <StoppedScreen view={view} onAction={onAction} />
       case 'SEARCH_FAILED':
-        return <FailedScreen view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} frameSrc={frameSrc} />
+        return <FailedScreen {...playback} view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} />
       case 'NO_RESULT':
         // 시연과 같은 틀. case가 실은 동작(설명 고치기 · 같은 조건으로 다시 찾기)을 버튼으로 두고, 첫 버튼만 강조한다.
         // 「처음으로」는 서버 action과 따로 언제나 둔다(#410)
@@ -288,25 +294,17 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
         )
       case 'NOT_OBSERVED':
         return (
-          <NotObservedScreen
-            view={view}
-            onSelect={reselect}
-            restyled
-            onNewReport={newReport}
-            onAction={onAction}
-            canRun={canRun}
-            onEditHint={editHint}
-            frameSrc={frameSrc}
-          />
+          <NotObservedScreen {...playback} view={view} onSelect={reselect} restyled onNewReport={newReport} onAction={onAction} canRun={canRun} onEditHint={editHint} />
         )
       default:
-        if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} frameSrc={frameSrc} />
+        if (sub === 'candidates') return <CandidateCompare {...playback} view={view} onBack={back} onSelect={reselect} />
         if (sub === 'plate' || sub === 'plateEdit')
           return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} frameSrc={frameSrc} />
         if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
         if (sub === 'details') return <DetailsCheck view={view} onBack={back} />
         return (
           <ResultScreen
+            {...playback}
             view={view}
             onCandidates={() => open('candidates')}
             onPlate={() => open('plate')}
@@ -319,6 +317,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             canRun={canRun}
             arriving={arriving}
             videoHref={cid && view.package?.artifact_ref ? api.assetUrl(cid, view.package.artifact_ref) : undefined}
+            plateImageHref={cid && view.package?.plate_image_ref ? api.assetUrl(cid, view.package.plate_image_ref) : undefined}
             frameSrc={frameSrc}
           />
         )

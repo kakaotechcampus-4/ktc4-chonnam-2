@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { LocationMap, MAP_GPS_NOTE, MAP_ME_FAILED, MAP_ME_NOTE, MAP_PLACE_NOTE, placeMatched, placeNotFound, placeQuery } from '../components/LocationMap'
-import { loadKakaoMaps, searchPlace } from '../components/kakaoMap'
+import { LocationMap, MAP_GPS_NOTE, MAP_ME_FAILED, MAP_ME_NOTE, MAP_MOVED_NOTE, MAP_PLACE_NOTE, placeMatched, placeNotFound, placeQuery } from '../components/LocationMap'
+import { loadKakaoMaps, reverseAddress, searchPlace } from '../components/kakaoMap'
 import { SNAPSHOTS } from '../contracts/fixtures'
 import { ResultScreen } from '../screens/ResultScreen'
 
@@ -10,9 +10,15 @@ vi.mock('../components/kakaoMap', () => ({
   kakaoMapKey: vi.fn(() => 'test-key'),
   loadKakaoMaps: vi.fn(),
   searchPlace: vi.fn(),
+  reverseAddress: vi.fn(),
 }))
 
 const created: { center: number[] }[] = []
+// 지도 · 핀에 건 이벤트와 만든 핀 — 테스트가 직접 누르고 끈다
+const listeners: { target: unknown; type: string; fn: (e?: { latLng: LatLng }) => void }[] = []
+const markers: { pos: LatLng; draggable?: boolean; setPosition(p: LatLng): void }[] = []
+const fire = (type: string, e?: { latLng: LatLng }) =>
+  act(async () => listeners.filter((l) => l.type === type).forEach((l) => l.fn(e)))
 class LatLng {
   constructor(
     public lat: number,
@@ -34,7 +40,22 @@ const maps = {
     relayout() {}
     setCenter() {}
   },
-  Marker: class {},
+  Marker: class {
+    pos: LatLng
+    draggable?: boolean
+    constructor(o: { position: LatLng; draggable?: boolean }) {
+      this.pos = o.position
+      this.draggable = o.draggable
+      markers.push(this)
+    }
+    setPosition(p: LatLng) {
+      this.pos = p
+    }
+    getPosition() {
+      return this.pos
+    }
+  },
+  event: { addListener: (target: unknown, type: string, fn: (e?: { latLng: LatLng }) => void) => listeners.push({ target, type, fn }) },
   load: (cb: () => void) => cb(),
 }
 
@@ -50,6 +71,9 @@ globalThis.ResizeObserver ??= class {
 
 beforeEach(async () => {
   created.length = 0
+  listeners.length = 0
+  markers.length = 0
+  vi.mocked(reverseAddress).mockReset()
   const { kakaoMapKey } = await import('../components/kakaoMap')
   vi.mocked(kakaoMapKey).mockReturnValue('test-key')
   vi.mocked(loadKakaoMaps).mockResolvedValue(maps as never)
@@ -157,4 +181,52 @@ it('결과 화면: 서버 검색어가 있어도 사용자가 위치를 고치�
   r.rerender(<ResultScreen {...props} edits={{ location: '운천역 사거리' }} />)
   await act(async () => {})
   expect(searchPlace).toHaveBeenLastCalledWith(maps, '운천역 사거리')
+})
+
+describe('지도에서 핀을 옮겨 주변을 살펴본다', () => {
+  const show = async () => {
+    const r = render(<LocationMap coord={{ lat: 37.5, lon: 127.0 }} />)
+    await act(async () => {})
+    return r
+  }
+
+  it('핀은 끌 수 있고, 지도를 누르면 그 자리로 옮겨 주소를 적고 「직접 옮긴 위치」라고 알린다', async () => {
+    vi.mocked(reverseAddress).mockResolvedValue('광주 서구 치평동 1200')
+    const r = await show()
+    expect(markers[0].draggable).toBe(true)
+    await fire('click', { latLng: new LatLng(37.51, 127.01) })
+    expect([markers[0].pos.lat, markers[0].pos.lng]).toEqual([37.51, 127.01])
+    expect(reverseAddress).toHaveBeenCalledWith(maps, 37.51, 127.01)
+    expect(r.container.textContent).toContain('직접 옮긴 위치 · 광주 서구 치평동 1200')
+    expect(r.container.textContent).toContain(MAP_MOVED_NOTE)
+    expect(r.container.textContent).not.toContain(MAP_GPS_NOTE)
+  })
+
+  it('핀을 끌어 놓아도 놓은 자리의 주소를 적는다', async () => {
+    vi.mocked(reverseAddress).mockResolvedValue('광주 서구 쌍촌동 10')
+    const r = await show()
+    markers[0].setPosition(new LatLng(37.49, 126.99))
+    await fire('dragend')
+    expect(reverseAddress).toHaveBeenCalledWith(maps, 37.49, 126.99)
+    expect(r.container.textContent).toContain('직접 옮긴 위치 · 광주 서구 쌍촌동 10')
+  })
+
+  it('「처음 위치로 돌아가기」는 핀을 처음 자리로 돌리고 안내도 되돌린다', async () => {
+    vi.mocked(reverseAddress).mockResolvedValue('광주 서구 치평동 1200')
+    const r = await show()
+    await fire('click', { latLng: new LatLng(37.51, 127.01) })
+    await act(async () => fireEvent.click(r.getByText('처음 위치로 돌아가기')))
+    expect([markers[0].pos.lat, markers[0].pos.lng]).toEqual([37.5, 127.0])
+    expect(r.container.textContent).toContain(MAP_GPS_NOTE)
+    expect(r.queryByText('처음 위치로 돌아가기')).toBeNull()
+    // 누른 버튼이 사라져도 초점이 body로 빠지지 않고 지도 안내 칸으로 간다(#577 리뷰)
+    expect(document.activeElement?.closest('.res-map-note')).not.toBeNull()
+  })
+
+  it('옮긴 자리의 주소를 못 찾으면 주소 없이 그렇다고 적는다', async () => {
+    vi.mocked(reverseAddress).mockResolvedValue(null)
+    const r = await show()
+    await fire('click', { latLng: new LatLng(37.51, 127.01) })
+    expect(r.container.textContent).toContain('직접 옮긴 위치 · 주소를 찾지 못했어요')
+  })
 })
