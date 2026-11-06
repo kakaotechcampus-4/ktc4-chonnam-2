@@ -186,7 +186,17 @@ def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, read
     _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
 
 
+def _apply_candidate_video_preview(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    from daesingo.case.candidate_video import PreviewResult
+    result = (PreviewResult.model_validate(reader(store.conn, outcome.kind, outcome.produced))
+              if outcome.status == "SUCCEEDED" else None)
+    case.settle_job(outcome.job_id, "REFLECTED")
+    observation.record_outcome(case, outcome.job_id, status=outcome.status,
+                               **({"incident_clip_ref": result.incident_clip_ref} if result is not None else {}))
+
+
 _APPLIERS = {
+    "CANDIDATE_VIDEO_PREVIEW": _apply_candidate_video_preview,
     "HINT_EXTRACT": _apply_hint_extract,
     "COARSE_SEARCH": _apply_coarse_search,
     "PLATE_READ": _apply_observation,

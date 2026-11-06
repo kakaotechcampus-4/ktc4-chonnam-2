@@ -55,7 +55,7 @@ function setup(views: { get?: CaseView } = {}) {
     sendCommand: vi.fn(),
     getView: vi.fn().mockResolvedValue(ok(views.get ?? view({}))),
   }
-  const api = { ...m, frameUrl: () => '', assetUrl: () => '' } as unknown as Api
+  const api = { ...m, frameUrl: () => '', assetUrl: () => '', candidateVideoUrl: (_case: string, ref: string) => `/candidate-video/${ref}` } as unknown as Api
   return { m, api }
 }
 
@@ -497,4 +497,119 @@ it('결과 화면에서 고친 제목은 command 없이 화면에만 남고, 「
   fireEvent.click(getByText('취소'))
   await findByText('끼어들기 신고')
   expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('candidate video request and polling keep the failure comparison visible without selecting', async () => {
+  const c = SNAPSHOTS.flatMap((s) => s.view.candidates)[0]
+  const initial = view({
+    case_rev: 8, stage: 'EVIDENCE_REVIEW', evidence: null,
+    candidates: [
+      { ...c, candidate_id: 'first', rank: 1, selected: true, video_preview: { status: 'NOT_REQUESTED', clip_ref: null } },
+      { ...c, candidate_id: 'second', rank: 2, selected: false, video_preview: { status: 'NOT_REQUESTED', clip_ref: null } },
+    ],
+    notices: [{ code: 'recording.incident_clip_build_failed', severity: 'ERROR', blocking: true, message_key: 'notice.incident_clip_build_failed', actions: [] }],
+  })
+  const pending: CaseView = { ...initial, case_rev: 9,
+    candidates: initial.candidates.map((candidate) => candidate.selected ? candidate : { ...candidate, video_preview: { status: 'PREPARING', clip_ref: null } }),
+    running_jobs: [{ job_id: 'preview', kind: 'CANDIDATE_VIDEO_PREVIEW', label_key: 'job.candidate_video_preview', status: 'RUNNING' }],
+  }
+  const ready: CaseView = { ...pending, running_jobs: [], candidates: pending.candidates.map((candidate) => candidate.selected ? candidate : { ...candidate, video_preview: { status: 'READY', clip_ref: 'clip_second' } }) }
+  const { m, api } = setup({ get: initial })
+  const screen = render(<ApiFlow api={api} caseId="c1" />)
+  await screen.findByRole('button', { name: '2번 후보 영상 보기' })
+  m.sendCommand.mockResolvedValue(ok(pending, 202))
+  m.getView.mockResolvedValue(ok(ready))
+  fireEvent.click(screen.getByRole('button', { name: '2번 후보 영상 보기' }))
+  await screen.findByText('영상 준비 중')
+  expect(screen.getByRole('button', { name: '이 장면으로 다시 준비' }).hasAttribute('disabled')).toBe(false)
+  await waitFor(() => expect(screen.container.querySelector('video')?.getAttribute('src')).toBe('/candidate-video/clip_second'), { timeout: 4000 })
+  expect(m.sendCommand).toHaveBeenCalledExactlyOnceWith('c1', 8, { kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW', payload: { candidate_id: 'second' } })
+  expect(screen.getByText('이 장면의 영상을 준비하지 못했어요.')).toBeTruthy()
+})
+
+it.each(['result', 'not-observed', 'failed', 'awaiting'] as const)('a single candidate has a playback entry on the %s screen', async (surface) => {
+  const original = surface === 'result' ? RESULT : surface === 'awaiting' ? AWAITING : notObserved(RESULT.candidates)
+  const selected = original.candidates.find((c) => c.selected) ?? RESULT.candidates[0]
+  const initial: CaseView = { ...original, case_id: 'c1', case_rev: 8, running_jobs: [],
+    candidates: [{ ...selected, candidate_id: 'only', rank: 1, selected: true,
+      video_preview: { status: 'NOT_REQUESTED', clip_ref: null } }],
+    ...(surface === 'failed' ? { evidence: null, package: null, notices: [{
+      code: 'recording.incident_clip_build_failed', severity: 'ERROR', blocking: true,
+      message_key: 'notice.incident_clip_build_failed', actions: [],
+    }] } : {}),
+  }
+  const { m, api } = setup({ get: initial })
+  const pending: CaseView = { ...initial, case_rev: 9,
+    candidates: initial.candidates.map((c) => ({ ...c, video_preview: { status: 'PREPARING', clip_ref: null } })),
+    running_jobs: [{ job_id: 'preview', kind: 'CANDIDATE_VIDEO_PREVIEW', label_key: 'job.candidate_video_preview', status: 'RUNNING' }],
+  }
+  m.sendCommand.mockResolvedValue(ok(pending, 202))
+  m.getView.mockResolvedValueOnce(ok(initial)).mockResolvedValue(ok({ ...pending, running_jobs: [],
+    candidates: pending.candidates.map((c) => ({ ...c, video_preview: { status: 'READY', clip_ref: 'only-clip' } })),
+  }))
+  const screen = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await screen.findByRole('button', { name: '1번 후보 영상 보기' }))
+  await waitFor(() => expect(screen.container.querySelector('video')?.getAttribute('src')).toBe('/candidate-video/only-clip'), { timeout: 4000 })
+  expect(screen.queryByRole('button', { name: /다른 후보/ })).toBeNull()
+  expect(m.sendCommand).toHaveBeenCalledExactlyOnceWith('c1', 8, { kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW', payload: { candidate_id: 'only' } })
+})
+
+// 하위 화면(다른 후보 · 번호판 · 시각 · 근거)은 브라우저 기록에 한 칸씩 남는다 — 브라우저 뒤로가기도 결과 화면으로 돌아온다
+// 「다른 장면이었나요?」는 신고 상황 응답 전 화면에 있다
+const WITH_OTHER = {
+  ...AWAITING,
+  candidates: [...AWAITING.candidates, { ...AWAITING.candidates[0], candidate_id: 'cand_other', selected: false }],
+}
+const backTo = async (findByText: (t: RegExp) => Promise<HTMLElement>) => {
+  act(() => history.back())
+  await findByText(/다른 장면이었나요\?/)
+}
+
+it('결과 화면에서 「다른 장면이었나요?」로 연 다른 후보 화면은 브라우저 뒤로가기로 결과 화면에 돌아온다', async () => {
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText, getByRole } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(getByRole('heading', { name: '다른 후보' })).toBeTruthy()
+  await backTo(findByText)
+})
+
+it('화면 안 「뒤로」로 닫으면 브라우저 기록도 한 칸 돌아가 빈칸이 남지 않는다', async () => {
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(history.state?.sub).toBe(1)
+  fireEvent.click(getByLabelText('뒤로'))
+  await findByText(/다른 장면이었나요\?/)
+  await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
+  // 다시 열어도 깊이는 1이다 — 닫은 칸 위에 쌓이지 않는다
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(history.state?.sub).toBe(1)
+})
+
+it('다른 후보를 고르면 하위 화면이 닫히고 쌓인 기록도 함께 정리된다', async () => {
+  const { m, api } = setup({ get: WITH_OTHER })
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
+  const { findByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  fireEvent.click(getAllByText('이 장면으로 다시 준비')[0])
+  await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
+  await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
+})
+
+it('결과 없음에서 연 「설명 고치기」도 브라우저 뒤로가기로 결과 없음 화면에 돌아온다', async () => {
+  const { m, api } = setup({ get: { ...EMPTY, description: '흰 차' } })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('설명 고치기'))
+  expect(getByLabelText('어떤 상황이었나요?')).toBeTruthy()
+  act(() => history.back())
+  await findByText(/말씀하신 장면을 찾지 못했어요/)
+  expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('하위 화면을 연 채 새로고침해 남은 기록 깊이는 처음 열 때 0으로 맞춘다', async () => {
+  history.replaceState({ sub: 1 }, '', '/?api')
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText(/다른 장면이었나요\?/)
+  expect(history.state?.sub).toBe(0)
 })

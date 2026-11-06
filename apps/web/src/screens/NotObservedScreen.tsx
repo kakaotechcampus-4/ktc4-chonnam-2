@@ -1,3 +1,4 @@
+import type { CandidatePlayback } from '../components/CandidateVideo'
 import type { JSX } from 'react'
 import { isAction, type Action, type CaseView } from '../contracts/caseView'
 import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
@@ -21,10 +22,9 @@ export function NotObservedScreen(props: {
   canRun?: (action: Action) => boolean
   /** 다른 후보가 없으면 설명 입력란을 화면에 바로 두고, 여기로 고친 설명을 보낸다 */
   onEditHint?: (description: string) => void
-  /** 후보 미리보기 이미지 주소(API 모드) */
-  frameSrc?: (frameRef: string) => string
-}): JSX.Element {
+} & CandidatePlayback): JSX.Element {
   const others = props.view.candidates.filter((c) => !c.selected).length
+  const hasPlayback = !!props.videoSrc && props.view.candidates.some((c) => c.video_preview && c.video_preview.status !== 'UNAVAILABLE')
   const r = props.restyled
   const code = 'evidence.visual_event_not_observed'
   const { onAction, canRun } = props
@@ -69,9 +69,9 @@ export function NotObservedScreen(props: {
           )}
         </section>
       </div>
-      {others > 0 && props.onSelect && (
+      {((others > 0 && props.onSelect) || hasPlayback) && (
         <div className={r ? 'rs notobs-cands' : undefined}>
-          <CandidatesScreen view={props.view} onSelect={props.onSelect} selectedLabel="먼저 확인한 장면" frameSrc={props.frameSrc} />
+          <CandidatesScreen {...props} onSelect={props.onSelect} selectedLabel="먼저 확인한 장면" />
         </div>
       )}
     </div>

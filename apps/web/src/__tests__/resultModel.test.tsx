@@ -154,6 +154,43 @@ describe('신고용 영상 다운로드', () => {
   })
 })
 
+describe('번호판 이미지 다운로드', () => {
+  const noop = vi.fn()
+  const show = (plateImageHref?: string) =>
+    render(<ResultScreen view={HAPPY} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref="/cases/c1/assets/v1" plateImageHref={plateImageHref} />)
+  const query = (r: ReturnType<typeof show>) => r.queryByRole('button', { name: '번호판 이미지 다운로드' })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('받을 주소가 없으면(서버가 아직 안 내림 · 못 만듦) 버튼을 두지 않는다', () => {
+    expect(query(show())).toBeNull()
+  })
+
+  it('주소가 있으면 누를 때 png로 받고, 실패하면 막고 이유를 말한다. 영상 버튼은 그대로다', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['png']) }).mockResolvedValueOnce({ ok: false })
+    vi.stubGlobal('fetch', fetchMock)
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    URL.revokeObjectURL = vi.fn()
+    const names: string[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      names.push(this.download)
+    })
+    const r = show('/cases/c1/assets/p1')
+    const btn = query(r)!
+    expect(btn.getAttribute('aria-disabled')).toBe('false')
+    fireEvent.click(btn)
+    await vi.waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalled(), { timeout: 3000 })
+    expect(fetchMock).toHaveBeenCalledWith('/cases/c1/assets/p1')
+    expect(names).toEqual([expect.stringMatching(/^daesingo_plate_\d{8}_\d{6}\.png$/)])
+    fireEvent.click(query(r)!)
+    await r.findByText('번호판 이미지를 받지 못했어요')
+    expect(query(r)!.getAttribute('aria-disabled')).toBe('true')
+    expect(r.getByRole('button', { name: '신고용 영상 다운로드' }).getAttribute('aria-disabled')).toBe('false')
+  })
+})
+
 describe('프레임 이미지', () => {
   it('ref가 없으면 자리 표시를 두고, 있으면 이미지를 그리고, 받지 못하면 자리 표시로 돌아간다', () => {
     const r = render(<FrameSlot className="f" src={null} alt="장면">자리</FrameSlot>)

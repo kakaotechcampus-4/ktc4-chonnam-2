@@ -1,3 +1,4 @@
+import type { CandidatePlayback } from '../components/CandidateVideo'
 import { useEffect, useId, useRef, useState, type JSX, type ReactNode } from 'react'
 import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
@@ -40,11 +41,10 @@ export function CandidateCompare(props: {
   view: CaseView
   onBack: () => void
   onSelect: (candidateId: string) => void
-  frameSrc?: (frameRef: string) => string
-}): JSX.Element {
+} & CandidatePlayback): JSX.Element {
   return (
     <SubPage title="다른 후보" onBack={props.onBack} className="cands-page">
-      <CandidatesScreen view={props.view} onSelect={props.onSelect} frameSrc={props.frameSrc} />
+      <CandidatesScreen {...props} />
     </SubPage>
   )
 }
@@ -122,7 +122,7 @@ export function PlateCheck(props: {
   const plateOk = PLATE_FORMAT.test(plateInput.replace(/\s/g, ''))
   const plateWrong = plateInput !== '' && !plateOk
   // 도는 job이 없으면 이미지는 더 오지 않는다(번호판을 못 읽으면 plate_preview_ref는 null로 끝난다) — 「준비 중」이라 하지 않는다
-  const pending = props.view.running_jobs.length > 0
+  const pending = props.view.running_jobs.some((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW')
   return (
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">

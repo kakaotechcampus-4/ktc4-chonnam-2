@@ -1,4 +1,4 @@
-// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.10)
+// CaseView — `contract-job-record-case-view.md` B절 §5·§6·§7 (case-view/v1.12)
 //
 // 이 파일이 web의 타입 정본이다. `apps/prototype/src/types.ts`의 CaseState는
 // 참고만 하고 가져오지 않는다(`docs/modules/web/decisions/web-stack.md`).
@@ -86,8 +86,15 @@ export interface PackageView {
   /** 최종 신고문(v1.7, #274). `package`가 있으면 둘 다 non-null이고 description은 줄바꿈 평문이다. */
   report: { title: string; description: string }
   artifact_ref: string | null
+  /** 번호판 이미지(PLATE_IMAGE) asset ref(v1.11, #569). 못 읽음 · 생성 실패 · 생성 중이면 `null`, v1.10 이하 서버에는 키가 없어 `null`과 같게 다룬다 */
+  plate_image_ref?: string | null
   capabilities: string[]
   warnings: string[]
+}
+
+export interface CandidateVideoPreview {
+  status: 'NOT_REQUESTED' | 'PREPARING' | 'READY' | 'FAILED' | 'UNAVAILABLE'
+  clip_ref: string | null
 }
 
 export interface Candidate {
@@ -111,6 +118,7 @@ export interface Candidate {
   marker_ms?: number | null
   observed: string
   thumb_ref: string | null
+  video_preview?: CandidateVideoPreview
   selected: boolean
   timeline_revision: number
   stale_revision: boolean
