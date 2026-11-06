@@ -16,6 +16,11 @@ export interface KakaoMap {
   setCenter(latlng: KakaoLatLng): void
 }
 
+export interface KakaoMarker {
+  setPosition(latlng: KakaoLatLng): void
+  getPosition(): KakaoLatLng
+}
+
 // 장소 검색(services 라이브러리)에서 쓰는 만큼만. x = 경도, y = 위도(문자열)
 interface KakaoPlace {
   place_name: string
@@ -28,11 +33,15 @@ interface KakaoPlace {
 export interface KakaoMaps {
   LatLng: new (lat: number, lng: number) => KakaoLatLng
   Map: new (el: HTMLElement, options: { center: KakaoLatLng; level: number }) => KakaoMap
-  Marker: new (options: { position: KakaoLatLng; map: unknown }) => unknown
+  Marker: new (options: { position: KakaoLatLng; map: unknown; draggable?: boolean }) => KakaoMarker
   load(callback: () => void): void
+  event: { addListener(target: unknown, type: string, handler: (e?: { latLng: KakaoLatLng }) => void): void }
   services: {
     Places: new () => { keywordSearch(query: string, callback: (data: KakaoPlace[], status: string) => void): void }
-    Geocoder: new () => { addressSearch(query: string, callback: (data: KakaoAddress[], status: string) => void): void }
+    Geocoder: new () => {
+      addressSearch(query: string, callback: (data: KakaoAddress[], status: string) => void): void
+      coord2Address(lng: number, lat: number, callback: (data: KakaoCoordAddress[], status: string) => void): void
+    }
     Status: { OK: string }
   }
 }
@@ -41,6 +50,11 @@ interface KakaoAddress {
   address_name: string
   x: string
   y: string
+}
+
+interface KakaoCoordAddress {
+  address: { address_name: string } | null
+  road_address: { address_name: string } | null
 }
 
 // matched: 실제로 찾은 검색어. 「사거리」 등을 떼고 찾았으면 원래 글과 다르다 — 화면이 그대로 밝힌다
@@ -86,6 +100,16 @@ export async function searchPlace(maps: KakaoMaps, query: string): Promise<Found
     if (found) return found
   }
   return null
+}
+
+// 좌표 → 주소(도로명이 있으면 도로명, 없으면 지번). 못 찾으면 null
+export function reverseAddress(maps: KakaoMaps, lat: number, lon: number): Promise<string | null> {
+  return new Promise((resolve) =>
+    new maps.services.Geocoder().coord2Address(lon, lat, (data, status) => {
+      const a = status === maps.services.Status.OK ? data[0] : undefined
+      resolve(a?.road_address?.address_name || a?.address?.address_name || null)
+    }),
+  )
 }
 
 declare global {
