@@ -13,6 +13,7 @@ import { NotObservedScreen } from './NotObservedScreen'
 import { ResultScreen, type ReportEdits } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
 import { useScreenFocus } from './screenFocus'
+import { useSubStack } from './subStack'
 import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
@@ -47,7 +48,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   const [edited, setEdited] = useState<{ key: string; edits: ReportEdits }>({ key: '', edits: {} })
   const edits = edited.key === draftKey ? edited.edits : {}
   const [situation, setSituation] = useState('')
-  const [subs, setSubs] = useState<Sub[]>([])
+  const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [unsupported, setUnsupported] = useState(false)
 
@@ -61,7 +62,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     if (!state.caseId) return
     const url = new URL(location.href)
     url.searchParams.set('case', state.caseId)
-    history.replaceState(null, '', url)
+    history.replaceState(history.state, '', url) // 하위 화면 기록 깊이(subStack)는 그대로 둔다
   }, [state.caseId])
 
   // 자동차 출발 — [영상에서 찾아보기]를 누른 뒤 진행 화면이 실제로 열리는 순간부터 업로드 화면 겉모습
@@ -101,11 +102,11 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   // 보낼 command가 없는 동작은 화면이 사용 불가와 이유를 보인다
   const canRun = (action: Action) => !!INPUT_SUB[action] || SENDABLE.has(action)
   const reselect = (candidateId: string) => {
-    setSubs([])
+    closeAll()
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
   }
   const editHint = (description: string) => {
-    setSubs([])
+    closeAll()
     setSituation(description) // 진행 화면이 새 설명을 보인다
     setStartedAt(Date.now())
     run({ kind: 'EDIT_HINT', payload: { description } })
@@ -119,10 +120,9 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   }
   const open = (sub: Sub) => {
     rememberOpener()
-    setSubs((s) => [...s, sub])
+    openSub(sub)
     setArriving(false)
   }
-  const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
   const mainRef = useRef<HTMLElement>(null)
   const rememberOpener = useScreenFocus(mainRef, `${kind}-${subs.join('/')}`, subs.length)
