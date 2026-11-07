@@ -7,7 +7,7 @@ import {
   type InfoState,
   type Notice,
 } from '../contracts/caseView'
-import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, jobLabel, noticeMessage, sourceLabel } from '../contracts/labels'
+import { ACTION_LABELS, INFO_STATE_LABELS, VISUAL_EVENT_CHOICES, formatValue, jobLabel, noticeMessage, sourceLabel, type VisualEventType } from '../contracts/labels'
 import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
 import { PENDING_TEXT } from '../components/DisplayRow'
 import { LocationMap } from '../components/LocationMap'
@@ -57,6 +57,10 @@ const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 �
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
 // 안전신문고 첫 화면에서 신고 양식까지 — 실제 메뉴 이름(11/1 확인). 이동 버튼은 첫 화면을 연다
 const HANDOFF_STEPS = ['위쪽 메뉴에서 「신고하기」를 누르세요', '「자동차·교통위반」을 누르세요']
+const PREPARING_TITLE = '신고자료를 준비하고 있어요.'
+// 번호판은 형식만 맞으면 「출처 확인됨」이다 — 대상 차량의 번호판인지는 사용자가 장면에서 본다(#597 코멘트)
+const PLATE_SCENE_CHECK = '신고할 차량의 번호판인지 확인해 주세요'
+const UNSURE_AGAIN = '「잘 모르겠어요」로 남긴 상황이에요. 근거 장면을 보고 다시 골라 주세요.'
 
 /** 제목·신고 내용·위치를 이 화면에서만 고친 값. 이 칸들을 고치는 command가 아직 없다 */
 export type ReportEdits = Partial<Record<'title' | 'description' | 'location', string>>
@@ -111,6 +115,10 @@ export function ResultScreen(props: {
   videoHref?: string
   /** 번호판 이미지를 받을 주소. 선택 첨부라 없으면(시연 · 아직 못 만듦) 버튼을 두지 않는다 */
   plateImageHref?: string
+  /** `[다른 상황]` 정정(#545). 없으면 고치기 입구를 두지 않는다 */
+  onCorrect?: (type: VisualEventType) => void
+  /** 안전신문고로 넘어갈 때 최종 검토를 기록한다(MARK_REVIEWED). 없으면(시연) 이동만 한다 */
+  onReviewed?: () => void
 } & CandidatePlayback): JSX.Element {
   const { view } = props
   // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
@@ -167,8 +175,8 @@ export function ResultScreen(props: {
   )
   const when = splitDateTime(occurred?.value ?? null)
   // 제목·신고 내용은 case가 만든 신고문(package.report, v1.7)을 그대로 보여 주고 복사만 한다.
-  // 계약상 package가 있으면 report도 항상 있다. 옛 판본 응답이 와도 깨지지 않게 없으면 예전처럼 둔다.
-  const shownReport = pkg?.report ?? null
+  // 묶음 전에는 초안(report_draft, #597)을 보인다. 둘 다 없으면(옛 판본 · 필수 입력 없음) 예전처럼 둔다.
+  const shownReport = pkg?.report ?? view.report_draft ?? null
   const report = shownReport && {
     title: edits.title ?? shownReport.title,
     // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다(#563 멘토 리뷰).
@@ -187,6 +195,12 @@ export function ResultScreen(props: {
   for (const s of Object.values(pkg?.report_field_states ?? {})) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
   const others = view.candidates.filter((c) => !c.selected).length
   const ready = view.stage === 'READY' && !!pkg && !view.notices.some((n) => n.blocking)
+  // 신고용 영상 등을 만드는 중 — 끝나지 않은 것을 「완성하지 못했어요」로 보이지 않는다
+  const preparing = view.running_jobs.some((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW')
+  const plateScene = plate?.value ? frame(ev?.plate_preview_ref) : null
+  // 상황을 고칠 수 있는 때 — 조립된 evidence에 판별된 유형(Fine OBSERVED)이 있을 때만이다.
+  // UNCERTAIN은 유형이 null이고 정정 조립을 지원하지 않는다(#597 evidence 결정). 응답 대기 중에는 위 「신고 상황」이 묻는다
+  const typeCode = !awaiting && ev?.record_id ? (ev.case_type_display.code as VisualEventType | null) : null
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
   const failedDownload = props.videoHref !== undefined && downloadFailed.includes(props.videoHref)
@@ -296,7 +310,7 @@ export function ResultScreen(props: {
       <header className="res-head">
         <ArrivingCar arriving={props.arriving} />
         <p className="state-context">신고자료</p>
-        <h1 className="res-title">{ready ? '신고자료가 준비됐어요.' : awaiting ? '신고 상황을 확인해 주세요.' : '신고자료를 완성하지 못했어요.'}</h1>
+        <h1 className="res-title">{ready ? '신고자료가 준비됐어요.' : awaiting ? '신고 상황을 확인해 주세요.' : preparing ? PREPARING_TITLE : '신고자료를 완성하지 못했어요.'}</h1>
         {counts.size > 0 && (
           <ul className="res-counts">
             {COUNT_ORDER.filter((s) => counts.has(s)).map((s) => (
@@ -395,6 +409,15 @@ export function ResultScreen(props: {
 
           <Item label="유형" review={reportType?.state} pick>
             <Value f={reportType} pending={partial} />
+            {typeCode && props.onCorrect && (
+              <SituationFix
+                current={typeCode}
+                unsure={selected?.situation_confirmation === 'USER_UNSURE'}
+                onConfirm={props.onRespond && (() => props.onRespond!('CONFIRMED'))}
+                onDetails={props.onDetails}
+                onCorrect={props.onCorrect}
+              />
+            )}
           </Item>
 
           {/* 신고용 영상은 응답 뒤 조립에서 만들어진다. 응답 전(v1.8 부분 투영 포함)에는 영상 칸을 그리지 않는다.
@@ -542,7 +565,17 @@ export function ResultScreen(props: {
 
           <Item label="차량 번호" review={plate?.state}>
             <div className="res-plate">
-              <p className={`res-plate-v${plate?.value ? '' : ' is-none'}`}>{plate?.value ?? '알 수 없음'}</p>
+              <div className="res-plate-row">
+                <p className={`res-plate-v${plate?.value ? '' : ' is-none'}`}>{plate?.value ?? '알 수 없음'}</p>
+                {/* 번호판을 읽은 장면 — 누르면 번호판 확인 화면이 같은 장면을 크게 보인다(#597) */}
+                {plateScene && (
+                  <button type="button" className="res-plate-thumb" onClick={props.onPlate}>
+                    <FrameSlot className="res-plate-thumb-img" src={plateScene} alt="번호판을 읽은 장면 — 눌러서 크게 보기">
+                      <span>장면 크게 보기</span>
+                    </FrameSlot>
+                  </button>
+                )}
+              </div>
               <div className="res-plate-meta">
                 {plate && <StatusBadge state={plate.state} />}
                 {plate?.source && <span className="res-src">{plate.source}</span>}
@@ -556,7 +589,7 @@ export function ResultScreen(props: {
                     <ChevronRight size={16} strokeWidth={2} aria-hidden />
                   </button>
                   <span id="res-plate-edit-why" className="res-src">
-                    {PLATE_EDIT_WHY}
+                    {plateScene ? PLATE_SCENE_CHECK : PLATE_EDIT_WHY}
                   </span>
                 </p>
               )}
@@ -615,7 +648,11 @@ export function ResultScreen(props: {
                 type="button"
                 className="rs-btn pri"
                 disabled={!ready}
-                onClick={() => window.open(SAFETY_REPORT_URL, '_blank', 'noopener')}
+                onClick={() => {
+                  // 새 창은 클릭 안에서 바로 연다(팝업 차단). 최종 검토 기록은 처음 한 번만 남긴다(#597, §20)
+                  window.open(SAFETY_REPORT_URL, '_blank', 'noopener')
+                  if (!view.user_reviewed) props.onReviewed?.()
+                }}
               >
                 안전신문고로 이동
                 <ExternalLink size={16} strokeWidth={2} aria-hidden />
@@ -748,5 +785,73 @@ function EditText(props: {
         </button>
       </div>
     </form>
+  )
+}
+
+// 상황 고치기(#545) — 판별된 유형이 틀렸으면 상황 설명 중에서 다시 고른다. 지금 유형은 선택지에서 뺀다(case-command §12-3).
+// 「잘 모르겠어요」로 남긴 경우에는 근거 장면을 보고 「맞아요」로 확인하거나 다른 상황을 고르게 한다(#597 evidence 결정).
+function SituationFix(props: {
+  current: VisualEventType
+  unsure: boolean
+  onConfirm?: () => void
+  onDetails: () => void
+  onCorrect: (type: VisualEventType) => void
+}): JSX.Element {
+  const [open, setOpen] = useState(false)
+  const [picked, setPicked] = useState<VisualEventType | null>(null)
+  const choices = (Object.keys(VISUAL_EVENT_CHOICES) as VisualEventType[]).filter((t) => t !== props.current)
+  return (
+    <div className="res-situation-fix">
+      {props.unsure && (
+        <p className="res-hint">
+          {UNSURE_AGAIN}{' '}
+          <button type="button" className="res-link" onClick={props.onDetails}>
+            근거 장면 보기
+            <ChevronRight size={16} strokeWidth={2} aria-hidden />
+          </button>
+        </p>
+      )}
+      {!open ? (
+        <p className="res-plate-edit">
+          {props.unsure && props.onConfirm && (
+            <button type="button" className="rs-btn sec sm" onClick={props.onConfirm}>
+              이 상황이 맞아요
+            </button>
+          )}
+          <button type="button" className="res-link" onClick={() => setOpen(true)}>
+            다른 상황이었어요
+            <ChevronRight size={16} strokeWidth={2} aria-hidden />
+          </button>
+        </p>
+      ) : (
+        <form
+          className="res-edit"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!picked) return
+            props.onCorrect(picked)
+            setOpen(false)
+          }}
+        >
+          <fieldset>
+            <legend>어떤 상황이었나요?</legend>
+            {choices.map((t) => (
+              <label key={t}>
+                <input type="radio" name="situation" value={t} checked={picked === t} onChange={() => setPicked(t)} />
+                {VISUAL_EVENT_CHOICES[t]}
+              </label>
+            ))}
+          </fieldset>
+          <div className="res-edit-actions">
+            <button type="submit" className="rs-btn pri sm" disabled={!picked}>
+              이 상황으로 고치기
+            </button>
+            <button type="button" className="rs-btn sec sm" onClick={() => setOpen(false)}>
+              취소
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   )
 }

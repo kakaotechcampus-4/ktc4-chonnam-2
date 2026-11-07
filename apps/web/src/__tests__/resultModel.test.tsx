@@ -296,3 +296,91 @@ describe('프레임 이미지', () => {
     expect(onEdit).toHaveBeenLastCalledWith('12가 3456')
   })
 })
+
+describe('#597 — 응답 없이 초안 · 번호판 장면 · 최종 검토 기록', () => {
+  afterEach(cleanup)
+  const noop = vi.fn()
+  const job = { job_id: 'j', kind: 'REPORT_VIDEO_EXPORT', label_key: 'job.report_video_export', status: 'RUNNING' } as const
+  // 묶음 전, 영상을 만드는 중 — 상황 응답 대기 notice가 없다
+  const draftView: CaseView = {
+    ...HAPPY,
+    stage: 'EVIDENCE_REVIEW',
+    package: null,
+    notices: [],
+    running_jobs: [job],
+    report_draft: { title: '초안 제목', description: '초안 신고 내용' },
+    evidence: { ...HAPPY.evidence!, plate_preview_ref: 'frame_plate' },
+  }
+
+  it('묶음 전에는 report_draft를 보이고, 영상을 만드는 중이면 「준비하고 있어요」다', () => {
+    const r = render(<ResultScreen view={draftView} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} />)
+    expect(r.getByRole('heading', { level: 1 }).textContent).toBe('신고자료를 준비하고 있어요.')
+    expect(r.getByText('초안 제목')).toBeTruthy()
+    expect(r.getByText('초안 신고 내용')).toBeTruthy()
+    expect(r.queryByRole('button', { name: '맞아요' })).toBeNull()
+  })
+
+  it('번호판을 읽은 장면을 썸네일로 두고, 누르면 번호판 확인 화면으로 간다 — 장면 주소가 없으면(시연) 두지 않는다', () => {
+    const onPlate = vi.fn()
+    const r = render(
+      <ResultScreen view={draftView} onCandidates={noop} onPlate={onPlate} onDetails={noop} onAction={noop} canRun={() => true} frameSrc={(ref) => `/f/${ref}`} />,
+    )
+    const thumb = r.getByAltText('번호판을 읽은 장면 — 눌러서 크게 보기')
+    expect(thumb.getAttribute('src')).toBe('/f/frame_plate')
+    fireEvent.click(thumb)
+    expect(onPlate).toHaveBeenCalledTimes(1)
+    // 안내는 하나만 — 「번호가 틀렸다면…」 대신 확인 문구
+    expect(r.getByText('신고할 차량의 번호판인지 확인해 주세요')).toBeTruthy()
+    expect(r.queryByText('번호가 틀렸다면 여기서 고칠 수 있어요')).toBeNull()
+    cleanup()
+    const demo = render(<ResultScreen view={draftView} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} />)
+    expect(demo.queryByAltText('번호판을 읽은 장면 — 눌러서 크게 보기')).toBeNull()
+    expect(demo.getByText('번호가 틀렸다면 여기서 고칠 수 있어요')).toBeTruthy()
+  })
+
+  const withType = (code: string | null, confirmation: 'NOT_ASKED' | 'USER_UNSURE'): CaseView => ({
+    ...draftView,
+    evidence: { ...draftView.evidence!, case_type_display: { ...draftView.evidence!.case_type_display, code } },
+    candidates: draftView.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: confirmation } : c)),
+  })
+
+  it('「다른 상황이었어요」는 지금 유형을 뺀 상황 설명 중에서 골라 CORRECTED로 보낸다', () => {
+    const onCorrect = vi.fn()
+    const r = render(<ResultScreen view={withType('SIGNAL', 'NOT_ASKED')} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onCorrect={onCorrect} />)
+    fireEvent.click(r.getByRole('button', { name: /다른 상황이었어요/ }))
+    expect(r.queryByLabelText('신호를 지키지 않고 지나갔어요')).toBeNull()
+    expect(r.getByRole('button', { name: '이 상황으로 고치기' }).hasAttribute('disabled')).toBe(true)
+    fireEvent.click(r.getByLabelText('중앙선을 넘었어요'))
+    fireEvent.click(r.getByRole('button', { name: '이 상황으로 고치기' }))
+    expect(onCorrect).toHaveBeenCalledWith('CENTER_LINE_CROSSING')
+  })
+
+  it('「잘 모르겠어요」로 남긴 판별 유형은 다시 확인하거나 고칠 수 있다 — 유형이 없으면(UNCERTAIN) 고치기를 두지 않는다', () => {
+    const onRespond = vi.fn()
+    const props = { onCandidates: noop, onPlate: noop, onDetails: noop, onAction: noop, canRun: () => true, onCorrect: noop, onRespond }
+    const r = render(<ResultScreen view={withType('SIGNAL', 'USER_UNSURE')} {...props} />)
+    fireEvent.click(r.getByRole('button', { name: '이 상황이 맞아요' }))
+    expect(onRespond).toHaveBeenCalledWith('CONFIRMED')
+    cleanup()
+    const uncertain = render(<ResultScreen view={withType(null, 'USER_UNSURE')} {...props} />)
+    expect(uncertain.queryByRole('button', { name: /다른 상황이었어요/ })).toBeNull()
+    expect(uncertain.queryByRole('button', { name: '이 상황이 맞아요' })).toBeNull()
+  })
+
+  it('안전신문고로 이동하면 최종 검토를 한 번만 기록한다', () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const onReviewed = vi.fn()
+    const ready = { ...HAPPY, user_reviewed: false, notices: HAPPY.notices.filter((n) => !n.blocking) }
+    const r = render(<ResultScreen view={ready} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onReviewed={onReviewed} />)
+    fireEvent.click(r.getByRole('button', { name: /안전신문고로 이동/ }))
+    expect(open).toHaveBeenCalled()
+    expect(onReviewed).toHaveBeenCalledTimes(1)
+    cleanup()
+    const again = render(
+      <ResultScreen view={{ ...ready, user_reviewed: true }} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onReviewed={onReviewed} />,
+    )
+    fireEvent.click(again.getByRole('button', { name: /안전신문고로 이동/ }))
+    expect(onReviewed).toHaveBeenCalledTimes(1)
+    open.mockRestore()
+  })
+})
