@@ -25,7 +25,7 @@ EVENT = {
 }
 
 
-# 10초 타임라인의 마감 — 600(11/5 E2E 한정 탐색 예산, §3-9) + 30 + 준비 여유 10 × 2
+# 10초 타임라인의 마감 — 600(공개 RC 탐색 예산, §3-9 · §3-10) + 30 + 준비 여유 10 × 2
 DEADLINE_SEC = 650
 
 
@@ -108,7 +108,7 @@ def test_long_input_gets_preparation_allowance_without_raising_the_search_budget
 
 
 def test_e2e_search_budget_still_fits_under_the_sixty_minute_cap():
-    # #452 11/5 E2E — 탐색 예산 600초면 26분 입력(1,584초)은 60분 상한에 걸린다. 발주 → Search 진입이
+    # #452 — 탐색 예산 600초면 26분 입력(1,584초)은 60분 상한에 걸린다. 발주 → Search 진입이
     # 3600 − 630 = 2970초 안이어야 Search 600초를 다 쓴다(§3-9).
     store, case_id = _searching(duration_ms=1_584_173)
     assert _deadline_sec(store, case_id) == 3600
