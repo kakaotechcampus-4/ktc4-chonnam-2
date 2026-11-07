@@ -9,6 +9,7 @@ import pytest
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.errors import CandidateSourceMismatchError
 from daesingo.search.execution import DeadlineExceededError, RunDeadline
+from daesingo.search.failure_kind import failure_kind_for_run
 from daesingo.search.fine import verify_fine
 from daesingo.search.ledger import SearchLedger
 from daesingo.search.media import MediaInput, PreparedMedia
@@ -19,6 +20,7 @@ from daesingo.search.runs import (
     CandidateSpan,
     ContractRef,
     RunId,
+    RunOutcome,
 )
 from daesingo.search.schemas import CoarseResponse, FineResponse, FineTemporalFact
 from daesingo.search.scope import AnalysisScope, SearchHint, VisualEventType
@@ -312,9 +314,13 @@ def test_fine_accepts_a_moment_that_does_not_match_the_coarse_representative(
 
 
 @pytest.mark.parametrize("offset_ms", [-1, 7_001])
-def test_fine_rejects_transport_offsets_outside_prepared_clip(
+def test_fine_keeps_the_verdict_and_drops_an_offset_outside_prepared_clip(
     tmp_path: Path, offset_ms: int
 ) -> None:
+    """clip 밖 시각 하나 때문에 판정 전체를 버리지 않는다(#601).
+
+    시각만 비우고 PARTIAL + issue에 수치를 남긴다.
+    """
     # Given
     source_ref = ContractRef(kind="analysis_source", ref="source-fine")
     source = ResolvedAnalysisSource(source_ref, 10.0, "timeline-fine", 2)
@@ -333,21 +339,33 @@ def test_fine_rejects_transport_offsets_outside_prepared_clip(
     )
     provider = _Provider(response=response)
 
-    # When / Then
-    with pytest.raises(ProviderPayloadError):
-        verify_fine(
-            source_ref,
-            _candidate(),
-            None,
-            VisualEventType.SIGNAL,
-            resolver,
-            provider,
-            GeminiSearchConfig(fine_padding_sec=1.5),
-            SearchLedger(),
-            preparer,
-            RunDeadline(lambda: 0.0, budget_ms=30_000),
-        )
+    # When
+    result = verify_fine(
+        source_ref,
+        _candidate(),
+        None,
+        VisualEventType.SIGNAL,
+        resolver,
+        provider,
+        GeminiSearchConfig(fine_padding_sec=1.5),
+        SearchLedger(),
+        preparer,
+        RunDeadline(lambda: 0.0, budget_ms=30_000),
+    )
+
+    # Then
     assert preparer.exited
+    assert result.visual_evidence.verification == response.verification
+    assert [fact.at_offset_ms for fact in result.visual_evidence.temporal_facts] == [
+        None
+    ]
+    assert result.visual_evidence.temporal_facts[0].fact == "EVENT"
+    assert result.analysis_run.outcome is RunOutcome.PARTIAL
+    (issue,) = result.analysis_run.issues
+    assert issue.code == "FINE_OFFSET_OUT_OF_CLIP"
+    assert f"offset_ms={offset_ms} " in issue.detail
+    assert "clip_ms=0..7000" in issue.detail
+    assert failure_kind_for_run(result.analysis_run) is None
 
 
 def test_fine_rejects_an_offset_that_would_fall_past_the_source_end(
@@ -355,7 +373,7 @@ def test_fine_rejects_an_offset_that_would_fall_past_the_source_end(
 ) -> None:
     """clip 안이어도 원본 밖을 가리키면 거절한다.
 
-    2.0초짜리 clip이 원본 9.0~10.0초에서 왔다고 보고하는 상황이다 — ffmpeg/probe가
+    2.0초짜리 clip이 원본 9.0~11.0초에서 왔다고 보고하는 상황이다 — ffmpeg/probe가
     어긋난 경우이고, 이때 1.5초 지점은 원본 10.5초라 원본 길이(10.0초)를 넘는다.
     """
     # Given
@@ -363,7 +381,7 @@ def test_fine_rejects_an_offset_that_would_fall_past_the_source_end(
     resolver = _Resolver(ResolvedAnalysisSource(source_ref, 10.0, "timeline-fine", 2))
     path = tmp_path / "source-upper.mp4"
     path.write_bytes(b"prepared")
-    preparer = _Preparer(PreparedMedia(path, "video/mp4", 8, 2.0, 9.0, 10.0))
+    preparer = _Preparer(PreparedMedia(path, "video/mp4", 8, 2.0, 9.0, 11.0))
     provider = _Provider(
         response=_response().model_copy(
             update={
