@@ -50,7 +50,9 @@ jobs:
           set -euo pipefail
           for revision in \
             e50b2976ef4edc3a030cfc5b03a5206340dd917b \
-            ce0750d5a3317ad1c810783d67f8a05ba88bce08; do
+            ce0750d5a3317ad1c810783d67f8a05ba88bce08 \
+            70f1c47cbc7c08fa848d057687f7130047f1126c \
+            bb29d750d23765a73b7b6853b22086648684a392; do
             git cat-file -e "${revision}^{commit}"
             git cat-file -e "${revision}^{tree}"
             test "$(git cat-file -t "${revision}:src")" = tree
@@ -172,7 +174,9 @@ jobs:
           set -euo pipefail
           for revision in \
             e50b2976ef4edc3a030cfc5b03a5206340dd917b \
-            ce0750d5a3317ad1c810783d67f8a05ba88bce08; do
+            ce0750d5a3317ad1c810783d67f8a05ba88bce08 \
+            70f1c47cbc7c08fa848d057687f7130047f1126c \
+            bb29d750d23765a73b7b6853b22086648684a392; do
             git cat-file -e "${revision}^{commit}"
             git cat-file -e "${revision}^{tree}"
             test "$(git cat-file -t "${revision}:src")" = tree

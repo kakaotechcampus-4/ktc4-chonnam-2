@@ -8,6 +8,13 @@ from daesingo.case.domain import CANDIDATE_VIDEO_PREVIEW, Candidate, CaseAggrega
 
 PREVIEW_KIND: Final = CANDIDATE_VIDEO_PREVIEW
 MAX_PREVIEW_RANK: Final = 3
+# Intermediate release identity: readers/workers stay enabled; no env override.
+# Fixed final bb29d750 retains its original enabled issuance path.
+PREVIEW_REQUESTS_ENABLED: Final = False
+
+
+class PreviewRequestsDisabled(ValueError):
+    """A bridge release must not persist a fresh preview job."""
 
 
 class PreviewState(TypedDict):
@@ -43,12 +50,14 @@ def preview_state(case: CaseAggregate, candidate: Candidate) -> PreviewState:
         if outcome.get("status") == "SUCCEEDED":
             return {"status": "READY", "clip_ref": outcome["incident_clip_ref"]}
         return {"status": "FAILED", "clip_ref": None}
-    return {"status": "NOT_REQUESTED", "clip_ref": None}
+    return {"status": "NOT_REQUESTED" if PREVIEW_REQUESTS_ENABLED else "UNAVAILABLE", "clip_ref": None}
 
 
 def request_preview(case: CaseAggregate, candidate: Candidate) -> None:
     if preview_state(case, candidate)["status"] in {"PREPARING", "READY"}:
         return
+    if not PREVIEW_REQUESTS_ENABLED:
+        raise PreviewRequestsDisabled("preview issuance disabled in compatibility release")
     span = candidate.span
     if span is None:
         raise ValueError("preview candidate span required")
