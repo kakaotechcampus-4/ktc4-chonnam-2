@@ -271,17 +271,17 @@
           ]
         },
         {
+          "code": "case.report_video_not_generated",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.report_video_not_generated",
+          "actions": []
+        },
+        {
           "code": "evidence.location_search_keyword_missing",
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.location_search_keyword_missing",
-          "actions": []
-        },
-        {
-          "code": "case.situation_response_pending",
-          "severity": "INFO",
-          "blocking": false,
-          "message_key": "notice.situation_response_pending",
           "actions": []
         }
       ]
@@ -477,17 +477,17 @@
       "running_jobs": [],
       "notices": [
         {
+          "code": "case.report_video_not_generated",
+          "severity": "INFO",
+          "blocking": false,
+          "message_key": "notice.report_video_not_generated",
+          "actions": []
+        },
+        {
           "code": "evidence.location_search_keyword_missing",
           "severity": "INFO",
           "blocking": false,
           "message_key": "notice.location_search_keyword_missing",
-          "actions": []
-        },
-        {
-          "code": "case.situation_response_pending",
-          "severity": "INFO",
-          "blocking": false,
-          "message_key": "notice.situation_response_pending",
           "actions": []
         }
       ]

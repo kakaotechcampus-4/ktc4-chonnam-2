@@ -22,11 +22,6 @@ UNDERIVED_NOTICES = {
     "evidence.visual_event_unconfirmed",
 }
 
-# #597 B안 — Fine `OBSERVED`는 응답 없이 영상을 발주하고 응답 대기 notice를 띄우지 않는다. `data/mock/case/`의 응답 전
-# 스냅샷은 web 데모 · 테스트도 쓰므로 아직 이전 흐름 그대로다(web과 함께 B안 흐름으로 바꾼다, #597). 그때까지 이 두 code는
-# fixture와 대조하지 않는다.
-B597_FIXTURE_LAG = {"case.situation_response_pending", "case.report_video_not_generated"}
-
 # real이 fixture와 다른 사실(§6 발견 사항 2).
 KNOWN_GAPS: dict[str, set[str]] = {
     "unknown_abstain_partial_001": {"stage", "package"},
@@ -103,8 +98,8 @@ def test_real_path_matches_case_fixture(name):
 
 @pytest.mark.parametrize("name", SCENARIOS)
 def test_real_notices_are_fixture_notices_minus_underived(name):
-    expected = {n["code"] for n in _fixture(name)["case_views"][-1]["notices"]} - B597_FIXTURE_LAG
-    actual = {n["code"] for n in _run(name)["notices"]} - B597_FIXTURE_LAG
+    expected = {n["code"] for n in _fixture(name)["case_views"][-1]["notices"]}
+    actual = {n["code"] for n in _run(name)["notices"]}
 
     assert actual == expected - UNDERIVED_NOTICES
     assert UNDERIVED_NOTICES.isdisjoint(actual), "만들지 않던 notice가 생겼다 — UNDERIVED_NOTICES와 §6을 고친다"

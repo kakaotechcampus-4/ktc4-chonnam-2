@@ -183,11 +183,7 @@ def test_happy_path_before_situation_response_has_no_package():
     assert package_reports[0]["overall"] == "UNKNOWN"
     assert view["package"] is None
     assert view["candidates"][0]["situation_confirmation"] == "NOT_ASKED"
-    # fixture는 아직 #597 이전 흐름(응답 대기 notice 있음)이다 — web과 함께 바꾼다. 그 전까지 notices만 따로 본다.
-    lag = {"case.situation_response_pending", "case.report_video_not_generated"}
-    assert [n for n in view["notices"] if n["code"] not in lag] == [
-        n for n in before["notices"] if n["code"] not in lag
-    ]
     assert "case.situation_response_pending" not in {n["code"] for n in view["notices"]}
-    skip = ("contract", "contract_version", "notices")
-    assert {k: v for k, v in view.items() if k not in skip} == {k: v for k, v in before.items() if k not in skip}
+    assert {k: v for k, v in view.items() if k not in ("contract", "contract_version")} == {
+        k: v for k, v in before.items() if k not in ("contract", "contract_version")
+    }

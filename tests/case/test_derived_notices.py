@@ -25,10 +25,6 @@ MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 CODE = "evidence.location_search_keyword_missing"
 PENDING_CODE = "case.situation_response_pending"
 DERIVED_CODES = {CODE, PENDING_CODE}
-# #597 B안 — Fine `OBSERVED`는 응답 없이 영상을 발주하고 응답 대기 notice를 띄우지 않는다. `data/mock/case/`의 응답 전
-# 스냅샷은 web 데모 · 테스트도 쓰므로 아직 이전 흐름 그대로다(web과 함께 B안 흐름으로 바꾼다, #597). 그때까지 이 두 code는
-# fixture와 대조하지 않는다.
-B597_FIXTURE_LAG = {"case.situation_response_pending", "case.report_video_not_generated"}
 
 
 def _case_views(scenario_id: str) -> list[dict]:
@@ -52,8 +48,7 @@ def test_derives_notice_when_search_keyword_is_null(scenario_id):
             continue
         assert expected["evidence"]["location_display"]["search_keyword"] is None
         derived = service.derive_notices(_without_notice(expected))
-        lag = lambda notices: [n for n in notices if n["code"] not in B597_FIXTURE_LAG]  # noqa: E731
-        assert lag(derived["notices"]) == lag(expected["notices"])
+        assert derived["notices"] == expected["notices"]
 
 
 def test_notice_shape_matches_contract():
