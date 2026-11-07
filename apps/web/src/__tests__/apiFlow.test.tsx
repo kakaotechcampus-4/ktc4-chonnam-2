@@ -65,6 +65,8 @@ it('영상을 고르면 올라가고, [영상에서 찾아보기]에서 상황 �
   const { container, getByRole, getByText, findByText } = render(<ApiFlow api={api} />)
 
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  expect(m.uploadSource).not.toHaveBeenCalled() // 개인정보·외부 처리 안내에 동의하기 전에는 서버로 보내지 않는다
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText(/^업로드 완료/)
   expect(m.createCase).toHaveBeenCalledOnce()
   expect(m.uploadSource).toHaveBeenCalledWith('c1', expect.objectContaining({ name: 'a.mp4' }))
@@ -81,12 +83,14 @@ it('올리는 중에 고른 파일은 받지 않고 목록에도 올리지 않�
   const { m, api } = setup()
   let finish!: (r: unknown) => void
   m.uploadSource.mockImplementationOnce(() => new Promise((r) => (finish = r)))
-  const { container, findByText, queryByText } = render(<ApiFlow api={api} />)
+  const { container, findByText, getByText, queryByText } = render(<ApiFlow api={api} />)
   const input = container.querySelector('input[type=file]')!
 
   fireEvent.change(input, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText('업로드 중')
   fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
+  expect(queryByText('동의하고 올리기')).toBeNull() // 받지 않을 파일이라 동의도 묻지 않는다(#606 리뷰)
   finish(ok({ case_id: 'c1', source_asset_ref: 'sa', case_view: view({ manifest_summary: { ...BASE.manifest_summary, file_count: 1, ok_file_count: 1 } }) }, 201))
   await findByText(/^업로드 완료/)
 
@@ -208,6 +212,7 @@ it('[영상에서 찾아보기] 뒤 진행 화면이 열리면 업로드 겉모�
   m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
   const { container, getByText, findByText } = render(<ApiFlow api={api} />)
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText(/^업로드 완료/)
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
@@ -636,4 +641,43 @@ it('하위 화면을 연 채 새로고침해 남은 기록 깊이는 처음 열 
   const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText(/다른 장면이었나요\?/)
   expect(history.state?.sub).toBe(0)
+})
+
+it('서버가 업로드를 거절하면 그 이유를 업로드 칸에 보인다', async () => {
+  const { m, api } = setup()
+  m.uploadSource.mockResolvedValue({ ok: false, status: 413, error: { code: 'http.payload_too_large', message_key: 'http.payload_too_large' }, caseView: null })
+  const { container, findByText, getByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'big.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
+  expect(await findByText(/서버가 받을 수 있는 크기보다 커요/)).toBeTruthy()
+})
+
+it('업로드 전 동의에서 취소하면 서버에 아무것도 보내지 않는다', () => {
+  const { m, api } = setup()
+  const { container, getByText, queryByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('취소'))
+  expect(m.createCase).not.toHaveBeenCalled()
+  expect(m.uploadSource).not.toHaveBeenCalled()
+  expect(queryByText(/^업로드 중/)).toBeNull()
+})
+
+it('같은 신고에서는 한 번 동의하면 파일을 더 골라도 다시 묻지 않는다(새 신고는 페이지를 새로 열어 다시 묻는다)', async () => {
+  const { m, api } = setup()
+  const { container, findByText, getByText, queryByText } = render(<ApiFlow api={api} />)
+  const input = container.querySelector('input[type=file]')!
+  fireEvent.change(input, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
+  await findByText(/^업로드 완료/)
+  fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
+  expect(queryByText('동의하고 올리기')).toBeNull()
+  await waitFor(() => expect(m.uploadSource).toHaveBeenCalledTimes(2))
+})
+
+it('동의 창을 닫으면 포커스가 「파일 선택」으로 돌아온다', () => {
+  const { api } = setup()
+  const { container, getByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('취소'))
+  expect(document.activeElement?.textContent).toBe('파일 선택')
 })
