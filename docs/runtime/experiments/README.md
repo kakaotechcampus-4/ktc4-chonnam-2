@@ -82,7 +82,7 @@ Plan 단계에서는 다음을 하지 않는다.
 | 문서 | 상태 | 닫으려는 질문 |
 | --- | --- | --- |
 | [O6 provider 실패 연결 검증 2026-11-07](./2026-11-07-o6-provider-failure-validation.md) | Result · fake provider 연결 3 + 관련 6 + 기록 응답 웹 2 PASS | 기존 retry 정책의 성공/소진 → Worker T1/T2 → Case 실패 안내·사용자 retry. 600초는 시계 모사이며 실제 provider·AWS·브라우저 이동은 미검증. 추가 회귀·hash·재현 절차는 본문 |
-| [기존 EC2 20개·20분 제품 E2E 2026-11-07](./2026-11-07-ec2-20file-product-e2e-result.md) | Result · 운영자 제공 증거, 선택 후보 OBSERVED·Package READY·다운로드/재생 PASS | 입력 20개 hash·순서, 8개 Job 성공/반영 확인. 26분 검증은 미완료로 보류·추후 별도 이슈이며 현재 선행조건이 아님. 썸네일·미리보기·자원/사용량 및 별도 O6 근거와 구분 |
+| [기존 EC2 20개·20분 제품 E2E 2026-11-07](./2026-11-07-ec2-20file-product-e2e-result.md) | Result · 운영자 제공 증거, 선택 후보 OBSERVED·Package READY·다운로드/재생 PASS, O1 호스트 표본 확보 | 정밀 Job/queue·token·latency와 약10분 CPU 평균·실행 중 메모리2표본. Worker 단독/peak·비용은 미확인. 26분 보류, Coarse600초 유지·필요 시 재검토. O6는 별도 근거 |
 | [기존 EC2 전체15개 Coarse 준비 실측 2026-11-05](./2026-11-05-ec2-full15-coarse-preparation-result.md) | Result · 운영자 제공 증거, 준비/guard/자동복구 PASS · 제품 E2E NOT_RUN | #580 고정 실행물의173.771196208초·완성 media34,016,924B·입력/출력 duration·표본 메모리/cgroup peak 구분.900초는 실험 상한이며 E2E 예산 확정 아님 |
 | [EC2 Recording 격리 실행 준비](./2026-11-03-ec2-recording-probe-runbook.md) · [로컬 검증 기록](./2026-11-03-ec2-recording-probe-validation.md) | IN_PROGRESS · 로컬 실행물 준비, EC2 NOT_RUN | 최신 source/image/도구 결속·운영 target 배제·공유4GiB 예산·단계별10초/120초 측정과 원래 서비스 복귀 |
 | [Recording CPU quota 대조 2026-11-03](./2026-11-03-recording-cpu-quota-probe.md) | IN_PROGRESS · 새 승인 g의 실제 smoke·A1/B/A2 PASS, 출력 동일 | 준비132.800/114.251/131.314초·B 관측13~14% 감소. 단회/cache·호스트 한계·이전 실패 보존. 배포20분 성능·과거 차이 전체는 미확정 |

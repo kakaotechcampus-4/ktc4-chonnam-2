@@ -53,13 +53,50 @@
 
 후반부 후보가 반환됐다는 사실과 전체 사건 재현율은 별개다. 선택한 장면의 사용자 확인과 OBSERVED 결과만 확보했으며, 요청한 모든 사건의 정답 목록 대조는 하지 않았다.
 
+## O1 후속 조회와 보존된 호스트 관측
+
+운영자가 같은 Case의 기존 DB 행과 sysstat 기록을 읽어 제공했다. 새 E2E·provider 호출·서비스 변경 없이 기존 실행 근거를 보완한 결과다. 아래 정밀 Job 시간은 앞 절의 최초 정수 초 조회와 구분한다.
+
+| Job | queue 대기 초 | 실행 wall 초 |
+| --- | ---: | ---: |
+| HINT_EXTRACT | 0.4944 | 6.8470 |
+| COARSE_SEARCH | 0.0099 | 418.7618 |
+| FINE_VERIFY | 0.0105 | 318.4969 |
+| INCIDENT_CLIP_BUILD | 0.0103 | 19.1131 |
+| PLATE_READ | 0.0143 | 49.9113 |
+| OVERLAY_TIME_READ | 50.0356 | 50.6853 |
+| REPORT_VIDEO_EXPORT | 0.9327 | 0.3169 |
+| PLATE_IMAGE_EXPORT | 2.8340 | 0.6086 |
+
+최초 queue는 UTC 2026-11-06 16:07:34.659304, 마지막 terminal은 16:23:05.100522다. KST 11월7일 01:07:34~01:23:05이며, **930.4412초** 관측창에는 사용자 확인·idle도 포함되므로 순수 처리시간으로 쓰지 않는다.
+
+| 관측 시각 UTC | CPU 평균 구간 | user+system | iowait / steal / idle | 메모리 available / used |
+| --- | --- | ---: | --- | --- |
+| 16:10:14 | 16:00:03~16:10:14 (611초) | 36.22% | 1.86 / 0.61 / 61.32% | 5,649,216KiB / 24.22% |
+| 16:20:14 | 16:10:14~16:20:14 (600초) | 79.39% | 0.19 / 0.24 / 20.19% | 5,722,912KiB / 23.30% |
+| 16:30:14 | 16:20:14~16:30:14 (600초) | 22.12% | 0.11 / 0.24 / 77.53% | 5,660,772KiB / 24.08% |
+
+sadf 12.6.1의 UTC 출력으로 날짜·구간을 대조했다. CPU는 약10분 구간 평균이며, **두 번째 CPU 구간만 Case 실행 안에 온전히 포함**된다. 첫 구간은 실행 전, 마지막 구간은 실행 후 시간을 포함하므로 비례 배분해 전체 실행 평균을 만들지 않는다. 메모리는 **16:10:14·16:20:14 두 시점**이 실행 중이며, 해당 표본의 available은 **약5.39~5.46GiB**, used 비율은 **23.30~24.22%**다. 16:30:14 메모리는 실행 후 참고값이다. sysstat의 kB 명칭은 실제 KiB이며 [공식 FAQ](https://sysstat.github.io/faq.html)에 따라 환산했다.
+
+모든 자원 값은 **호스트 전체**다. Worker RSS/cgroup 사용량이나 다른 팀 작업의 기여도를 분리하지 않았다. **79.39%는 user+system 구간 평균이지 순간 CPU peak가 아니며**, 메모리 두 표본의 범위도 전체 실행의 최소·최대 보장이 아니다. 이 기록으로 실행 중 OOM/restart 없음·디스크 peak·동시 처리 capacity·p95를 판정하지 않는다. 이번 최소 O1 근거는 시간·queue·사용량과 같은 시간대의 호스트 표본이며, 더 촘촘한 관측을 했다고 표현하지 않는다.
+
+| Usage operation | input / output token | 기록된 latency |
+| --- | --- | ---: |
+| HINT_EXTRACT | 519 / 483 | 6.729초 |
+| CANDIDATE_SEARCH | 176,144 / 377 | 54.510초 |
+| VISUAL_VERIFY | 8,598 / 723 | 12.936초 |
+| READOUT_PLATE | null / null | 50.000초 |
+| READOUT_OVERLAY_TIME | null / null | 51.000초 |
+
+tracker 5행은 모두 FINALIZED/SUCCEEDED, failure_kind null이다. Usage 행 수·Job attempt를 실제 HTTP 시도 수로 환산하지 않는다. Coarse/Fine의 Job wall과 기록된 latency 차이를 Recording 단독 준비시간으로 확정하지 않는다. 유료 Hint/Coarse/Fine의 ledger amount는 **null**로 비용 미확인이며 0원으로 계산하지 않는다. local Readout 두 항목은 기록상0이지만 실제 provider 청구서를 대조한 결과가 아니다. 원시 응답 종료 사유·SDK 내부 시도 수·전체 사건 정답 대조는 별도 미확인이다.
+
 ## 남은 제한과 후속 작업
 
 - **후보 썸네일:** 3개 모두 `thumbnail_reference_present=false`. 이번 성공이 [#583](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/583)의 수정·배포 완료를 뜻하지 않는다.
 - **화면 내 신고영상 미리보기:** 브라우저에 미리보기 불가가 표시됐다. 다운로드 파일의 재생 성공과 구분하며 원인은 미확정이다.
 - **사용자 확인 필드:** `safety_report_type`, `location`, `violation_expression`이 미확인 상태다. Package READY는 실제 신고 제출 또는 법적 판단 완료가 아니다.
-- **Search 관측:** provider 호출·재시도 횟수, input/output token, 응답 종료 사유, 실제 비용은 이번 최종 조회에 없다. Job attempt 1을 provider 호출 1회로 환산하지 않는다.
-- **AWS 최소 안정성:** O1의 실행 구간별 자원·사용량 및 O6 필수 복구 경로는 이 단회 정상 E2E와 별도로 증거를 대조해야 한다. 백업 격리 복원을 Worker 장애 복구의 대체 근거로 쓰지 않는다.
-- **26분 검증 보류와 임시 설정:** 운영자는 26분 재검증을 나중으로 미루고 추후 별도 이슈로 추적하기로 했다. 26분 재검증은 현재 20분 결과 정리의 선행조건이 아니며, 기존 미검출·미완료 기록은 보존한다. [PM의 600초 일시 승인과 종료 후 150초 복귀 조건](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6650917486)은 유지하며, 검증 범위 변경을 PM에게 공유한 뒤 복귀 PR·임시 업로드 한도 원복을 별도 절차로 처리한다. 보류가 600초 예외의 무기한 연장이나 복귀 배포 완료를 뜻하지 않는다. 향후 같은 문제가 재발하면 재현 입력·순서·revision/config·기대 장면·실제 결과를 이슈로 남긴다. 이번 문서 변경에서 설정을 변경하지 않았다.
+- **Search 관측:** 후속 조회에서 token·latency를 확보했다. provider 호출·재시도 횟수, 응답 종료 사유, 실제 비용은 미확인이다. Job attempt 1을 provider 호출 1회로 환산하지 않는다.
+- **AWS 최소 안정성:** O1은 위 호스트 표본의 범위로 정리한다. O6는 [별도 provider 실패 연결 검증](2026-11-07-o6-provider-failure-validation.md)과 [배포 C′의 Worker 복구 CI](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42046404269)를 구분해 사용한다. 정상 E2E·백업 격리 복원을 Worker 장애 복구의 대체 근거로 쓰거나 로컬 fake 결과를 실제 AWS 장애 주입 PASS로 표현하지 않는다.
+- **26분 검증 보류와 임시 설정:** 운영자는 26분 재검증을 나중으로 미루고 추후 별도 이슈로 추적하기로 했다. 현재 선행조건이 아니며 기존 미완료 기록은 보존한다. 운영자가 전달한 **11월6일 회의 후속 방침은 Coarse 600초 유지·필요 시 재검토**다([#452 갱신](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6694582845)). 앞선 [150초 복귀 조건](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6650917486)은 당시 결정 이력으로 보존하며 현재 복귀 예정으로 표시하지 않는다. 이 방침은 Coarse 상한에 관한 것으로 업로드 한도 등 다른 설정의 유지·변경을 일괄 승인하지 않는다. 이번 문서 변경에서 운영 설정·코드·배포를 변경하지 않았다.
 
 공개 업로드 허용 범위·동시 처리량·p95·장시간 안정성은 이 단회 성공으로 승인하지 않는다. 기존 [전체 15개 격리 준비 결과](2026-11-05-ec2-full15-coarse-preparation-result.md)는 provider 송신 직전 차단 실험이고, 이번 제품 E2E와 입력·측정 경계가 다르다.
