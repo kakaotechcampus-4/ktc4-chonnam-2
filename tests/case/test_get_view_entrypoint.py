@@ -96,8 +96,8 @@ def test_get_view_with_real_adapter_reaches_ready_caseview():
 
     view = case_package.get_view("case_h001_getview_real", store=store)
 
-    # READY는 Package가 실제로 준비됐을 때만(#167). 상황 응답 전이라 ADR-EVIDENCE-005 D2-c로
-    # Package가 막혀 EVIDENCE_REVIEW에 머문다.
-    assert view["stage"] == "EVIDENCE_REVIEW"
-    assert view["package"] is None
+    # OBSERVED의 필수 자산과 요건이 준비되면 응답 없이 READY가 된다(#597).
+    assert view["candidates"][0]["situation_confirmation"] == "NOT_ASKED"
+    assert view["stage"] == "READY"
+    assert view["package"] is not None
     assert view["evidence"]["plate_display"]["value"] == "12가3456"
