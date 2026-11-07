@@ -10,6 +10,8 @@ vi.mock('../components/driving/DrivingPreview', () => ({
     </div>
   ),
 }))
+const { decodeAviFrame } = vi.hoisted(() => ({ decodeAviFrame: vi.fn() }))
+vi.mock('../components/aviFrame', () => ({ decodeAviFrame }))
 const videos: HTMLVideoElement[] = []
 const createUrl = vi.fn(), revokeUrl = vi.fn()
 beforeEach(() => {
@@ -118,6 +120,23 @@ it('장면 찾기가 끝나면 게임을 해제하고 다시 시작해도 자동
   r.rerender(<VideoThumb file={null} name="a.avi" canDrive />)
   expect(r.queryByTestId('waiting-drive')).toBeNull()
   expect(r.getByRole('button', { name: invitation })).toBeTruthy()
+})
+
+it('AVI는 <video> 없이 첫 영상 조각을 디코드해 그리고, 못 꺼내면 대체 화면을 둔다(#595)', async () => {
+  const close = vi.fn()
+  decodeAviFrame.mockResolvedValueOnce({ image: {}, width: 1920, height: 1080, close })
+  const avi = new File(['avi'], 'EVT_1.AVI', { type: '' })
+  const r = render(<VideoThumb file={avi} name="EVT_1.AVI" />)
+  await act(async () => {})
+  expect(decodeAviFrame).toHaveBeenCalledWith(avi)
+  expect(r.container.querySelector('img')?.getAttribute('src')).toBe('data:image/jpeg;base64,preview')
+  expect(close).toHaveBeenCalledOnce()
+  expect(videos).toHaveLength(0)
+  decodeAviFrame.mockResolvedValueOnce(null)
+  r.rerender(<VideoThumb file={new File(['x'], 'broken.avi')} name="broken.avi" />)
+  await act(async () => {})
+  expect(r.getByText('미리보기를 표시할 수 없어요')).toBeTruthy()
+  expect(videos).toHaveLength(0)
 })
 
 it('준비 중 화면을 나가면 디코더·주소·실패 타이머를 해제한다', () => {
