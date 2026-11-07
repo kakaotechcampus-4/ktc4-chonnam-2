@@ -1,6 +1,6 @@
 # 유형이 판별되면 신고 상황 응답 없이 신고용 영상을 발주한다 (#597 B안)
 
-> **상태: 결정 · Case 쪽 구현(발주 조건 · 응답 대기 notice) · Evidence · Web 변경 전** · 2026-11-07 · 제품 결정 김준영([#597](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/597) 2026-11-07) · 담당 유소연(`case`, 구현 리드) · 관련 `core-user-flow.md` §10 · §15(Evidence 소유, 갱신 예정), `contract-job-record-case-view.md` B절 `notices[]`, #171 B-2 · C-2, #351, #545
+> **상태: 결정 · Case 쪽 구현(발주 조건 · 응답 대기 notice · `report_draft` 투영, case-view/v1.13) · Evidence [#618](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/618)과 통합 · Web 변경 전** · 2026-11-07 · 제품 결정 김준영([#597](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/597) 2026-11-07) · 담당 유소연(`case`, 구현 리드) · 관련 `core-user-flow.md` §10 · §15(Evidence 소유, 갱신 예정), `contract-job-record-case-view.md` B절 `notices[]`, #171 B-2 · C-2, #351, #545
 
 ## 1. 문제
 
@@ -18,9 +18,9 @@
 
 ## 3. 다른 모듈에 남은 것 (이 결정만으로는 묶음이 나가지 않는다)
 
-- **Evidence(김준영):** `render_report`가 `OBSERVED`면 `CONFIRMED` · `CORRECTED`를 요구한다(`evidence/policy.py`). 묶음 요건 `package.evidence.situation_response`도 `NOT_ASKED`를 막는다. 응답 없이 초안을 렌더링하는 방법과 요건 변경은 Evidence 결정이다[미정].
-- **CaseView 초안:** 묶음 전(영상 생성 중) 초안을 어디서 받아 어떤 필드로 내릴지는 Evidence 반환 모양이 정해진 뒤 정한다[미정]. 지금 `report.title/description`은 묶음이 있어야 나온다(`view.py`).
-- **유형 정정(#545):** 초안에서 유형을 고치면 `CORRECTED` 응답으로 남길지 정정 기록으로 남길지 — 신고문 · 묶음을 다시 만드는 조건이 여기에 달려 있다[미정].
+- **Evidence(김준영, #618):** `OBSERVED + NOT_ASKED`만 응답 없이 특정형 신고문 · 묶음 요건을 통과한다(요건 정책 v7). `OBSERVED + USER_UNSURE`는 계속 막는다. 정본은 `docs/modules/evidence/decisions/observed-report-draft.md`.
+- **CaseView 초안(이 PR):** 최상위 `report_draft: {title, description} | null` — 현재 선택의 조립된 EvidenceRecord를 evidence `render_report_draft()`에 넘긴 결과를 그대로 싣는다(`view.py`, case-view/v1.13). 조립 전 · 렌더 불가면 `null`. 최종 신고문은 `package.report` 그대로다.
+- **유형 정정(#545):** 기존 `RECORD_SITUATION_RESPONSE {CORRECTED, visual_event_type}`로 정정 기록과 `CORRECTED` 응답을 함께 남긴다(김준영 #597 2026-11-07). 발생시각 정정으로 사후 각인 입력이 바뀌면 현재 입력과 같은 export만 결과로 세고(`stored_observation`), 영상이 없어진 것으로 보아 새 입력으로 다시 발주한다 — 코드 경로 확인, 통합 E2E에서 실제 확인한다.
 - **Web(신유민):** `selectScreen.ts`는 EVIDENCE_REVIEW에서 job이 돌고 응답 대기 notice가 없으면 진행 화면이다. 이 결정 뒤에는 `OBSERVED`일 때 영상 생성 중 진행 화면이 보인다 — 「생성 중에도 초안 표시」를 위해 web이 바꾼다.
 - **mock 시나리오:** `data/mock/case/`의 응답 전 스냅샷(happy · correction_rerun · plate_reread)은 web 데모 · 테스트도 쓰므로 이전 흐름 그대로 두었다. web과 함께 B안 흐름으로 바꾼다. 그때까지 Case 테스트는 바뀐 두 code(`case.situation_response_pending`, `case.report_video_not_generated`)만 fixture와 대조하지 않는다(`B597_FIXTURE_LAG`).
 
