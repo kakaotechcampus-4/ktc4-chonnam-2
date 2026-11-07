@@ -173,6 +173,8 @@ function resultFor(candidateId: string): CaseView {
     requirements_evidence: null,
     requirements_package: null,
     package: null,
+    // 초안은 선택 후보의 EvidenceRecord로만 만든다 — 다시 고른 직후에는 없다(#621 소연 님 코멘트)
+    report_draft: null,
     evidence: {
       ...RESULT.evidence!,
       record_id: `demo_evidence_${candidateId}`,
@@ -222,6 +224,7 @@ function awaiting(candidates: Candidate[]): CaseView {
     stage: 'EVIDENCE_REVIEW',
     evidence: null,
     package: null,
+    report_draft: null,
     candidates: candidates.map((c) => (c.selected ? { ...c, situation_confirmation: 'NOT_ASKED' } : c)),
     // B안(#597)에서 응답 대기는 UNCERTAIN 부분 투영에만 생기고 mock fixture에는 없다 — notice를 직접 둔다(#621 소연 님 코멘트)
     notices: [{ code: 'case.situation_response_pending', severity: 'INFO', blocking: false, message_key: 'notice.situation_response_pending', actions: [] }],
