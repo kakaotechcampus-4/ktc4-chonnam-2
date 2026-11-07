@@ -56,3 +56,44 @@
 4. 해당 배포본이 준비되면 #523에 연결하고 Web/Case 확인을 받는다. 현재 #583/#523 운영 검증 완료를 주장하지 않는다.
 
 AWS·provider·Docker·운영 변경, staging·commit·push·외부 댓글은 실행하지 않았다.
+
+## #604 병합 후 #617 CI 실패 보완
+
+위 NOT_RUN은 최초 구현 당시의 상태다. 이후 #604를 병합한 HEAD `ff94a1f1767277211f2a170b87dba89b59f2ad33`에서 [원격 CI](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42347235116)의 regression·quality·boundary는 성공했지만 MySQL에서 8개 실패를 관측하고 canonical 전체 1,500초 상한에 도달했다. 개별 실패 traceback은 전체 timeout으로 출력되지 않았다. 시간 초과만 발생한 것으로 정산하지 않았다.
+
+### 재현과 원인
+
+기존 로컬 MySQL 8.4 이미지, Ubuntu Python 3.12.3, `uv sync --locked --extra test --extra eval-gemini` 환경을 사용했다. 운영 DB와 분리한 전용 컨테이너(메모리 1GiB, CPU 1, DB tmpfs 1GiB, localhost 전용 포트)로 재현했다. 실제 provider HTTP는 기존 MockTransport이며 호출하지 않았다.
+
+`test_incident_frames_mysql.py` 중 해당 12개를 수정 전에 실행해 **8 failed / 4 passed**, 52.75초로 같은 실패 node를 재현했다.
+
+- stale/missing span 및 수동 generation 변경 검사는 clip 결과만 있다고 가정했지만, 준비 단계의 실제 Coarse가 먼저 만든 `Candidate.thumb_ref`도 CaseView에 남아 있었다.
+- 저장 오류·취소 주입 검사는 `add_frame`에 실패를 걸었다. 같은 위치의 Coarse frame이 이미 저장돼 있어 clip 단계에서 기존 frame을 재사용하고 해당 주입 지점을 통과하지 않았다.
+- historical clip payload의 frame 필드가 없거나 null이어도 Coarse frame은 존재했다. 따라서 화면에 frame이 없다는 종전 fixture 전제가 더 이상 성립하지 않았다.
+
+이 실패들의 직접 원인은 clip-only 시험 준비 데이터에 새 Coarse 발급까지 들어온 것이다. 새로운 Coarse fallback을 제거하거나 제품 동작을 되돌리지 않았다.
+
+### 보완 범위
+
+- 기존 clip-only `prepare()`는 **과거 Coarse producer에 frame 발급이 없는 상태**를 명시적으로 만든다. 테스트 peer의 선택적 `legacy_coarse_frames`에서만 issuer를 빈 맵으로 대체한다. production 옵션은 추가하지 않았다. 기존 assertion·skip·timeout은 유지했다.
+- 새 `test_coarse_frames_mysql.py`는 `coarse_frames=True`로 실제 production Coarse issuer를 사용한다. 4개 후보 중 rank 1~3만 발급하고, Fine NOT_OBSERVED/FAILED 각각과 T1 rollback 유무를 대조한다.
+- 실제 Worker가 생성한 Engine에 실패 주입 이벤트를 연결한다. T1 rollback 이후 provider 호출은 준비 helper에서 1회로 확인하며 디코딩은 3회로 유지한다. committed produced payload, CaseView ref, no clip, 소유 PNG HTTP 200·타 Case 404를 확인한다.
+- 새 검사 초기에는 queue fixture Engine에 이벤트를 걸어 실제 Worker Engine에 주입되지 않는 P2가 있었다. 독립 리뷰로 발견·수정하고 정적 재확인을 받았다. Fine 결과를 최상위 `verification`으로 읽던 테스트 오류도 실제 `visual_evidence.verification` 경로로 고쳤다. 초기 실패 로그를 보존했다.
+
+### 실행 결과와 한계
+
+| 검사 | 결과 |
+| --- | --- |
+| 기존 incident frames/clip MySQL 2개 모듈 | **35 PASS**. 초기 혼합 실행의 기존 node 전부 통과 |
+| 신규 현재 Coarse MySQL 4개 | 수정 후 별도 **4 PASS**, 19.52초 |
+| 신규 issuer·production media·Case 오프라인 회귀 | **52 PASS** |
+| 신규 검사 Ruff / boundary / Contract fixtures / diff | **PASS** |
+| 수정한 기존 시험 파일 Ruff | 기존 5건·18건 유지, 신규 0건. 기존 lint를 전체 통과로 표시하지 않음 |
+| 원격 canonical 전체·strict·변조 gate 재실행 | **NOT_RUN** — 푸시 후 확인 필요 |
+| 실제 EC2·배포·브라우저 확인 | **NOT_RUN** |
+
+최초 혼합 회귀는 기존 35개와 수정 전 신규 4개를 수집해 **36 passed / 3 failed**였다. 실패는 신규 검사의 위 Engine 연결·필드 경로 문제이며, 이후 실제 Engine 연결 수정본은 **2 passed / 2 failed**(필드 경로), 최종본 4개는 전부 통과했다. 이를 한 번의 최종 39 PASS 실행으로 표현하지 않는다. warning 1개는 기존 Starlette TestClient/httpx deprecation이다.
+
+원문은 로컬 `.codex-scratch/issue583-ci-local/`의 `red.log`, `green.log`, `coarse-final.log`, `coarse-final2.log`에 보존했다. 전체 CI timeout의 독립 원인 및 수정 후 전체 소요 시간은 아직 입증하지 않았다. 1,500초 상한은 변경하지 않았다. 이 후속 작업에서는 로컬 Docker만 사용했으며 AWS·운영 변경·실제 provider·staging·commit·push·외부 게시는 하지 않았다.
+
+시험 종료 뒤 owner 라벨을 재확인해 전용 MySQL 컨테이너와 그 소유 임시 저장소를 제거했다. 이번 Linux 환경·cache·basetemp 및 WSL 유지용 대기 프로세스만 정리했으며, 기존 이미지·보호 volume·로그는 보존했다. 변경 4개는 미스테이징 상태로 남겼다.
