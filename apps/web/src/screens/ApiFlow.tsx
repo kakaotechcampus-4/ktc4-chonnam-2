@@ -315,6 +315,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             edits={edits}
             onEdit={(key, value) => setEdited({ key: draftKey, edits: { ...edits, [key]: value } })}
             onRespond={respond}
+            onReviewed={() => run({ kind: 'MARK_REVIEWED', payload: {} })}
+            onCorrect={(type) => run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: type } })}
             onAction={onAction}
             canRun={canRun}
             arriving={arriving}

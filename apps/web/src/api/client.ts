@@ -6,6 +6,7 @@
 // 모르니 POST를 다시 보내기 전에 GET /view로 확인한다.
 
 import type { CaseView } from '../contracts/caseView'
+import type { VisualEventType } from '../contracts/labels'
 
 /** §3.3 envelope의 `error`. `http.*`는 HTTP 층, `case.command.*`는 case가 만든 값이다. */
 export interface ApiError {
@@ -43,6 +44,8 @@ export type Command =
   | { kind: 'STOP_ANALYSIS'; payload: Record<string, never> }
   | { kind: 'SELECT_OTHER_CANDIDATE'; payload: { candidate_id: string } }
   | { kind: 'RECORD_SITUATION_RESPONSE'; payload: { value: 'CONFIRMED' | 'USER_UNSURE' } }
+  /** §12-3 `[다른 상황]` — 고른 유형을 함께 보낸다 */
+  | { kind: 'RECORD_SITUATION_RESPONSE'; payload: { value: 'CORRECTED'; visual_event_type: VisualEventType } }
   | { kind: 'MARK_REVIEWED'; payload: Record<string, never> }
   | { kind: 'EDIT_HINT'; payload: { description: string } }
   /** §12 입력형 — 새 값만 보낸다. 이전 값 · supersede는 case가 채운다 */

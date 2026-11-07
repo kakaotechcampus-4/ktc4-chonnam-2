@@ -42,7 +42,16 @@ const STOPPED = view({
   stage: 'SEARCHING',
   notices: [notice('case.analysis_stopped', ['RETRY_SEARCH'])],
 })
-const AWAITING = SNAPSHOTS.map((s) => s.view).find((v) => v.notices.some((n) => n.code === 'case.situation_response_pending'))!
+// 응답 대기(UNCERTAIN) — B안 fixture에는 이 스냅샷이 없어 결과 스냅샷에서 만든다: 조립 전(record_id null) + 응답 대기 notice
+const AWAITING_BASE = SNAPSHOTS.map((s) => s.view).find((v) => v.package && v.evidence)!
+const AWAITING: CaseView = {
+  ...AWAITING_BASE,
+  stage: 'EVIDENCE_REVIEW',
+  package: null,
+  evidence: { ...AWAITING_BASE.evidence!, record_id: null },
+  candidates: AWAITING_BASE.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: 'NOT_ASKED' } : c)),
+  notices: [notice('case.situation_response_pending', [])],
+}
 
 function setup(views: { get?: CaseView } = {}) {
   const m = {

@@ -618,7 +618,8 @@ it('응답 대기 중 evidence가 부분 투영돼도 신고용 영상 칸은 �
 
 it('package에 report가 없는 옛 판본이 와도 결과 화면이 깨지지 않는다', () => {
   const ready = SNAPSHOTS.map((x) => x.view).find((v) => v.stage === 'READY' && v.package)!
-  const old = { ...ready, package: { ...ready.package!, report: undefined } } as unknown as CaseView
+  // 옛 판본에는 report_draft 키도 없다
+  const old = { ...ready, report_draft: undefined, package: { ...ready.package!, report: undefined } } as unknown as CaseView
   const noop = () => {}
   const { container } = render(
     <ResultScreen view={old} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} />,

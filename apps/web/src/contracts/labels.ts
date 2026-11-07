@@ -220,6 +220,15 @@ export function atProvenanceLabel(key: string | null | undefined): string {
   return AT_PROVENANCE_LABELS[key] ?? AT_PROVENANCE_FALLBACK
 }
 
+/** `[다른 상황]` 선택지 — 법적 유형 이름이 아니라 상황 설명이다(case-command §12-3, Flow §15) */
+export const VISUAL_EVENT_CHOICES = {
+  SIGNAL: '신호를 지키지 않고 지나갔어요',
+  CENTER_LINE_CROSSING: '중앙선을 넘었어요',
+  SOLID_LINE_LANE_CHANGE: '실선 구간에서 차로를 바꿨어요',
+  MOTORCYCLE_HELMET_NON_USE: '오토바이 운전자가 안전모를 쓰지 않았어요',
+} as const
+export type VisualEventType = keyof typeof VISUAL_EVENT_CHOICES
+
 /**
  * 상황 확인 — 닫힌 4종이고 label_key가 내려오지 않아 web이 문구를 갖는다
  * (value-state-display.md §5-3). NOT_ASKED와 USER_UNSURE를 같은 빈칸으로

@@ -180,6 +180,11 @@ export interface CaseView {
   } | null
   candidates: Candidate[]
   evidence: EvidenceView | null
+  /**
+   * 묶음 전 신고서 초안(#597). Fine `OBSERVED`면 상황 응답 없이 evidence가 렌더링한다.
+   * 필수 입력(발생시각 등)이 없으면 `null`이고, 옛 판본 응답에는 키가 없다. 묶음이 생기면 `package.report`가 최종이다.
+   */
+  report_draft?: { title: string; description: string } | null
   requirements_evidence: Requirements | null
   requirements_package: Requirements | null
   package: PackageView | null
