@@ -3,16 +3,22 @@
 // 실제 분석·배포 서버는 쓰지 않는다 — 그 확인은 배포본 수동 완주 기록이 맡는다.
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
-/** Tab만 눌러 target에 닿는다(E2E-01). 닿은 요소에는 focus 표시가 보여야 한다(E2E-02). */
+/** focus 표시에 쓰이는 값. 투명한 outline은 보이지 않으므로 없는 것으로 친다 */
+const ringOf = (el: Element) => {
+  const s = getComputedStyle(el)
+  const transparent = /rgba\(.*,\s*0\)$/.test(s.outlineColor) || s.outlineColor === 'transparent'
+  const outline = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0 && !transparent ? `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}` : ''
+  return [outline, s.boxShadow, s.borderColor].join(' | ')
+}
+
+/** Tab만 눌러 target에 닿는다(E2E-01). 닿기 전과 비교해 focus 표시가 실제로 바뀌어야 한다(E2E-02) —
+ *  평소에도 있는 그림자나 투명 outline만으로는 통과하지 않는다(#623 리뷰). */
 async function tabTo(page: Page, target: Locator, max = 80) {
   for (let i = 0; i < max; i++) {
+    const before = await target.evaluate(ringOf)
     await page.keyboard.press('Tab')
     if (await target.evaluate((el) => el === document.activeElement)) {
-      const ring = await target.evaluate((el) => {
-        const s = getComputedStyle(el)
-        return s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0 ? 'outline' : s.boxShadow !== 'none' ? 'shadow' : ''
-      })
-      expect(ring, 'focus 표시가 보여야 한다').not.toBe('')
+      expect(await target.evaluate(ringOf), 'focus 표시가 보여야 한다').not.toBe(before)
       return
     }
   }
@@ -23,7 +29,8 @@ async function tabTo(page: Page, target: Locator, max = 80) {
 async function expectNamedControls(page: Page) {
   const unnamed = await page.evaluate(() =>
     [...document.querySelectorAll('button, a[href], input:not([type=hidden]):not([hidden]), select, textarea, [role=button]')]
-      .filter((el) => (el as HTMLElement).offsetParent !== null)
+      // offsetParent는 position: fixed 요소에서 늘 null이라, 겹쳐 뜨는 화면(모달 등)도 검사하도록 그려진 상자로 본다(#623 리뷰)
+      .filter((el) => el.getClientRects().length > 0)
       .filter((el) => {
         const labelledby = el.getAttribute('aria-labelledby')
         const fromIds = labelledby?.split(' ').map((id) => document.getElementById(id)?.textContent ?? '').join('')
