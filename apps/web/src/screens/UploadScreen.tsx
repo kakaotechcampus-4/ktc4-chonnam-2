@@ -12,9 +12,9 @@ import { Puffs, SpeedLines, burst, seeded, type Puff, type Speed } from '../comp
 import { videoTime, videoTimeText, type VideoTime } from '../state/videoTime'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
-// 공개 운영 한도·원본 보관 안내 — 4분은 지금 배포의 분석 범위 상한(DAESINGO_RECORDING_ANALYSIS_MAX_DURATION_MS=240000,
-// environment-and-deployment-config §3). 48 MiB는 변환한 분석 영상 한도라 업로드 크기로 적지 않는다. 배포 값이 바뀌면 이 줄만 바꾼다
-const LIMIT_TEXT = '영상 합계 4분까지 찾아볼 수 있어요. 올린 영상은 24시간 뒤 지워져요.'
+// 원본 보관 안내 — 공유된 보관 정책(원본 최대 24시간)만 적는다. 공개 한도는 확정 전이라 숫자를 적지 않고,
+// 너무 긴 영상은 서버 안내(notice.analysis_range_too_long)가 알린다. 실제 삭제 확인은 공개 게이트(#606 철원 님 답)
+const LIMIT_TEXT = '올린 영상은 최대 24시간 보관해요.'
 
 export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
 
@@ -508,7 +508,7 @@ export function UploadScreen(props: {
             <ul>
               <li>영상에는 번호판 · 얼굴 · 위치 같은 개인정보가 담길 수 있어요.</li>
               <li>장면을 찾기 위해 영상 일부가 외부 AI 서비스로 전송돼요.</li>
-              <li>올린 영상은 24시간, 분석 결과와 신고자료는 7일 뒤 지워져요.</li>
+              <li>올린 영상은 최대 24시간, 분석 결과와 신고자료는 최대 7일 보관해요.</li>
               <li>직접 찍었거나 올릴 권한이 있는 영상만 올려 주세요.</li>
               <li>대신고는 신고를 대신 접수하거나 위반을 확정하지 않아요.</li>
             </ul>
