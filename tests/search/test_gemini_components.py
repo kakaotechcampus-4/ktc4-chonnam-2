@@ -43,7 +43,7 @@ def test_fine_prompt_pins_the_offset_base_to_the_clip_it_hands_over():
     """모델에게 준 것은 잘라낸 clip인데 구간은 원본 초로 말해준다.
 
     기준을 적지 않으면 같은 답을 원본 절대 시각으로도, clip 상대로도 낼 수 있고
-    전자는 `outside prepared clip`으로 거절된다(이슈 #132 C4).
+    전자는 clip 밖 시각이라 버려진다(이슈 #132 C4 · #601).
     """
     rendered = FINE_PROMPT.render(
         event_type="SIGNAL", target_hint="없음", start_sec=200.0, end_sec=214.0
