@@ -1,6 +1,6 @@
 # 근거 장면(`evidence.preview_ref`) — case가 선택 후보의 IncidentClip에서 FrameRef를 발급받아 채운다
 
-> **상태: 결정 · 구현(handler 발급 연결 [PR #527](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/527), 2026-11-03) · 배포본 표시 확인 전** · 2026-10-29 · 상위 3개 썸네일 범위 확대 2026-11-02(#523, §7) · 썸네일 발급을 Coarse로 옮김 2026-11-07(#583, §7-8 · case 쪽만, Runtime 배선 전) · Owner 정책 검토 2026-11-04(§7-6 · 7) · 발급 위치 확정 2026-10-30(정철원, [PR #470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470)) · 결정 추적 [#446](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/446) Case 확인 요청 6 · Search 답(4 · 5번, 서어진 2026-10-29) · 관련 `contract-source-asset-media-stream.md` §5.3 · `adr-data-contract-call-closure-2026-09-08.md`(「thumbnail 이미지 전달 방식」 Pending)
+> **상태: 결정 · 구현(handler 발급 연결 [PR #527](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/527), 2026-11-03) · 배포본 표시 확인 전** · 2026-10-29 · 상위 3개 썸네일 범위 확대 2026-11-02(#523, §7) · 썸네일 발급을 Coarse로 옮김 2026-11-07(#583, §7-8 · Case #604·Runtime #617 머지) · Owner 정책 검토 2026-11-04(§7-6 · 7) · 발급 위치 확정 2026-10-30(정철원, [PR #470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470)) · 결정 추적 [#446](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/446) Case 확인 요청 6 · Search 답(4 · 5번, 서어진 2026-10-29) · 관련 `contract-source-asset-media-stream.md` §5.3 · `adr-data-contract-call-closure-2026-09-08.md`(「thumbnail 이미지 전달 방식」 Pending)
 >
 > **후보 영상 재생**(상위 3개 썸네일을 poster로 쓰고 그 위에 영상을 더함)은 `candidate-video-preview.md`(#554).
 
@@ -83,9 +83,9 @@ Search는 썸네일을 채우지 않기로 답했다(#446 4번). 이유는 셋�
    - **반영 · 투영:** Coarse 반영 때 후보 `thumb_ref`에 남긴다. Search `thumbnail_ref`보다 우선이고 `null`이면 Search 값이다. 늦은 결과 · 재전달은 반영 guard가 막으므로 현재 세대 후보에만 남는다. 다시 찾으면 후보 목록과 함께 바뀐다.
    - **A안 경로는 그대로 둔다.** clip이 낸 frame이 여전히 우선이고, clip의 `null`은 Coarse frame을 지우지 않는다(6과 같다). 같은 후보 · 같은 대표 시각이라 같은 장면이다. clip handler 쪽 발급을 걷어낼지는 Runtime이 정한다.
    - **근거 장면에도 닿는다.** `evidence.preview_ref`는 clip frame이 없으면 선택 후보 `thumb_ref`를 쓰므로(`view.py`), clip 전에도 Coarse frame이 보인다. 같은 대표 시각 frame이라 결정 1의 장면과 다르지 않다.
-   - **Runtime 몫(#583 정철원 댓글 2026-11-06):** Coarse handler 접합, 후보 frame 발급기를 clip에서 분리, `FRAME_REFUSALS` 4종만 `null`, 후보 0개면 호출 안 함, Coarse 결과 validator. frame 발급 · 저장 실패로 Coarse 전체를 재시도해 유료 호출이 반복되는 위험은 Runtime이 대조한다 — 피하기 어려우면 A(전용 job)로 다시 본다.
+   - **Runtime 구현:** 성공 Coarse의 Top-3 발급을 T1 전에 연결했다. 네 가지 `FRAME_REFUSALS`만 후보별 `null`로 처리하고, 빈 후보 목록에는 발급을 호출하지 않는다. MySQL PR CI에서 첫 Fine `NOT_OBSERVED`/실패 뒤 ref 유지와 소유 프레임 HTTP 조회를 확인했다. 프레임 발급·저장 실패는 유료 Search 호출 재시도 경계 밖에서 처리한다. 대상 EC2·브라우저 검증은 PR 기준 `NOT_RUN`이다. [#617](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/617) · [PR CI](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42356263220)
    - **남는 한계:** Coarse 자체가 실패하면 후보도 썸네일도 없다. 썸네일 3장의 추가 시간은 재지 않았다[확인 필요].
 
-case 쪽 구현은 `case/preview_frame.py` `coarse_thumbnail_candidate_ids` · `coarse_frame_refs` · `thumbnail_candidate_ids` · `candidate_frame_position` · `current_candidate_frame_refs`, `reflection.py`(`candidate_frame_refs` 저장), `view.py`(`thumb_ref` 투영), `service.candidates_from_events`(`frame_refs`), 테스트 `tests/case/test_candidate_thumbnails.py` · `tests/case/test_coarse_candidate_thumbnails.py`(#583)다. handler 주입과 production 연결은 #527(2026-11-03)로 끝났다.
+case 쪽 구현은 `case/preview_frame.py` `coarse_thumbnail_candidate_ids` · `coarse_frame_refs` · `thumbnail_candidate_ids` · `candidate_frame_position` · `current_candidate_frame_refs`, `reflection.py`(`candidate_frame_refs` 저장), `view.py`(`thumb_ref` 투영), `service.candidates_from_events`(`frame_refs`), 테스트 `tests/case/test_candidate_thumbnails.py` · `tests/case/test_coarse_candidate_thumbnails.py`(#583)다. clip handler 연결은 #527에서, 별도의 Coarse handler 연결은 #617에서 머지됐다.
 
 남은 확인: 다른 후보 카드의 「미리보기 준비 중」은 web이 `running_jobs`가 있는지만으로 정해, 썸네일과 무관한 Fine · export가 돌 때도 준비 중이 될 수 있다(`docs/runtime/rt10b-preview-frames.md` #525 판정의 한계 표). case가 썸네일 발급 대기를 따로 알려야 하는지 정하지 않았다.

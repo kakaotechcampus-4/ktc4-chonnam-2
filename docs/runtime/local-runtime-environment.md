@@ -361,7 +361,7 @@ Search 5분 입력의 15.7 MB/17초도 480p 조건의 별도 1회 측정값이�
 
 | 결정/제약 | 현재 상태와 필요한 판단 |
 | --- | --- |
-| MVP 저장 | DB 한 행 유지; packet 상한만 올려 해결했다고 하지 않음 |
+| AnalysisSource 저장 | 초기 baseline은 DB 한 행 저장. 현재 소스의 청크 writer·기존 BLOB 읽기와 배포 설정의 길이·바이트 한도는 [Recording 한도](../modules/recording/analysis-source-limits.md) 참조 |
 | 사전/변환 중 거부 | Owner 합의: 명시적 prepared-media byte 한도 및 별도 지원 길이를 정하고, 변환 전/누적·최종 byte 검사로 DB write 전 중단 |
 | 오류 전달 구현 | `ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` → Case `recording.analysis_range_too_long`(`ERROR`, blocking, `message_key: notice.analysis_range_too_long`, `actions: []`). Case는 수치를 복제하지 않고 typed code만 소비 |
 | 현재 구현·병합 상태 | 명시적 두 한도 설정·길이 사전 거부·구간 누적/최종 byte 검사·encode/concat 출력 감시·Runtime terminal mapping 구현. Case notice [#481](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/481)과 Web 문구·실패 화면 [#492](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/492)도 병합됨. job이 없으면 `SEARCH_FAILED`, 있으면 진행 화면 유지; [구현 경계·코드 근거](../modules/recording/analysis-source-limits.md#typed-실패와-case-연결) |
