@@ -27,7 +27,7 @@
 
 - `research/`: 조사·비교·Spike
 - `experiments/`: 실제 설정/입력/결과/learning
-- `decisions/`: 조사·실험 후 확정한 module 내부 결정
+- [`decisions/`](decisions/README.md): 조사·실험 후 확정한 module 내부 결정
 - `contracts/`: 이 모듈이 생산/소비하는 계약의 초안·검토 메모. cross-module 최종 계약은 `architecture/contracts/`로 승격
 - `reviews/`: evidence/common-runtime Owner 관점의 Mock·접합부 검수 보고서
 - `prompts/`: AI 에이전트·담당자에게 작업을 발주하거나 handoff할 때 전달하는 지시 문서

@@ -118,6 +118,8 @@ case가 발주한 작업(Job Intent) 1건을 append-only로 기록해, 부분 �
 - 재시도 성공 보장
 - heartbeat/lease/retry/backoff/DB 구조 등 Runtime 내부 구현 세부
 
+**#597 통합 계약 경계.** 이 문서의 상황 응답 선행 발주 및 대기 notice 규칙은 기존 CaseView 버전 기준이다. [#616](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/616) 통합에서 Case가 조립된 EvidenceRecord 기준으로 발주·대기를 구분하고, [Evidence 초안 API](../../modules/evidence/decisions/observed-report-draft.md)를 호출해 최상위 `report_draft: {title, description} | null`을 투영한다. 응답이 없으면 기존처럼 `NOT_ASKED`를 투영한다. CaseView 스키마·버전과 소비자 fixture 개정은 Case/Web 통합에서 반영한다.
+
 ### 4. 조사에서 확인된 제약
 
 | 제약 | 근거 |

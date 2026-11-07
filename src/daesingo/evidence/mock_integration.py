@@ -16,16 +16,15 @@ from pathlib import Path
 from typing import Any
 
 from .assembly import assemble_evidence, calculate_evidence_needs
-from .errors import ContractInputError, PackageNotReady
+from .errors import PackageNotReady
 from .policy import (
     GENERIC_NO_LOCATION_TEMPLATE_REF,
     GENERIC_TEMPLATE_REF,
     SAFETY_REPORT_POLICY_REF,
     SPECIFIC_NO_LOCATION_TEMPLATE_REF,
     SPECIFIC_TEMPLATE_REF,
-    render_report,
 )
-from .requirements import build_report_package, evaluate_requirements
+from .requirements import build_report_package, evaluate_requirements, render_report_draft
 from .time_resolution import resolve_time
 from .validation import validate_contract
 
@@ -50,7 +49,7 @@ _IMPLEMENTATION_FILES = (
     "src/daesingo/evidence/policy.py",
     "src/daesingo/evidence/policy_data.json",
     "src/daesingo/evidence/policy_catalog.py",
-    "src/daesingo/evidence/requirement_rules_v6.json",
+    "src/daesingo/evidence/requirement_rules_v7.json",
     "src/daesingo/evidence/requirements.py",
     "src/daesingo/evidence/safety_report_policy_v1_2.json",
     "src/daesingo/evidence/time_resolution.py",
@@ -213,22 +212,6 @@ def _assemble(
     )
 
 
-def _render_preview(record: Contract) -> Contract | None:
-    location = record.get("location") or {}
-    display = next((location[key]["value"] for key in ("address", "place_name", "user_hint") if location.get(key)), None)
-    if record.get("occurred_at") is None or record.get("vehicle_number") is None:
-        return None
-    event = record["event"]
-    return render_report(
-        visual_event_type=event["visual_event_type"]["value"],
-        situation_response=record.get("situation_response", {}).get("value"),
-        occurred_at=record["occurred_at"]["value"],
-        location_display=display,
-        vehicle_number=record["vehicle_number"]["value"],
-        violation_expression=event["violation_expression"]["value"],
-    )
-
-
 def _base(root: Path, scenario_id: str, config: Contract) -> tuple[Contract, Contract, Contract, Contract, Contract]:
     upstream = _upstream(root, scenario_id)
     candidate = _selected_candidate(upstream["search"], upstream["case"])
@@ -365,13 +348,9 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
                 plate=plate,
                 record_id=f"{ids['evidence'][0]}_unconfirmed_guard",
             )
-            render_error: str | None = None
-            try:
-                _render_preview(unconfirmed_record)
-            except ContractInputError as exc:
-                render_error = str(exc)
-            if render_error != "report.input.situation_unconfirmed":
-                raise ValueError("specific-template policy guard did not fail closed")
+            draft = render_report_draft(unconfirmed_record)
+            if draft is None:
+                raise ValueError("observed EvidenceRecord did not produce a report draft")
             policy_guard_check = {
                 "shared_case_situation_confirmation": next(
                     item["situation_confirmation"]
@@ -380,9 +359,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
                 ),
                 "without_confirmation": {
                     "evidence_record": unconfirmed_record,
-                    "render_error": render_error,
-                    "normal_final_report_emitted": False,
-                    "report_package_emitted": False,
+                    "report_draft": draft,
                 },
                 "with_derived_confirmation": {
                     "adapter_input": deepcopy(config.get("situation_response")),
@@ -528,9 +505,7 @@ def run_all(root: Path, output_dir: Path) -> Contract:
                 else {
                     "shared_case_situation_confirmation": result["policy_guard_check"]["shared_case_situation_confirmation"],
                     "without_confirmation": {
-                        "render_error": result["policy_guard_check"]["without_confirmation"]["render_error"],
-                        "normal_final_report_emitted": result["policy_guard_check"]["without_confirmation"]["normal_final_report_emitted"],
-                        "report_package_emitted": result["policy_guard_check"]["without_confirmation"]["report_package_emitted"],
+                        "report_draft": result["policy_guard_check"]["without_confirmation"]["report_draft"],
                     },
                     "with_derived_confirmation": result["policy_guard_check"]["with_derived_confirmation"],
                 },
@@ -543,7 +518,7 @@ def run_all(root: Path, output_dir: Path) -> Contract:
         "implementation_fingerprints": fingerprints,
         "scenarios": results,
         "readiness": "PARTIAL_READY",
-        "reason": "Shared upstream contracts and a consumer reader are executable; H/U Package assembly succeeds under requirement-rules-v6, which no longer requires the I4 final-video plate/time observations (ADR-EVIDENCE-010), while real case projection and the post-stamp fact wiring remain unconnected.",
+        "reason": "Shared upstream contracts and a consumer reader are executable; H/U Package assembly succeeds under requirement-rules-v7, which omits the I4 final-video plate/time observations (ADR-EVIDENCE-010), while real case projection and the post-stamp fact wiring remain unconnected.",
     }
     _write(output_dir / "run-summary.json", summary)
     return summary

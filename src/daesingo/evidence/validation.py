@@ -120,7 +120,8 @@ def _validate_evidence_value(
     if not (allow_null and item_value is None) and not value_is_valid(item_value):
         errors.append(f"{name}:value")
     source = item.get("source") or {}
-    if source.get("observability") not in {"OBSERVED", "INFERRED"} or not _ref(source.get("ref")):
+    if (not isinstance(source, dict) or source.get("observability") not in ("OBSERVED", "INFERRED")
+            or not _ref(source.get("ref"))):
         errors.append(f"{name}:source")
     support_refs = item.get("support_refs")
     if not isinstance(support_refs, list) or any(not _ref(ref) for ref in support_refs):
@@ -136,6 +137,8 @@ def _validate_evidence_value(
 
 
 def validate_evidence_record(value: Contract) -> list[str]:
+    if not isinstance(value, dict):
+        return ["record:shape"]
     errors: list[str] = []
     _required(value, ("contract_version", "record_ref", "case_ref", "selection_rev", "basis", "event", "provenance"), errors)
     if value.get("contract_version") != "evidence-record/v1.3":
@@ -146,12 +149,16 @@ def validate_evidence_record(value: Contract) -> list[str]:
         errors.append("supersedes_ref")
     if not isinstance(value.get("selection_rev"), int) or value.get("selection_rev", 0) < 1:
         errors.append("selection_rev")
-    basis = value.get("basis") or {}
+    basis = value.get("basis")
+    if not isinstance(basis, dict):
+        return [*errors, "basis:shape"]
     if not _ref(basis.get("candidate_ref"), "candidate_event") or not _ref(basis.get("visual_evidence_ref"), "visual_evidence"):
         errors.append("basis")
     if not _ref(basis.get("evidence_interval_ref")) or basis.get("evidence_interval_ref", {}).get("kind") not in {"incident_clip", "candidate_event"}:
         errors.append("basis_interval")
-    event = value.get("event") or {}
+    event = value.get("event")
+    if not isinstance(event, dict):
+        return [*errors, "event:shape"]
     _validate_evidence_value(
         event.get("visual_event_type"),
         "event.visual_event_type",
@@ -167,13 +174,18 @@ def validate_evidence_record(value: Contract) -> list[str]:
             value_is_valid=_non_empty_string,
         )
     occurred = value.get("occurred_at")
-    if occurred is not None:
+    if occurred is not None and not isinstance(occurred, dict):
+        errors.append("occurred_at:shape")
+    elif occurred is not None:
         _datetime(occurred.get("value"), "occurred_at.value", errors)
         if not _ref(occurred.get("time_resolution_ref"), "time_resolution"):
             errors.append("occurred_at.ref")
-        if occurred.get("resolution_status") not in {"OK", "NEEDS_REVIEW"}:
+        if occurred.get("resolution_status") not in ("OK", "NEEDS_REVIEW"):
             errors.append("occurred_at.status")
-        if "observability" in (occurred.get("source") or {}):
+        source = occurred.get("source")
+        if source is not None and not isinstance(source, dict):
+            errors.append("occurred_at.source")
+        elif source is not None and "observability" in source:
             errors.append("occurred_at.observability")
     if value.get("vehicle_number") is not None:
         _validate_evidence_value(
@@ -203,14 +215,25 @@ def validate_evidence_record(value: Contract) -> list[str]:
                 errors,
                 value_is_valid=_coordinate if name == "coord" else _non_empty_string,
             )
+    provenance = value.get("provenance")
+    if not isinstance(provenance, dict):
+        return [*errors, "provenance:shape"]
+    for field in ("input_refs", "correction_refs"):
+        refs = provenance.get(field)
+        if not isinstance(refs, list) or any(not _ref(ref) for ref in refs):
+            errors.append(f"provenance.{field}")
+    if not _non_empty_string(provenance.get("policy_ref")):
+        errors.append("provenance.policy_ref")
     response = value.get("situation_response")
-    if response is not None:
-        if response.get("value") not in {"CONFIRMED", "CORRECTED", "USER_UNSURE"}:
+    if response is not None and not isinstance(response, dict):
+        errors.append("situation_response:shape")
+    elif response is not None:
+        if response.get("value") not in ("CONFIRMED", "CORRECTED", "USER_UNSURE"):
             errors.append("situation_response.value")
         _datetime(response.get("responded_at"), "situation_response.responded_at", errors)
         if response.get("value") != "USER_UNSURE" and not _ref(response.get("candidate_ref"), "candidate_event"):
             errors.append("situation_response.candidate_ref")
-        if response.get("value") == "CORRECTED" and not value.get("provenance", {}).get("correction_refs"):
+        if response.get("value") == "CORRECTED" and not provenance.get("correction_refs"):
             errors.append("corrected_without_correction_ref")
     return errors
 
