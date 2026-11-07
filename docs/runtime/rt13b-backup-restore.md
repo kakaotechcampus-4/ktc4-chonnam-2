@@ -9,7 +9,7 @@
 이번 변경은 `backup_compose.py`와 focused tests/docs만의 host 도구 변경이다. Dockerfile은
 이 도구를 image에 COPY하지 않는다. 게시된 B `ce0750d5a3317ad1c810783d67f8a05ba88bce08`
 및 C′ `70f1c47cbc7c08fa848d057687f7130047f1126c` source/image/digest를 변경하거나 재생성하지 않는다.
-controller·config·Coarse 600초/종료 후 150초 복귀 조건·#583도 변경하지 않는다.
+controller·config·#583 및 당시의 Coarse 600초 실험 예산과 종료 후 150초 복귀 계획에도 영향을 주지 않았다. 공개 RC의 Coarse 예산은 [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-10을 따른다.
 
 | 단계 | 새 처리와 유지한 guard |
 | --- | --- |

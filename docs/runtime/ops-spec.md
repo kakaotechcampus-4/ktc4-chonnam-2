@@ -298,7 +298,7 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 
 - **초과 요청은 일찍 거절한다.** 과부하에서 일부 요청을 의도적으로 거절해 수락한 요청의 지연을 낮게 유지하는 load shedding 접근을 따른다([AWS Builders' Library](https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload)).
 - **전역 connection 한도 하나로 끝내지 않는다.** Uvicorn `--limit-concurrency`는 한도를 넘는 새 요청에 바로 `503`을 주고 idle keep-alive 연결도 한도에 센다([Uvicorn 문서](https://uvicorn.dev/server-behavior/)). 요청 종류를 구분하지 못해 조회 · health까지 막을 수 있으므로 위 표처럼 종류별 경계를 둔다.
-- **queue 대기가 Case 대기 예산을 넘으면 수락하지 않는다.** Case는 탐색 job을 `requested_at + 실행 예산 + 30초`까지만 기다린다([case 대기 timeout](../modules/case/decisions/case-wait-timeout.md)). queue가 길어지면 실행이 성공하기 전에 Case가 기다리기를 멈춘다. timeout을 늘려 숨기지 않는다.
+- **queue 대기가 Case 대기 예산을 넘으면 수락하지 않는다.** Case는 탐색 job의 `requested_at`부터 실행 예산, 큐 여유 30초, 타임라인 범위에 따른 준비 여유를 합산해 대기 마감을 계산한다. 공개 RC 기본 발주의 대기는 최대 60분이며, 첫 Coarse 실행 예산은 600초다. [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-2·§3-8·§3-10을 따른다. queue가 길어지면 실행이 성공하기 전에 Case가 기다리기를 멈춘다. timeout을 늘려 숨기지 않는다.
 - **IP 단위 제한만으로 공정성 · 비용 상한을 삼지 않는다.** 같은 네트워크의 여러 사용자가 한 공인 IP를 쓸 수 있다. 서버 전체 상한을 우선하고, 인증 없는 case 생성으로 반복 상한을 우회할 수 있는지 함께 본다.
 - **Worker 증설로 해결하지 않는다.** §17 조건이 그대로다.
 - **운영 통제 절차가 필요하다.** 신규 분석만 일시 중단하고 기존 결과 조회 · 다운로드는 유지하는 방법을 공개 전에 정한다.

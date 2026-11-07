@@ -368,7 +368,7 @@ Search 5분 입력의 15.7 MB/17초도 480p 조건의 별도 1회 측정값이�
 | 지원 길이/bytes/encoding | 초기 배포 baseline v1은 4분·48 MiB([설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)). 약 1시간 입력 지원과 운영 최적 encoding은 **미확정**. Recording Owner가 실제 runtime profile·DB packet/driver overhead·Search inline 상한과 함께 측정/확정 필요 |
 | Incident 품질 | 현재 EC2 적용 기준은 `720 / veryfast / CRF20`([운영자 제공 적용·E2E 결과](./experiments/2026-11-02-incident720-config-real-e2e.md)). 과거 baseline v1은 `240 / veryfast / CRF23`. 사건 포함·화질 개선은 사용자 육안 확인이며 최적 화질·OCR 정확도·모든 입력 품질·실제 신고 수용 보장이 아님 |
 | Search 상한 | 코드 inline media `40 MiB`, request `56 MiB`; Recording 저장 상한과 다른 단계, runtime env knob 아님 |
-| 시간 예산 | Case 요청 시점 + Search `150초` + 큐 여유 `30초` 유지 합의. Recording 준비/큐는 Case 대기에 포함되며 Search RunDeadline은 Search 호출부터 시작 |
+| 시간 예산 | 11/2 기록의 `150초` + 큐 여유 `30초`는 당시 기준. 공개 RC의 첫 Coarse 실행 예산 및 별도 Case 대기 마감은 [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-2·§3-8·§3-10 참조 |
 | 재측정 | Runtime 머신에서 준비·큐·Search를 나눠 측정한 뒤 Case 대기 기준 판단. 범위 분할은 MVP 밖 #168 |
 
 초기 배포 baseline v1은 코드 기본값이나 약 1시간 지원 보장이 아니다.
