@@ -159,10 +159,89 @@ def test_mysql_command_runs_complete_inventory_once_with_visible_output(tmp_path
     assert command.count('tests') == 1
     assert command[command.index('-m', command.index('pytest'))+1] == 'mysql'
     assert '--ignore='+GATE in command
-    assert kwargs['timeout'] == 1500
+    assert kwargs['timeout'] == 2400
     assert not any(k in kwargs for k in ('capture_output','stdout','stderr'))
     assert len([cmd for cmd, _ in invocations if 'pytest' in cmd]) == 1
     assert not list(tmp_path.rglob('manifest.json'))
+
+
+@pytest.mark.parametrize('mode, outcome, exception', [
+    ('success', 'success', None),
+    ('failure', 'failed', 'CalledProcessError'),
+    ('timeout', 'timeout', 'TimeoutExpired'),
+])
+def test_stage_logs_distinguish_timeout_and_failure_and_keep_cli_nonzero(
+        tmp_path, mode, outcome, exception):
+    child = {'success': "print('visible-child-output', flush=True)",
+             'failure': 'raise SystemExit(7)',
+             'timeout': 'import time; time.sleep(60)'}[mode]
+    timeout = 1 if mode == 'timeout' else 10
+    code = (
+        'from pathlib import Path; import sys; '
+        'from tests.ci_orchestration import _run_stage; '
+        f'_run_stage("control", [sys.executable, "-c", {child!r}], '
+        f'Path({str(tmp_path)!r}), None, timeout={timeout})'
+    )
+    result = subprocess.run([sys.executable, '-B', '-X', 'utf8', '-c', code],
+                            cwd=ROOT, capture_output=True, text=True, timeout=30)
+    assert (result.returncode == 0) is (mode == 'success'), result.stdout + result.stderr
+    if exception:
+        assert exception in result.stderr
+    else:
+        assert 'visible-child-output' in result.stdout
+    record, = [json.loads(line) for line in (tmp_path/'timings.jsonl').read_text().splitlines()]
+    assert record['stage'] == 'control'
+    assert record['outcome'] == outcome
+    assert record['timeout_seconds'] == timeout
+    assert record['seconds'] >= 0
+    logged = result.stdout.split('CI stage: ', 1)[1].splitlines()[0]
+    assert json.loads(logged) == record
+
+
+@pytest.mark.parametrize('failed_stage', ['canonical-mysql', 'strict', 'actual-report-mutations'])
+@pytest.mark.parametrize('error', ['failure', 'timeout'])
+def test_mysql_stops_at_each_failed_or_timed_out_stage(tmp_path, monkeypatch, failed_stage, error):
+    api = orchestration()
+    stages = ['canonical-mysql', 'strict', 'actual-report-mutations']
+    budgets = [2400, 60, 300]
+    calls = []
+
+    def run(command, **kwargs):
+        index = len(calls)
+        calls.append(command)
+        assert kwargs['check'] is True
+        assert kwargs['timeout'] == budgets[index]
+        if stages[index] == failed_stage:
+            if error == 'timeout':
+                raise subprocess.TimeoutExpired(command, kwargs['timeout'])
+            raise subprocess.CalledProcessError(7, command)
+        if index == 0:
+            # Substitute only the expensive DB/pytest boundary. These small
+            # artifacts exercise the real sealing path, not MySQL acceptance.
+            directory = Path(kwargs['env']['RT12_CATALOG_EVIDENCE']).parent
+            (directory/'mysql.json').write_text(json.dumps({
+                'selected': ['sql'], 'collected': [{'nodeid': 'sql'}]}), encoding='utf-8')
+            (directory/'collection.json').write_text('["sql"]', encoding='utf-8')
+            (directory/'catalog.json').write_text('{}', encoding='utf-8')
+            (directory/'mysql.xml').write_text('<testsuite/>', encoding='utf-8')
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(api.subprocess, 'run', run)
+    monkeypatch.setattr(api, 'current_context', lambda: {'revision': 'control'})
+    monkeypatch.setattr(api, 'load_evidence', lambda *args: pytest.fail('accepted failed run'))
+    monkeypatch.setenv('DAESINGO_MYSQL_URL', 'mysql+pymysql://root@localhost/test')
+    monkeypatch.delenv('PYTEST_ADDOPTS', raising=False)
+    exception = subprocess.TimeoutExpired if error == 'timeout' else subprocess.CalledProcessError
+    with pytest.raises(exception):
+        api.run_mysql(tmp_path)
+    expected = stages[:stages.index(failed_stage)+1]
+    assert len(calls) == len(expected)
+    timing_file, = tmp_path.rglob('timings.jsonl')
+    records = [json.loads(line) for line in timing_file.read_text().splitlines()]
+    assert [record['stage'] for record in records] == expected
+    assert [record['outcome'] for record in records] == [
+        *(['success'] * (len(expected)-1)), 'timeout' if error == 'timeout' else 'failed']
+    assert bool(list(tmp_path.rglob('manifest.json'))) is (failed_stage == 'actual-report-mutations')
 
 
 def test_cli_required_uses_fail_closed_exit_status(tmp_path):
