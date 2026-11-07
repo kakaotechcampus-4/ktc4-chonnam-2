@@ -16,6 +16,8 @@ from daesingo.recording.mysql_repository import MySQLRecordingRepository
 def run(data):
     source = Path(sys.modules[MySQLRecordingRepository.__module__].__file__).resolve()
     assert source.is_relative_to(Path(data['source_root']).resolve())
+    if data['action'] == 'preview_api':
+        return preview_api(data)
     if data['action'] == 'migrate':
         from daesingo.common.db.migrate import upgrade_all
         upgrade_all(sa.engine.make_url(data['url']))
@@ -42,6 +44,35 @@ def run(data):
             return result
     finally:
         engine.dispose()
+
+
+def preview_api(data):
+    """Use the exact release's real API composition and repository defaults."""
+    import hashlib
+    import os
+    from io import StringIO
+    from fastapi.testclient import TestClient
+    from daesingo.api.app import create_app
+    from daesingo.api.bootstrap import bootstrap
+    os.environ['DAESINGO_ENV_FILE'] = data['env_file']
+    with TestClient(create_app(startup=bootstrap(revision='compat-preview', stream=StringIO()))) as client:
+        cid = data['case_id']
+        view = client.get(f'/cases/{cid}/view')
+        assert view.status_code == 200
+        if data.get('operation') == 'request':
+            response = client.post(f'/cases/{cid}/commands', json={
+                'case_id': cid, 'expected_case_rev': view.json()['case_rev'],
+                'kind': 'REQUEST_CANDIDATE_VIDEO_PREVIEW',
+                'payload': {'candidate_id': data['candidate_id']}})
+        elif data.get('operation') == 'clip':
+            response = client.get(f"/cases/{cid}/candidate-videos/{data['clip_ref']}")
+            return {'status': response.status_code, 'bytes': len(response.content),
+                    'sha256': hashlib.sha256(response.content).hexdigest()}
+        else:
+            response = view
+        module = sys.modules.get('daesingo.case.candidate_video')
+        return {'status': response.status_code, 'body': response.json(),
+                'writer_enabled': None if module is None else getattr(module, 'PREVIEW_REQUESTS_ENABLED', True)}
 
 
 def jobs(engine, data):
@@ -82,10 +113,15 @@ def jobs(engine, data):
         return {'terminal': 'SUCCEEDED'}
     if data['action'] == 'job_reflect':
         with engine.begin() as conn:
-            row = conn.exec_driver_sql('SELECT execution_id,job_id,kind,attempt,status,produced FROM job_execution WHERE case_id=%s', (data['case_id'],)).mappings().one()
+            query = 'SELECT execution_id,job_id,kind,attempt,status,produced,trace_id FROM job_execution WHERE case_id=%s'
+            values = (data['case_id'],)
+            if data.get('job_kind'):
+                query += ' AND kind=%s'
+                values += (data['job_kind'],)
+            row = conn.exec_driver_sql(query, values).mappings().one()
             terminal = HandlerResult(status=row['status'], produced=json.loads(row['produced']))
             incoming = ReflectionInput(row['execution_id'], row['job_id'], data['case_id'], row['kind'], row['attempt'], terminal)
-            result = reflect_terminal(conn, incoming, CaseReflector(reader=ProducedReader(), timelines=Timeline()), 'trace-transition')
+            result = reflect_terminal(conn, incoming, CaseReflector(reader=ProducedReader(), timelines=Timeline()), row['trace_id'])
         return {'reflection': result.status}
     with engine.begin() as conn:
         case = cases.load(conn, data['case_id'], lock='update')

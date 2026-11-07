@@ -17,7 +17,9 @@ from daesingo.recording.mysql_repository import _key
 pytestmark = pytest.mark.mysql
 ROOT = Path(__file__).parents[2]
 REVISIONS = {'e50': 'e50b2976ef4edc3a030cfc5b03a5206340dd917b',
-             'bridge': 'ce0750d5a3317ad1c810783d67f8a05ba88bce08'}
+             'bridge': 'ce0750d5a3317ad1c810783d67f8a05ba88bce08',
+             'preview_source': '70f1c47cbc7c08fa848d057687f7130047f1126c',
+             'preview_final': 'bb29d750d23765a73b7b6853b22086648684a392'}
 
 
 @pytest.fixture(scope='session')
@@ -161,3 +163,86 @@ def test_actual_revisions_job_t1_t2_and_receipt(mysql_engine, tmp_path, releases
     loaded = invoke(releases, 'bridge', url, tmp_path, 'case_roundtrip', case_id=case_id)
     assert loaded['result'] == {'budget': budget, 'future_key': {'kept': [1, 2]},
                                 'processed': 1, 'stage': 'CANDIDATE_REVIEW'}
+
+
+@pytest.mark.mysql_check('candidate_video', 'compatible_bridge')
+def test_actual_preview_writer_reader_bridge(mysql_engine, tmp_path, monkeypatch, releases):
+    """Pinned 70f reads bridge data; pinned C emits; actual bridge processes and reuses."""
+    import hashlib
+    from daesingo.case import candidate_video
+    from daesingo.common.db.migrate import upgrade_all
+    from test_incident_clip_mysql import prepare
+    from test_candidate_video_mysql import _client, _request, _run, _settle_evidence, _view
+    assert candidate_video.PREVIEW_REQUESTS_ENABLED is False
+    upgrade_all(mysql_engine.url)
+    cid, root, _, startup = prepare(mysql_engine, tmp_path, monkeypatch,
+                                    frame_candidates=3, coarse_frames=True)
+    _settle_evidence(mysql_engine, startup, root, cid)
+    env_file = str(tmp_path / 'peer.env')
+    args = {'case_id': cid, 'env_file': env_file}
+
+    def call(release, **options):
+        response = invoke(releases, release, mysql_engine.url, root, 'preview_api', **args, **options)
+        assert response['ok'], response
+        return response['result']
+
+    def state():
+        with mysql_engine.connect() as conn:
+            return (conn.exec_driver_sql('SELECT case_rev,CAST(state AS CHAR) FROM cases WHERE case_id=%s', (cid,)).one(),
+                    conn.exec_driver_sql('SELECT execution_id,kind,status,case_applied_at FROM job_execution WHERE case_id=%s ORDER BY execution_id', (cid,)).all(),
+                    conn.exec_driver_sql('SELECT * FROM usage_record ORDER BY usage_id').all())
+
+    with _client(monkeypatch, tmp_path) as client:
+        view = _view(client, cid)
+        target = next(c['candidate_id'] for c in view['candidates'] if c['rank'] == 2)
+        before = state()
+        rejected = _request(client, cid, target)
+        assert rejected.status_code == 409
+        assert rejected.json()['error']['code'] == 'case.command.not_allowed'
+        assert state() == before
+        assert all(c['video_preview']['status'] == 'UNAVAILABLE' for c in view['candidates'])
+    # Actual old source, not a test-mode flag: read new Coarse thumbs and existing chunked clip data.
+    old = call('preview_source')
+    assert old['status'] == 200
+    assert [c['thumb_ref'] for c in old['body']['candidates']] == [c['thumb_ref'] for c in view['candidates']]
+    assert any(c['thumb_ref'] for c in view['candidates'])
+    # Exact immutable C uses its actual default API producer, no flag or mocked repository.
+    emitted = call('preview_final', operation='request', candidate_id=target)
+    assert emitted['writer_enabled'] is True and emitted['status'] == 202 and emitted['body']['ok']
+    with mysql_engine.connect() as conn:
+        rows = conn.exec_driver_sql('SELECT kind,status FROM job_execution WHERE case_id=%s AND kind=%s',
+                                  (cid, 'CANDIDATE_VIDEO_PREVIEW')).all()
+    assert rows == [('CANDIDATE_VIDEO_PREVIEW', 'QUEUED')]
+    pending = state()
+    reused = call('final', operation='request', candidate_id=target)
+    assert reused['writer_enabled'] is False and reused['status'] == 200 and reused['body']['ok']
+    assert state() == pending
+    # Bridge's unchanged real default Worker builds/stores the clip and commits T1/T2.
+    assert _run(mysql_engine, startup, root, {'CANDIDATE_VIDEO_PREVIEW'}, 1) == ['CANDIDATE_VIDEO_PREVIEW']
+    assert candidate_video.PREVIEW_REQUESTS_ENABLED is False
+    ready = call('final')
+    card = next(c for c in ready['body']['candidates'] if c['candidate_id'] == target)
+    assert card['video_preview']['status'] == 'READY'
+    clip_ref = card['video_preview']['clip_ref']
+    b_clip = call('final', operation='clip', clip_ref=clip_ref)
+    c_clip = call('preview_final', operation='clip', clip_ref=clip_ref)
+    assert b_clip == c_clip and b_clip['status'] == 200 and b_clip['bytes'] > 0
+    with mysql_engine.connect() as conn:
+        payload, content = conn.exec_driver_sql('SELECT payload,content FROM recording_entry WHERE kind=%s AND entry_key=%s',
+                                               ('incident_clip', _key(clip_ref))).one()
+        assert set(json.loads(payload)) == {'__recording_prepared_metadata__'} and content is None
+        assert conn.exec_driver_sql('SELECT COUNT(*) FROM recording_media_chunk WHERE kind=%s AND entry_key=%s',
+                                    ('incident_clip', _key(clip_ref))).scalar_one() > 0
+        heads = {name: conn.exec_driver_sql('SELECT version_num FROM '+name+'_alembic_version').scalar_one()
+                 for name in ('case', 'recording', 'runtime')}
+    assert heads == {'case': 'case_0001', 'recording': 'recording_0002', 'runtime': 'runtime_0006'}
+    before = state()
+    redelivery = invoke(releases, 'final', mysql_engine.url, root, 'job_reflect',
+                        case_id=cid, job_kind='CANDIDATE_VIDEO_PREVIEW')
+    assert redelivery['ok'] and redelivery['result']['reflection'] == 'ALREADY_APPLIED'
+    assert call('final', operation='request', candidate_id=target)['body']['ok']
+    assert state() == before
+    c_view = call('preview_final')['body']
+    assert next(c for c in c_view['candidates'] if c['candidate_id'] == target)['video_preview'] == card['video_preview']
+    assert hashlib.sha256((releases['preview_final']/'src/daesingo/case/candidate_video.py').read_bytes()).digest() != \
+           hashlib.sha256((ROOT/'src/daesingo/case/candidate_video.py').read_bytes()).digest()

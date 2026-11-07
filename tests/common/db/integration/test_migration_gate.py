@@ -25,7 +25,7 @@ from frame_acceptance import FRAME_CHECKS, FRAME_PARAMETERS
 from asset_acceptance import ASSET_CHECKS, ASSET_PARAMETERS
 # Independent copy of the gate list: tests/worker/test_candidate_video_mysql.py (#554).
 CANDIDATE_VIDEO_CHECKS = tuple(("candidate_video", s) for s in (
-    "counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1", "tcp_process", "commit_unknown", "parallel_fine", "storage_damage", "source_lost", "stale_generation", "process_kill", "range_concurrency"))
+    "counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1", "tcp_process", "commit_unknown", "parallel_fine", "storage_damage", "source_lost", "stale_generation", "process_kill", "range_concurrency", "compatible_bridge"))
 from observability_acceptance import OBSERVABILITY_CHECKS, OBSERVABILITY_PARAMETERS
 
 pytestmark = pytest.mark.mysql
