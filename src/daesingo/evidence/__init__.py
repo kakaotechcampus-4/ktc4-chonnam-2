@@ -23,6 +23,7 @@ from .requirements import (
     aggregate_outcomes,
     build_report_package,
     evaluate_requirements,
+    render_report_draft,
 )
 from .time_resolution import resolve_time
 from .validation import validate_contract
@@ -50,6 +51,7 @@ __all__ = [
     "correction_heads",
     "evaluate_requirements",
     "render_report",
+    "render_report_draft",
     "resolve_independent_facts",
     "resolve_time",
     "validate_contract",

@@ -29,9 +29,10 @@ class SharedScenarioIntegrationTests(unittest.TestCase):
         guard = result["policy_guard_check"]
         self.assertEqual("CONFIRMED", guard["shared_case_situation_confirmation"])
         self.assertEqual(guard["shared_case_situation_confirmation"], CONFIGS["scenario_happy_001"]["situation_response"]["value"])
-        self.assertEqual("report.input.situation_unconfirmed", guard["without_confirmation"]["render_error"])
-        self.assertFalse(guard["without_confirmation"]["normal_final_report_emitted"])
-        self.assertFalse(guard["without_confirmation"]["report_package_emitted"])
+        observed = guard["without_confirmation"]
+        self.assertNotIn("situation_response", observed["evidence_record"])
+        report = outputs["report_packages"][0]["report"]
+        self.assertEqual({key: report[key] for key in ("title", "description")}, observed["report_draft"])
         self.assertEqual("EVIDENCE_TEST_DERIVED", result["execution_mode"]["case_context"])
         self.assertTrue(result["consumer_mock"]["package_ready"])
         self.assertEqual("CASE_OWNED_NOT_DERIVED", result["consumer_mock"]["user_reviewed"])

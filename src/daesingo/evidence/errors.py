@@ -9,6 +9,15 @@ class ContractInputError(EvidenceError):
     """An upstream value does not satisfy the consumed contract."""
 
 
+class ReportContentLengthError(ContractInputError):
+    """The rendered description is outside the report policy's length range."""
+
+    def __init__(self, length: int, template_ref: str):
+        super().__init__("rendered report description is outside the 5..900 character policy")
+        self.length = length
+        self.template_ref = template_ref
+
+
 class InvalidCorrectionValue(ContractInputError):
     """A correction's `new_value` is outside its target's value space.
 
