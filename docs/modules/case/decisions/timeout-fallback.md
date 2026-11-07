@@ -16,12 +16,12 @@
 
 - **timeout·중단 시 무엇을 보여줄지**는 `product/core-user-flow.md` §7(분석 중단 — 현재까지 후보 유지 + `이어서 찾기` + `조건 수정`)과 §22(결과 없음 — 출구 4개)가 정했다. 「직접 타임라인」 화면은 두지 않는다(§22).
 - runtime의 lease·heartbeat·retry timing은 `common/runtime`이 소유한다(`module-architecture.md` §2 원칙 6). `case`가 정하는 것은 「얼마나 기다린 뒤 부분 결과로 전환하는가」와 「그때 어떤 Job을 취소/유지하는가」다.
-- search 실행 상한의 단일 권위는 `AnalysisScope.budget.max_latency_sec`다(#149 A안, #180). 아래 값은 case가 Job마다 이 필드로 넘기는 값이다. Fine은 scope를 받지 않으므로 **case가 후보당 상한(아래 표 70초)을 Fine 호출마다 `max_latency_sec`로 넘기고**, search는 호출마다 새 시계로 센다(PR #328). Worker 경로에서는 **case가 Fine 발주 때 관찰 입력 `max_latency_sec`에 고정하고 handler가 그 값을 읽는다** — Coarse scope 상한을 fallback으로 쓰지 않는다(2026-10-26 #407 Runtime 결정 (a), `incident-clip-observation-input.md` §4-1). *(이전 문구 「Coarse scope의 상한을 이어받는다」(#180)는 search가 Fine 상한을 따로 받기 전의 동작이다.)*
+- search 실행 상한의 단일 권위는 `AnalysisScope.budget.max_latency_sec`다(#149 A안, #180). 공개 RC의 Coarse 실행 예산과 Case 대기 마감은 [Case 대기 결정](case-wait-timeout.md) §3-2·§3-8·§3-10을 따른다. Fine은 scope를 받지 않으므로 **case가 후보당 상한(아래 표 70초)을 Fine 호출마다 `max_latency_sec`로 넘기고**, search는 호출마다 새 시계로 센다(PR #328). Worker 경로에서는 **case가 Fine 발주 때 관찰 입력 `max_latency_sec`에 고정하고 handler가 그 값을 읽는다** — Coarse scope 상한을 fallback으로 쓰지 않는다(2026-10-26 #407 Runtime 결정 (a), `incident-clip-observation-input.md` §4-1). *(이전 문구 「Coarse scope의 상한을 이어받는다」(#180)는 search가 Fine 상한을 따로 받기 전의 동작이다.)*
 - **영상을 클립으로 나누는 범위와 나눈 뒤 후보 순서·경계 중복**은 #168이 정했다([Case 결정](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/168#issuecomment-5889291979)) — 인라인 상한 안의 영상은 클립 1개(Run 1개), 넘는 영상만 나눈다.
 
 ## 잠정값 (2026-09-28)
 
-> **잠정.** 로컬 4코어 머신에서 잰 값이다. Coarse 시간의 절반 이상이 로컬 ffmpeg 전처리라 **runtime 머신에서 다시 재야** 확정할 수 있다(search Owner가 가장 중요한 미측정 항목으로 꼽음). 재측정 결과가 나오면 이 표를 갱신한다.
+> **2026-09-28 측정과 잠정값 기록.** Coarse 150초는 당시 기준이다. 로컬 4코어 머신에서 잰 값이다. Coarse 시간의 절반 이상이 로컬 ffmpeg 전처리라 **runtime 머신에서 다시 재야** 확정할 수 있다(search Owner가 가장 중요한 미측정 항목으로 꼽음). 현재 공개 RC의 Coarse 기준은 위 Case 대기 결정을 참조한다.
 
 | 항목 | 잠정값 | 근거(#182 실측) |
 | --- | --- | --- |
@@ -43,5 +43,5 @@
 | --- | --- | --- |
 | 위 잠정값 확정 | 잠정 | runtime 머신 재측정(`common/runtime` 배치 후). **Recording 준비 · 큐 대기 · Search를 나눠 잰다**(2026-10-29, #452 — case 대기 마감은 셋을 모두 포함한다, `long-analysis-range.md` §3). Fine 70초는 근거 표본이 29회(#182)뿐이고 시계가 전처리 · provider 호출 · 재시도 대기를 모두 포함하므로, 재측정 때 **Fine timeout 발생 횟수**도 함께 본다(#328) |
 | Fine 70초 실제 적용 | Worker 경로 반영(2026-10-26, #412) · 동기 경로 미반영 | Worker 경로는 관찰 입력 `max_latency_sec`(`observation.FINE_MAX_LATENCY_SEC`)로 handler에 넘긴다. 동기 경로 `real_e2e.py`는 아직 Coarse 값(150초)을 이어받는다 |
-| 클립 분할 발주 구현 | 미구현 · **MVP 범위 밖**(2026-10-29, #452 — `long-analysis-range.md`. 상한을 넘는 범위는 Recording이 변환 전에 거르고 case가 구분된 notice로 알린다. 분할 크기에는 Recording 저장 상한도 들어가야 한다) | 지금 case는 영상을 클립으로 나누지 않고 Coarse를 한 번에 부른다(`real_e2e.py`, 상한 150초 — #200). 분할은 인라인 상한을 넘는 영상에만 필요하고(#168 (c)), 그 전에 #168에 남은 overlap 길이·중복 제거 호출 지점을 정한다 |
+| 클립 분할 발주 구현 | 미구현 · **MVP 범위 밖**(2026-10-29, #452 — `long-analysis-range.md`. 상한을 넘는 범위는 Recording이 변환 전에 거르고 case가 구분된 notice로 알린다. 분할 크기에는 Recording 저장 상한도 들어가야 한다) | Case는 영상을 클립으로 나누지 않고 Coarse를 한 번 발주한다. 동기 `real_e2e.py`의 150초는 별도 경로의 값이다(#200). 분할은 인라인 상한을 넘는 영상에만 필요하고(#168 (c)), 그 전에 #168에 남은 overlap 길이·중복 제거 호출 지점을 정한다 |
 | 부분 재실행 정책 표와의 정합 | 미결 | `module-architecture.md` §7-4 |

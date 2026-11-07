@@ -6,6 +6,7 @@
 
 - `ownership.md` — 현재 역할 배정안 (모듈 Owner + 운영 역할)
 - `project-operating-plan.md` — 1.3에서 옮긴 운영 원칙과 주간 리듬. 실제 일정은 팀 Notion
+- [`rc-scope-2026-11-05.md`](rc-scope-2026-11-05.md) — 11/5 PM RC 포함·제외·P0 차단·조건부 수용·11/9 동결 판정. 사용자 지원 범위·배포 보호는 Product/Ops Spec을 따른다
 - `pre-deploy-security-review.md` — 배포 전 보안·개인정보 검수표 (담당 Owner · 확인일 · PASS/WARN/BLOCK)
 - `tool-trajectory-review.md` — 결과가 아니라 **경로**가 맞았는지 판정하는 절차 (목데이터 통합 1회 + 데모 직전 1회)
 - `cross-cutting-decisions.md` — 모듈 경계 밖 운영 책임 11건의 결정 기록

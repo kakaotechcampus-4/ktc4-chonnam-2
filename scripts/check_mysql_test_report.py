@@ -34,11 +34,13 @@ REQUIRED_CHECKS = frozenset({
 
     *(('observability', s) for s in ('distribution','boundaries','transaction','catalog','privacy')),
     *(("api_asset", s) for s in ("read", "isolation", "exact_identity", "corruption", "transaction", "failure", "interruption", "send")),
+    # #554 candidate video preview: tests/worker/test_candidate_video_mysql.py
+    *(("candidate_video", s) for s in ("counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1", "tcp_process", "commit_unknown", "parallel_fine", "storage_damage", "source_lost", "stale_generation", "process_kill", "range_concurrency", "compatible_bridge")),
     *(("api_frame", s) for s in ("read", "isolation", "concurrency", "connection", "failure", "transaction", "send_lifetime", "corrupt_scope", "exact_identity")),
     *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
         "commit_unknown", "reader", "process", "redelivery", "migration", "transaction", "receipt", "json")),
     *(("api_upload", s) for s in ("durability", "atomicity", "concurrency", "receive", "taxonomy", "filename", "abort", "failure", "interruption", "limit", "transport", "storage")),
-    *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy", "media_read", "media_validation", "media_failure", "exact_ownership", "exact_purge", "exact_privacy")),
+    *(("recording", s) for s in ("restore", "transaction", "ownership", "identity", "storage", "concurrent", "failure", "migration", "compatibility", "registration_input", "registration_taxonomy", "media_read", "media_validation", "media_failure", "exact_ownership", "exact_purge", "exact_privacy", "chunked_media", "compatible_release")),
     *(("api_start_analysis", s) for s in ("atomicity", "rollback", "dependency", "commit_unknown", "repeat", "response_loss")),
     ("async_e2e", "lifecycle"),
     *(("api_cancel", s) for s in ("atomicity", "rollback", "commit_unknown", "repeat", "interruption", "delivery")),
@@ -141,6 +143,24 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("recording", "compatible_release", parameter) for parameter in (
+        "new_analysis_source_content", "new_analysis_source_metadata",
+        "new_incident_clip_content", "new_incident_clip_metadata",
+        "default_api_content", "default_api_metadata",
+        "default_worker_analysis_content", "default_worker_analysis_metadata",
+        "default_worker_incident_content", "default_worker_incident_metadata",
+        "replay_analysis_source", "replay_incident_clip", "precision_content", "precision_metadata",
+        "atomic_link", "packet", "facade_rollback", "attach_legacy", "attach_chunked", "corrupt_replay", "rr_current_legacy", "rr_current_chunked", "rr_current_metadata",
+        "revision_analysis_source", "revision_incident_clip", "job_e50_bridge_final",
+        "job_bridge_final_bridge", "job_final_bridge_bridge", "job_bridge_e50_e50")),
+    *(("recording", "chunked_media", parameter) for parameter in (
+        "bounded", "detached", "duplicate", "replay", "metadata", "commit_unknown", "search_consumer",
+        "atomic_chunk", "atomic_manifest", "atomic_case_link",
+        "corrupt_missing", "corrupt_changed", "corrupt_extra", "corrupt_order", "corrupt_oversize", "corrupt_manifest",
+        "concurrent_equal", "concurrent_conflict", "legacy_analysis_source", "legacy_incident_clip")),
+    *(("recording", "chunked_media", prefix + "_" + kind)
+      for prefix in ("exact", "exact_attach", "exact_legacy", "exact_corrupt")
+      for kind in ("analysis_source", "incident_clip")),
     ('exhaustion', 'port', 'exact_execution_id'),
     ('exhaustion', 'cancellation', 'delivery'),
     ('exhaustion', 'cancellation', 'recovery'),

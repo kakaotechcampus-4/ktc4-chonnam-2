@@ -23,7 +23,7 @@ runtime experiments
 - api + worker + mysql이 같은 baseline host에서 함께 동작할 때 자원 경합이 있는가
 - ffmpeg materialization과 provider request construction의 peak working set은 얼마인가
 - Worker concurrency를 늘릴 여유가 실제로 있는가
-- process-local reuse가 restart/다중 Worker에서도 충분한가
+- 실행 내 reuse·반복 job의 재준비·durable ref 읽기 비용이 restart/다중 Worker에서 어떻게 달라지는가
 - failure/crash 후 temp asset과 실행 상태가 회수되는가
 - long-duration Real E2E가 현재 storage/capacity 가정을 깨는가
 
@@ -81,11 +81,35 @@ Plan 단계에서는 다음을 하지 않는다.
 
 | 문서 | 상태 | 닫으려는 질문 |
 | --- | --- | --- |
+| [O6 provider 실패 연결 검증 2026-11-07](./2026-11-07-o6-provider-failure-validation.md) | Result · fake provider 연결 3 + 관련 6 + 기록 응답 웹 2 PASS | 기존 retry 정책의 성공/소진 → Worker T1/T2 → Case 실패 안내·사용자 retry. 600초는 시계 모사이며 실제 provider·AWS·브라우저 이동은 미검증. 추가 회귀·hash·재현 절차는 본문 |
+| [기존 EC2 20개·20분 제품 E2E 2026-11-07](./2026-11-07-ec2-20file-product-e2e-result.md) | Result · 운영자 제공 증거, 선택 후보 OBSERVED·Package READY·다운로드/재생 PASS, O1 호스트 표본 확보 | 정밀 Job/queue·token·latency와 약10분 CPU 평균·실행 중 메모리2표본. Worker 단독/peak·비용은 미확인. 26분 보류, Coarse600초 유지·필요 시 재검토. O6는 별도 근거 |
+| [기존 EC2 전체15개 Coarse 준비 실측 2026-11-05](./2026-11-05-ec2-full15-coarse-preparation-result.md) | Result · 운영자 제공 증거, 준비/guard/자동복구 PASS · 제품 E2E NOT_RUN | #580 고정 실행물의173.771196208초·완성 media34,016,924B·입력/출력 duration·표본 메모리/cgroup peak 구분.900초는 실험 상한이며 E2E 예산 확정 아님 |
+| [EC2 Recording 격리 실행 준비](./2026-11-03-ec2-recording-probe-runbook.md) · [로컬 검증 기록](./2026-11-03-ec2-recording-probe-validation.md) | IN_PROGRESS · 로컬 실행물 준비, EC2 NOT_RUN | 최신 source/image/도구 결속·운영 target 배제·공유4GiB 예산·단계별10초/120초 측정과 원래 서비스 복귀 |
+| [Recording CPU quota 대조 2026-11-03](./2026-11-03-recording-cpu-quota-probe.md) | IN_PROGRESS · 새 승인 g의 실제 smoke·A1/B/A2 PASS, 출력 동일 | 준비132.800/114.251/131.314초·B 관측13~14% 감소. 단회/cache·호스트 한계·이전 실패 보존. 배포20분 성능·과거 차이 전체는 미확정 |
+| [Recording 준비 시간 재집계 2026-11-03](./2026-11-03-recording-preparation-timing.md) | Analysis · #452 원인별 기여도 미확정 | #552 보호 events/trace의 중첩 없는 시간 분해·CPU/청크 인과 한계·대표 구간 및 배포 후속 측정안. 새 실영상/운영 실측은 NOT_RUN |
+| [P2-0c 격리 capacity override 2026-11-03](./2026-11-03-capacity-override.md) | Result · 240/480초 준비 경계 PASS, 720초 Search40MiB 거부 | Analysis 전용 유한 override·packet64MiB 유지. provider 직전 차단 실험이며1200초·배포 E2E는 NOT_RUN |
+| [#544 이후 청크 저장 규모 재검증 2026-11-03](./2026-11-03-chunked-capacity-recheck.md) | Result · 합성38,359,627B DB 대조 PASS | 최초 disk/RAM 중단·harness 실패 보존. packet64MiB에서 저장·분할 조회·rollback 개선 확인, 20분/큰 복원 미검증 |
+| [Incident 720p 설정 적용·실영상 E2E 2026-11-02](./2026-11-02-incident720-config-real-e2e.md) | Result (운영자 제공 증거·로컬 metadata/hash 재확인) | EC2 5초 단독 측정, config 적용, 변경 후 실영상 결과와 비통제 시간 비교의 한계 |
 | [RT-14 AWS 배포·Real E2E 2026-10-31](./2026-10-31-rt14-aws-real-e2e.md) | Result | 실제 EC2 배포·public smoke·7 job 실행과 최종 Package READY의 입력 조건을 구분한 단회 acceptance |
-| [Elice Runtime Capacity Smoke Plan](./elice-runtime-capacity-smoke-plan.md) | Planned | #95 P0/P1 경로를 baseline EC2에서 실행할 때 CPU/RAM/disk/queue/reuse가 안전한가 |
+| [Runtime Capacity Smoke Plan — P2 (Elice ML API)](./elice-runtime-capacity-smoke-plan.md) | Planned · 2026-11-02 구현/Product 정합성 반영, 미실행 | 0a 현 baseline rejection 회귀 / 0b 현 baseline 안 characterization / 0c 격리 experimental override로 최초 병목·최소 20분 logical timeline 가능성 판단. RT-14 단회 acceptance와 구분 |
 | [Pre-implementation Spike 2026-10-03](./pre-implementation-spike-2026-10-03.md) | Result | workflow §5 A Decision의 기술 semantics — claim lock(RR/RC) · conditional UPDATE 경합 · Compose secret file · shared volume rename. capacity 실험이 아니다 |
 
-P2 결과가 현재 가정을 크게 바꾸면 그 결과를 바탕으로 P3 30분~1시간 Runtime E2E plan을 별도로 만든다. P3 문서를 선작성해 가정을 고정하지 않는다.
+[P2 수정 전 감사](../reviews/runtime-p2-plan-audit-2026-11-02.md)는 기존 A~F 판정·현재 코드 경로·계측 공백을 기록한다.
+RT-14 Result의 §14~§15와 Recovery §10에는 재부팅·DB/media 격리 복원의 운영자 제공 후속 결과가 있다.
+이를 P2 capacity 완료 또는 RT-14 전체 완료로 확대하지 않는다.
+
+[Product Spec](../../product/product-spec.md)의 핵심 약속은 장시간·다중 블랙박스에서 사건 후보를 먼저 찾는 것이다.
+4분/48 MiB는 초기 배포 안전 baseline·현재 config snapshot이며 최종 제품 지원 길이가 아니다.
+약 19분 26초/22개 입력의 baseline rejection PASS도 제품 지원 범위 밖 확정이나 장시간 문제 해결을 뜻하지 않는다.
+최소 20분 logical timeline은 이번 PM 요청의 **검증 목표/decision target**이며 현재 지원 확정값이 아니다.
+
+P2-0c에서는 운영과 분리된 target에 근거·유한한 안전 한도·복귀 계획을 갖춘 experimental override를 허용한다.
+운영 baseline 변경이나 측정값의 자동 production 승격과 구분한다. 현 single-source/단일 Coarse 구조가
+제품 목표를 충족하지 못하면 bounded/chunked processing·storage·Search 요청·Case merge/dedup 등을
+포함한 cross-module 설계를 다시 연다. 채택 방식은 아직 미정이며 제품 지원 범위 변경의 최종 승인자는 PM이다.
+
+P3는 **30분~1시간 logical timeline Real E2E**다. single AnalysisSource인지 다른 bounded 처리인지 미정이며,
+P2 결과와 Recording/Case/Search의 장시간 지원 설계 결정 후 정한다.
 
 ## Routing
 

@@ -137,7 +137,11 @@
           "situation_confirmation": "USER_UNSURE",
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "video_preview": {
+            "status": "UNAVAILABLE",
+            "clip_ref": null
+          }
         }
       ],
       "evidence": {
@@ -358,7 +362,11 @@
           "situation_confirmation": "USER_UNSURE",
           "timeline_revision": 1,
           "stale_revision": false,
-          "stale_revision_label_key": null
+          "stale_revision_label_key": null,
+          "video_preview": {
+            "status": "UNAVAILABLE",
+            "clip_ref": null
+          }
         }
       ],
       "evidence": {
@@ -567,6 +575,7 @@
           "violation_expression"
         ],
         "artifact_ref": "da_u001_report_video",
+        "plate_image_ref": "da_u001_plate_image",
         "capabilities": [
           "DOWNLOAD_ASSETS",
           "COPY_FIELDS",

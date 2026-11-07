@@ -2,12 +2,14 @@
 
 **Refs #460 · #450 · 2026-11-01, `develop` `23a26987` 코드 기준**
 
+2026-11-03 Web build 전달 경로 추가: 지정 브랜치 기준이며 #541 consumer와 실제 배포의 통합·검증은 별도다([검증 기록](../runtime/reviews/kakao-map-build-config-2026-11-03.md)). 기존 운영 snapshot의 기준일은 유지한다.
+
 서버를 띄우거나 Local E2E · AWS E2E · publish/deploy를 할 때 필요한 **설정 이름**과
 그 값이 공개 가능한지, 실제 값이 어디에 있는지를 한 곳에서 찾기 위한 문서다.
 
 - **실행 절차는 여기 없다.** 아래 §7의 기존 runbook으로 간다.
-- **키별 의미·허용값·코드 기본값의 원문**은 [canonical guide](../runtime/local-runtime-environment.md)다. 이 문서는 그 표를 복제하지 않고 이름·필수 여부·값 분류만 모은다.
-- 이 문서가 원문인 것은 [§3 Recording baseline v1](#3-recording-초기-배포-baseline-v1)과, 흩어져 있던 이름·구조를 모은 인벤토리다.
+- **API/Worker runtime 키별 의미·허용값·코드 기본값의 원문**은 [canonical guide](../runtime/local-runtime-environment.md)다. 이 문서는 그 표를 복제하지 않고 이름·필수 여부·값 분류만 모은다. Web build 입력의 원문은 이 문서 §2.4다.
+- 이 문서가 원문인 것은 [§3 Recording baseline v1·현재 적용값](#3-recording-초기-배포-baseline-v1)과, 흩어져 있던 이름·구조를 모은 인벤토리다.
 - 실제 팀 환경의 값(account·instance·경로·hostname·허용 IP 등)과 Secret 보관 위치는 **팀 Notion 엔지니어링 위키의 「운영 비공개 정보」**에 있다.
 
 ## 1. 공개 구분 규칙
@@ -22,6 +24,7 @@
 
 판단이 애매하면: 다른 팀이 같은 코드로 배포해도 같은 값이면 repo, 우리 계정·서버에서만 의미 있으면 Notion이다.
 GitHub **Variable** 값은 공개 Actions 로그의 step `env`에 그대로 찍힌다. 로그에 나와도 되는 값만 Variable로 둔다.
+§2.4의 카카오 JavaScript 공개 키는 브라우저 bundle에 의도적으로 포함되는 설정이다. 비밀 credential과 구분하며 실제 키 값을 이 문서·테스트·명령 예시·검증 로그·PR에 복제하지 않는다.
 
 ## 2. Local / Local E2E
 
@@ -61,7 +64,7 @@ GitHub **Variable** 값은 공개 Actions 로그의 step `env`에 그대로 찍�
 
 - 선택 키는 빈 문자열로 두지 말고 줄을 생략한다. Coarse/Fine용 `DAESINGO_GEMINI_*`에 빈 값을 넣으면 기본값으로 돌아가지 않는다(Intent는 빈 값을 기본값으로 처리).
 - Search Coarse/Fine은 `gemini-4-argon`, Intent는 `gemini-3.8-flash`가 코드 기본값이다([Search Owner 결정](../modules/search/decisions/search-argon-model-2026-10-27.md)). 예전 Flash override가 남아 있으면 Coarse/Fine도 Flash로 간다.
-- **Case · Readout · Web 앱 env는 없다.** Readout 모델·cache는 image에 고정(`PADDLE_PDX_CACHE_HOME=/opt/daesingo/paddlex`, Dockerfile이 지정)이고 버전은 [canonical guide §1 · §6](../runtime/local-runtime-environment.md#1-지원-범위와-버전)에 있다. Web은 build/runtime env 없이 상대 API URL을 쓴다.
+- **Case · Readout의 별도 앱 env는 없다.** Readout 모델·cache는 image에 고정(`PADDLE_PDX_CACHE_HOME=/opt/daesingo/paddlex`, Dockerfile이 지정)이고 버전은 [canonical guide §1 · §6](../runtime/local-runtime-environment.md#1-지원-범위와-버전)에 있다. Web은 상대 API URL을 쓰며 API/Worker의 `runtime.env`를 읽지 않는다. 선택적 Web build 설정은 §2.4를 따른다.
 
 ### 2.3 개발 · 테스트 · eval 전용
 
@@ -74,7 +77,29 @@ GitHub **Variable** 값은 공개 Actions 로그의 step `env`에 그대로 찍�
 
 실행: MySQL test는 [루트 README 실행 절](../../README.md#실행)과 [CI 실행 구조](../runtime/ci-test-partitions.md), eval은 [`eval/README.md`](../../eval/README.md).
 
+### 2.4 Web 선택적 build 설정
+
+이 절이 Web 설정 이름·공급·소비 경로의 원문이다. API/Worker runtime secret 표 및 루트 `.env.example`에 섞지 않는다.
+
+| build 입력 | 필수·기본값 | 로컬 개발 공급 위치 | RT-14 publish 공급 위치 | 소비 위치·공개 범위 |
+| --- | --- | --- | --- | --- |
+| `VITE_KAKAO_MAP_KEY` | 선택, 미설정 시 빈 문자열 | `apps/web/.env.local`(루트 `.env`가 아님) 또는 build process env | Repository Variable `RT14_KAKAO_MAP_JS_KEY` → publish build step env `VITE_KAKAO_MAP_KEY` → `docker build --build-arg VITE_KAKAO_MAP_KEY` | Dockerfile `web-build`의 ARG → 같은 RUN의 npm env → `npm run build --workspace=daesingo-web` → #541 `import.meta.env.VITE_KAKAO_MAP_KEY` → 정적 JS bundle |
+
+- 사용자가 이후 설정할 위치는 저장소 **Settings → Secrets and variables → Actions → Variables → Repository variables**다. 이름은 `RT14_KAKAO_MAP_JS_KEY` 하나만 사용한다. Secret이나 API/Worker `runtime.env`가 아니다. 이번 작업에서는 실제 설정을 생성·변경하지 않는다.
+- **카카오 JavaScript 키만** 허용한다. 브라우저에 그대로 포함되므로 다운로드·열람 가능하다. GitHub Secret에 저장하더라도 bundle을 비밀로 만들지 못한다. REST API 키·관리자 키·provider/DB/AWS credential을 이 입력이나 다른 `VITE_*`로 전달하지 않는다. build arg도 비밀 전달 수단이 아니다.
+- 키 소유 앱의 JavaScript SDK 도메인 허용 목록에 실제 서비스 origin을 등록하고 카카오맵 사용 설정을 확인해야 한다. 도메인 제한이 필요하다. 키·콘솔·SDK 접근 권한·실제 지도 로드는 별도 운영 검증이며 이 배선 검증으로 입증되지 않는다.
+- Vite는 `apps/web/package.json`의 `tsc -b && vite build` 실행 시 process env를 읽고 build 때 정적으로 치환한다. `.dockerignore`의 `.env*` 제외는 유지한다. API/Worker runtime 파일 변경이나 컨테이너 restart만으로 기존 Web bundle에 키가 반영되지 않는다.
+- 미설정 Docker build도 성공해야 한다. #541이 포함된 앱은 키 없음/SDK 실패 시 지도 칸만 숨기고 기존 신고 흐름을 유지한다. **현재 지정 브랜치에는 #541 consumer가 없다.** 배선과 #541은 별도 병합 가능하지만 지도가 포함된 배포 artifact에는 두 변경이 모두 필요하다. 임시 통합 검증은 병합·배포 완료가 아니다.
+- 공개 build 입력이 달라지면 같은 source SHA라도 Web bytes와 manifest hash가 달라질 수 있다. revision marker만으로 지도 설정 반영을 판단하지 않는다. 실제 승격 검증은 **검증·게시한 정확한 image digest**, 그 image에서 추출한 Web 전체 파일 manifest와 `release.json`의 `web_sha256`, Web/API/image revision 일치를 함께 대조한다.
+- 기존 ECR `IMMUTABLE` tag는 source SHA이고 host는 `releases/<revision>` 및 `approvals/<revision>.json`을 사용한다. `deploy/ec2.py stage_web()`은 기존 경로의 image/manifest 불일치를 거부한다. **이미 게시·staging된 SHA에 키만 바꿔 다른 image를 재게시·덮어쓰지 않는다.** 키를 설정·교체한 새 build는 새 source revision으로 기존 CI/publish/승인 절차를 따른다. 같은 SHA의 여러 build variant 운영이 필요하면 image/tag/release/approval identity 설계에 대한 별도 결정이 필요하며 이번에 바꾸지 않는다.
+
+근거: [Vite env 치환·공급 우선순위](https://vite.dev/guide/env-and-mode), [Docker build 변수와 비밀 경계](https://docs.docker.com/build/building/variables/), [GitHub vars context](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#vars-context). 실제 전달 여부는 [Web stage 검증 기록](../runtime/reviews/kakao-map-build-config-2026-11-03.md)으로 구분한다.
+
 ## 3. Recording 초기 배포 baseline v1
+
+### 3.1 과거 초기 배포·재현 기준
+
+아래는 `aws-e2e-20261031-v1` 당시의 baseline v1이다. 현재 Incident 적용값은 §3.2를 따른다.
 
 ```env
 DAESINGO_RECORDING_ANALYSIS_PROFILE_REF=aws-e2e-v1
@@ -89,13 +114,29 @@ DAESINGO_RECORDING_INCIDENT_PRESET=veryfast
 DAESINGO_RECORDING_INCIDENT_CRF=23
 ```
 
-- **현재 초기 배포 baseline v1**이다. 근거: [#460 Recording Owner 정리(2026-11-01)](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6555755740), 실행 근거는 [AWS E2E 기록 §4](../runtime/experiments/2026-10-31-rt14-aws-real-e2e.md#4-aws-real-e2e-temporary-acceptance-values). 같은 값이 현재 AWS 배포 config에 들어 있다.
+- **과거 초기 배포 baseline v1**이다. 근거: [#460 Recording Owner 정리(2026-11-01)](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6555755740), 당시 실행 근거는 [AWS E2E 기록 §4](../runtime/experiments/2026-10-31-rt14-aws-real-e2e.md#4-aws-real-e2e-temporary-acceptance-values). 과거 Incident 240p 기록은 보존한다.
 - **최적 운영값 확정이 아니다.** 단회 E2E 재현 기준이며 판독 정확도 · 번호판 가독성 · 신고영상 품질을 최적으로 검증한 값이 아니다.
 - Analysis 최대 분석 범위는 **4분**(`240000` ms), 최종 분석 영상은 48 MiB다. 4분을 넘는 요청은 거부된다.
 - **약 1시간 영상 지원은 후속 실측·개선 대상**이다([#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)). 한도만 키워서 해결했다고 하지 않는다.
-- 값을 바꾸면 **`PROFILE_REF`도 새 식별자로 바꾸고** 변경 이유와 검증 근거를 남긴 뒤 이 절과 `.env.example`을 함께 갱신한다.
+- **Analysis 설정을 바꾸면 `ANALYSIS_PROFILE_REF`도 새 식별자로 바꾸고** 변경 이유와 검증 근거를 남긴 뒤 이 절과 `.env.example`을 함께 갱신한다. Incident만 변경할 때 Analysis profile 식별자는 유지한다.
 - 배포에서는 `MAX_BYTES + packet_margin_bytes < 실제 DB session max_allowed_packet`를 controller가 확인한다(현재 48 MiB + 8 MiB < 64 MiB).
 - 한도의 정확한 의미: [AnalysisSource 한도](../modules/recording/analysis-source-limits.md).
+
+### 3.2 현재 적용값 — Incident 720p (2026-11-02)
+
+운영자 제공 적용 결과 기준으로 current config는 `aws-e2e-20261102-incident720-v1`,
+previous는 `aws-e2e-20261031-v1`이다. Incident만 다음 값으로 바뀌었다.
+
+```env
+DAESINGO_RECORDING_INCIDENT_HEIGHT=720
+DAESINGO_RECORDING_INCIDENT_PRESET=veryfast
+DAESINGO_RECORDING_INCIDENT_CRF=20
+```
+
+Analysis 6개 값은 §3.1 그대로이며 `ANALYSIS_PROFILE_REF=aws-e2e-v1`을 유지한다.
+이미지·revision·비밀번호 등 나머지 설정도 유지됐다는 운영자 보고다.
+근거와 한계는 [Incident 720p 적용·실영상 E2E 기록](../runtime/experiments/2026-11-02-incident720-config-real-e2e.md)에 둔다.
+이는 현재 적용 기준이며 최적 화질·OCR 정확도·모든 입력의 성능이나 실제 신고 수용을 보장하지 않는다.
 
 ## 4. AWS E2E / production
 
@@ -253,6 +294,8 @@ IAM policy simulator로 권한을 볼 때는 조직 SCP의 region 조건 때문�
 
 ### Repository Variables
 
+Web 공개 build 입력과 설정할 위치는 [§2.4](#24-web-선택적-build-설정)에만 정의한다. 아래는 기존 배포 제어 변수다.
+
 | 이름 | 쓰는 operation | 역할 | 값 형태 | 설정/갱신 시점 |
 | --- | --- | --- | --- | --- |
 | `RT14_AWS_REGION` | 전부 | region 확인 | `ap-northeast-2`(다른 값 거부) | 고정 |
@@ -281,7 +324,7 @@ workflow 안에서는 `ECR_REPOSITORY`, `DEPLOY_IMAGE`, `DEPLOY_REVISION`, `DEPL
 | policy 실제 값 | — | host `/opt/daesingo/policy.json` |
 | 허용 IP · hostname | — | host `/etc/caddy/rt14-public.env` |
 
-값이 바뀌면: Parameter Store 갱신 → 새 config ID로 `configure.py` → `RT14_CONFIG_ID` 갱신 → 새 승인 파일 → deploy. 기존 config ID는 고치지 않는다.
+API/Worker runtime 값이 바뀌면: Parameter Store 갱신 → 새 config ID로 `configure.py` → `RT14_CONFIG_ID` 갱신 → 새 승인 파일 → deploy. 기존 config ID는 고치지 않는다. Web 공개 build 입력 변경은 §2.4의 새 artifact/image 절차를 따른다.
 
 ## 7. 실행 절차는 여기
 
@@ -297,7 +340,7 @@ workflow 안에서는 `ECR_REPOSITORY`, `DEPLOY_IMAGE`, `DEPLOY_REVISION`, `DEPL
 
 ## 8. 바꿀 때 같이 고칠 곳
 
-- env 이름을 추가 · 삭제 · 변경: 코드 consumer → `.env.example` → canonical guide 해당 절 → 이 문서 §2 · §4.
-- Recording baseline: §3과 `.env.example`을 함께, `PROFILE_REF`를 새 값으로.
+- API/Worker runtime env 이름을 추가 · 삭제 · 변경: 코드 consumer → `.env.example` → canonical guide 해당 절 → 이 문서 §2 · §4. Web build 입력은 Web/Docker/workflow 경로와 이 문서 §2.4만 정합화한다.
+- Recording 적용값: §3과 `.env.example`을 함께 갱신한다. Analysis 설정 변경 시에만 `ANALYSIS_PROFILE_REF`를 새 값으로 관리하고, Incident만 변경하면 유지한다.
 - workflow Secret/Variable 이름: workflow → 이 문서 §5 → 팀 Notion의 실제 값 표.
 - host 구조 · policy 필드 · Caddy 설정: `deploy/` 코드 또는 host 변경 → 이 문서 §4 → 필요하면 runbook.

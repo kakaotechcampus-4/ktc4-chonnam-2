@@ -1,6 +1,8 @@
-import { useEffect, useState, type JSX, type ReactNode } from 'react'
-import { Film } from 'lucide-react'
+import { useEffect, useRef, useState, type JSX } from 'react'
+import { ChevronRight, Film } from 'lucide-react'
 import { PREVIEW_UNAVAILABLE, REPRESENTATIVE_VIDEO } from '../contracts/labels.flow'
+import { decodeAviFrame } from './aviFrame'
+import { DrivingPreview } from './driving/DrivingPreview'
 
 // 대표 영상의 정지 화면 한 장. 브라우저 안에서 원본 File로 임시 주소를 만들어 앞부분 한
 // 장면을 그린다 — 서버 업로드·분석과 무관하고, 재생 기능도 없다.
@@ -12,24 +14,75 @@ const SEEK_SEC = 1
 const GIVE_UP_MS = 4000
 const MAX_WIDTH = 960
 
+function snapshot(image: CanvasImageSource, w: number, h: number): string | null {
+  if (!w || !h) return null
+  const scale = Math.min(1, MAX_WIDTH / w)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(w * scale)
+  canvas.height = Math.round(h * scale)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+  try {
+    return canvas.toDataURL('image/jpeg', 0.82)
+  } catch {
+    return null
+  }
+}
+
 export function VideoThumb(props: {
   file: File | null
   name: string
-  /** 정지 화면 위에 겹쳐 그릴 장식(진행 중 연출) */
-  overlay?: ReactNode
+  /** 분석 중 선택해서 여는 주행 게임. 미리보기 성공 여부와 무관하다. */
+  canDrive?: boolean
 }): JSX.Element {
   const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
   const [failed, setFailed] = useState<File | null>(null)
+  const [driving, setDriving] = useState<'unopened' | 'preview' | 'game'>('unopened')
+  const entry = useRef<HTMLButtonElement>(null)
+  const wasDriving = useRef(false)
+  const gameVisible = !!props.canDrive && driving === 'game'
+
+  useEffect(() => {
+    if (!props.canDrive) setDriving('unopened')
+  }, [props.canDrive])
+  useEffect(() => {
+    if (wasDriving.current && !gameVisible) entry.current?.focus({ preventScroll: true })
+    wasDriving.current = gameVisible
+  }, [gameVisible])
 
   useEffect(() => {
     const file = props.file
     if (!file) return
+    // AVI는 <video>가 열지 못하므로 첫 영상 조각을 직접 디코드한다(#595). 캡처 지점은 첫 키프레임(0초)이다.
+    if (/\.avi$/i.test(file.name) || file.type === 'video/avi' || file.type === 'video/x-msvideo') {
+      let cancelled = false
+      decodeAviFrame(file).then(
+        (frame) => {
+          const src = frame && !cancelled ? snapshot(frame.image, frame.width, frame.height) : null
+          frame?.close()
+          if (cancelled) return
+          if (src) setShot({ file, src })
+          else setFailed(file)
+        },
+        () => !cancelled && setFailed(file),
+      )
+      return () => {
+        cancelled = true
+      }
+    }
     // 임시 주소를 못 만드는 환경(테스트용 jsdom 등)에서는 바로 대체 화면이다.
     if (typeof URL.createObjectURL !== 'function') {
       setFailed(file)
       return
     }
-    const url = URL.createObjectURL(file)
+    let url: string
+    try {
+      url = URL.createObjectURL(file)
+    } catch {
+      setFailed(file)
+      return
+    }
     const video = document.createElement('video')
     video.muted = true
     video.preload = 'auto'
@@ -55,27 +108,18 @@ export function VideoThumb(props: {
 
     video.addEventListener('error', fail)
     video.addEventListener('loadedmetadata', () => {
+      if (done) return
       const d = video.duration
-      video.currentTime = Number.isFinite(d) && d > 0 ? Math.min(SEEK_SEC, d / 2) : 0.1
+      try {
+        video.currentTime = Number.isFinite(d) && d > 0 ? Math.min(SEEK_SEC, d / 2) : 0.1
+      } catch {
+        fail()
+      }
     })
     video.addEventListener('seeked', () => {
       if (done) return
-      const w = video.videoWidth
-      const h = video.videoHeight
-      if (!w || !h) return fail()
-      const scale = Math.min(1, MAX_WIDTH / w)
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.round(w * scale)
-      canvas.height = Math.round(h * scale)
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return fail()
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      let src: string
-      try {
-        src = canvas.toDataURL('image/jpeg', 0.82)
-      } catch {
-        return fail()
-      }
+      const src = snapshot(video, video.videoWidth, video.videoHeight)
+      if (!src) return fail()
       release()
       setShot({ file, src })
     })
@@ -90,14 +134,26 @@ export function VideoThumb(props: {
     <figure className="flow-thumb">
       <div className="flow-thumb-box">
         <div className={`flow-thumb-frame${src ? ' has-shot' : ''}`}>
-          {!src && (
-            <span className="flow-thumb-fallback">
-              <Film size={24} strokeWidth={1.8} aria-hidden />
-              {unavailable && <span>{PREVIEW_UNAVAILABLE}</span>}
-            </span>
+          <div className="flow-thumb-content" hidden={gameVisible}>
+            {!src && (
+              <span className="flow-thumb-fallback">
+                <Film size={24} strokeWidth={1.8} aria-hidden />
+                {unavailable && <span>{PREVIEW_UNAVAILABLE}</span>}
+              </span>
+            )}
+            {src && <img src={src} alt="" />}
+            {props.canDrive && (
+              <button type="button" ref={entry} className="flow-preview-switch is-game" onClick={() => setDriving('game')}>
+                <span className="flow-preview-invite-copy">
+                  {driving === 'unopened' ? '기다리는 동안 게임을 해보시겠어요?' : '주행 게임'}
+                </span>
+                <ChevronRight size={16} aria-hidden />
+              </button>
+            )}
+          </div>
+          {props.canDrive && driving !== 'unopened' && (
+            <DrivingPreview active={gameVisible} onBack={() => setDriving('preview')} />
           )}
-          {src && <img src={src} alt="" />}
-          {props.overlay}
         </div>
       </div>
       <figcaption>

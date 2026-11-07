@@ -24,7 +24,10 @@ from test_worker_mysql import queue  # noqa: F401
 pytestmark = pytest.mark.mysql
 
 
-def prepare(queue, tmp_path, monkeypatch, *, multisource=False):
+def prepare(queue, tmp_path, monkeypatch, *, multisource=False, frame_candidates=None,
+            coarse_frames=False, fine_scenario=None):
+    # These clip-only scenarios deliberately start with a historical Coarse
+    # payload without frames. New Coarse tests opt into real issuance explicitly.
     from fastapi.testclient import TestClient
     from daesingo.api.bootstrap import bootstrap as api_bootstrap
     from daesingo.api.app import create_app
@@ -62,13 +65,23 @@ def prepare(queue, tmp_path, monkeypatch, *, multisource=False):
         assert response.status_code == 202
     # These are integration seeds in this process; separate OS processes are
     # independently tested in e2e_runtime. Only external provider HTTP is fake.
-    for kind in ("COARSE_SEARCH", "FINE_VERIFY"):
+    for kind in (("COARSE_SEARCH",) if frame_candidates == 0 else ("COARSE_SEARCH", "FINE_VERIFY")):
         incoming, outgoing = multiprocessing.Pipe()
         try:
-            worker_peer(outgoing, str(env_file), "clip_multisource" if multisource else "clip", kind)
+            scenario = (f"clip_frames_{frame_candidates}" if frame_candidates is not None else
+                        "clip_multisource" if multisource else "clip")
+            if kind == "FINE_VERIFY" and fine_scenario is not None:
+                scenario = fine_scenario
+            worker_peer(outgoing, str(env_file), scenario, kind,
+                        legacy_coarse_frames=kind == "COARSE_SEARCH" and not coarse_frames)
             result = incoming.recv()
             assert "error" not in result, result
-            assert result["http_calls"] == 1 and result["terminals"] == [{"status": "SUCCEEDED", "failure_kind": None}]
+            assert result["http_calls"] == 1
+            if kind == "FINE_VERIFY" and fine_scenario == "fine_failed":
+                assert len(result["terminals"]) == 1 and result["terminals"][0]["status"] == "FAILED"
+                assert result["terminals"][0]["failure_kind"] is not None
+            else:
+                assert result["terminals"] == [{"status": "SUCCEEDED", "failure_kind": None}]
         finally: incoming.close(); outgoing.close()
     return case_id, root, temp, bootstrap(revision="test", stream=StringIO())
 
@@ -140,7 +153,9 @@ def test_actual_clip_once_and_durable_inputs_survive_t1_replay(queue, tmp_path, 
         terminal = conn.execute(sa.select(job_execution).where(job_execution.c.execution_id == clip_row["execution_id"])).mappings().one()
         assert terminal["status"] == "SUCCEEDED" and terminal["case_applied_at"] is not None
         content = ProducedReader()(conn, "INCIDENT_CLIP_BUILD", tuple(terminal["produced"]))
-        assert set(content) == {"incident_clip_ref"}
+        assert set(content) == {"incident_clip_ref", "preview_frame_ref", "candidate_frame_refs"}
+        assert content["preview_frame_ref"]
+        assert set(content["candidate_frame_refs"].values()) == {content["preview_frame_ref"]}
         assert conn.scalar(sa.select(sa.func.count()).select_from(produced_objects).where(produced_objects.c.job_kind == "INCIDENT_CLIP_BUILD")) == 1
         facade = stored_case_store(conn, storage_root=root)
         case = facade.get_case(case_id)
@@ -278,7 +293,10 @@ def test_two_successful_executions_can_reference_the_same_durable_clip(queue, tm
         assert len(rows) == len(calls) == 2 and all(row["status"] == "SUCCEEDED" for row in rows)
         assert rows[0]["produced"] != rows[1]["produced"]
         payloads = [ProducedReader()(conn, "INCIDENT_CLIP_BUILD", tuple(row["produced"])) for row in rows]
-        assert payloads[0] == payloads[1] and set(payloads[0]) == {"incident_clip_ref"}
+        assert payloads[0] == payloads[1]
+        assert set(payloads[0]) == {"incident_clip_ref", "preview_frame_ref", "candidate_frame_refs"}
+        assert payloads[0]["preview_frame_ref"]
+        assert set(payloads[0]["candidate_frame_refs"].values()) == {payloads[0]["preview_frame_ref"]}
         assert all(row["case_applied_at"] is not None for row in rows)
     assert queue.pool.checkedout() == 0
 

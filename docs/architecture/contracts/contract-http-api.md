@@ -51,6 +51,7 @@ web이 backend를 부르는 HTTP 경로 · status · header · body를 정한다
 | `GET` | `/cases/{case_id}/view` | `200` | CaseView 그대로 | CaseView |
 | `GET` | `/cases/{case_id}/frames/{frame_ref}` | `200` | 이미지 bytes | FrameRef |
 | `GET` | `/cases/{case_id}/assets/{asset_ref}` | `200` | 파일 bytes | DerivedAsset · ReportPackage |
+| `GET` | `/cases/{case_id}/candidate-videos/{clip_ref}` | `200` · `206` | 후보 미리보기 MP4 bytes | [후보 영상 조회](#후보-영상-조회-2026-11-02-로컬-구현) · IncidentClip |
 | `GET` | `/health/live` | `200` | `{status}` | Tech Spec §14 |
 | `GET` | `/health/ready` | `200` · `503` | `{status}` | Tech Spec §14 |
 
@@ -648,3 +649,8 @@ GET /health/ready HTTP/1.1
 4. 리뷰 반영 뒤 Status를 `Final — Accepted`로, Contract Version을 `http-api/v1`로 올리고 짝 ADR §5에 review 결과를 남긴 뒤 Accepted로 바꾼다.
 
 **충족 (2026-10-05).** 1 ~ 3의 리뷰가 PR #265에서 끝났고(web · case는 「Final을 막는 항목 없음」, recording은 §5.2 응답 시점 · §5.5 · §3.5 동의 · §5.6 방향 동의에 구현 선행 조건 유지 요청) 결론을 이 판본에 반영했다(4). 리뷰별 결과는 짝 ADR §5다. 남은 것은 §9의 구현 선행 조건 · 후속 결정뿐이다.
+
+
+## 후보 영상 조회 (2026-11-02 로컬 구현)
+
+`GET /cases/{case_id}/candidate-videos/{clip_ref}`는 현재 Case의 READY 후보 미리보기만 읽는다. 저장된 IncidentClip MP4를 `inline`, `private, no-store`, `Accept-Ranges: bytes`로 반환한다. 단일 byte Range는 206/Content-Range, 불가능한 범위는 416/`bytes */size`, 지원하지 않는 형식·multipart는 전체 200이다. validator를 발급하지 않으므로 If-Range가 있으면 전체 200이다. 알 수 없는/다른 Case ref는 기존 404 http.not_found, owned-but-unavailable은 404 http.ref_unavailable, 일시 장애는 503이다. 기존 /assets 다운로드 경로는 변경하지 않는다. 세대·범위·생성 정책은 `docs/modules/case/decisions/candidate-video-preview.md`.

@@ -4,12 +4,12 @@
 
 ## 1. 문제
 
-case는 업로드된 전체 범위를 scope 하나 · `COARSE_SEARCH` 하나(`max_latency_sec=150`)로 발주한다. 클립 분할은 구현되지 않았다(`timeout-fallback.md` 「남은 것」).
+case는 업로드된 전체 범위를 scope 하나 · `COARSE_SEARCH` 하나로 발주한다. 실행 예산은 [Case 대기 결정](case-wait-timeout.md) §3-10을 따른다. 클립 분할은 구현되지 않았다(`timeout-fallback.md` 「남은 것」).
 
 #452에서 MP4 22개(총 1,166.13초)를 한 case로 올렸을 때 두 가지가 드러났다.
 
 - **저장 상한이 먼저 걸린다.** Recording이 분석 영상(234,566,319 bytes)을 만드는 데 약 285초가 걸렸고, 그 뒤 DB 저장 상한(`max_allowed_packet` 64 MiB)을 넘어 저장 단계에서 실패했다. 실패는 원인을 구분할 수 없는 `RUNTIME_HANDLER_ERROR`로 끝난다.
-- **준비 시간이 case 대기 마감에 들어간다.** 마감은 `requested_at + 150 + 30초`(`case-wait-timeout.md` §3-2)라 큐와 Recording 준비 시간을 포함한다. Search의 실행 시계(`RunDeadline`)는 Search 호출부터 센다. 그래서 이 입력은 Search가 시작되기 전에 화면 대기가 끝난다.
+- **준비 시간이 case 대기 마감에 들어간다.** 당시 마감은 `requested_at + 150 + 30초`라 큐와 Recording 준비 시간을 포함했다. Search의 실행 시계(`RunDeadline`)는 Search 호출부터 센다. 그래서 이 입력에서는 Search가 시작되기 전에 화면 대기가 끝났다.
 
 ## 2. 결정
 
@@ -17,13 +17,13 @@ case는 업로드된 전체 범위를 scope 하나 · `COARSE_SEARCH` 하나(`ma
 2. **범위 상한의 수치는 case가 갖지 않는다.** 저장 상한(Recording)과 inline 상한(Search)은 각 Owner의 값이다. case가 「몇 분까지」를 따로 계산하면 같은 값이 두 곳에 생기고, 한쪽만 바뀌면 어긋난다.
 3. **상한을 넘는 범위는 Recording이 변환 전에 거르고, 원인을 구분할 수 있는 실패로 돌려준다**(#452 Recording 확인 요청 1). 4분 변환 뒤 일반화된 오류로 끝나지 않게 하는 것이 목적이다. Recording 답(#452, 2026-10-29): (1) 별도로 확정한 지원 길이를 넘는 요청은 변환 전에 거부하고, (2) 변환 중에도 누적 결과가 저장 한도를 넘으면 DB write 전에 중단한다. code는 Recording `ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED` · Runtime terminal `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`다. 지원 길이 수치는 Runtime profile 측정 뒤 Recording이 정한다(「약 5분」은 추정).
 4. **case는 그 실패를 탐색 실패와 다른 notice로 옮긴다.** `search.candidate_search_failed`(다시 찾기)와 구분해 「분석 범위가 너무 김」을 알린다. 같은 입력으로 다시 찾아도 결과가 같으므로 `RETRY_SEARCH`를 싣지 않는다 — 「실행 경로가 없는 action은 싣지 않는다」(CaseView 계약 B§7)와 같은 원칙이다.
-5. **150초 잠정값은 유지한다.** 이 값은 Search 실행 상한(`AnalysisScope.budget.max_latency_sec`)이고 Recording 준비 시간과 별개다.
+5. **Search 실행 상한은 `AnalysisScope.budget.max_latency_sec`로 전달한다.** 당시 150초 잠정값을 유지하기로 했으며, 이후 [Case 대기 결정](case-wait-timeout.md) §3-10에서 공개 RC 동안 600초를 유지하기로 했다.
 6. **case 대기 마감의 기산점은 지금 바꾸지 않는다.** Search 시작부터 세려면 Runtime · Recording이 「준비 끝 · Search 시작」을 case에 알려야 한다(cross-module). 결정 3대로 긴 범위가 변환 전에 거부되면, 마감에 걸리는 것은 상한 안의 범위뿐이다.
 
 ## 3. 확정 조건 · 재측정
 
 - `timeout-fallback.md` 잠정값의 확정 조건 「Runtime 머신 재측정」에 **Recording 준비 · 큐 대기 · Search를 나눠 잰다**를 더한다. #452 측정은 셋을 합친 경과만 대기 마감과 비교할 수 있었다.
-- 재측정에서 상한 안의 범위가 마감(180초)을 넘으면 그때 여유 30초 또는 기산점을 다시 정한다.
+- 당시에는 재측정에서 180초 마감을 넘으면 여유 30초 또는 기산점을 재검토하기로 했다. 2026-11-04에 준비 여유를 더하는 것으로 정했다([Case 대기 결정](case-wait-timeout.md) §3-8).
 - 참고 추정(측정 아님): #452 입력의 비율(1,166초 → 준비 240.8~285.2초)을 그대로 적용하면 5분 범위의 준비 시간은 약 62~73초다. 영상 내용 · 머신에 따라 달라진다.
 
 ## 4. 지금 한 것 · 남은 것

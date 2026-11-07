@@ -8,6 +8,7 @@ from daesingo.search import (
     build_gemini_search_service,
     search_candidates,
 )
+from daesingo.search.prompts import COARSE_PROMPT
 from daesingo.search.scope import (
     SearchBudget,
     TimelineRef,
@@ -91,7 +92,7 @@ def run(scope: dict[str, str]) -> list[dict[str, object]]:
         "contract_version": CONTRACT_VERSION,
         "processed_duration_sec": sum(clip.duration_sec for clip in prepared.clips),
         "model": service.config.model,
-        "prompt_version": "coarse-p3",
+        "prompt_version": COARSE_PROMPT.version,
         "prompt_fingerprint": records[0].prompt_fingerprint if records else None,
         "config_version": service.config.version,
         "config_fingerprint": service.config.fingerprint,

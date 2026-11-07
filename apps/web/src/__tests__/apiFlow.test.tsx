@@ -55,7 +55,7 @@ function setup(views: { get?: CaseView } = {}) {
     sendCommand: vi.fn(),
     getView: vi.fn().mockResolvedValue(ok(views.get ?? view({}))),
   }
-  const api = { ...m, frameUrl: () => '', assetUrl: () => '' } as unknown as Api
+  const api = { ...m, frameUrl: () => '', assetUrl: () => '', candidateVideoUrl: (_case: string, ref: string) => `/candidate-video/${ref}` } as unknown as Api
   return { m, api }
 }
 
@@ -115,6 +115,8 @@ it('[분석 중단]은 STOP_ANALYSIS를 보내고, 중단 화면에서 [다시 �
   fireEvent.click(await findByText('분석 중단'))
   await findByText('분석을 중단했어요.')
   expect(m.sendCommand).toHaveBeenCalledWith('c1', 2, { kind: 'STOP_ANALYSIS', payload: {} })
+  // 중단 화면으로 바뀌면 그 제목에 초점이 간다(#509 #2)
+  expect(document.activeElement?.textContent).toBe('분석을 중단했어요.')
 
   m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_rev: 4 })) // 다시 찾으면 rev가 오른다
   fireEvent.click(getByText('다시 찾기'))
@@ -460,6 +462,16 @@ it('시각이 없어 묶음이 막힌 알림의 「시각 직접 입력」은 �
   expect(queryByText('한국 시간 기준으로 저장해요.')).toBeNull() // 결과 화면으로 돌아간다
 })
 
+it('시각 입력 화면의 날짜·시간 칸은 「한국 시간 기준」 안내를 설명으로 읽는다(#559)', async () => {
+  const { api } = setup({ get: RESULT })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('시각 수정하기'))
+  for (const name of ['날짜', '시간']) {
+    const id = getByLabelText(name).getAttribute('aria-describedby')!
+    expect(document.getElementById(id)?.textContent?.trim()).toBe('한국 시간 기준으로 저장해요.')
+  }
+})
+
 it('결과 화면 발생 시간의 「시각 수정하기」는 지금 값을 채운 입력 화면을 열고, 취소하면 보내지 않는다', async () => {
   const { m, api } = setup({ get: RESULT })
   const { findByText, getByLabelText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
@@ -470,4 +482,158 @@ it('결과 화면 발생 시간의 「시각 수정하기」는 지금 값을 �
   fireEvent.click(getByText('취소'))
   await findByText('시각 수정하기')
   expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('결과 화면에서 고친 제목은 command 없이 화면에만 남고, 「일자 수정하기」도 같은 시각 입력 화면을 연다', async () => {
+  const { m, api } = setup({ get: RESULT })
+  const { findByText, getByLabelText, getByText, container } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('제목 수정하기'))
+  fireEvent.change(getByLabelText('제목'), { target: { value: '끼어들기 신고' } })
+  fireEvent.click(getByText('저장'))
+  expect(container.textContent).toContain('끼어들기 신고')
+  expect(container.textContent).toContain('이 화면에서만 바꿨어요')
+  fireEvent.click(getByText('일자 수정하기'))
+  expect((getByLabelText('날짜') as HTMLInputElement).value).toBe('2026-08-24')
+  fireEvent.click(getByText('취소'))
+  await findByText('끼어들기 신고')
+  expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('서버가 돌려준 case를 이 브라우저에 기억하고, 없는 case 주소를 열어도 기억은 덮지 않는다', async () => {
+  localStorage.clear()
+  const live = setup({ get: SEARCHING })
+  const a = render(<ApiFlow api={live.api} caseId="c1" />)
+  await a.findByText('분석 중단')
+  expect(localStorage.getItem('daesingo.lastCase')).toBe(SEARCHING.case_id)
+  a.unmount()
+
+  const gone = setup()
+  gone.m.getView.mockResolvedValue({ ok: false, status: 404, error: { code: 'http.not_found', message_key: 'http.not_found' }, caseView: null })
+  const b = render(<ApiFlow api={gone.api} caseId="other" />)
+  await b.findByText('진행 정보를 찾을 수 없어요')
+  expect(localStorage.getItem('daesingo.lastCase')).toBe(SEARCHING.case_id)
+})
+
+it('기억한 case가 서버에서 지워졌으면 잊는다 — 「찾을 수 없어요」 대신 새 신고로 시작한다', async () => {
+  localStorage.setItem('daesingo.lastCase', 'old')
+  const { m, api } = setup()
+  m.getView.mockResolvedValue({ ok: false, status: 404, error: { code: 'http.not_found', message_key: 'http.not_found' }, caseView: null })
+  const { queryByText } = render(<ApiFlow api={api} caseId="old" remembered />)
+  await waitFor(() => expect(localStorage.getItem('daesingo.lastCase')).toBeNull())
+  expect(queryByText('진행 정보를 찾을 수 없어요')).toBeNull()
+})
+
+it('candidate video request and polling keep the failure comparison visible without selecting', async () => {
+  const c = SNAPSHOTS.flatMap((s) => s.view.candidates)[0]
+  const initial = view({
+    case_rev: 8, stage: 'EVIDENCE_REVIEW', evidence: null,
+    candidates: [
+      { ...c, candidate_id: 'first', rank: 1, selected: true, video_preview: { status: 'NOT_REQUESTED', clip_ref: null } },
+      { ...c, candidate_id: 'second', rank: 2, selected: false, video_preview: { status: 'NOT_REQUESTED', clip_ref: null } },
+    ],
+    notices: [{ code: 'recording.incident_clip_build_failed', severity: 'ERROR', blocking: true, message_key: 'notice.incident_clip_build_failed', actions: [] }],
+  })
+  const pending: CaseView = { ...initial, case_rev: 9,
+    candidates: initial.candidates.map((candidate) => candidate.selected ? candidate : { ...candidate, video_preview: { status: 'PREPARING', clip_ref: null } }),
+    running_jobs: [{ job_id: 'preview', kind: 'CANDIDATE_VIDEO_PREVIEW', label_key: 'job.candidate_video_preview', status: 'RUNNING' }],
+  }
+  const ready: CaseView = { ...pending, running_jobs: [], candidates: pending.candidates.map((candidate) => candidate.selected ? candidate : { ...candidate, video_preview: { status: 'READY', clip_ref: 'clip_second' } }) }
+  const { m, api } = setup({ get: initial })
+  const screen = render(<ApiFlow api={api} caseId="c1" />)
+  await screen.findByRole('button', { name: '2번 후보 영상 보기' })
+  m.sendCommand.mockResolvedValue(ok(pending, 202))
+  m.getView.mockResolvedValue(ok(ready))
+  fireEvent.click(screen.getByRole('button', { name: '2번 후보 영상 보기' }))
+  await screen.findByText('영상 준비 중')
+  expect(screen.getByRole('button', { name: '이 장면으로 다시 준비' }).hasAttribute('disabled')).toBe(false)
+  await waitFor(() => expect(screen.container.querySelector('video')?.getAttribute('src')).toBe('/candidate-video/clip_second'), { timeout: 4000 })
+  expect(m.sendCommand).toHaveBeenCalledExactlyOnceWith('c1', 8, { kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW', payload: { candidate_id: 'second' } })
+  expect(screen.getByText('이 장면의 영상을 준비하지 못했어요.')).toBeTruthy()
+})
+
+it.each(['result', 'not-observed', 'failed', 'awaiting'] as const)('a single candidate has a playback entry on the %s screen', async (surface) => {
+  const original = surface === 'result' ? RESULT : surface === 'awaiting' ? AWAITING : notObserved(RESULT.candidates)
+  const selected = original.candidates.find((c) => c.selected) ?? RESULT.candidates[0]
+  const initial: CaseView = { ...original, case_id: 'c1', case_rev: 8, running_jobs: [],
+    candidates: [{ ...selected, candidate_id: 'only', rank: 1, selected: true,
+      video_preview: { status: 'NOT_REQUESTED', clip_ref: null } }],
+    ...(surface === 'failed' ? { evidence: null, package: null, notices: [{
+      code: 'recording.incident_clip_build_failed', severity: 'ERROR', blocking: true,
+      message_key: 'notice.incident_clip_build_failed', actions: [],
+    }] } : {}),
+  }
+  const { m, api } = setup({ get: initial })
+  const pending: CaseView = { ...initial, case_rev: 9,
+    candidates: initial.candidates.map((c) => ({ ...c, video_preview: { status: 'PREPARING', clip_ref: null } })),
+    running_jobs: [{ job_id: 'preview', kind: 'CANDIDATE_VIDEO_PREVIEW', label_key: 'job.candidate_video_preview', status: 'RUNNING' }],
+  }
+  m.sendCommand.mockResolvedValue(ok(pending, 202))
+  m.getView.mockResolvedValueOnce(ok(initial)).mockResolvedValue(ok({ ...pending, running_jobs: [],
+    candidates: pending.candidates.map((c) => ({ ...c, video_preview: { status: 'READY', clip_ref: 'only-clip' } })),
+  }))
+  const screen = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await screen.findByRole('button', { name: '1번 후보 영상 보기' }))
+  await waitFor(() => expect(screen.container.querySelector('video')?.getAttribute('src')).toBe('/candidate-video/only-clip'), { timeout: 4000 })
+  expect(screen.queryByRole('button', { name: /다른 후보/ })).toBeNull()
+  expect(m.sendCommand).toHaveBeenCalledExactlyOnceWith('c1', 8, { kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW', payload: { candidate_id: 'only' } })
+})
+
+// 하위 화면(다른 후보 · 번호판 · 시각 · 근거)은 브라우저 기록에 한 칸씩 남는다 — 브라우저 뒤로가기도 결과 화면으로 돌아온다
+// 「다른 장면이었나요?」는 신고 상황 응답 전 화면에 있다
+const WITH_OTHER = {
+  ...AWAITING,
+  candidates: [...AWAITING.candidates, { ...AWAITING.candidates[0], candidate_id: 'cand_other', selected: false }],
+}
+const backTo = async (findByText: (t: RegExp) => Promise<HTMLElement>) => {
+  act(() => history.back())
+  await findByText(/다른 장면이었나요\?/)
+}
+
+it('결과 화면에서 「다른 장면이었나요?」로 연 다른 후보 화면은 브라우저 뒤로가기로 결과 화면에 돌아온다', async () => {
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText, getByRole } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(getByRole('heading', { name: '다른 후보' })).toBeTruthy()
+  await backTo(findByText)
+})
+
+it('화면 안 「뒤로」로 닫으면 브라우저 기록도 한 칸 돌아가 빈칸이 남지 않는다', async () => {
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(history.state?.sub).toBe(1)
+  fireEvent.click(getByLabelText('뒤로'))
+  await findByText(/다른 장면이었나요\?/)
+  await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
+  // 다시 열어도 깊이는 1이다 — 닫은 칸 위에 쌓이지 않는다
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  expect(history.state?.sub).toBe(1)
+})
+
+it('다른 후보를 고르면 하위 화면이 닫히고 쌓인 기록도 함께 정리된다', async () => {
+  const { m, api } = setup({ get: WITH_OTHER })
+  m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
+  const { findByText, getAllByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText(/다른 장면이었나요\?/))
+  fireEvent.click(getAllByText('이 장면으로 다시 준비')[0])
+  await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
+  await waitFor(() => expect(history.state?.sub ?? 0).toBe(0))
+})
+
+it('결과 없음에서 연 「설명 고치기」도 브라우저 뒤로가기로 결과 없음 화면에 돌아온다', async () => {
+  const { m, api } = setup({ get: { ...EMPTY, description: '흰 차' } })
+  const { findByText, getByLabelText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('설명 고치기'))
+  expect(getByLabelText('어떤 상황이었나요?')).toBeTruthy()
+  act(() => history.back())
+  await findByText(/말씀하신 장면을 찾지 못했어요/)
+  expect(m.sendCommand).not.toHaveBeenCalled()
+})
+
+it('하위 화면을 연 채 새로고침해 남은 기록 깊이는 처음 열 때 0으로 맞춘다', async () => {
+  history.replaceState({ sub: 1 }, '', '/?api')
+  const { api } = setup({ get: WITH_OTHER })
+  const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
+  await findByText(/다른 장면이었나요\?/)
+  expect(history.state?.sub).toBe(0)
 })

@@ -126,7 +126,7 @@ def test_worker_registration_marker_rejects_partial_set_and_stale_process(tmp_pa
     spec.loader.exec_module(m)
     target = tmp_path / "status.json"
     expected = {"HINT_EXTRACT", "COARSE_SEARCH", "FINE_VERIFY", "INCIDENT_CLIP_BUILD", "PLATE_READ",
-                "OVERLAY_TIME_READ", "REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}
+                "OVERLAY_TIME_READ", "REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT", "CANDIDATE_VIDEO_PREVIEW"}
     with pytest.raises(ValueError):
         m.publish(SimpleNamespace(_handlers={"HINT_EXTRACT": None}), "a" * 40, target, token="process-A")
     assert not target.exists()

@@ -1,12 +1,12 @@
 """Detached fixed Readout inputs through Case and Runtime public read ports."""
-from daesingo.common.jobs.produced import ProducedReader
+from daesingo.worker.produced_reader import worker_produced_reader
 from daesingo.worker.readout_handlers import ReadoutInput
 
 
 class ReadoutInputs:
     def __init__(self, *, transaction, store_factory, reader=None):
         self.transaction, self.store_factory = transaction, store_factory
-        self.reader = reader if reader is not None else ProducedReader()
+        self.reader = reader if reader is not None else worker_produced_reader()
 
     def __call__(self, context):
         return self.transaction(lambda conn: self._read(conn, context))

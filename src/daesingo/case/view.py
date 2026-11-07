@@ -1,7 +1,7 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.9` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.11` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
@@ -18,6 +18,8 @@ from __future__ import annotations
 from typing import Any
 
 from daesingo.case.domain import CaseAggregate
+from daesingo.case.preview_frame import current_candidate_frame_refs, current_preview_frame_ref
+from daesingo.case.candidate_video import preview_state
 from daesingo.case.observation import selected_clip_failed
 from daesingo.case.labels import (
     at_provenance_label_key,
@@ -29,7 +31,7 @@ from daesingo.case.labels import (
 )
 from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
 
-CONTRACT_VERSION = "case-view/v1.10"
+CONTRACT_VERSION = "case-view/v1.12"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -65,6 +67,7 @@ _JOB_EXECUTION_STATUS_TO_PROGRESS_STATE: dict[str, str] = {
 
 # `running_jobs[].label_key` — 계약 A§12 · B§12 등재 키. 미등록 kind와 `COARSE_SEARCH`는 fallback.
 JOB_LABEL_KEYS = {
+    "CANDIDATE_VIDEO_PREVIEW": "job.candidate_video_preview",
     "PLATE_READ": "job.plate_read",
     "OVERLAY_TIME_READ": "job.overlay_time_read",
     "FINE_VERIFY": "job.fine_verify",
@@ -331,6 +334,7 @@ def _build_candidates_view(
     # current_timeline_revision=2≠timeline_revision:1 → stale_revision:true,
     # stale_revision_label_key:"candidate.stale_timeline_revision")로 확인.
     out = []
+    frame_refs = current_candidate_frame_refs(case)
     # rank 오름차순(#122). rank가 없는 후보(구 fixture 등)는 뒤로, 같은 rank면 받은 순서를 유지한다.
     for c in sorted(case.candidates, key=lambda c: (c.rank is None, c.rank or 0)):
         at, at_provenance = c.at, c.at_provenance
@@ -357,7 +361,9 @@ def _build_candidates_view(
                 "at_provenance": at_provenance,
                 "at_provenance_label_key": at_provenance_label_key(at_provenance),
                 "observed": c.observed,
-                "thumb_ref": c.thumb_ref,
+                # case가 clip에서 발급받은 썸네일(#523)이 우선이다 — Search `thumbnail_ref`는 실제 경로에서 늘 null이다.
+                "thumb_ref": frame_refs.get(c.candidate_id) or c.thumb_ref,
+                "video_preview": {"status": "UNAVAILABLE", "clip_ref": None} if stale_revision else preview_state(case, c),
                 "selected": c.selected,
                 "timeline_revision": c.timeline_revision,
                 "stale_revision": stale_revision,
@@ -637,6 +643,11 @@ def _build_requirements_view(requirement_report: dict[str, Any] | None) -> dict[
     }
 
 
+def _plate_image_ref(assets: dict[str, Any]) -> str | None:
+    ref = assets.get("plate_image_ref")
+    return ref["ref"] if ref is not None else None
+
+
 def _build_package_view(report_package: dict[str, Any] | None, evidence_record: dict[str, Any] | None) -> dict[str, Any] | None:
     if report_package is None or evidence_record is None:
         return None
@@ -658,6 +669,9 @@ def _build_package_view(report_package: dict[str, Any] | None, evidence_record: 
         "report_fields": report_fields,
         "report_field_states": field_states,
         "artifact_ref": report_package["assets"]["report_video_ref"]["ref"],
+        # 번호판 이미지(#569) — evidence는 PLATE_IMAGE가 AVAILABLE일 때만 이 키를 싣는다.
+        # 번호판을 못 읽음 · 생성 실패 · 생성 중이면 키가 없고, 그때는 null이다.
+        "plate_image_ref": _plate_image_ref(report_package["assets"]),
         "capabilities": report_package["handoff"]["supported_actions"],
         "warnings": [],
         "unconfirmed_fields": unconfirmed,
@@ -705,7 +719,9 @@ def build_case_view(
     from .search_progress import search_progress_view
 
     selected = next((c for c in case.candidates if c.selected), None)
-    preview_ref = selected.thumb_ref if selected else None
+    # 근거 장면은 case가 clip에서 발급받은 frame이다(#446). Search 후보 `thumbnail_ref`는 실제 경로에서 늘 null이라
+    # 발급 전에는 그 값(fixture에만 있음)을 그대로 쓴다.
+    preview_ref = (current_preview_frame_ref(case) or selected.thumb_ref) if selected else None
 
     # 현재 선택 context의 evidence만 투영한다(#173 E-4 조건 1의 전제, W7 6.6순위). 재선택 직후
     # adapter가 아직 이전 선택의 evidence를 들고 있어도 그대로 내리지 않는다 — web은

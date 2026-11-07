@@ -1,14 +1,14 @@
 # AnalysisSource 저장 한도
 
-IN_PROGRESS (#452 장시간 입력·운영 최적화 후속) · Related #460, #450, #72 · 상태 갱신 2026-11-02
+IN_PROGRESS (#452 장시간 입력·운영 최적화 후속) · Related #460, #450, #72 · 상태 갱신 2026-11-07
 
 근거: [#452 본문·전체 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452),
 [Case 결정 PR #454](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/454),
 [현재 Runtime 실행환경](../../runtime/local-runtime-environment.md).
-MVP DB 한 행 저장을 유지한다. DB `max_allowed_packet`을 제품 상한으로 읽거나 변경하지 않는다.
+초기 baseline은 DB 한 행에 저장했다. `develop`의 prepared-media writer는 AnalysisSource·IncidentClip을 청크로 저장하고 기존 BLOB을 읽을 수 있다. 업무상 길이·바이트 한도와 MySQL `max_allowed_packet`은 각각 확인한다. [청크 저장 구현 메모](chunked-prepared-media.md) · [호환 release 절차](../../runtime/rt14-preview-bridge.md)
 
-초기 배포 baseline v1은 확정됐다. 설정 원문은 병합된
-[PR #526](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/526)의
+초기 배포 baseline v1은 병합된
+[PR #526](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/526)에 기록됐다. 초기 baseline v1의 원문은
 [환경·배포 설정 명세 §3](../../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)이다.
 이는 코드 기본값이나 운영 최적값 확정이 아니며, 약 1시간 입력 지원은 미확정이다.
 
@@ -83,21 +83,23 @@ CaseView 계약에도 등재됐으며 Case는 길이·byte 수치를 복제하�
 초기 구성·재현 기준은 Analysis `aws-e2e-v1 / 480 / veryfast / CRF23`,
 `50331648 bytes (48 MiB) / 240000 ms (4분)`, Incident `240 / veryfast / CRF23`이다.
 코드에는 여전히 기본값이 없으므로 runtime 파일에 명시해야 한다.
-운영 최적 encoding·품질 및 약 1시간 입력 지원은 미확정이다. Incident `720p / CRF20`은
-[#460 Owner 확인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/460#issuecomment-6559419741)의
-별도 비교 후보이며, 적용된 baseline이나 EC2 설정값이 아니다.
+11/2 EC2 기록의 Incident 설정은 `720 / veryfast / CRF20`이며, Analysis profile과 6개 설정은 유지됐다.
+[2026-11-02 적용·실영상 E2E 기록](../../runtime/experiments/2026-11-02-incident720-config-real-e2e.md)은
+운영자 제공 결과와 로컬 결과 파일 metadata·hash 재확인을 구분한다.
+사건 포함·화질 개선은 사용자 육안 확인이며 OCR 정확도나 전체 입력 품질 보장이 아니다.
+운영 최적 encoding·품질 및 약 1시간 입력 지원은 미확정이다. 해당 Incident 변경 당시에는 Analysis의 4분·48 MiB 설정을 유지했다.
 기존 64MiB packet 관측, “약 5분” 추정, 테스트의 낮은 한도를 운영 기본값으로 사용하지 않는다.
 장시간 입력 지원·운영 최적값을 판단할 때는 아래 근거를 함께 검증해야 한다.
 
 1. 실제 Runtime의 확정 profile로 대표/복잡한 영상과 지원하려는 길이를 측정: 구간/누적/최종 bytes,
    encode/concat/준비 경과, peak RSS/temp 사용량, 원본 불변·coverage.
 2. 운영 DB packet과 driver escaping/statement metadata 여유를 포함해 선택한 byte 한도가 실제로 저장·복원·rollback 가능한지 검증.
-3. Search inline/request byte 상한과 준비·큐·Search 각각의 시간 및 기존 Case 180초 대기를 함께 검증.
+3. Search inline/request byte 상한과 준비·큐·Search 각각의 시간 및 해당 revision의 [Case 대기 마감](../case/decisions/case-wait-timeout.md)을 함께 검증.
 4. 22개 실제 원본으로 재검증. 작은 합성 영상 검증은 해당 실제 입력 검증이나 제품 한도 결정이 아니다.
 
 [#452 최신 측정 해석](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6559422935)에
 따라 Search 단독 7분 20초 성공과 표본별 9~13분 추정은 전체 Recording→Search 지원 길이가 아니다.
-현재 baseline은 4분 상한이며 한도나 DB packet만 늘려 약 1시간 지원이 해결됐다고 하지 않는다.
+후속 #452에서는 별도 EC2 설정으로 20개·20분 입력 1건의 `READY`와 다운로드·재생을 기록했다. 공개 길이·바이트 상한은 대상 배포의 검증과 승인으로 확정한다. [20분 실행 기록](../../runtime/experiments/2026-11-07-ec2-20file-product-e2e-result.md) · [공개 운영 조건](../../runtime/ops-spec.md#21-1-공개-모드-gono-go-2026-11-05-정책-현재-미검증)
 
 ## 과거 검증 기록 (2026-10-30 구현 당시, 합성 입력)
 

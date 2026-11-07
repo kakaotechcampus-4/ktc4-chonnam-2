@@ -156,3 +156,12 @@ DerivedAsset 바이트/Content-Type은 (c) 범위로 남는다. 원본 IncidentC
 현재 diff에는 원격 CI 결과가 없다. 병합 준비 상태에서는 원래 API 타이밍 실패와
 현재 CI를 계속 드러내야 하며, REC-1(a) 코드/인수 준비 상태는 깨끗한 전체 프로젝트
 회귀나 REC-1 완료와 별개다.
+
+## 2026-11-02 — #452 prepared-media 청크 저장 후속
+
+기존 이력과 frozen migration은 보존한다. 새 `recording_0002`의 additive 청크 저장,
+metadata-only 조회, SAVEPOINT 원자성, detached stream, legacy/구버전 rollback 구분과
+실제 MySQL·backup/restore·독립 리뷰 근거는
+[청크 저장 구현 메모](chunked-prepared-media.md)를 따른다.
+이 후속은 원본 등록·frame/derived 저장 정책이나 retention을 변경하지 않는다.
+기존 bytes 기반 export caller와 materializer의 전체 bytes 메모리 경계는 여전히 남는다.

@@ -39,6 +39,7 @@ _ACTION_JOB_KIND = {
 }
 
 _PAYLOAD_KEYS = {
+    "REQUEST_CANDIDATE_VIDEO_PREVIEW": frozenset({"candidate_id"}),
     "SELECT_OTHER_CANDIDATE": frozenset({"candidate_id"}),
     "RECORD_SITUATION_RESPONSE": frozenset({"value"}),
     "MARK_REVIEWED": frozenset(),
@@ -107,6 +108,19 @@ def _select_other_candidate(case: CaseAggregate, payload: dict[str, Any], view: 
     correction.reselect_candidate(case, candidate_id)
     # 새 후보의 첫 빠진 관찰 단계부터 발주한다 — 같은 탐색 결과 안에서 끝난 관찰은 재사용한다(W12:C2, §4-6).
     observation.issue_missing_for_selected(case)
+
+
+def _request_candidate_video_preview(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
+    from daesingo.case.candidate_video import PreviewRequestsDisabled, eligible, request_preview
+    candidate = next((c for c in case.candidates if c.candidate_id == payload["candidate_id"]), None)
+    if candidate is None:
+        raise _Rejected("unknown_target")
+    if case.stage not in {"CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"} or not eligible(case, candidate):
+        raise _Rejected("not_allowed")
+    try:
+        request_preview(case, candidate)
+    except PreviewRequestsDisabled:
+        raise _Rejected("not_allowed") from None
 
 
 def _record_situation_response(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
@@ -252,7 +266,13 @@ def _stop_analysis(case: CaseAggregate, payload: dict[str, Any], view: dict[str,
         raise _Rejected("not_allowed") from None
 
 
+# 성공 뒤 export · READY gate(#167)를 다시 보지 않는 command. 후보 영상 미리보기는 Fine/OCR/export와
+# READY gate를 실행하지 않는다(`decisions/candidate-video-preview.md` §2).
+_SKIP_EXPORT_GATE = frozenset({"REQUEST_CANDIDATE_VIDEO_PREVIEW"})
+
+
 _HANDLERS = {
+    "REQUEST_CANDIDATE_VIDEO_PREVIEW": _request_candidate_video_preview,
     "SELECT_OTHER_CANDIDATE": _select_other_candidate,
     "RECORD_SITUATION_RESPONSE": _record_situation_response,
     "MARK_REVIEWED": _mark_reviewed,
@@ -369,7 +389,7 @@ def execute_command(
         return CommandResult(_response(rejected.reason, view))
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
     # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
-    if case.stage == "EVIDENCE_REVIEW":
+    if case.stage == "EVIDENCE_REVIEW" and request["kind"] not in _SKIP_EXPORT_GATE:
         from daesingo.case.exports import issue_missing_exports
         adapter = store.adapter_for(case)
         issue_missing_exports(case, adapter, view_of(case))

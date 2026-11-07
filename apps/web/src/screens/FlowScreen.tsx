@@ -15,8 +15,11 @@ import {
 import { selectScreen } from '../state/selectScreen'
 import { ProgressPanel } from '../components/ProgressPanel'
 import { VideoThumb } from '../components/VideoThumb'
-import { SearchFx } from '../components/SearchFx'
+import { softwareRendering } from '../components/driving/DrivingPreview'
 import carTop from '../assets/car/car-top.webp'
+
+// 주행 게임을 빌드에서 끈다(`VITE_DRIVING_GAME=off`). 끄면 진입 버튼이 없고 Three.js도 불러오지 않는다.
+const DRIVING_ON = import.meta.env.VITE_DRIVING_GAME !== 'off'
 
 // Figma 02_Main_Flow · 02_Retry_Flow · 02_Fail_Flow. 세 프레임은 같은 틀이고
 // 단계 상태(progress)와 알림(notices)만 다르다 — 둘 다 CaseView에서 온다.
@@ -31,6 +34,8 @@ import carTop from '../assets/car/car-top.webp'
 // 단계 사이처럼 RUNNING이 잠깐 없을 때는 마지막으로 진행하던 단계를 그대로 두어 제목이
 // 흔들리지 않게 한다. 아직 한 단계도 시작하지 않았을 때만 전체 흐름 문구를 제목으로 쓴다.
 const TITLE_OUT_MS = 260
+// 분석은 서버에서 계속되고, 이 브라우저는 마지막 case를 기억한다(state/lastCase) — 창을 닫았다 와도 이어진다
+export const LEAVE_NOTE = '처리 중이에요. 창을 닫고 다른 작업을 하다 돌아오셔도 결과를 준비해 둘게요.'
 // 위에서 본 자동차(car-top.webp, 앞이 아래) 표시 크기 — 이미지 여백을 빼면 보이는 차는 약 23×49
 const CAR_H = 53
 
@@ -49,6 +54,8 @@ export function FlowScreen(props: {
 }): JSX.Element {
   const screen = selectScreen(props.view)
   const [enter] = useState(() => (props.pushIn ? 'rs-push-in' : 'rs-enter'))
+  // CPU로 3D를 그리는 환경(원격 데스크톱·가상 머신)에서는 게임 진입을 숨긴다 — 화면을 열 때 한 번만 본다.
+  const [driveable] = useState(() => DRIVING_ON && !softwareRendering())
   const rootRef = useRef<HTMLDivElement>(null)
   // 「영상에서 찾아보기」가 사라져 포커스가 갈 곳을 잃으면 진행 화면이 받는다(보이는 요소).
   useEffect(() => {
@@ -157,10 +164,12 @@ export function FlowScreen(props: {
               </>
             )}
           </p>
-          <p className="flow-elapsed">
+          {/* 1초마다 바뀌므로 live 영역에서 뺀다 — 화면 낭독기가 단계 안내 사이에 매초 읽지 않게(#509 #1) */}
+          <p className="flow-elapsed" aria-live="off">
             경과 시간 <span>{elapsed}</span>
           </p>
         </div>
+        <p className="flow-leave-note">{LEAVE_NOTE}</p>
         {/* 안내 한 줄 자리는 늘 비워 둔다 — 안내가 나타나거나 사라져도 아래 영상·단계 목록이
             밀리지 않는다. 문구가 길어 줄이 바뀌면 그만큼만 늘어난다(자르지 않음) */}
         <div className="flow-partial-slot">
@@ -175,9 +184,11 @@ export function FlowScreen(props: {
 
       <div className="flow-main">
         <VideoThumb
+          key={`${props.view.case_id}:${representative?.name ?? ''}`}
           file={representative instanceof File ? representative : null}
           name={representative?.name ?? props.files[0]?.name ?? ''}
-          overlay={running === 'coarse_search' && <SearchFx />}
+          // 분석을 기다리는 동안(PROGRESS)이면 단계와 상관없이 연다 — 단계 사이에 RUNNING이 잠깐 없어도 닫지 않는다.
+          canDrive={driveable && screen.kind === 'PROGRESS' && screen.blocking.length === 0}
         />
 
         {props.files.length > 1 && (

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
-import { ChevronRight, CircleAlert, Download, ExternalLink, Film, Info } from 'lucide-react'
+import { Check, ChevronRight, CircleAlert, Download, ExternalLink, Film, Info } from 'lucide-react'
 import {
   isAction,
   type Action,
@@ -10,9 +10,11 @@ import {
 import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, jobLabel, noticeMessage, sourceLabel } from '../contracts/labels'
 import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
 import { PENDING_TEXT } from '../components/DisplayRow'
+import { LocationMap } from '../components/LocationMap'
 import { StatusBadge } from '../components/StatusBadge'
 import { ArrivingCar } from '../components/ArrivingCar'
 import { FrameSlot } from '../components/FrameSlot'
+import { CandidateVideo, type CandidatePlayback } from '../components/CandidateVideo'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
 
 // 03_Main_Result — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
@@ -27,6 +29,8 @@ const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/'
 const COPIED = '복사했습니다'
 const COPY_FAILED = '복사하지 못했어요. 값을 직접 선택해 복사해 주세요.'
 const TOAST_MS = 3000
+// 누른 복사 버튼이 「복사됨」으로 바뀌어 있는 시간 — 알림(TOAST_MS)보다 짧게 두어 버튼이 먼저 돌아온다
+const COPIED_MS = 1600
 // 아래 문구는 검토 대기 중인 새 문구다(보고서 「검토할 문구」).
 // 붙여넣지 않고 안전신문고에서 사용자가 고르는 칸(유형·위치·발생 일시) 표시
 const PICK_MARK = '직접 선택'
@@ -40,14 +44,22 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
 }
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
 const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
+const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요'
+const PLATE_FRAME_FAILED = '번호판 장면을 받지 못했어요'
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 // 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
 const PLATE_EDIT_LINK = '확인·수정하기'
 const PLATE_EDIT_WHY = '번호가 틀렸다면 여기서 고칠 수 있어요'
 const TIME_EDIT_LINK = { none: '시각 입력하기', some: '시각 수정하기' }
+const DATE_EDIT_LINK = { none: '일자 입력하기', some: '일자 수정하기' }
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
+// 안전신문고 첫 화면에서 신고 양식까지 — 실제 메뉴 이름(11/1 확인). 이동 버튼은 첫 화면을 연다
+const HANDOFF_STEPS = ['위쪽 메뉴에서 「신고하기」를 누르세요', '「자동차·교통위반」을 누르세요']
+
+/** 제목·신고 내용·위치를 이 화면에서만 고친 값. 이 칸들을 고치는 command가 아직 없다 */
+export type ReportEdits = Partial<Record<'title' | 'description' | 'location', string>>
 
 const COUNT_ORDER: InfoState[] = [
   'INFO_NEEDS_REVIEW',
@@ -60,6 +72,11 @@ const COUNT_ORDER: InfoState[] = [
 // 빨강은 실패(ERROR)에만, 주황은 확인이 필요한 경고(WARN)에만 쓴다. 안내(INFO)는 기본 색이다.
 function tone(n: Notice): 'fail' | 'review' | 'info' {
   return n.severity === 'ERROR' ? 'fail' : n.severity === 'WARN' ? 'review' : 'info'
+}
+
+export function withLocation(description: string, before: string | null | undefined, after: string | undefined): string {
+  if (after === undefined || !before) return description
+  return description.includes(before) ? description.split(before).join(after) : `${description}\n위치: ${after}`
 }
 
 interface Field {
@@ -80,24 +97,37 @@ export function ResultScreen(props: {
   canRun: (action: Action) => boolean
   /** 번호판을 이 화면에서만 고쳤는가(서버 저장 아님) */
   plateEditedLocally?: boolean
+  /** 발생 시각을 이 화면에서만 고쳤는가(시연, 서버 저장 아님) */
+  timeEditedLocally?: boolean
+  /** 제목·신고 내용·위치를 이 화면에서만 고친 값. 하위 화면을 다녀와도 남게 흐름이 들고 있다 */
+  edits?: ReportEdits
+  /** 없으면 고치기 입구를 두지 않는다 */
+  onEdit?: (key: keyof ReportEdits, value: string) => void
   /** 진행에서 막 넘어왔는가 — 첫 화면의 배경 자동차가 오른쪽에서 들어와 멈춘다. 하위 화면에서 돌아올 때는 제자리 */
   arriving?: boolean
   /** 신고 상황 응답. RECORD_SITUATION_RESPONSE가 받는 두 값만 둔다 — 「다른 상황」은 입력형이라 command가 아직 없다 */
   onRespond?: (value: 'CONFIRMED' | 'USER_UNSURE') => void
   /** 신고용 영상을 받을 주소(API 모드). 없으면(시연) 다운로드 버튼을 막아 둔다 */
   videoHref?: string
-  /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
-  frameSrc?: (frameRef: string) => string
-}): JSX.Element {
+  /** 번호판 이미지를 받을 주소. 선택 첨부라 없으면(시연 · 아직 못 만듦) 버튼을 두지 않는다 */
+  plateImageHref?: string
+} & CandidatePlayback): JSX.Element {
   const { view } = props
   // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
-  const [downloadFailed, setDownloadFailed] = useState<string | null>(null)
+  const [downloadFailed, setDownloadFailed] = useState<string[]>([])
   const [downloading, setDownloading] = useState(false)
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const pkg = view.package
   const ev = view.evidence
   // 신고 상황은 결과 화면에서 묻는다(core-user-flow §20, #171 B-2). 응답 전에는 묶음이 없다.
   const selected = view.candidates.find((c) => c.selected)
+  const candidateVideo = selected?.video_preview && props.videoSrc && (
+    <CandidateVideo key={selected.candidate_id} preview={selected.video_preview} ordinal={selected.rank ?? 1}
+      src={selected.video_preview.clip_ref ? props.videoSrc(selected.video_preview.clip_ref) : undefined}
+      poster={frame(selected.thumb_ref ?? ev?.preview_ref) ?? undefined}
+      onRequest={props.onPreview ? () => props.onPreview?.(selected.candidate_id) : undefined}
+      busy={props.previewBusy} />
+  )
   const awaiting =
     selected?.situation_confirmation === 'NOT_ASKED' &&
     view.notices.some((n) => n.code === 'case.situation_response_pending')
@@ -119,9 +149,13 @@ export function ResultScreen(props: {
   const reportType = field('safety_report_type', () =>
     ev ? { value: ev.report_type_display.label, state: ev.report_type_display.info_state, source: sourceLabel(ev.report_type_display.source_label_key) } : null,
   )
-  const location = field('location', () =>
+  const edits = props.edits ?? {}
+  const shownLocation = field('location', () =>
     ev ? { value: ev.location_display.value, state: ev.location_display.info_state, source: sourceLabel(ev.location_display.source_label_key) } : null,
   )
+  // 상태·출처는 서버가 정한 값 그대로 둔다 — 값만 바꾸고 「이 화면에서만 바꿨어요」로 알린다
+  const location: Field | null =
+    edits.location !== undefined && shownLocation ? { ...shownLocation, value: edits.location } : shownLocation
   const content = field('violation_expression', () =>
     ev ? { value: ev.violation_display.label, state: ev.violation_display.info_state, source: sourceLabel(ev.violation_display.source_label_key) } : null,
   )
@@ -134,8 +168,15 @@ export function ResultScreen(props: {
   const when = splitDateTime(occurred?.value ?? null)
   // 제목·신고 내용은 case가 만든 신고문(package.report, v1.7)을 그대로 보여 주고 복사만 한다.
   // 계약상 package가 있으면 report도 항상 있다. 옛 판본 응답이 와도 깨지지 않게 없으면 예전처럼 둔다.
-  const report = pkg?.report ?? null
-  const keyword = ev?.location_display.search_keyword ?? null
+  const shownReport = pkg?.report ?? null
+  const report = shownReport && {
+    title: edits.title ?? shownReport.title,
+    // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다(#563 멘토 리뷰).
+    // 원래 글이 신고문에 그대로 없으면(case가 다듬어 넣은 경우) 옛 위치를 조용히 복사하지 않게 고친 위치를 끝에 붙인다
+    description: edits.description ?? withLocation(shownReport.description, shownLocation?.value, edits.location),
+  }
+  // 위치를 고쳤으면 검색어도 고친 글을 따른다 — 보이는 값·복사·지도가 같은 글을 쓴다(#563 멘토 리뷰)
+  const keyword = edits.location ?? ev?.location_display.search_keyword ?? null
   const hasForm = Boolean(pkg || ev)
   // 검색어를 못 만들었다는 안내는 위치 칸에 붙는 말이라 위 목록이 아니라 검색어 자리에 둔다
   // (버튼 없는 INFO라 옮겨도 잃는 것이 없다). 위치 칸이 없으면 위 목록에 남긴다.
@@ -148,14 +189,20 @@ export function ResultScreen(props: {
   const ready = view.stage === 'READY' && !!pkg && !view.notices.some((n) => n.blocking)
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
-  const failedDownload = props.videoHref !== undefined && downloadFailed === props.videoHref
+  const failedDownload = props.videoHref !== undefined && downloadFailed.includes(props.videoHref)
   const canDownload = video === 'ready' && !!props.videoHref && !failedDownload && !downloading
   const videoHint =
     video !== 'ready' ? VIDEO_STATUS[video] : !props.videoHref ? NO_DOWNLOAD_LINK : failedDownload ? DOWNLOAD_FAILED : null
+  const plateFailed = props.plateImageHref !== undefined && downloadFailed.includes(props.plateImageHref)
+  const canDownloadPlate = !!props.plateImageHref && !plateFailed && !downloading
+  // 번호판을 읽은 장면 전체(#600) — 잘라낸 번호판 이미지로는 어느 차량인지 대조하기 어렵다.
+  // 번호판 확인 화면의 장면과 같은 주소라, 그 화면이 장면을 그리지 않을 때(plate_preview_ref null · 시연)는 버튼도 두지 않는다
+  const plateFrameHref = frame(ev?.plate_preview_ref) ?? undefined
+  const plateFrameFailed = plateFrameHref !== undefined && downloadFailed.includes(plateFrameHref)
+  const canDownloadPlateFrame = !!plateFrameHref && !plateFrameFailed && !downloading
   // 링크로 열지 않고 받아서 저장한다 — 서버가 UNAVAILABLE을 돌려주면 화면이 알아야 한다. 파일 전체가 메모리에 올라간다.
   // 받는 동안은 버튼을 막아 두 번 받지 않게 한다.
-  const download = async () => {
-    const href = props.videoHref
+  const download = async (href: string | undefined, prefix: string, ext: string) => {
     if (!href) return
     setDownloading(true)
     try {
@@ -164,12 +211,13 @@ export function ResultScreen(props: {
       const url = URL.createObjectURL(await res.blob())
       const a = document.createElement('a')
       a.href = url
-      a.download = 'daesingo_report.mp4'
+      // 받은 시각을 붙여 여러 번 받아도 (1)이 붙지 않게 한다. sv-SE는 '2026-11-03 13:53:03' 형식
+      a.download = `${prefix}_${new Date().toLocaleString('sv-SE').replace(' ', '_').replace(/[-:]/g, '')}.${ext}`
       a.click()
       // 바로 해제하면 일부 브라우저(Firefox · Safari)에서 저장이 취소된다
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch {
-      setDownloadFailed(href)
+      setDownloadFailed((list) => [...list, href])
     } finally {
       setDownloading(false)
     }
@@ -186,12 +234,24 @@ export function ResultScreen(props: {
 
   const [toast, setToast] = useState<{ text: string; id: number } | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  useEffect(() => () => clearTimeout(timer.current), [])
-  const copy = (text: string) => {
+  // 복사에 성공하면 누른 버튼 자체가 잠깐 「복사됨」으로 바뀐다. 알림 글은 화면 구석이라 눈이 가지 않기 때문이다
+  const [copied, setCopied] = useState<string | null>(null)
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current)
+      clearTimeout(copiedTimer.current)
+    },
+    [],
+  )
+  const copy = (text: string, key: string) => {
     const done = (ok: boolean) => {
       setToast({ text: ok ? COPIED : COPY_FAILED, id: Date.now() })
       clearTimeout(timer.current)
       timer.current = setTimeout(() => setToast(null), TOAST_MS)
+      clearTimeout(copiedTimer.current)
+      setCopied(ok ? key : null)
+      if (ok) copiedTimer.current = setTimeout(() => setCopied(null), COPIED_MS)
     }
     if (!navigator.clipboard) return done(false)
     navigator.clipboard.writeText(text).then(
@@ -199,16 +259,35 @@ export function ResultScreen(props: {
       () => done(false),
     )
   }
+  const copyClass = (key: string, base: string) => `${base} rs-copy${copied === key ? ' is-copied' : ''}`
+  const copyText = (key: string, idle: string, done: string) =>
+    copied === key ? (
+      <>
+        <Check className="rs-copy-check" size={16} strokeWidth={2.5} aria-hidden />
+        {done}
+      </>
+    ) : (
+      idle
+    )
+  // 고치는 동안에는 보이던 값 대신 입력칸이 그 자리에 열린다. onEdit이 없으면 값만 둔다
+  const editable = (key: keyof ReportEdits, label: string, value: string | null | undefined, shown: ReactNode, multiline?: boolean) =>
+    props.onEdit ? (
+      <EditText label={label} value={value ?? ''} multiline={multiline} edited={edits[key] !== undefined} onSave={(v) => props.onEdit!(key, v)}>
+        {shown}
+      </EditText>
+    ) : (
+      shown
+    )
   const copyButton = (label: string, value: string | null | undefined) =>
     canCopy && (
       <button
         type="button"
-        className="rs-btn sec sm"
+        className={copyClass(label, 'rs-btn sec sm')}
         disabled={!value}
         aria-label={`${label} 복사`}
-        onClick={() => value && copy(formatValue(value))}
+        onClick={() => value && copy(formatValue(value), label)}
       >
-        복사
+        {copyText(label, '복사', '복사됨')}
       </button>
     )
 
@@ -271,7 +350,9 @@ export function ResultScreen(props: {
             이 사건을 이렇게 정리했어요. <b>“{selected.observed}”</b>
           </p>
           {/* 근거 장면은 있을 때만 보인다. case는 사건 장면 준비 전 · 발급 실패 때 null을 준다(#446) */}
-          <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />
+          {/* 미리보기를 볼 수 없는 후보면 근거 장면 이미지만 둔다 — 「볼 수 없어요」가 붙으면 이미지도 못 보는 것처럼 읽힌다(#554 리뷰) */}
+          {candidateVideo && selected?.video_preview?.status !== 'UNAVAILABLE' ? <div className="res-frame">{candidateVideo}</div> :
+            <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />}
           {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
           <ul className="res-pending">
             {['사건 유형', '신고 유형', '위반 내용'].map((label) => (
@@ -321,18 +402,27 @@ export function ResultScreen(props: {
           {!awaiting && (
             <Item label="동영상">
               <div className="res-video">
-                {/* 미리보기와 다운로드는 따로 판단한다 — 미리보기는 아직 열지 않았다 */}
-                <div className="res-frame">
-                  <Film size={26} strokeWidth={1.5} aria-hidden />
-                  <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                {/* 후보 영상 재생과 신고용 영상 다운로드는 각각의 준비 상태를 따른다 */}
+                {/* 왼쪽은 후보 미리보기(Search 구간 그대로)다. 시각을 새긴 신고용 영상은 오른쪽 다운로드로 받는다(#554 리뷰) */}
+                <div className="res-preview">
+                  <div className="res-frame">
+                    {candidateVideo || <>
+                      <Film size={26} strokeWidth={1.5} aria-hidden />
+                      <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
+                    </>}
+                  </div>
+                  {candidateVideo && <p className="res-preview-label">후보 미리보기</p>}
                 </div>
                 <div className="res-video-side">
                   {video === 'ready' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
+                  {/* disabled 대신 aria-disabled — Tab으로 닿아야 못 누르는 이유(res-video-why)가 읽힌다(#509 #5) */}
                   <button
                     type="button"
                     className="rs-btn sec sm"
-                    disabled={!canDownload}
-                    onClick={() => void download()}
+                    aria-disabled={!canDownload}
+                    onClick={() => {
+                      if (canDownload) void download(props.videoHref, 'daesingo_clip', 'mp4')
+                    }}
                     aria-describedby={videoHint ? 'res-video-why' : undefined}
                   >
                     <Download size={16} strokeWidth={2} aria-hidden />
@@ -341,6 +431,45 @@ export function ResultScreen(props: {
                   {videoHint && (
                     <p id="res-video-why" className={`res-hint${video === 'failed' || failedDownload ? ' is-fail' : ''}`}>
                       {videoHint}
+                    </p>
+                  )}
+                  {/* 번호판 이미지는 선택 첨부라 못 만들어도 신고를 막지 않는다(core-user-flow) — 만들어졌을 때만 버튼을 둔다 */}
+                  {props.plateImageHref && (
+                    <button
+                      type="button"
+                      className="rs-btn sec sm"
+                      aria-disabled={!canDownloadPlate}
+                      onClick={() => {
+                        if (canDownloadPlate) void download(props.plateImageHref, 'daesingo_plate', 'png')
+                      }}
+                      aria-describedby={plateFailed ? 'res-plate-why' : undefined}
+                    >
+                      <Download size={16} strokeWidth={2} aria-hidden />
+                      번호판 이미지 다운로드
+                    </button>
+                  )}
+                  {plateFailed && (
+                    <p id="res-plate-why" className="res-hint is-fail">
+                      {PLATE_DOWNLOAD_FAILED}
+                    </p>
+                  )}
+                  {plateFrameHref && (
+                    <button
+                      type="button"
+                      className="rs-btn sec sm"
+                      aria-disabled={!canDownloadPlateFrame}
+                      onClick={() => {
+                        if (canDownloadPlateFrame) void download(plateFrameHref, 'daesingo_plate_scene', 'png')
+                      }}
+                      aria-describedby={plateFrameFailed ? 'res-plate-frame-why' : undefined}
+                    >
+                      <Download size={16} strokeWidth={2} aria-hidden />
+                      번호판 장면 다운로드
+                    </button>
+                  )}
+                  {plateFrameFailed && (
+                    <p id="res-plate-frame-why" className="res-hint is-fail">
+                      {PLATE_FRAME_FAILED}
                     </p>
                   )}
                   {others > 0 && (
@@ -355,14 +484,14 @@ export function ResultScreen(props: {
           )}
 
           <Item label="위치 선택" review={location?.state} pick>
-            <Value f={location} />
+            {ev ? editable('location', '위치', location?.value, <Value f={location} />) : <Value f={location} />}
             {keyword && (
               <p className="res-keyword">
                 <span className="res-keyword-k">검색어</span>
                 <span className="res-keyword-v">{keyword}</span>
                 {canCopy && (
-                  <button type="button" className="rs-btn sec sm" aria-label="검색어 복사" onClick={() => copy(keyword)}>
-                    복사
+                  <button type="button" className={copyClass('검색어', 'rs-btn sec sm')} aria-label="검색어 복사" onClick={() => copy(keyword, '검색어')}>
+                    {copyText('검색어', '복사', '복사됨')}
                   </button>
                 )}
               </p>
@@ -373,14 +502,20 @@ export function ResultScreen(props: {
                 <span>{noticeMessage(keywordMissing.message_key)}</span>
               </p>
             )}
+            {ev && <LocationMap coord={ev.location_display.coord} query={keyword ?? location?.value} />}
           </Item>
 
           <Item label="제목">
             {report ? (
-              <span className="res-val-line">
-                <span className="res-val">{report.title}</span>
-                {copyButton('제목', report.title)}
-              </span>
+              editable(
+                'title',
+                '제목',
+                report.title,
+                <span className="res-val-line">
+                  <span className="res-val">{report.title}</span>
+                  {copyButton('제목', report.title)}
+                </span>,
+              )
             ) : (
               <p className="res-missing">{NO_TITLE}</p>
             )}
@@ -388,10 +523,16 @@ export function ResultScreen(props: {
 
           {report ? (
             <Item label="신고 내용">
-              <span className="res-report">
-                <span className="res-val res-report-text">{report.description}</span>
-                {copyButton('신고 내용', report.description)}
-              </span>
+              {editable(
+                'description',
+                '신고 내용',
+                report.description,
+                <span className="res-report">
+                  <span className="res-val res-report-text">{report.description}</span>
+                  {copyButton('신고 내용', report.description)}
+                </span>,
+                true,
+              )}
             </Item>
           ) : (
             <Item label="신고 내용" review={content?.state}>
@@ -422,12 +563,22 @@ export function ResultScreen(props: {
             </div>
           </Item>
 
+          {/* 일자·시간은 한 값(occurred_at)이라 어느 칸에서 열어도 같은 시각 입력 화면이다 */}
           <Item label="발생 일자" review={occurred?.state} pick>
             <Value f={occurred && { ...occurred, value: when.date }} />
+            {ev && props.onTime && (
+              <p className="res-plate-edit">
+                <button type="button" className="res-link" onClick={props.onTime}>
+                  {when.date ? DATE_EDIT_LINK.some : DATE_EDIT_LINK.none}
+                  <ChevronRight size={16} strokeWidth={2} aria-hidden />
+                </button>
+              </p>
+            )}
           </Item>
 
           <Item label="발생 시간" review={occurred?.state} pick>
             <Value f={occurred && { ...occurred, value: when.time }} />
+            {props.timeEditedLocally && <p className="res-hint">{LOCAL_EDIT_NOTE}</p>}
             {/* 결과 화면 발생 시각 수정이 EDIT_EVENT_TIME의 입구다(input-commands 결정 §2-8). 값 칸이 없으면 case가 거부한다 */}
             {ev && props.onTime && (
               <p className="res-plate-edit">
@@ -451,12 +602,12 @@ export function ResultScreen(props: {
             {canCopy && (
               <button
                 type="button"
-                className="rs-btn sec"
+                className={copyClass('전체', 'rs-btn sec')}
                 disabled={!ready || !pasteText}
                 aria-describedby="res-copy-all-note"
-                onClick={() => copy(pasteText)}
+                onClick={() => copy(pasteText, '전체')}
               >
-                붙여넣을 내용 전체 복사
+                {copyText('전체', '붙여넣을 내용 전체 복사', '전체 복사했어요')}
               </button>
             )}
             {pkg.capabilities.includes('OPEN_DESTINATION') && (
@@ -479,6 +630,18 @@ export function ResultScreen(props: {
           </p>
         )}
         {pkg && !ready && <p className="res-block-note">위 문제가 해결돼야 안전신문고로 넘어갈 수 있어요.</p>}
+        {pkg?.capabilities.includes('OPEN_DESTINATION') && (
+          <div className="res-steps">
+            <p id="res-steps-h" className="res-steps-h">
+              안전신문고에서는 이렇게 들어가세요
+            </p>
+            <ol aria-labelledby="res-steps-h">
+              {HANDOFF_STEPS.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ol>
+          </div>
+        )}
         <p className="res-toast" role="status" aria-live="polite">
           {toast && <span key={toast.id}>{toast.text}</span>}
         </p>
@@ -520,5 +683,70 @@ function Value(props: { f: Field | null; pending?: boolean; after?: ReactNode })
       </span>
       {f?.source && <span className="res-src">{f.source}</span>}
     </>
+  )
+}
+
+// 이 화면에서만 고치기 — 「수정」을 누르면 그 자리에서 입력칸이 열린다. 빈 값으로는 저장하지 않는다.
+function EditText(props: {
+  label: string
+  value: string
+  multiline?: boolean
+  edited: boolean
+  onSave: (value: string) => void
+  children: ReactNode
+}): JSX.Element {
+  const [draft, setDraft] = useState<string | null>(null)
+  const line = useRef<HTMLInputElement>(null)
+  const area = useRef<HTMLTextAreaElement>(null)
+  const opener = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (draft !== null) (line.current ?? area.current)?.focus()
+  }, [draft !== null]) // eslint-disable-line react-hooks/exhaustive-deps -- 열릴 때만
+  const close = () => {
+    setDraft(null)
+    requestAnimationFrame(() => opener.current?.focus())
+  }
+  if (draft === null)
+    return (
+      <>
+        {props.children}
+        {props.edited && <p className="res-hint">{LOCAL_EDIT_NOTE}</p>}
+        <p className="res-plate-edit">
+          <button ref={opener} type="button" className="res-link" onClick={() => setDraft(props.value)}>
+            {props.label} 수정하기
+            <ChevronRight size={16} strokeWidth={2} aria-hidden />
+          </button>
+        </p>
+      </>
+    )
+  const field = {
+    className: 'field',
+    'aria-label': props.label,
+    value: draft,
+    onChange: (e: { target: { value: string } }) => setDraft(e.target.value),
+  }
+  return (
+    <form
+      className="res-edit"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!draft.trim()) return
+        props.onSave(draft.trim())
+        close()
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') close()
+      }}
+    >
+      {props.multiline ? <textarea ref={area} rows={6} {...field} /> : <input ref={line} {...field} />}
+      <div className="res-edit-actions">
+        <button type="submit" className="rs-btn pri sm" disabled={!draft.trim()}>
+          저장
+        </button>
+        <button type="button" className="rs-btn sec sm" onClick={close}>
+          취소
+        </button>
+      </div>
+    </form>
   )
 }

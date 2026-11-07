@@ -74,16 +74,21 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
 _SPAN_KEYS = ("timeline_id", "timeline_revision", "start_ms", "end_ms")
 
 
-def candidates_from_events(raw_candidates: list[dict[str, Any]]) -> list[Candidate]:
+def candidates_from_events(raw_candidates: list[dict[str, Any]], *,
+                           frame_refs: dict[str, str | None] | None = None) -> list[Candidate]:
     """search `CandidateEvent` → case `Candidate`. 동기 경로(`receive_search_candidates`)와 Worker 반영 경로
-    (`reflection.reflect_execution`)가 같은 변환을 쓴다."""
+    (`reflection.reflect_execution`)가 같은 변환을 쓴다.
+
+    `frame_refs`는 Coarse handler가 발급한 후보 썸네일(#583 E안)이다. 있으면 그 값이 Search `thumbnail_ref`(실제
+    경로에서 늘 `null`)보다 우선이고, `null`(발급 거부)이면 Search 값을 쓴다."""
+    frame_refs = frame_refs or {}
     return [
         Candidate(
             candidate_id=c["candidate_id"],
             at=None,
             at_provenance="recording.timeline_relative_only",
             observed=c["summary"],
-            thumb_ref=c["thumbnail_ref"],
+            thumb_ref=frame_refs.get(c["candidate_id"]) or c["thumbnail_ref"],
             rank=c["rank"],
             # span 좌표는 생성 당시 timeline revision 기준이다 — stale 판정과 marker_ms의 근거(#184).
             representative_ms=c["span"]["representative_ms"],
@@ -245,6 +250,7 @@ def build_view_from_adapter(
         analysis_timed_out=case.analysis_timed_out,
         clip_build_failed=selected_clip_failed(case),
         analysis_range_too_long=case.analysis_range_too_long,
+        search_input_unsupported=case.search_input_unsupported,
         visual_verify_status=visual_verify_status,
         overlay_time_readouts=snapshot.overlay_time_readouts,
         hint_unclear=case.hint_unclear,
@@ -498,11 +504,13 @@ def derive_notices(
     analysis_timed_out: bool = False,
     clip_build_failed: bool = False,
     analysis_range_too_long: bool = False,
+    search_input_unsupported: bool = False,
 ) -> dict[str, Any]:
     """조립된 `CaseView` 값만으로 발동 조건이 정해지는 notice를 덧붙인다.
 
     - `search.candidate_search_failed` — 진행 상태 `coarse_search`가 `FAILED`일 때(PR #187 리뷰).
-      evidence 유무와 무관하다.
+      evidence 유무와 무관하다. 그 실패가 지원하지 않는 영상이면(`search_input_unsupported`, #542) 다시 찾아도
+      같으므로 action이 없다.
     - `recording.analysis_range_too_long` — 같은 조건에서 그 실패가 분석 범위 상한 초과일 때(`analysis_range_too_long`, #452).
       `search.candidate_search_failed` 대신 붙는다. 다시 찾아도 같으므로 action이 없다.
     - `case.analysis_stopped` — `stage=SEARCHING`이고 진행 상태 `coarse_search`가 `PARTIAL`일 때(사용자 중단, 8-9).
@@ -557,7 +565,11 @@ def derive_notices(
     derived = []
     # 후보 탐색 실패는 evidence 유무와 무관하게 알린다 — 실패를 「결과 없음」으로 보이지 않게 한다.
     if any(s["step"] == "coarse_search" and s["state"] == "FAILED" for s in view.get("progress", [])):
-        derived.append(ANALYSIS_RANGE_TOO_LONG_NOTICE if analysis_range_too_long else CANDIDATE_SEARCH_FAILED_NOTICE)
+        if analysis_range_too_long:
+            derived.append(ANALYSIS_RANGE_TOO_LONG_NOTICE)
+        else:
+            derived.append({**CANDIDATE_SEARCH_FAILED_NOTICE, "actions": []} if search_input_unsupported
+                           else CANDIDATE_SEARCH_FAILED_NOTICE)
     if view.get("stage") == "SEARCHING" and any(
         s["step"] == "coarse_search" and s["state"] == "PARTIAL" for s in view.get("progress", [])
     ):

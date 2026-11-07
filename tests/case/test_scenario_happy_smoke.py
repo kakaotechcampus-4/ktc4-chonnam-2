@@ -126,6 +126,7 @@ def test_happy_path_ready_matches_fixture():
     assert view["package"]["report_field_states"] == ready["package"]["report_field_states"]
     assert view["package"]["unconfirmed_fields"] == ready["package"]["unconfirmed_fields"]
     assert view["package"]["artifact_ref"] == ready["package"]["artifact_ref"]
+    assert view["package"]["plate_image_ref"] == ready["package"]["plate_image_ref"]
     assert view["package"]["capabilities"] == ready["package"]["capabilities"]
 
 

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
 import { ChevronDown, CircleAlert } from 'lucide-react'
 import carSide from '../assets/car/car-side.webp'
 import carDoorOpen from '../assets/car/car-door-open.webp'
@@ -72,6 +72,12 @@ const GHOSTS = [1, 2, 3]
 // 「영상에서 찾아보기」 뒤 겉모습 복사본을 남겨 두는 시간 — 출발 0.95초 + 밀려 나가는 0.42초 + 여유.
 // 시연(DemoFlow)과 실제(ApiFlow)가 같이 쓴다
 export const DEPART_EXIT_MS = 1450
+// 「영상에서 찾아보기」를 아직 못 누르는 이유 — 화면 낭독기용
+const SEARCH_OFF_WHY: Record<Exclude<UploadState, 'done'>, string> = {
+  idle: '영상을 먼저 올려 주세요.',
+  uploading: '영상을 올리는 중이에요. 끝나면 누를 수 있어요.',
+  fail: '영상을 올리지 못했어요. 다시 선택해 주세요.',
+}
 
 // 출발 연기·속도선 — 원본 좌표(ox, oy)를 출발 장면(칸 너비 width, 높이 320) 좌표로 옮겨 놓는다.
 // 시간(ms)은 refresh.css의 출발 타임라인과 맞춘다: 시동 진동 100~450 · 배기 120~ · 휠스핀 연기 300~ · 출발 450~970
@@ -135,6 +141,7 @@ export function UploadScreen(props: {
   /** 분석 시작 직후 화면이 빠지는 동안 — 자동차가 출발한다(누를 수 없는 복사본에서만 쓴다) */
   departing?: boolean
 }): JSX.Element {
+  const situationId = useId()
   const [over, setOver] = useState(false)
   const [pointerIn, setPointerIn] = useState(false)
   const [intro, setIntro] = useState(!introPlayed)
@@ -174,11 +181,19 @@ export function UploadScreen(props: {
   }, [state, uploadedKey, props.departing])
   const timeText = vtime && videoTimeText(vtime)
 
-  // 연출 단계 — 실제 업로드 상태(state)와 따로 둔다. 업로드가 새로 시작될 때마다(파일 교체 포함)
-  // 처음부터 다시 하고, 업로드 중이 아니면 바로 지운다.
+  // 연출 단계 — 실제 업로드 상태(state)와 따로 둔다. 탑승 → 문 닫힘 → 바퀴는 이 화면의 첫 업로드에서 한 번만 한다.
+  // 파일마다 목록이 새로 만들어지거나 다시 골라 올려도 처음부터 하지 않는다. 업로드 중이 아니면 바로 지운다.
   const [phase, setPhase] = useState<Phase>(null)
+  const played = useRef(false)
+  const wasUploading = useRef(false)
   useEffect(() => {
-    if (state !== 'uploading') return setPhase(null)
+    if (state !== 'uploading') {
+      if (wasUploading.current) played.current = true
+      wasUploading.current = false
+      return setPhase(null)
+    }
+    wasUploading.current = true
+    if (played.current) return
     setPhase('boarding')
     const a = setTimeout(() => setPhase('closing'), BOARD_MS)
     const b = setTimeout(() => setPhase('wheel'), BOARD_MS + CLOSE_MS + HOLD_MS)
@@ -186,7 +201,7 @@ export function UploadScreen(props: {
       clearTimeout(a)
       clearTimeout(b)
     }
-  }, [state, props.files])
+  }, [state])
 
   // 장면의 폭(칸 너비)만 따라간다 — 높이는 설계값이라 칸이 접혀도 배율이 흔들리지 않는다.
   const scene = useRef<HTMLDivElement>(null)
@@ -432,14 +447,33 @@ export function UploadScreen(props: {
             rows={4}
             value={props.situation}
             onChange={props.onSituation}
+            id={situationId}
+            describedBy={`${situationId}-hint`}
           />
-          <span className="rs-hint">Tab 키를 누르면 예시 문장이 들어가요. 비워 두셔도 영상에서 찾아볼게요.</span>
+          <span className="rs-hint" id={`${situationId}-hint`}>
+            비워 두셔도 영상에서 찾아볼게요.
+          </span>
         </label>
+        <ExampleButton example={EXAMPLE} value={props.situation} onChange={props.onSituation} inputId={situationId} />
 
         <div className="rs-actions">
-          <button type="button" className="rs-btn pri lg" disabled={state !== 'done'} onClick={props.onSearch}>
+          {/* disabled 대신 aria-disabled — Tab으로 닿아 못 누르는 이유가 읽힌다(#509 #5). 화면에는 업로드 칸이 상태를 보인다 */}
+          <button
+            type="button"
+            className="rs-btn pri lg"
+            aria-disabled={state !== 'done'}
+            aria-describedby={state !== 'done' ? `${situationId}-why` : undefined}
+            onClick={() => {
+              if (state === 'done') props.onSearch()
+            }}
+          >
             영상에서 찾아보기
           </button>
+          {state !== 'done' && (
+            <span id={`${situationId}-why`} className="sr-only">
+              {SEARCH_OFF_WHY[state]}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -453,21 +487,40 @@ export function SituationInput(props: {
   rows: number
   value: string
   onChange: (text: string) => void
+  /** 예시 버튼이 채운 뒤 초점을 돌려줄 때 쓴다 */
+  id?: string
+  /** 칸 아래 안내 — 화면 낭독기가 칸과 함께 읽는다 */
+  describedBy?: string
 }): JSX.Element {
+  // Tab은 초점 이동에만 쓴다. 예시 문장은 ExampleButton으로 넣는다(#509 #4)
   return (
     <textarea
+      id={props.id}
       className="field situation"
       rows={props.rows}
       aria-label={props.label}
+      aria-describedby={props.describedBy}
       placeholder={`예: ${props.example}`}
       value={props.value}
       onChange={(e) => props.onChange(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Tab' && !e.shiftKey && !props.value) {
-          e.preventDefault()
-          props.onChange(props.example)
-        }
-      }}
     />
+  )
+}
+
+// 칸이 비어 있을 때만 보인다. 누르면 예시를 채우고 초점을 칸으로 옮긴다 — 버튼이 사라져도 초점을 잃지 않게.
+// 칸을 감싼 label 안에 두지 않는다(label 안의 두 번째 조작 요소가 되지 않게).
+export function ExampleButton(props: { example: string; value: string; onChange: (text: string) => void; inputId: string }): JSX.Element | null {
+  if (props.value) return null
+  return (
+    <button
+      type="button"
+      className="rs-example"
+      onClick={() => {
+        props.onChange(props.example)
+        document.getElementById(props.inputId)?.focus()
+      }}
+    >
+      예시 문장 넣기
+    </button>
   )
 }

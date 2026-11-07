@@ -3,9 +3,10 @@ from daesingo.common.jobs.execution import HandlerResult
 from daesingo.common.jobs.produced import ProducedObject
 from daesingo.recording import ContractRef, RecordingCapabilityError
 from daesingo.worker.registry import KindRegistry
+from daesingo.worker.produced_reader import IncidentClipResult
 
 
-def incident_clip_registry(*, load, service_factory=None):
+def incident_clip_registry(*, load, service_factory=None, frames=None):
     if service_factory is None:
         return KindRegistry({})
 
@@ -68,8 +69,13 @@ def incident_clip_registry(*, load, service_factory=None):
             else:
                 # The payload points to immutable Recording media. The result
                 # receipt belongs to this execution, even when a new job reuses it.
-                result = HandlerResult(objects=(ProducedObject(kind="incident_clip_result",
-                    payload={"incident_clip_ref": clip.incident_clip_ref}),))
+                payload = {"incident_clip_ref": clip.incident_clip_ref}
+                if frames is not None:
+                    # This optional seam needs real Case helpers before production
+                    # activation. It runs after input connection release, before T1.
+                    payload.update(frames(context, data, clip, recording))
+                    payload = IncidentClipResult.model_validate(payload).model_dump()
+                result = HandlerResult(objects=(ProducedObject(kind="incident_clip_result", payload=payload),))
             context.checkpoint()
         context.checkpoint()
         return result

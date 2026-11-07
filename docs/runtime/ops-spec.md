@@ -4,7 +4,7 @@
 **Owner:** common/runtime — 김준영  
 **Deployment baseline:** EC2 1대 + Docker Compose + MySQL  
 **AWS 환경 입력:** [`official-inputs/aws-environment.md`](./official-inputs/aws-environment.md) — 카테캠 제공 조건 · 2026-10-02 / 10-30 실환경 snapshot  
-**Last synced:** 2026-10-30 — `develop` `f208d65f`(#479 · #478 포함)  
+**2026-10-30 배포 준비 snapshot:** `develop` `f208d65f`(#479 · #478 포함). 이후 실행 근거와 남은 검증은 §3·§21 참조
 **Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)  
 **Logical Data Model:** [`docs/architecture/erd-draft.md`](../architecture/erd-draft.md)  
 **Alignment ADR:** [ERD ↔ Runtime 정합화](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
@@ -14,12 +14,12 @@
 **2026-10-31 구현 갱신:** 승인값은 유지하며 [공개 배포·복구 Notes](rt14-public-deployment.md)에
 rollback tip 독립·release-bound Web·pointer/state·Caddy/DDNS·외부 smoke와 현재 검증을 연결한다.
 아래 2026-10-30 snapshot 표는 당시 이력이다. #483/#484/#488의 quality/import/secret gate는
-현재 CI에 있으며 이번 변경에서 완화하지 않았다. 실제 AWS/public acceptance는 완료하지 않았다.
+현재 CI에 있다. 이 구현 기록은 AWS 실행 전 상태이며, 첫 제한 접근 검증은 아래 실행 기록에 있다.
 
 **2026-10-31 실행 갱신:** 첫 AWS 배포, 검증자 1명(`/32`)으로 제한한 public acceptance, 실영상 E2E 1회를
 수행했다([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 같은 날 팀 계정에서 Elastic IP를
 할당·연결할 수 있음을 확인해 공개 주소에 쓰기로 했고(§2-2, RD-14a), `AWS_ACCOUNT_ID`는 Secret으로
-공급하도록 바꿨다(§2-1). 두 번째 deploy·rollback·restore rehearsal과 장기 공개 hardening은 남았다.
+공급하도록 바꿨다(§2-1). 이후 배포·복원 증거와 남은 검증은 §3에 구분해 기록한다.
 
 ## 1. 문서 경계
 
@@ -259,11 +259,23 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 원칙:
 
 - **제출 · 심사 · 발표 기간 동안 URL이 실제로 쓸 수 있어야 한다.** 이것이 공지의 요구다. 공지에는 심사가 끝나는 시점이 없다(`확인 필요`).
-- **팀 운영 목표는 같은 URL을 11/20까지 유지하는 것을 기본값으로 둔다.** 11/20은 공지 요구가 아니라 카테캠 AWS 제공 종료일이라는 외부 조건이다. EC2를 중지하면 공인 IPv4가 바뀌므로(§2-1) 주소를 유지하는 수단은 RD-14가 정한다(§2-2).
+- **공개 서비스 운영 종료 목표는 2026-11-20이다(2026-11-05 PM 결정).** 당일 카테캠 AWS 제공 종료를 넘겨 운영하지 않으며, 제공 기한·실제 비용·심사 조건이 더 짧으면 사전 안내 후 일찍 종료한다. 해당 날짜의 서비스 중단과 관리 데이터 삭제는 실제 운영 절차로 확인해야 한다. 기존 EIP·DNS·TLS 및 주소 안정성 운영은 RD-14(§2-2)를 따른다.
 - **EC2는 팀원 공유다**([`aws-environment.md`](./official-inputs/aws-environment.md) §1). 제출 뒤에는 서비스 중인 instance의 중지 · 재시작 · host 전역 변경(package 설치 등)을 운영 창에서만 한다. 전원 자동화 금지는 §2-1 「공유 EC2 전원 · host 변경 원칙」이다.
-- **공개 범위와 비용 상한은 RD-14(endpoint 구성)와 따로 정한다.** 인증 없이 업로드 · 분석이 가능하므로 공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용 중 무엇인지와 provider 호출 상한을 공개 전에 정한다. 이 결정과 §2-4 보호는 공개 운영 hardening 후속 이슈에서 우선순위를 나누고, 공개 전에 §21 pre-deploy review를 실행한다. 카테캠 계정은 상업적 · 유료 서비스 운영이 금지다(같은 문서 §3).
+- **공개 범위 정책은 2026-11-05 PM이 C 목표·A-1 대체로 결정했다**(아래 「공개 운영 모드 결정」). RD-14는 endpoint 배포를 소유하며 실제 사용자 영상 공개를 자동으로 승인하지 않는다. 금액 상한도 §2-4의 초기 제안값일 뿐 실제 provider 예산·차단 구현 및 테스트가 완료된 것은 아니다. 공개 전에 §21 및 [보안 검수표](../management/pre-deploy-security-review.md)를 실행한다. 카테캠 계정에서는 상업적·유료 서비스 운영을 하지 않는다.
 - **외부 체험은 §2-4의 보호 범위 안에서만 받는다.**
 - **제공 종료 전 데이터 처리.** 업로드 영상 · 파생물 · DB의 삭제 시점과 방법은 retention 미결(§14, #71)과 함께 정한다. 결정 전에는 「제공 종료와 함께 사라진다」고 가정하지 않는다.
+
+#### 공개 운영 모드 결정 (2026-11-05, PM)
+
+| 모드 | 허용 범위 | 공개 전 조건·상태 |
+| --- | --- | --- |
+| **C — 목표** | 로그인 없이 URL 접근; 필요한 고지·동의 후 **업로드 권한이 있는 사용자 영상**의 제한적 분석 | 세션별 Case/원본/파생물/다운로드 접근 격리, provider 과금 강제 차단, 삭제 및 배포 실영상 E2E 검증 후 별도 Go 승인. **미승인** |
+| **A-1 — C 불가 시 대체** | **공식 승인·비식별 샘플에 한해 실제 AI 분석**. 임의 영상 업로드·임의 media 분석은 서버에서 차단 | 샘플 allowlist의 서버측 강제, 세션별 Case·입력 단서·결과 접근 보호, 유료 실행 한도·삭제·샘플 실제 E2E가 검증돼야 한다. **미승인** |
+| **둘 다 불가** | 실제 유료 분석 공개 보류 | 비실행 안내·사전 생성 결과 시연은 실제 분석과 구분해 별도 검토. 이를 A-1 성공으로 표시하지 않음 |
+
+- **공개 URL 접근과 유료 분석 수락은 별개**다. 웹 진입 허용은 임의 Case/API 호출 허가가 아니다. 현재 [HTTP API 인증 경계](../architecture/contracts/contract-http-api.md#36-인증)는 `case_id`를 아는 것을 사실상 접근 조건으로 두므로, 이를 사용자 간 격리의 검증 증거로 간주하지 않는다. A-1에서도 이 위험은 남는다.
+- 공식 기본 샘플은 **1~2분**짜리 사용·공개 권한이 확인된 영상 1~2개를 목표로 한다. 사용자 영상은 **최대 10분 지원 목표**지만, 실제 허용 길이/바이트는 배포 환경의 Recording → Search → Case → 신고자료 다운로드 E2E로 검증된 상한만 사용한다. 초기 재현용 4분/48 MiB 설정과 이후 실험 조건은 [Recording 한도](../modules/recording/analysis-source-limits.md)에 구분해 기록한다.
+- 20분 이상 지원은 이후 확장·검증 목표이지 이번 공개 보장 범위가 아니다. 실제 Go/No-Go와 release revision·검증 증거는 §21에 기록한다. **이 문서 변경은 코드 구현, 설정 적용 또는 공개 승인으로 간주하지 않는다.**
 
 ### 2-4. 외부 체험 운영 보호 · 부하 시험
 
@@ -286,11 +298,30 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 
 - **초과 요청은 일찍 거절한다.** 과부하에서 일부 요청을 의도적으로 거절해 수락한 요청의 지연을 낮게 유지하는 load shedding 접근을 따른다([AWS Builders' Library](https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload)).
 - **전역 connection 한도 하나로 끝내지 않는다.** Uvicorn `--limit-concurrency`는 한도를 넘는 새 요청에 바로 `503`을 주고 idle keep-alive 연결도 한도에 센다([Uvicorn 문서](https://uvicorn.dev/server-behavior/)). 요청 종류를 구분하지 못해 조회 · health까지 막을 수 있으므로 위 표처럼 종류별 경계를 둔다.
-- **queue 대기가 Case 대기 예산을 넘으면 수락하지 않는다.** Case는 탐색 job을 `requested_at + 실행 예산 + 30초`까지만 기다린다([case 대기 timeout](../modules/case/decisions/case-wait-timeout.md)). queue가 길어지면 실행이 성공하기 전에 Case가 기다리기를 멈춘다. timeout을 늘려 숨기지 않는다.
+- **queue 대기가 Case 대기 예산을 넘으면 수락하지 않는다.** Case는 탐색 job의 `requested_at`부터 실행 예산, 큐 여유 30초, 타임라인 범위에 따른 준비 여유를 합산해 대기 마감을 계산한다. 공개 RC 기본 발주의 대기는 최대 60분이며, 첫 Coarse 실행 예산은 600초다. [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-2·§3-8·§3-10을 따른다. queue가 길어지면 실행이 성공하기 전에 Case가 기다리기를 멈춘다. timeout을 늘려 숨기지 않는다.
 - **IP 단위 제한만으로 공정성 · 비용 상한을 삼지 않는다.** 같은 네트워크의 여러 사용자가 한 공인 IP를 쓸 수 있다. 서버 전체 상한을 우선하고, 인증 없는 case 생성으로 반복 상한을 우회할 수 있는지 함께 본다.
 - **Worker 증설로 해결하지 않는다.** §17 조건이 그대로다.
 - **운영 통제 절차가 필요하다.** 신규 분석만 일시 중단하고 기존 결과 조회 · 다운로드는 유지하는 방법을 공개 전에 정한다.
 - 새 HTTP status · 오류 코드 · 사용자 안내가 필요하면 HTTP Contract Owner와 Consumer(case · web)가 함께 정한다. 이 문서는 운영 요구만 정한다.
+
+#### 공개 체험 사용량·비용 제한안 (2026-11-05 PM 정책, 구현·승인 전)
+
+아래는 **초기 운영 제한안**이며 런타임에서 실제 강제되지 않는 한 지원 기능이나 검증 완료로 표시하지 않는다.
+
+| 항목 | 시작 목표값 | 필수 검증·비고 |
+| --- | --- | --- |
+| 세션별 사용 | 세션당 1일 업로드 최대 3회, 초기 분석 최대 3회 | 서버 발급 익명 세션 기준. 브라우저 로컬 상태만으로 집행 금지 |
+| IP별 사용 | IP당 1일 업로드·유료 분석 각각 최대 10회, 업로드는 시간당 최대 3회 | 공유 NAT를 고려하고 예외 해제·차단 수단 정의 |
+| 유료 반복 | 재탐색·재판독·처음 보는 후보 분석 등 추가 provider 호출을 유료 사용량에 합산, Case당 유료 재실행 최대 2회 | [#311](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/311)의 **MVP Case 내부 무제한 반복 결정은 유지**. 공개 운영 admission만 별도로 제한 |
+| 동시 실행 | 익명 세션당 유료 분석 최대 1건, 서비스 전체 유료 분석 수락 최대 2건 | Worker concurrency=1을 2로 늘린다는 뜻이 아님. queue·대기·거절 동작은 검증 후 설정 |
+| 일반 API | IP당 분당 60요청 검토 시작값 | 정상 Web polling에 영향 없는지 실측, 미확정 |
+| **Provider API 비용** | **일 20,000원 / 공개 기간 누적 100,000원 초기 상한안**, 분석 1건 약 1,000원 목표 | **최종 지출 승인 전**. 실제 계정 잔액·단가·retry·재실행 비용 확인. EC2·인프라 비용은 별도 |
+| 운영 중단 | 예산 소진·남용·보안 이상 시 신규 업로드/유료 분석/재실행 즉시 중단 | 조회·완료 산출물은 안전한 범위에서 유지; 실제 kill switch 동작 확인 |
+
+- **비용 상한은 공급자 호출 전에 서버 공유 상태에서 보수적으로 예약·차단해야 한다.** 사후 UsageRecord 집계, 프런트 버튼 제한, 공급자 알림만으로 hard cap을 충족했다고 보지 않는다. 계정/결제 책임자와 실제 운영 가능액을 대조하기 전에는 2만/10만원을 승인된 지출 예산으로 취급하지 않는다.
+- **모든 유료 경로**(초기 탐색·Fine·재탐색·재판독·다른 후보·실패 재시도)를 통제한다. 제한 초과는 가능한 한 비과금 상태에서 즉시 거절하고, Web에는 사용자가 이해할 수 있는 사유·재시도 안내를 제공한다. 새 오류 status/code는 [HTTP 계약](../architecture/contracts/contract-http-api.md) Owner와 합의 후 정한다.
+- **C와 A-1 모두** Case ID·영상 ref를 추측하거나 복사해 다른 세션에서 원본·프레임·다운로드·입력 단서를 볼 수 없는지 검증한다. 별도 로그인은 두지 않지만, 추측 불가능한 세션/Case 권한과 직접 URL 접근 검증은 필요하다. A-1은 공식 샘플 외 파일 등록과 API 우회 분석을 서버에서 거부해야 한다.
+- 모든 숫자는 승인·실측 후 변경할 수 있으나 운영 설정·프런트 안내·백엔드 검증값을 일치시킨다. 세션/IP 식별자는 최소한만 수집·보관한다. 구현 작업 범위와 담당 배정은 별도 합의한다.
 
 #### 부하 시험
 
@@ -320,7 +351,7 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 
 ## 3. 현재 상태와 목표 상태
 
-### 현재 develop에서 확인된 것 — 2026-10-30 (`7bab60bc` 기준)
+### 2026-10-30 배포 준비 snapshot (`7bab60bc` 기준)
 
 Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-implementation-plan.md) §6 · [Implementation Log](./runtime-implementation-log.md)가 소유한다. 로컬 구성 절차는 [로컬 Runtime 실행환경](./local-runtime-environment.md)이다.
 
@@ -336,7 +367,13 @@ Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-imple
 - EC2 배포 준비 구현 — OIDC 인증 · ECR publish · SSM host controller · rollback 도구와 Worker 8종 등록 marker (RT-14 #479, §2-1). OIDC 인증 · ECR publish만 실제 실행했고 EC2 배포는 실행하지 않았다
 - CI: MySQL gate · 배포 image media/OCR acceptance · boundary/contract · web (§19)
 
-### 아직 없는 것
+### 이후 실행 증거
+
+- 10/31 실제 EC2 배포에서 release artifact를 사용했고, 검증자 1명(`/32`) 환경에서 외부 TLS·Web/API smoke를 통과했다. 해당 실영상 Case는 신고영상 다운로드까지 도달했다. [10/31 실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)
+- DB·PAX media의 단회 백업·격리 복원·비교는 운영자 제공 결과상 PASS였다. 운영 DB 복원 전환과 RPO/RTO는 별도 검증 항목이다. 로컬 파일 기반 백업 도구의 후속 변경은 #592에서 머지됐다. [복원 acceptance](rt14-recovery-acceptance.md) · [파일 기반 도구 #592](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/592)
+- #452에서 C′ `70f1c47c`로 보고된 EC2 배포 조건의 20개·20분 단회 실행은 `READY`와 다운로드·재생까지 기록됐다. 이후 #622가 머지한 호환 중간 release와 고정 최종 후보 `bb29d750`은 각각 별도 소스다. 실제 전환·rollback 판정에는 해당 배포 실행의 증거가 필요하다. [20분 실행 기록](experiments/2026-11-07-ec2-20file-product-e2e-result.md) · [호환 release 절차](rt14-preview-bridge.md)
+
+### 2026-10-30 준비 당시 남은 항목
 
 - EC2 실제 배포 — 승인한 구현 변경 · AWS 입력 등록 · 첫 publish/deploy · rollback rehearsal(RT-14, RD-12b ~ f. Gate는 2026-10-30 승인)
 - 배포 후 검증의 실제 실행(RD-12h). 준비 구현의 smoke는 host 내부 loopback이고, 외부 경로 smoke는 RD-14에 달려 있다
@@ -348,7 +385,7 @@ Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-imple
 - Ruff · type checker · secret scan(RT-15)
 - P2 Runtime Capacity Smoke — baseline EC2에서 working set · concurrency 실측
 
-따라서 local runtime 절(§4 · §6 · §9 일부)은 현재 동작을 가리키고, **EC2 배포 · 운영 관측 · capacity 절은 아직 구현 목표와 운영 acceptance criteria**다.
+위 목록은 10/30 당시 상태다. 후속 운영 검증 상태는 §21·§23 및 각 실행 기록을 따른다.
 
 ## 4. Docker / Process 운영
 
@@ -571,10 +608,10 @@ EC2 기본 CPU/RAM/disk 지표
 - local disk working set이 얼마나 되는가
 - OOM/swap/CPU saturation이 반복되는가
 
-2026-10-30 현재:
+2026-10-30 당시 관측 준비 상태:
 
 - queue wait · oldest queued · execution duration · STALE · retry · cancel 지표는 RT-12(b)의 **DB 집계 query**와 structured log event catalog로 local · integration에서 볼 수 있다([`rt12b-observability.md`](./rt12b-observability.md)). 정기 기록 · 대시보드는 없다(RD-13b).
-- 배포된 stack이 없으므로 이 값은 아직 실제 운영 metric이 아니다.
+- 당시에는 배포된 stack이 없었다. 이후 실제 stack의 CloudWatch 상관 이벤트와 DB/자원 단회 표본은 [RT-14 Result §8](./experiments/2026-10-31-rt14-aws-real-e2e.md)에 있다. 전용 phase 계측·지속 관측·capacity 검증 완료를 뜻하지 않으며, 현재 가용 관측과 gap은 [P2 §7](./experiments/elice-runtime-capacity-smoke-plan.md#7-관측-방법과-instrumentation-gaps)을 따른다.
 - AWS 쪽 수집 경로: EC2 instance role에 `CloudWatchAgentServerPolicy`가 붙어 있고 Log Group 생성 · retention 설정이 SSO 권한으로 가능했다. 그러나 CloudWatch Agent는 설치돼 있지 않고 Log Group도 없다([`aws-environment.md`](./official-inputs/aws-environment.md) §8 · §10). 위 「structured stdout → AWS log collection」 경로의 transport 선택은 RD-13a다. RT-14 Gate는 Docker `awslogs` driver + dual local cache를 승인했고(2026-10-30) 준비 구현이 그대로 render한다 — 별도 Agent는 필요 없다. 이 EC2에서 Docker daemon이 instance role로 임시 group에 로그를 보내는 것은 2026-10-30 스파이크로 확인했고([RT-14 배포 설계](./rt14-deployment-design.md) §17), 운영 group · retention과 실제 stack 로그 수신 확인이 남는다([RT-14 실행 절차](./rt14-deployment.md) §1 · §8).
 - EC2 기본 CloudWatch metric(CPU 등)은 콘솔에서 볼 수 있다. RAM · disk · process RSS는 Agent 없이 기본 metric에 없다.
 
@@ -672,17 +709,22 @@ OS working space
 - peak simultaneous disk
 - cleanup 이후 steady-state disk
 
-> **현재 구현 사실 (2026-10-30 `develop` `7bab60bc` 기준):** local Compose에서 api · worker는 named volume `/media` 하나를 공유한다 — `source`(durable publish 원본), `staging`(API upload), `api-temp` · `worker-temp`(각 process의 미디어 작업 temp). Recording이 준비한 미디어 bytes(AnalysisSource 등)는 recording 소유 MySQL table의 `LONGBLOB` 행에 저장되므로 **MySQL data volume의 working set**에 들어간다. 이 저장의 지원 길이 · byte 한도 운영값은 Recording Owner 측정 뒤 확정할 미결이다([#452](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452), [로컬 Runtime 실행환경](./local-runtime-environment.md) §5 · §9). 그 밖에 Docker image(PaddleOCR 모델 cache 포함)와 container log(B-O1, container당 ~100 MB)가 같은 disk를 쓴다. EC2 배포에서는 rollback을 위해 current · previous known-good image를 지우지 않고 candidate image가 잠시 더해진다([RT-14 실행 절차](./rt14-deployment.md) §8 예산표). AnalysisSource 재사용 범위는 RD-09, process 사이 bytes · ref 경계는 §4-2(RD-17)다.
+> **구현 경계 (2026-11-02 `develop` `15b8b6a1` 대조):** local Compose에서 api · worker는 `/media` volume을 공유한다 — `source`(durable 원본), `staging`(upload), `api-temp` · `worker-temp`(Recording temp). production은 [RT-14 controller](./rt14-public-deployment.md)가 소유 external volume을 연결한다. prepared AnalysisSource 등은 Recording MySQL `LONGBLOB`이므로 **DB volume working set**이다. 초기 profile/byte/길이 baseline v1은 이미 확정됐으며 원문은 [Recording limits](../modules/recording/analysis-source-limits.md)와 [설정 명세 §3](../management/environment-and-deployment-config.md#3-recording-초기-배포-baseline-v1)다. 운영 최적값·장시간 지원과 DB/Search/Case 결합 측정은 #452/P2에 남는다. Search 자체 tempfile은 별도 `/tmp`/container layer도 쓰므로 `/media/worker-temp`만 관찰하지 않는다. image/OCR cache·logs·DB/media·backup도 같은 disk 예산에 포함한다. current/previous known-good/candidate 보존 예산은 RT-14 절차를 따른다.
 
 Issue #95 R3에서는 동일 AnalysisSource의 process-local reuse가 materialization 비용을 크게 줄일 가능성이 확인됐다. 그러나 현재 확인된 것은 **성능 최적화 후보**이지 durability guarantee가 아니다.
 
-따라서 Runtime은 persistent/shared cache를 먼저 도입하지 않고 다음을 capacity 실험에서 함께 관측한다.
+현재 Worker는 invocation별 새 RecordingService를 만들며 instance-local reuse와 durable BLOB 읽기는 다르다.
+새 job의 local-source preparation이 자동 persistent cache hit가 되는 것은 아니다.
+반복 job/실행 내 reuse·restart 뒤 ref 읽기/재준비·temp 회수와 durable DB 증가를 구분하는
+측정은 [갱신한 P2-B/C/D](./experiments/elice-runtime-capacity-smoke-plan.md#8-실험-순서와-각-선행조건)를 따른다.
 
-- cold materialization과 warm reuse의 시간·disk 차이
-- Worker/process restart 후 재생성 비용
-- 동일 입력 동시 요청의 duplicate materialization 가능성
-- cleanup 이후 steady-state disk 회수
-- reuse 이득이 local-only storage의 제약을 상쇄하는지
+초기 4분/48 MiB 설정은 [Product Spec](../product/product-spec.md)의 장시간·다중 영상 후보 탐색 약속을
+축소한 최종 제품 한도가 아니다. P2-0a의 현재 구성 안전 거부와 0b의 baseline 관측에 더해,
+[P2-0c](./experiments/elice-runtime-capacity-smoke-plan.md#p2-0c--isolated-capacity-probe--최소-20분-logical-timeline-판단)는
+최소 20분 logical timeline 가능성/최초 병목을 판단하도록 격리 target의 근거 있는 experimental override를 허용한다.
+유한한 guard·자원/비용·config 복귀를 유지하며 운영 packet/limit 변경이나 자동 승격은 하지 않는다.
+목표 미충족 시 bounded/chunked processing·storage·Search/Case 결합 설계를 다시 열 수 있으나 방식을 확정하지 않는다.
+제품 지원 범위 변경의 최종 승인자는 PM이고, P3는 처리 방식 미정의 30~60분 logical timeline Real E2E다.
 
 이 결과가 local-only storage로 부족하다는 근거를 만들 때 §13의 Object Storage 또는 shared persistence 후보를 검토한다.
 
@@ -725,6 +767,11 @@ Issue #95의 Elice 전환 실험에서 Runtime 설계에 영향을 주는 사실
 
 반대로 아직 다음은 확인되지 않았다.
 
+이 목록의 현재 잔여 범위는 [P2 정합성 감사](./reviews/runtime-p2-plan-audit-2026-11-02.md)와
+[P2 §0](./experiments/elice-runtime-capacity-smoke-plan.md#0-감사-결과와-이미-있는-evidence)에서 구분한다.
+RT-14의 작은 실영상 단회 자원 표본은 이미 있으나 대표 working set·구간 분해·동시 부하 검증은 아니다.
+Coarse/Fine의 현재 기본은 Argon이며 inline 경로와 Intent Flash를 구분한다.
+
 - baseline EC2에서 api + worker + mysql + ffmpeg + base64/JSON이 동시에 실행될 때 peak CPU/RAM/disk
 - provider call 중 request construction이 Worker RSS에 미치는 실제 영향
 - MySQL과 media transform의 CPU/I/O contention
@@ -761,27 +808,21 @@ Object Storage를 baseline 의무로 두지 않는다.
 
 ## 14. Retention / Cleanup
 
-현재 exact retention 일수는 미결이다.
+**2026-11-05 PM 운영 목표**를 정했다. 아래 기간은 사용자에게 약속할 **최대 보관 목표**이며, 배포 저장소·DB·실패/재시작 경로의 실제 삭제 구현과 검증은 아직 완료된 것으로 보지 않는다([#71](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/71), §21).
 
-금지:
+| 구분 | 보관 목표·삭제 경계 | 현재 상태 |
+| --- | --- | --- |
+| **사용자 기기 외부 원본**(`ExternalSourceRef`) | 사용자가 소유하는 원본은 서비스가 삭제하지 않음 | 기존 Contract 유지 |
+| **서비스 업로드 원본 복사본**(관리 source, staging 등) | 업로드 시점부터 **최대 24시간**, 처리·제출에 필요 없으면 조기 삭제 | 서버 저장 경로별 TTL·실제 삭제 검증 필요 |
+| **AnalysisSource·IncidentClip·DerivedAsset 등 파생물** | 생성 시점부터 **최대 7일**, 실패·취소·Case 삭제 및 종료 시 더 이른 파기 조건 검토 | 파일·DB 연결·orphan purge 검증 필요 |
+| **Case와 사용자별 입력·분석 결과 DB** | Case 생성 시점부터 **최대 7일** | 실제 참조·외부 파일 포함 삭제 검증 필요 |
+| **RemoteCopy / provider 내부 보관** | Provider의 지원 delete/expiry를 확인해 삭제 호출·상태 기록. 즉시 삭제 미지원 시 `PENDING_EXPIRY` 유지 | 외부 Provider 내부 삭제 시점을 자체 TTL로 보장하지 않음 |
+| **UsageRecord 및 운영 로그** | 영상·사용자 Case 보관기간과 분리. 운영 로그의 기존 RD-11a(CloudWatch 30일, host dual cache 20m × 5) 기준 유지 | 개인 정보·비밀값 비기록 검수 필요; UsageRecord retention은 별도 미결 |
 
-- 근거 없이 “7일”, “30일” 같은 숫자 선결
-- video asset retention과 UsageRecord retention 자동 동일시
-- 사용자 External Source까지 서비스 purge 대상처럼 취급
-
-결정해야 할 축:
-
-```text
-Managed Source Copy retention
-AnalysisSource retention
-IncidentClip retention
-DerivedAsset retention
-RemoteCopy expiry/delete
-UsageRecord retention
-log retention
-```
-
-각 값은 개인정보/재현성/비용/사용자 flow를 함께 보고 결정한다.
+- **2026-11-20 서비스 종료** 전에 새 업로드·유료 분석을 중단하고 서버가 관리하는 업로드 원본, 파생물, Case/사용자 DB 및 임시·orphan 파일의 안전한 삭제·잔여 확인을 수행한다. 최대 7일 보관 목표가 AWS 제공 종료일 이후까지 보관할 근거가 되지는 않는다. 사용자 데이터 삭제 완료 전 시스템 종료를 완료 처리하지 않는다.
+- 삭제는 업로드 실패·취소·재시도·재시작·기한 만료·서비스 종료를 포함해 검증한다. 미완료 삭제·provider expiry는 정확한 상태와 재시도/운영자 대응을 남긴다. 백업·로그·외부 Provider의 실제 보관 범위를 별도로 확인한다.
+- 실제 `purge_case()`·`DeletionReport`·provider adapter의 소유 경계는 변경하지 않는다. retention 값은 운영 정책이며, Domain Contract와 물리 구현을 이 문서만으로 바꾸지 않는다.
+- 세부 cleanup 구현·검증은 [#71](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/71)과 [Pre-deploy Security Review](../management/pre-deploy-security-review.md)를 따른다.
 
 ## 15. Provider 장애 운영
 
@@ -1034,6 +1075,25 @@ coverage는 미검증 경로를 찾는 보조지표로 사용하며 근거 없�
 
 상세 security checklist는 [`docs/management/pre-deploy-security-review.md`](../management/pre-deploy-security-review.md)를 따른다.
 
+### 21-1. 공개 모드 Go/No-Go (2026-11-05 정책, 현재 미검증)
+
+**정책 확정은 배포 승인·acceptance PASS가 아니다.** 실제 배포 revision, 실행 일시, 결과·증거 링크와 담당자 판단을 기록한 후 PM이 공개 모드를 승인한다.
+
+| Gate | 배포 전 확인할 사항 | 검증 담당 | 초기 판정 |
+| --- | --- | --- | --- |
+| G1 외부 접근 | 비회원 외부 HTTPS 접속, 샘플 제공, Web/API 같은 revision 확인 | Runtime·Web | 미검증 |
+| G2 권한·개인정보 | C: 다른 세션의 Case/source/derived/download 접근 불가, 고지·동의. A-1: 같은 접근 격리 및 **공식 샘플만 서버에서 허용** | Runtime·Case·Web | **C/A-1 모두 미검증** |
+| G3 비용·남용 | 세션/IP/반복·전역 유료 수락 상한, provider 요청 전 예산 강제 차단, 긴급 중단 | Runtime·Search | **C/A-1 모두 미검증** |
+| G4 검증 길이 | 실제 공개 환경의 E2E 성공 길이·바이트로 입력 상한 설정; 10분 목표 미충족 시 검증된 상한만 사용 | Runtime·Recording·Search | #452 검증 대기 |
+| G5 삭제 | 업로드 사본·파생·Case DB·임시 파일의 TTL/삭제, 실패·취소·재시작·종료 시 잔여 확인 | Runtime·Recording | **C/A-1 모두 미검증** |
+| G6 샘플 시연 | 허가·비식별 대표 샘플 1~2분의 실제 끝까지 분석·다운로드 및 사용자 안내 확인 | Demo·Web·Runtime | 미검증 |
+| G7 운영 인계 | provider 실제 예산 승인, 운영 종료 11/20, 중단·삭제 runbook, 비상 담당자·통신 수단 확정 | PM·Runtime | 일부 결정 / 미검증 |
+
+- **C 공개**는 G1~G7 중 필수조건을 모두 통과한 뒤 승인한다. G4의 10분 목표가 미달해도 검증된 더 짧은 상한이 명확하고 다른 필수조건을 통과하면 제한 C를 검토할 수 있다.
+- **A-1 대체**는 사용자 임의 영상의 업로드·분석을 서버에서 차단한 상태에서, G1·G2(샘플 격리 포함)·G3·G5·G6·G7을 별도 실증한 뒤에만 승인한다. A-1을 선택했다고 비용·삭제·권한 보호를 생략하지 않는다.
+- 두 모드 모두 불충족이면 공개 실분석을 중단한다. 사전 계산 결과나 정적 안내를 제공하더라도 실제 AI 분석처럼 표시하지 않는다.
+- 검증 항목의 Owner/판정은 [Pre-deploy Security Review](../management/pre-deploy-security-review.md)에, 서버 실행 증거는 해당 배포 실험·runbook에 기록한다. 기존 RT-14 endpoint acceptance만으로 본 Gate를 PASS로 승격하지 않는다.
+
 ## 22. Non-goals
 
 현재 baseline에서 일부러 만들지 않는다.
@@ -1056,29 +1116,30 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [x] local Dockerfile / Compose exact service command — RT-13(a), §4
 - [x] production restart policy — RD-13c 승인(2026-10-30): api · worker · mysql `unless-stopped` · migrate `no`. restart rehearsal은 RT-14 acceptance
 - [x] local MySQL volume · logical backup/restore 도구 — RT-13(a) · RT-13(b)
-- [ ] EC2 운영 backup 주기 · 보관 위치 · restore 절차(RD-12f · RD-12g) — deploy role은 `ec2:CreateVolume`이 거부돼 EBS snapshot에서 새 volume을 만드는 복원 경로가 막혀 있다([`aws-environment.md`](./official-inputs/aws-environment.md) §10)
+- [ ] EC2 운영 backup 주기 · 보관 위치 · restore 절차(RD-12f · RD-12g) — DB·PAX media 단회 격리 복원은 §3에 기록됐다. 정기 운영 백업 정책과 운영 복원 전환 검증이 남았다. EBS snapshot 경로의 권한 관측은 [`aws-environment.md`](./official-inputs/aws-environment.md) §10 참조
 - [ ] production log transport — RD-13a 승인(2026-10-30): service별 `awslogs` + dual local cache. 운영 Log Group 생성 · 실제 수신 acceptance가 남았다
 - [x] log retention(운영 log) — RD-11a 승인(2026-10-30): host dual cache 20m × 5 · CloudWatch 30일. 영상 · 파생물 · UsageRecord retention은 아래 별도 항목
 - [ ] health alert/restart threshold — `/health/live` · `/health/ready` 구현은 완료. RD-13c alert는 공개 운영 hardening 후속으로 넘겼다(2026-10-30 Gate)
 - [ ] disk working-set guardrail
 - [ ] Object Storage 사용 범위
-- [ ] Managed asset retention
+- [ ] Managed asset retention **구현·삭제 검증** — 원본 복사본 최대 24시간, 파생물·사용자 Case DB 최대 7일은 운영 목표로 결정(§14); 실제 adapter·TTL 미검증
 - [ ] UsageRecord retention
 - [ ] provider RemoteCopy cleanup 운영
 - [ ] P2 Runtime Capacity Smoke 수행 — #95 P0/P1 기반 concurrency=1 baseline, working set, cleanup, restart/reuse 관측
 - [ ] capacity/scaling threshold — P2 결과 없이 숫자를 선결하지 않음
 - [ ] P2 이후 필요 시 P3 30분~1시간 Runtime E2E 계획
-- [ ] OIDC + SSM deployment workflow — 준비 구현은 `develop`에 있다(#479, §2-1). Gate는 2026-10-30 승인. OIDC 실제 인증 · publish는 같은 날 확인. 승인한 구현 변경 · remote용 Secret/Variable 등록 · 첫 배포가 남았다(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))
-- [ ] 배포 artifact 전달 방식 — RD-12b 승인(2026-10-30): Actions build once → 같은 image acceptance → ECR immutable SHA tag · digest. deploy role ECR push는 2026-10-30 확인(§2-1). EC2 instance role pull acceptance가 남았다
+- [ ] OIDC + SSM deployment workflow — 10/31 첫 배포와 후속 실험 실행 기록은 §3 참조. 차기 release의 실제 revision·digest와 전환 증거는 해당 실행에 결속한다. [RT-14 #450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)
+- [ ] 배포 artifact 전달 방식 — RD-12b 승인(2026-10-30): Actions build once → 같은 image acceptance → ECR immutable SHA tag · digest. 10/31에는 publish한 production image를 실제 EC2 배포에 사용했다(§3). 이후 release도 SHA·digest와 실제 pull을 대조한다
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
-- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. rollback tip gate 변경 · 최초 배포 recovery runbook · rehearsal이 남았다
-- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지다. 공개 배포의 외부 smoke(DNS · HTTPS · Web → API) 추가가 남았다([RT-14 배포 설계](./rt14-deployment-design.md) §10). 2026-10-31: 외부 smoke는 [공개 배포 Notes](rt14-public-deployment.md)로 구현됐고 검증자 PC에서 PASS했다. Caddy `/32` 제한 중 workflow 단계 smoke는 runner에서 403이라 공개 범위 확대 때 함께 정한다(§2-2)
+- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 구현·복구 절차는 [RT-14 공개 배포 Notes](rt14-public-deployment.md)와 [호환 release 절차](rt14-preview-bridge.md) 참조. 대상 release의 실제 rollback rehearsal 증거가 필요하다
+- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 2026-10-31 제한 접근의 외부 smoke는 [공개 배포 Notes](rt14-public-deployment.md)로 구현됐고 검증자 PC에서 PASS했다. Caddy `/32` 제한 중 workflow 단계 smoke는 runner에서 403이라 공개 범위 확대 때 함께 정한다(§2-2)
 - [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** 공개 모델(same-origin · HTTPS · Caddy host 인프라 · release-bound Web artifact · SG 80/443만 · ~~DDNS 우선 · EIP 비필수~~ EIP + DuckDNS, updater는 백업)은 [RT-14 배포 설계](./rt14-deployment-design.md) §13, 2026-10-30 Gate 승인 · 2026-10-31 RD-14a 갱신. 2026-10-31 검증자 1명(`/32`) 제한 public acceptance PASS([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 공개 범위 확대가 남았다
-- [ ] 공개 범위(공개 샘플 전용 / 제한 접근 / 실사용자 영상 허용)와 샘플 입력 · 사용 안내 — §2-3. RD-14와 분리해 공개 운영 hardening 후속 이슈에서 정한다
+- [x] **공개 운영 방향 결정**(2026-11-05) — C 제한형 Public Beta 목표, 미충족 시 A-1 공식 샘플 실분석 대체, 종료일 11/20(§2-3). **코드 구현·게이트 검증·실제 공개 승인은 아직 미완료**
+- [ ] C/A-1 실제 공개 Go/No-Go, 공식 샘플·사용 안내·권한 격리·예산 확인(§21-1)
 - [ ] 제출 뒤 배포본 hotfix 허용 여부 — 공지에 없음, 카테캠 확인 필요
-- [ ] 외부 체험 보호 상한 — 신규 분석 수락 · 동시 업로드 · 다운로드 메모리 · 운영 통제(신규 분석 일시 중단) 절차(§2-4). RT-14 Gate가 아니라 공개 운영 hardening 후속 이슈 범위
+- [ ] 외부 체험 보호 상한 **구현·실측** — 11/5 정책값(세션/IP/반복/동시 분석, provider 일 2만원·누적 10만원 *잠정*)은 §2-4. 실제 예산 승인·서버 admission·업로드/다운로드 보호·긴급 중단 절차는 미완료. RT-14 endpoint Gate와 분리
 - [ ] 외부 체험 부하 시험 실행과 결과 기록 — P2 다음 단계, 기준은 시험 전에 고정(§2-4). 공개 운영 hardening 후속 이슈 범위
-- [ ] 제출 → 발표(11/16) → AWS 종료(11/20) 운영 유지와 종료 시 데이터 삭제 — §2-3 · §14
+- [ ] **11/20 공개 운영 종료 실행 및 데이터 정리 검증** — 종료일은 결정됨. 발표(11/16)까지 가용성·일정/잔여 예산·종료 전 삭제 증거는 별도 확인(§2-3 · §14)
 - [x] 공유 EC2 전원 자동화 금지 — §2-1 「공유 EC2 전원 · host 변경 원칙」(2026-10-30 공유 사용 충돌 근거)
 - [ ] README 배포 절 · 환경 분리 서술 — 실제 배포 실행 뒤(§2-3 · §4-1)
 - [ ] 공개 전 pre-deploy security review 실행 — §21
@@ -1102,7 +1163,7 @@ Recording/Search benchmark와 실제 Runtime implementation이 생기기 전까�
 - [Recording architecture input](../modules/recording/research/architecture-input-memo.md)
 - [Search architecture input](../modules/search/research/architecture-input-memo.md)
 - [Runtime experiments router](./experiments/README.md)
-- [Elice Runtime Capacity Smoke Plan](./experiments/elice-runtime-capacity-smoke-plan.md)
+- [Runtime Capacity Smoke Plan — P2 (Elice ML API)](./experiments/elice-runtime-capacity-smoke-plan.md)
 - [Issue #95 — Elice ML API migration tracker](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/95)
 - [Issue #153 — provider usage · pricing · runtime config boundary review](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/153)
 - [Pre-deploy security review](../management/pre-deploy-security-review.md)

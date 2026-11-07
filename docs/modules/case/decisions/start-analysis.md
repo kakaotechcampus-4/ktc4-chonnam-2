@@ -1,6 +1,6 @@
 # 분석 시작(`START_ANALYSIS`) — command · 단서 반영 · 첫 탐색 발주
 
-> **상태: 결정 · 구현 전** · 결정일 2026-10-07 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-1(`../design-refinement-w7-baseline.md`), case-command Draft §11(`../contracts/contract-case-command.md`), #247 H-2 · H-3 · H-5, #210 · #277(search 단서 구조화 함수), #313(여러 영상 · 탐지 유형 의견 수렴)
+> **상태: 결정 · 구현**(`case/analysis_start.py`, [PR #315](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/315)) · 결정일 2026-10-07 · RC 다중 영상 범위 2026-11-01(#510, §3-1) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-1(`../design-refinement-w7-baseline.md`), case-command Draft §11(`../contracts/contract-case-command.md`), #247 H-2 · H-3 · H-5, #210 · #277(search 단서 구조화 함수), #313(여러 영상 · 탐지 유형 의견 수렴)
 > Draft §11이 이미 정한 것(빈 설명 · 실패 notice 없음 · `case_rev` 유지 · `HINT_EXTRACT` 이름 · CaseView `description`)은 다시 정하지 않는다. 이 문서는 Draft §11의 **미결 2 · 3 · 4**와 여러 영상 처리를 정하고, 구현 범위를 적는다. 규칙 원문은 구현 때 case-command 계약 정식 판본으로 옮긴다.
 
 ## 1. 목표 · 성공 기준
@@ -58,6 +58,10 @@
   - 영상 2개 이상: `create_relative_timeline_from_placements()`로 **등록 순서대로 이어 붙인다**(각 원본을 앞 원본 끝에서 시작, gap 없음). 파일마다 VIDEO 스트림 하나는 지금 real 경로(`real_e2e.py` `_unique_video_media_stream_ref`)와 같이 **VIDEO 스트림이 정확히 하나인지 검증**해 쓴다 — 고르지 않는다(정철원 확인 2026-09-21 「유일성 검증이지 임의 선택이 아니다」).
   - **좌표는 십진값으로 누적한다**(2026-10-28, [#421](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/421)). `Decimal(str(duration_sec))`로 더하고 placement에 넣을 때만 float로 바꾼다. float로 더하면 표현 오차(예: 5e-15초)로 placement가 원본보다 길어져 recording 길이 검증(`Decimal(str(...))` 비교)에 거부됐다. recording 검증은 그대로 둔다 — 실제 길이 초과는 계속 거부된다. 유효숫자 15자리 이하의 좌표(ffprobe 길이는 소수점 6자리)는 float 왕복에서 십진값 그대로다.
   - **이 순서 판단은 원래 recording 책임이다.** case가 임시로 대신하며, 판단은 이 구현 안에만 둔다. recording이 정렬(파일명 시각 · 전후방 겹침 · gap)을 맡게 되면 이 구현 하나만 바꾼다. recording에 작업을 요청하지 않는다(#313 의견 수렴).
+  - **RC 범위와 교체 조건(2026-11-01, [#510](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510)).** 정렬의 최종 책임은 recording이 맡기로 했다([정철원](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6547366917) · [PM](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6553548214)).
+    - **RC:** 이 임시 구현을 쓰되, 지원 입력을 **촬영 순서가 확인됐고 · 파일 사이 실제 gap이 없으며(연속 입력) · 사용할 카메라가 정해진** 경우로 제한한다. 임의 업로드 순서 · 실제 gap · 전후방 별도 파일의 시간 관계를 자동 복원한다고 말하지 않는다. 제품은 이 조건을 자동 검증 · 차단하지 않는다.
+    - **교체 조건:** recording이 실제 순서 · gap · overlap을 해석하는 공개 capability의 입력 · 실패 계약을 공개하면 이 구현을 그것으로 바꾼다. 일정은 정하지 않았다.
+    - **교체 범위:** 구현 클래스 하나 + 조립 지점(`api/composition.py` · `worker/case_composition.py`, 각 Owner 조율) + 테스트. port 시그니처 · fingerprint 공식 · 재시도 경로는 그대로다. 미정: 입력 추가 여부 · 카메라 선택을 누가 하는지 · 옛 sequential case 재처리. 기존 case는 자동 재계산하지 않는다([서어진 정리](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6556860866) · [정철원 수락](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6559421773)).
 - **영상 스트림 ref는 등록할 때 받아 둔다.** recording 공개 경로에서 스트림 종류(VIDEO/AUDIO)를 알 수 있는 곳은 등록 결과(`register_local_source()` → `RegisteredSource.media_streams`)뿐이다. 그래서 `service.record_source_registered(case_id, source_asset, *, media_streams=None, store)`가 선택 인자로 스트림 목록을 받아, case가 VIDEO가 정확히 하나면 그 ref를, 아니면 `None`을 원본과 함께 저장한다(`sources`). 인자를 빼는 기존 호출은 그대로 동작한다(`video_stream_ref=None`).
 - composition root가 구현을 주입한다. 테스트는 가짜 구현을 쓴다.
 
@@ -67,16 +71,17 @@
 3. 여러 파일 분석 입력은 recording(`prepare_analysis_source_from_resolution`)이 지원하지만 real 경로는 파일 1개로만 검증됐다.
 4. **한 파일 안에 VIDEO 스트림이 둘 이상**(전방 · 후방이 한 AVI)이면 스트림을 고를 기준이 없어 실패한다 — 지금 real 경로와 같은 한계다. 기본 카메라 선택 정책은 recording이 정하지 않았다(`multi-source-timeline.md`). **영상이 1개여도 같다** — 임시 구현이 발주 전에 막는다(composition root는 등록 때 `media_streams`를 넘겨야 한다). 실패는 §3-7 「타임라인을 만들지 못함」과 같이 처리한다.
 5. **부를 때마다 recording 타임라인이 새로 생긴다.** 같은 원본이어도 `timeline_id`가 달라져 `COARSE_SEARCH` fingerprint도 달라진다(재전달 · 재시도 때) — 재사용 캐시가 생기면 적중하지 않는다. recording 저장소가 case와 같은 transaction이 아니면 case rollback 뒤 타임라인이 고아로 남는다. recording의 case 타임라인 기능(또는 재사용 조회)이 생기면 함께 풀린다.
+6. **파일 사이에 실제 끊김이 있을 때 경계를 걸친 IncidentClip · 신고용 영상은 확인하지 않았다**(#510 「확인 필요」). #491 이후 A→B 경계를 걸친 clip을 만들 수 있지만, 이어 붙인 타임라인은 끊김을 모르므로 끊긴 두 장면이 이어진 영상처럼 보일 수 있다. RC 입력 제한(위)으로 피하고, 실제 영상으로는 재현하지 않았다.
 
 ### 3-2. 탐지 대상 유형 — 항상 4개 전부
 
 `target_event_types` = `SIGNAL` · `CENTER_LINE_CROSSING` · `SOLID_LINE_LANE_CHANGE` · `MOTORCYCLE_HELMET_NON_USE`. 사용자가 유형을 고르는 입력이 없고(web 첫 화면은 자유 문장 하나, 비워도 진행 — `apps/web/src/screens/UploadScreen.tsx`), 설명이 비어도 탐색이 돌아야 한다. 계약은 다중 유형을 허용한다(AnalysisScope 계약 ADR-003). 사용자 문장은 지금처럼 `hint`(`vehicle` · `free_text`)로만 넘긴다.
 
-**위험(2026-10-12 갱신, #313):** search가 set1에서 「정답 유형 1개」와 「4개 동시 입력」을 3회 비교했다(`docs/modules/search/experiments/search-flash-set1-event-types-2026-10-09.md`). 4개를 함께 넣으면 최종 검출 4/33 → 0/33, Coarse 겹침 14/33 → 7/33으로 떨어졌고, 중앙선 침범을 실선 차로 변경으로 분류한 사례(C00)가 가장 뚜렷했다. 비용은 약 7.4% 높았다(Fine 후보 증가). 개발 표본 11사건의 3회 반복이라 독립 사건 33건이 아니고, search도 원인 확정 · 모델 전환을 결정하지 않았다. **case 방침은 유지한다** — 「무엇을 찾는가」는 여전히 4개 전부이고, 여러 유형을 어떻게 처리할지(한 호출 · 유형별 호출 · 분류 우선순위)는 AnalysisScope 계약상 search 내부 방식이다(「단일값 가정 금지」). search가 방식을 바꾸면 예산 기본값(§3-3 — 유형별 순차 호출이면 150초를 넘을 수 있다)만 다시 맞춘다.
+**위험(2026-10-12 갱신, #313):** search가 set1에서 「정답 유형 1개」와 「4개 동시 입력」을 3회 비교했다(`docs/modules/search/experiments/search-flash-set1-event-types-2026-10-09.md`). 4개를 함께 넣으면 최종 검출 4/33 → 0/33, Coarse 겹침 14/33 → 7/33으로 떨어졌고, 중앙선 침범을 실선 차로 변경으로 분류한 사례(C00)가 가장 뚜렷했다. 비용은 약 7.4% 높았다(Fine 후보 증가). 개발 표본 11사건의 3회 반복이라 독립 사건 33건이 아니고, search도 원인 확정 · 모델 전환을 결정하지 않았다. **case 방침은 유지한다** — 「무엇을 찾는가」는 여전히 4개 전부이고, 여러 유형을 어떻게 처리할지(한 호출 · 유형별 호출 · 분류 우선순위)는 AnalysisScope 계약상 search 내부 방식이다(「단일값 가정 금지」). search가 방식을 바꾸면 예산 기본값(§3-3 — 당시 150초 기준으로 유형별 순차 호출은 예산을 넘을 수 있었다)만 다시 맞춘다.
 
 ### 3-3. 예산 — Draft §11 미결 2의 나머지
 
-- `max_latency_sec` = **150초** — `timeout-fallback.md` 「Coarse 클립당 150초」.
+- `max_latency_sec` = **공개 RC 동안 600초** — [Case 대기 결정](case-wait-timeout.md) §3-10. Case 대기 마감에는 §3-2·§3-8의 큐·준비 여유가 별도로 들어간다.
 - `max_cost_krw` = **설정값, 기본 1,000원** — 금액은 계약이 아니라 설정 관리 대상이다(`budget-krw-normalization.md`). 기본값은 지금 real 경로 값이다. 최근 search 실험의 Coarse 한 번이 약 5만 토큰(3.8 Flash 단가로 수십 원)이라 여유가 있다.
 - 시간 구간 = 타임라인 전체 `TIMELINE_RELATIVE [0, duration_ms]` 1개. `duration_ms`는 타임라인 끝(초)을 ms로 **내린** 값이다(2026-10-28, [#422](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/422)) — 반올림하면 끝점이 원본 끝을 넘어 recording이 `OUT_OF_TIMELINE_RANGE`로 거부했다. 1ms 미만의 끝 조각은 첫 탐색에서 빠지고, 내린 값이 0이면(1ms 미만 영상) `TimelineUnavailable`이다.
 

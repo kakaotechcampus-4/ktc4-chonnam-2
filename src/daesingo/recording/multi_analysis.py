@@ -13,6 +13,38 @@ from .probe import _snapshot
 from .analysis_limits import remaining_bytes, check_output_size, check_output, read_output, checkpoint
 
 
+def _metadata_seam_correction(inputs, parts, tolerance):
+    """등록된 전체 길이의 반올림으로 입증되는 seam 차이만 정확히 합산한다."""
+    def projected(part, span):
+        if part.source_bounds is None:
+            return False
+        start, end = part.source_bounds
+        shift = Fraction(str(span.timeline_range.start_sec)) - Fraction(str(span.source_range.start_sec))
+        return (part.timeline_range.start_sec == float(shift + start)
+                and part.timeline_range.end_sec == float(shift + end))
+
+    correction = Fraction(0)
+    for (source, _, span), (_, _, following), left, right in zip(inputs, inputs[1:], parts, parts[1:]):
+        if (source.duration_sec is None or not projected(left, span) or not projected(right, following)
+                or right.source_bounds[0] != 0 or following.source_range.start_sec != 0
+                or span.timeline_range.end_sec != following.timeline_range.start_sec
+                or not left.source_frames or left.frames != left.source_frames):
+            continue
+        start, end = left.source_bounds
+        metadata = Fraction(str(source.duration_sec))
+        # 전체 source endpoint이며, 검증된 frame 길이와 투영이 같아야 한다.
+        # 임의의 작은 gap, 부분 trim, encoder drift는 이 근거로 인정하지 않는다.
+        if (Fraction(str(span.source_range.end_sec)) != metadata
+                or end != left.source_end
+                or end - start != left.source_frames[-1][0] + left.source_frames[-1][1]
+                or (metadata * 1000000).denominator != 1
+                or Fraction(int(end * 1000000 + Fraction(1, 2)), 1000000) != metadata
+                or abs(end - metadata) > tolerance):
+            continue
+        correction += end - metadata
+    return correction
+
+
 def materialize_chain(engine, inputs, profile_ref):
     try:
         snapshots = [_snapshot(source.path) for source, _, _ in inputs]
@@ -31,7 +63,12 @@ def materialize_chain(engine, inputs, profile_ref):
         if any(not p.frames or p.video_size != parts[0].video_size for p in parts):
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결할 출력의 frame 또는 해상도가 일치하지 않습니다")
         mixed = any(p.time_base != parts[0].time_base for p in parts)
+        # VFR parts use no B frames; even equal clocks can then have different
+        # decode delays. Reuse exact packet projection to preserve seam durations.
+        exact_clock = mixed or any(len({duration for _, duration in p.frames}) > 1 for p in parts)
         output_clock = common_time_base(parts) if mixed else parts[0].time_base
+        # A reduced common clock must not widen the existing duration check.
+        duration_base = output_clock
         # 초 단위 decimal metadata의 표현 오차에만 사용하는 비교 상한이다.
         # 한 tick/frame보다 항상 작게 제한하며 timestamp/range는 수정하지 않는다.
         tolerance = min(Fraction(1, 1000000), min(p.time_base for p in parts) / 2,
@@ -46,14 +83,16 @@ def materialize_chain(engine, inputs, profile_ref):
             expected.extend((offset + at, length) for at, length in p.frames)
             offset += p.frames[-1][0] + p.frames[-1][1]
         timeline_range = TimeRange(start_sec=parts[0].timeline_range.start_sec, end_sec=parts[-1].timeline_range.end_sec)
-        # 여러 seam의 오차가 누적돼도 전체 허용 폭을 늘리지 않는다.
+        # tolerance는 늘리지 않는다. metadata 반올림의 정확한 signed 차이만
+        # 별도 보존식에 넣고, 근거 없는 누적 이동은 기존 전체 상한으로 거부한다.
         timeline_length = Fraction(str(timeline_range.end_sec)) - Fraction(str(timeline_range.start_sec))
-        if abs(offset - timeline_length) > tolerance:
+        correction = _metadata_seam_correction(inputs, parts, tolerance)
+        if abs(offset - timeline_length - correction) > tolerance:
             raise RecordingCapabilityError("UNSUPPORTED_MEDIA", "연결 coverage와 Timeline 길이가 일치하지 않습니다")
         with TemporaryDirectory(prefix="recording-chain-", dir=engine._temp_root) as work:
             root = Path(work)
             options, expected_packets = [], None
-            if mixed:
+            if exact_clock:
                 lines, options, expected_packets, output_clock = prepare_mixed_parts(engine, parts, root)
             else:
                 lines = ["ffconcat version 1.0"]
@@ -72,10 +111,10 @@ def materialize_chain(engine, inputs, profile_ref):
             check_output(output)
             raw = engine._probe(output)
             base, frames = engine._frames(raw, expected_coverage=expected)
-            if mixed:
+            if exact_clock:
                 if (base != output_clock or tuple(frames) != tuple(expected)
                         or int(raw["frames"][0]["best_effort_timestamp"]) != 0):
-                    raise ValueError("exact mixed-clock coverage mismatch")
+                    raise ValueError("exact chain coverage mismatch")
                 validate_packets(engine, output, output_clock, expected_packets)
             stream = raw["streams"][0]
             if (stream["codec_name"] != "h264" or stream["pix_fmt"] != "yuv420p"
@@ -87,7 +126,8 @@ def materialize_chain(engine, inputs, profile_ref):
                            for (a, x), (b, y) in zip(frames, expected))):
                 raise ValueError("연결 출력 검증 실패")
             duration = float(raw["format"]["duration"])
-            if not math.isfinite(duration) or duration <= 0 or abs(duration - float(offset)) > .001 + float(2 * base):
+            if (not math.isfinite(duration) or duration <= 0
+                    or abs(duration - float(offset)) > .001 + float(2 * min(base, duration_base))):
                 raise ValueError("연결 출력 duration 불일치")
             engine._strict_decode(output)
             content = read_output(output)

@@ -16,7 +16,7 @@ from uuid import uuid4
 from pydantic import TypeAdapter
 
 from .errors import RecordingCapabilityError
-from .media_content import FrameImage, OpenedDerivedAsset, identity, png
+from .media_content import FrameImage, OpenedDerivedAsset, actual_media_type, identity, png
 from .fixtures import RecordingFixture
 from .models import (
     GPSObservation,
@@ -560,8 +560,10 @@ class RecordingService(RecordingExports):
         media = get(parsed.ref)
         if media is None:
             raise RecordingCapabilityError("UNKNOWN_REF", "등록되지 않은 자산 ref입니다")
-        content = (self._repository.get_prepared_content(parsed) if parsed.kind in {"analysis_source", "incident_clip"}
-                   else self._repository.get_derived_content(parsed.ref) if parsed.kind == "derived_asset" else None)
+        if parsed.kind in {"analysis_source", "incident_clip"}:
+            content = self._repository.get_prepared_metadata(parsed)
+        else:
+            content = self._repository.get_derived_content(parsed.ref) if parsed.kind == "derived_asset" else None
         available = media.availability if content is not None else (
             "UNAVAILABLE" if media.availability == "UNAVAILABLE" else "UNKNOWN")
         lineage = (getattr(media, "source_refs", []) if parsed.kind != "incident_clip" else
@@ -994,6 +996,27 @@ class RecordingService(RecordingExports):
         if clip is None:
             raise RecordingCapabilityError("NOT_FOUND", "등록되지 않은 IncidentClip입니다")
         return clip.model_copy(deep=True)
+
+    def open_incident_video(self, clip_ref: str) -> OpenedAnalysisSource:
+        identity(clip_ref)
+        try:
+            clip = self.get_incident_clip(clip_ref)
+        except RecordingCapabilityError as error:
+            if error.code == "NOT_FOUND":
+                raise RecordingCapabilityError("UNKNOWN_REF", "incident video not found") from None
+            raise
+        if clip.availability != "AVAILABLE":
+            raise RecordingCapabilityError("UNAVAILABLE", "incident video unavailable")
+        try:
+            local = self._local_clips.get(clip_ref)
+            stored = ((local[1], "video/mp4") if local is not None else
+                      self._repository.get_prepared_content(ContractRef(kind="incident_clip", ref=clip_ref)))
+            if (stored is None or len(stored[0]) != clip.byte_size or stored[1] != "video/mp4"
+                    or actual_media_type(stored[0]) != "video/mp4"):
+                raise ValueError("invalid incident video content")
+        except (ValueError, OSError):  # 파일 부재 · 권한 등 저장소 I/O 실패도 경로를 숨긴 UNAVAILABLE로
+            raise RecordingCapabilityError("UNAVAILABLE", "incident video content unavailable") from None
+        return OpenedAnalysisSource(BytesIO(stored[0]), "video/mp4", len(stored[0]))
 
     def register_derived_asset(self, payload: DerivedAsset | dict[str, Any], *,
                                content: bytes | None = None, content_type: str | None = None,

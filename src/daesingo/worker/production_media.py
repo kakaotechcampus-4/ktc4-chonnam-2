@@ -22,8 +22,17 @@ class ProductionMediaFactory:
         self.settings, self.search_settings, self.media = settings, search_settings, media
 
     @contextmanager
+    def frame_service(self, data):
+        repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root, temp_root=self.temp_root,
+            temp_context=self.media.detached_temp if self.media is not None else None)
+        with build_recording_service(repository, self.settings, temp_root=self.temp_root,
+                case_id=data.case_id, analysis_checkpoint=data.checkpoint) as recording:
+            yield recording
+
+    @contextmanager
     def __call__(self, data):
-        repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root)
+        repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root, temp_root=self.temp_root,
+            temp_context=self.media.detached_temp if self.media is not None else None)
         materializer = partial(self.media.materializer, LocalAnalysisMaterializer) if self.media is not None else None
         with build_recording_service(repository, self.settings, temp_root=self.temp_root,
                                      materializer_factory=materializer, case_id=data.case_id,

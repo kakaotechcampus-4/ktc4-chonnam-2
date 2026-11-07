@@ -175,7 +175,7 @@ def test_prepare_fine_returns_prepared_media() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Coarse ffprobe assertions: ≤1 fps, ≤360p, no audio
+# Coarse ffprobe assertions: ≤1 fps, 270p, no audio
 # ---------------------------------------------------------------------------
 
 
@@ -191,16 +191,36 @@ def test_coarse_fps_at_most_1() -> None:
 
 
 @_NEEDS_FFMPEG
-def test_coarse_height_at_most_360() -> None:
+def test_coarse_is_270p_crf28_and_fine_keeps_360p_default_crf() -> None:
+    # #452: Coarse만 270p · crf28. Fine은 360p · libx264 기본 CRF 유지.
+    import daesingo.search.media as media
+
+    encode_args: list[list[str]] = []
+    real_run = media._run_subprocess
+
+    def spy(args: list[str], deadline: RunDeadline, **kw: object):
+        if "libx264" in args:
+            encode_args.append(list(args))
+        return real_run(args, deadline, **kw)
+
     data = _make_test_mp4(duration_sec=6.0, size="640x480")
     preparer = MediaPreparer(_DEFAULT_CFG)
-    with preparer.prepare_coarse(
-        _media_input(data), deadline=_real_deadline()
-    ) as coarse:
-        video = _video_stream(coarse.path)
-        assert int(str(video["height"])) <= 360, (
-            f"Coarse height={video['height']} exceeds 360"
-        )
+    with patch.object(media, "_run_subprocess", spy):
+        with preparer.prepare_coarse(
+            _media_input(data), deadline=_real_deadline()
+        ) as coarse:
+            assert int(str(_video_stream(coarse.path)["height"])) == 270
+        with preparer.prepare_fine(
+            _media_input(data),
+            fine_start_sec=1.0,
+            fine_end_sec=4.0,
+            deadline=_real_deadline(),
+        ) as fine:
+            assert int(str(_video_stream(fine.path)["height"])) == 360
+
+    coarse_args, fine_args = encode_args
+    assert coarse_args[coarse_args.index("-crf") + 1] == "28"
+    assert "-crf" not in fine_args
 
 
 @_NEEDS_FFMPEG

@@ -51,6 +51,22 @@ _FORWARD_EDGES: dict[str, str] = {
 }
 
 
+# 발주 입력(후보 · 세대 · span · clip ref)을 case state에 고정하는 JobRecord.kind 선언.
+# `jobs.py`가 이 모듈을 import하므로 kind 선언은 여기 둔다(`jobs.OBSERVATION_KINDS`는 같은 값).
+#
+# 선택 후보의 신고자료를 준비하는 관찰 kind(`decisions/incident-clip-observation-input.md` §4-1).
+# 준비 중 판단 · 빠진 관찰 재발주 · 저장 관찰 읽기는 이 집합만 본다.
+OBSERVATION_KINDS = frozenset({"FINE_VERIFY", "INCIDENT_CLIP_BUILD", "PLATE_READ", "OVERLAY_TIME_READ"})
+# 후보 영상 미리보기(`decisions/candidate-video-preview.md`). 입력은 고정하지만 관찰이 아니다 —
+# 신고자료 준비 · 재선택 제한 · export gate에 섞지 않는다.
+CANDIDATE_VIDEO_PREVIEW = "CANDIDATE_VIDEO_PREVIEW"
+# `observation_input`을 받는 kind.
+INPUT_PINNED_KINDS = OBSERVATION_KINDS | {CANDIDATE_VIDEO_PREVIEW}
+# 기다리던 job을 supersede할 때 kind · scope_ref에 더해 입력의 이 키까지 같아야 하는 kind.
+# 미리보기는 후보마다 따로 기다리므로 다른 후보의 요청을 대체하지 않는다.
+SUPERSEDE_INPUT_KEY: dict[str, str] = {CANDIDATE_VIDEO_PREVIEW: "candidate_id"}
+
+
 class InvalidTransition(Exception):
     pass
 
@@ -106,6 +122,11 @@ ANALYSIS_JOB_KINDS = ("HINT_EXTRACT", "COARSE_SEARCH")
 
 # case 대기 = 실행 상한 + 큐 대기 여유 — 단서 구조화 대기(`decisions/start-analysis.md` §3-5)와 같은 여유다.
 SEARCH_WAIT_QUEUE_MARGIN_SEC = 30.0
+# Recording 분석 영상 준비 여유 — 마감 기산점이 발주 시각이라 준비 시간도 마감 안에 든다(#452). 분석 범위 길이 × 계수를
+# 더하고, 전체 대기는 상한을 넘지 않는다. 잠정값: EC2 120초 입력 준비 177.61초(약 1.5배, #561 1회)에 여유를 둔 2.0,
+# 26분 입력(약 55분)이 들어가는 60분. Search 실행 상한(`budget.max_latency_sec`)은 바꾸지 않는다.
+SEARCH_WAIT_PREP_FACTOR = 2.0
+SEARCH_WAIT_MAX_SEC = 3600.0
 
 
 @dataclass
@@ -143,6 +164,10 @@ class CaseAggregate:
     # 마지막 탐색 실패가 분석 범위 상한 초과(Runtime `RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED`)였는가(#452).
     # `candidate_search_failed`일 때만 뜻이 있고 실패마다 덮어쓴다. case는 수치를 갖지 않고 code만 본다. CaseView 비노출.
     analysis_range_too_long: bool = False
+
+    # 마지막 탐색 실패가 지원하지 않는 영상(Runtime `RECORDING_UNSUPPORTED_MEDIA`)이었는가(#542). 같은 입력으로 다시 찾아도
+    # 같으므로 「다시 찾기」를 싣지 않는다. `analysis_range_too_long`과 같이 실패마다 덮어쓴다. CaseView 비노출.
+    search_input_unsupported: bool = False
 
     # 후보 목록 세대 — `receive_candidates()`가 목록을 교체하거나 `regress_to_searching()`이 비울 때마다
     # 오른다. adapter는 같은 세대 안에서만 후보별 관찰(Fine·판독)을 재사용한다
@@ -279,7 +304,8 @@ class CaseAggregate:
         self.hints = dict(hints)
         self.hint_unclear = unclear
 
-    def record_candidate_search_failure(self, *, job_id: str | None = None, range_too_long: bool = False) -> bool:
+    def record_candidate_search_failure(self, *, job_id: str | None = None, range_too_long: bool = False,
+                                        unsupported_input: bool = False) -> bool:
         """후보 탐색 Run이 `FAILED`로 끝났다. 계약 §7(`RESUME_SEARCH` 행): 실패 Run은 투영 대상을
         바꾸지 않는다 — 후보 목록을 교체하지 않고, `CANDIDATE_REVIEW`로 진행하지도 않는다(그러면
         web이 「결과 없음」으로 그린다). stage는 `SEARCHING`에 머물고 실패 사실만 남긴다.
@@ -293,6 +319,7 @@ class CaseAggregate:
             raise InvalidTransition(f"{self.stage}에서는 후보 탐색 실패를 받을 수 없다(SEARCHING 전용)")
         self.candidate_search_failed = True
         self.analysis_range_too_long = range_too_long
+        self.search_input_unsupported = unsupported_input
         self._reflect(job_id, "COARSE_SEARCH")
         return True
 
@@ -356,7 +383,8 @@ class CaseAggregate:
         return self.settled_jobs[records[-1]["job_id"]]
 
     def wait_deadline(self, record: dict[str, Any]) -> datetime | None:
-        """case가 이 job의 결과를 기다리는 마감 — 발주 시각 + 실행 상한 + 큐 대기 여유(`decisions/case-wait-timeout.md`).
+        """case가 이 job의 결과를 기다리는 마감 — 발주 시각 + 실행 상한 + 큐 대기 여유 + 준비 여유, 전체 상한 있음
+        (`decisions/case-wait-timeout.md`).
         지금은 `COARSE_SEARCH`만 마감이 있다. 실행 상한은 그 job의 AnalysisScope `budget.max_latency_sec`이고(#149 A안 —
         단일 권위), scope를 모르면 마감을 지어내지 않는다(`None`)."""
         if record["kind"] != "COARSE_SEARCH":
@@ -364,7 +392,11 @@ class CaseAggregate:
         scope = self.analysis_scopes.get(record.get("scope_ref") or "")
         if scope is None:
             return None
-        limit = scope["budget"]["max_latency_sec"] + SEARCH_WAIT_QUEUE_MARGIN_SEC
+        base = scope["budget"]["max_latency_sec"] + SEARCH_WAIT_QUEUE_MARGIN_SEC
+        # 준비 여유는 타임라인 상대 범위만 센다 — 절대 시각 범위(동기 경로 · fixture)는 지금처럼 여유 없이 둔다.
+        range_sec = sum(r["end_ms"] - r["start_ms"] for r in scope["time_ranges"]
+                        if r.get("kind") == "TIMELINE_RELATIVE") / 1000
+        limit = max(base, min(base + range_sec * SEARCH_WAIT_PREP_FACTOR, SEARCH_WAIT_MAX_SEC))
         return datetime.fromisoformat(record["requested_at"]) + timedelta(seconds=limit)
 
     def stop_waiting_expired(self, now: datetime) -> list[str]:
@@ -502,7 +534,8 @@ class CaseAggregate:
         if selected is None or generation is None:
             return False
         return any(
-            (source := self.observation_inputs.get(r["job_id"])) is not None
+            r["kind"] in OBSERVATION_KINDS
+            and (source := self.observation_inputs.get(r["job_id"])) is not None
             and source["candidate_id"] == selected
             and source["generation_job_id"] == generation
             for r in self.waiting_job_records()

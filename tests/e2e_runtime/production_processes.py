@@ -1,6 +1,7 @@
 """Spawned acceptance peers; domain and transaction composition stays real."""
 import io
 import os
+import time
 from dataclasses import replace
 from types import MappingProxyType
 from threading import Event
@@ -34,7 +35,7 @@ def api_peer(pipe, env_file):
     finally: pipe.close()
 
 
-def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
+def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False, *, legacy_coarse_frames=False):
     import httpx
     import openai
     from daesingo.worker.bootstrap import bootstrap
@@ -48,10 +49,26 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
     try:
         startup = bootstrap(revision="test", stream=io.StringIO())
         settings = startup.modules["search"]
-        startup = replace(startup, modules=MappingProxyType({**startup.modules,
-            "search": replace(settings, config=replace(settings.config, max_retries=0))}))
+        # Legacy process scenarios remain fast; O6 scenarios keep deployed policy.
+        if not scenario.startswith("provider_"):
+            startup = replace(startup, modules=MappingProxyType({**startup.modules,
+                "search": replace(settings, config=replace(settings.config, max_retries=0))}))
         engine = create_worker_engine(startup.config.db)
         calls = []
+        http_attempts, run_budgets = [], []
+        clock_advance = [0.0]
+        from daesingo import search
+        original_factory = search.build_gemini_search_service
+        original_search = search.SearchService.search_candidates_linked
+        def service_factory(*args, **kwargs):
+            service = original_factory(*args, **kwargs)
+            if scenario == "provider_deadline_exhausted":
+                # Supported SearchService clock seam; budget and retry sleep stay real.
+                service.monotonic = lambda: time.monotonic() + clock_advance[0]
+            return service
+        def search_candidates(service, scope, **kwargs):
+            run_budgets.append(scope.budget.max_latency_sec)
+            return original_search(service, scope, **kwargs)
         readout_calls = []
         builds, encodes, exports = [], [], []
         original_build = RecordingService.build_incident_clip
@@ -73,6 +90,17 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
         def respond(request):
             assert engine.pool.checkedout() == 0
             calls.append(request)
+            status = 503 if scenario.startswith("provider_") and kind == "COARSE_SEARCH" and (
+                scenario != "provider_retry_success" or len(calls) == 1) else 200
+            if scenario == "failed" or scenario == "fine_failed" and kind == "FINE_VERIFY":
+                status = 500
+            http_attempts.append({"status": status, "at_sec": time.monotonic(),
+                "timeout_sec": request.extensions["timeout"]["read"]})
+            if status == 503:
+                if scenario == "provider_deadline_exhausted" and len(calls) == 2:
+                    # Model a slow provider spending the original remaining budget.
+                    clock_advance[0] += request.extensions["timeout"]["read"] + 0.001
+                return httpx.Response(503, json={"error": {"message": "offline transient failure"}})
             if scenario == "failed" or scenario == "fine_failed" and kind == "FINE_VERIFY":
                 return httpx.Response(500, json={"error": {"message": "offline failure"}})
             if kind == "HINT_EXTRACT":
@@ -87,6 +115,16 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     "end_sec": 20 / 30 if fractional else 1.5 * settings.config.coarse_fps if multi else .8},
                     "at_sec": settings.config.coarse_fps if multi else .5,
                     "observed": ["red signal"], "score": .9}]
+                if scenario.startswith("clip_frames_"):
+                    count = int(scenario.removeprefix("clip_frames_"))
+                    candidates = [{"event_type": "SIGNAL", "span": {
+                        "start_sec": (.1 + index * .2) * settings.config.coarse_fps,
+                        "end_sec": (.25 + index * .2) * settings.config.coarse_fps},
+                        # Between 10fps PTS boundaries so this success fixture
+                        # cannot exercise a float-at-exact-PTS refusal instead.
+                        "at_sec": (.15 + index * .2) * settings.config.coarse_fps,
+                        "observed": ["red signal"], "score": .9 - index * .1}
+                        for index in range(count)]
                 if scenario == "partial":
                     candidates.append({"event_type": "SIGNAL", "span": {"start_sec": 8, "end_sec": 9},
                         "at_sec": 8.5, "observed": ["outside source"], "score": .5})
@@ -103,8 +141,14 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     "message": {"role": "assistant", "content": json.dumps(content)}}],
                 "usage": {"prompt_tokens": 10, "completion_tokens": 2, "total_tokens": 12}})
         original = openai.OpenAI
-        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
-            with patch.object(openai, "OpenAI", lambda **kw: original(http_client=client, **kw)), \
+        sdk_retry_settings = []
+        def sdk_client(**kwargs):
+            sdk_retry_settings.append(kwargs["max_retries"])
+            return original(http_client=client, **kwargs)
+        with httpx.Client(transport=httpx.MockTransport(respond), trust_env=False) as client:
+            with patch.object(openai, "OpenAI", sdk_client), \
+                 patch.object(search, "build_gemini_search_service", service_factory), \
+                 patch.object(search.SearchService, "search_candidates_linked", search_candidates), \
                  patch.object(RecordingService, "build_incident_clip", build), \
                  patch.object(LocalAnalysisMaterializer, "_run", media_run), \
                  patch.object(LocalAnalysisMaterializer, "materialize", encode):
@@ -130,6 +174,13 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     stack.enter_context(patch.object(readout, function, invoke_readout))
                 else:
                     stack = __import__("contextlib").ExitStack()
+                if legacy_coarse_frames:
+                    # Explicit old-producer fixture for clip-only acceptance.
+                    # Current Coarse issuance is covered separately, never disabled in production.
+                    if kind != "COARSE_SEARCH":
+                        raise ValueError("legacy frame seed is Coarse-only")
+                    from daesingo.worker.coarse_frames import CoarseFrameIssuer
+                    stack.enter_context(patch.object(CoarseFrameIssuer, "__call__", lambda *args: {}))
                 for export_name in ("export_report_video", "export_plate_image"):
                     actual_export = getattr(RecordingService, export_name)
                     def export(service, _actual=actual_export, _name=export_name, **kw):
@@ -163,6 +214,11 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                         {"dispatch": staticmethod(invoke)})(), stop=stop, reflector=reflector)
                     loop.run()
         pipe.send({"pid": os.getpid(), "http_calls": len(calls), "pool_checkedout": engine.pool.checkedout(),
+                   "http_attempts": http_attempts, "run_budgets_sec": run_budgets,
+                   "fake_clock_advance_sec": clock_advance[0],
+                   "sdk_max_retries": sdk_retry_settings,
+                   "retry_policy": {"max_retries": startup.modules["search"].config.max_retries,
+                       "retry_base_sec": startup.modules["search"].config.retry_base_sec},
                    "terminals": terminals, "clip_calls": len(builds), "encodes": len(encodes), "readout_calls": readout_calls, "export_calls": exports, "registered_kinds": sorted(registry._handlers)})
     except BaseException:
         import traceback

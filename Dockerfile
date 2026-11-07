@@ -53,7 +53,9 @@ COPY data/mock/case ./data/mock/case
 COPY data/real/case ./data/real/case
 COPY docker/web_release.mjs ./docker/web_release.mjs
 ARG REVISION=local
-RUN npm run build --workspace=daesingo-web \
+# 브라우저에 포함되는 공개 JavaScript 키만 허용한다. runtime secret을 전달하지 않는다.
+ARG VITE_KAKAO_MAP_KEY=""
+RUN VITE_KAKAO_MAP_KEY="$VITE_KAKAO_MAP_KEY" npm run build --workspace=daesingo-web \
     && node docker/web_release.mjs apps/web/dist "$REVISION"
 
 FROM base AS runtime

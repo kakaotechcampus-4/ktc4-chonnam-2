@@ -38,6 +38,7 @@ export interface SourceRegistered {
 
 /** case-command §5 — kind별 payload. */
 export type Command =
+  | { kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW'; payload: { candidate_id: string } }
   | { kind: 'START_ANALYSIS'; payload: { description: string } }
   | { kind: 'STOP_ANALYSIS'; payload: Record<string, never> }
   | { kind: 'SELECT_OTHER_CANDIDATE'; payload: { candidate_id: string } }
@@ -136,6 +137,7 @@ export function createApi(options: ApiOptions = {}) {
 
     /** §5.5 · §5.6 — `<img src>` · 다운로드 링크로 직접 연다(추가 header 없음, §3.6). */
     frameUrl: (caseId: string, frameRef: string) => `${caseUrl(caseId)}/frames/${encodeURIComponent(frameRef)}`,
+    candidateVideoUrl: (caseId: string, clipRef: string) => `${caseUrl(caseId)}/candidate-videos/${encodeURIComponent(clipRef)}`,
     assetUrl: (caseId: string, assetRef: string) => `${caseUrl(caseId)}/assets/${encodeURIComponent(assetRef)}`,
   }
 }

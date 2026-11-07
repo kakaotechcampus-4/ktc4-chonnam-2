@@ -20,6 +20,7 @@ from typing import Any, Literal, Protocol
 from daesingo.case import observation
 from daesingo.case.analysis_start import InitialSearchBudget, reflect_hint_extraction
 from daesingo.case.domain import CaseAggregate
+from daesingo.case.preview_frame import coarse_frame_refs
 from daesingo.case.service import candidates_from_events, mark_ready_if_package_ready, utc_now
 from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimelineSource
@@ -124,6 +125,7 @@ def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, stor
         case.record_candidate_search_failure(
             job_id=outcome.job_id,
             range_too_long=outcome.failure_kind == "RECORDING_ANALYSIS_SOURCE_SIZE_LIMIT_EXCEEDED",
+            unsupported_input=outcome.failure_kind == "RECORDING_UNSUPPORTED_MEDIA",
         )
         return
     content = reader(store.conn, outcome.kind, outcome.produced)
@@ -131,7 +133,11 @@ def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, stor
     if str(content["outcome"]) == "FAILED":
         case.record_candidate_search_failure(job_id=outcome.job_id)
         return
-    case.receive_candidates(candidates_from_events(content["candidate_events"]), job_id=outcome.job_id)
+    # 후보 썸네일은 Coarse handler가 T1 전에 발급해 실은 값이다(#583 E안) — 검증은 상태를 바꾸기 전에 하고, 여기서
+    # 다시 발급하지 않는다. 늦은 결과 · 재전달은 위 guard에서 이미 걸러져 현재 세대 후보에만 남는다.
+    frame_refs = coarse_frame_refs(content)
+    case.receive_candidates(candidates_from_events(content["candidate_events"], frame_refs=frame_refs),
+                            job_id=outcome.job_id)
     # 가장 유력한 후보를 자동으로 고르고 첫 Fine을 발주한다(W12:C2, #168 결정 1). rank=1이 없거나 stale이면 고르지
     # 않고 CANDIDATE_REVIEW에 머문다(`select_top_ranked`).
     if case.select_top_ranked() is not None:
@@ -169,19 +175,33 @@ def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *
     _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
     if outcome.status == "SUCCEEDED":
         content = reader(store.conn, outcome.kind, outcome.produced)
+        # 근거 장면 · 후보 썸네일은 handler가 T1 전에 발급해 실은 값을 그대로 남긴다(#446 결정 5, #523). 싣지 않은
+        # 결과(이전 형식 · 발급 불가)는 `None` · `{}`이고, 여기서 다시 발급하지 않는다.
         observation.record_outcome(case, outcome.job_id, status=outcome.status,
-                                   incident_clip_ref=content["incident_clip_ref"])
+                                   incident_clip_ref=content["incident_clip_ref"],
+                                   preview_frame_ref=content.get("preview_frame_ref"),
+                                   candidate_frame_refs=dict(content.get("candidate_frame_refs") or {}))
         observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
 
 
 def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
     # export가 만든 파생 asset은 recording이 clip lineage로 등록해 CaseView 조립 때 case asset 목록에서 고른다
-    # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice 매핑은 미결
-    # (`report-video-export.md` §5), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
+    # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice는 view가 실행 상태로
+    # 계산하고(`exports.export_notices`), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
     _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
 
 
+def _apply_candidate_video_preview(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+    from daesingo.case.candidate_video import PreviewResult
+    result = (PreviewResult.model_validate(reader(store.conn, outcome.kind, outcome.produced))
+              if outcome.status == "SUCCEEDED" else None)
+    case.settle_job(outcome.job_id, "REFLECTED")
+    observation.record_outcome(case, outcome.job_id, status=outcome.status,
+                               **({"incident_clip_ref": result.incident_clip_ref} if result is not None else {}))
+
+
 _APPLIERS = {
+    "CANDIDATE_VIDEO_PREVIEW": _apply_candidate_video_preview,
     "HINT_EXTRACT": _apply_hint_extract,
     "COARSE_SEARCH": _apply_coarse_search,
     "PLATE_READ": _apply_observation,

@@ -6,11 +6,13 @@ import { FailedScreen } from './FailedScreen'
 import { FlowScreen } from './FlowScreen'
 import { NoResultScreen, RetrySearch } from './NoResultScreen'
 import { NotObservedScreen } from './NotObservedScreen'
-import { ResultScreen } from './ResultScreen'
+import { ResultScreen, type ReportEdits } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
-import { CandidateCompare, DetailsCheck, PlateCheck } from './SubScreens'
+import { CandidateCompare, DetailsCheck, PlateCheck, TimeEdit } from './SubScreens'
 import { acceptView } from '../state/resultModel'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
+import { useScreenFocus } from './screenFocus'
+import { useSubStack } from './subStack'
 
 // 시연용 흐름 — Figma 하단 작업 영역의 Main · Details · Failed 열(After 제외).
 // 화면은 사용자 행동(파일 선택·버튼)과 작업 상태 변화로만 넘어간다.
@@ -287,7 +289,7 @@ type Main =
   | { kind: 'upload'; state: UploadState }
   | { kind: 'flow'; run: Run; frame: number; startedAt: number }
   | { kind: 'done'; run: Run }
-type Sub = 'candidates' | 'plate' | 'plateEdit' | 'details'
+type Sub = 'candidates' | 'plate' | 'plateEdit' | 'time' | 'details'
 // 시연에서 연결한 notice 동작. 나머지(시각 직접 입력·시각 확인하기·설명 고치기)는 입력 화면과 command가
 // 아직 없어(contract-case-command §32 「입력형 action은 다음 판본」) 사용 불가로 보인다.
 // 연결한 것도 실제 command(RUN_NOTICE_ACTION)를 보내지 않는다 — 시연용 재진행·화면 안 반영이다.
@@ -324,14 +326,35 @@ function withPlate(view: CaseView, plate: string | null): CaseView {
   }
 }
 
+// 직접 고친 발생 시각도 같은 방식으로 화면 안에서만 얹는다(?api에서는 EDIT_EVENT_TIME으로 보낸다).
+function withTime(view: CaseView, time: string | null): CaseView {
+  if (!time || !view.evidence) return view
+  const evidence = {
+    ...view.evidence,
+    event_time_display: { ...view.evidence.event_time_display, value: time, info_state: 'INFO_USER_CONFIRMED' as const, source_label_key: null },
+  }
+  if (!view.package) return { ...view, evidence }
+  return {
+    ...view,
+    evidence,
+    package: {
+      ...view.package,
+      report_fields: { ...view.package.report_fields, occurred_at: time },
+      report_field_states: { ...view.package.report_field_states, occurred_at: { info_state: 'INFO_USER_CONFIRMED', source_label_key: null } },
+    },
+  }
+}
+
 // 어느 경우를 보여 줄지 고르는 상자는 시연 준비용이다. 서비스 화면에는 두지 않고 `?cases`일 때만 연다.
 export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   const [caseKey, setCaseKey] = useState('main')
   const [main, setMain] = useState<Main>({ kind: 'upload', state: 'idle' })
-  const [subs, setSubs] = useState<Sub[]>([])
+  const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [files, setFiles] = useState<File[]>([])
   const [situation, setSituation] = useState('')
   const [plate, setPlate] = useState<string | null>(null)
+  const [time, setTime] = useState<string | null>(null)
+  const [edits, setEdits] = useState<ReportEdits>({})
   const [uploadLeaving, setUploadLeaving] = useState(false)
   // 진행이 끝나 결과 화면이 막 열렸는가 — 자동차 도착은 이때만. 하위 화면을 열면 끈다
   const [arriving, setArriving] = useState(false)
@@ -367,31 +390,35 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   // 새 진행은 새 초안이다 — 직접 입력한 번호판도 넘기지 않는다(#173).
   const start = (run: Run, expect: { caseRev: number; candidateId: string | null } = { caseRev: 0, candidateId: null }) => {
     expected.current = expect
-    setSubs([])
+    closeAll()
     setReturnY([])
     setPlate(null)
+    setTime(null)
+    setEdits({})
     setMain({ kind: 'flow', run, frame: 0, startedAt: Date.now() })
   }
   const newReport = () => {
     setUploadLeaving(false)
     setMain({ kind: 'upload', state: 'idle' })
-    setSubs([])
+    closeAll()
     setReturnY([])
     setPlate(null)
+    setTime(null)
+    setEdits({})
     setFiles([])
     setSituation('')
   }
   // 하위 화면은 맨 위에서 열고, 뒤로 오면 결과 화면을 보던 자리로 돌아간다.
   const [returnY, setReturnY] = useState<number[]>([])
   const open = (sub: Sub) => {
+    rememberOpener()
     setReturnY((y) => [...y, window.scrollY])
-    setSubs((s) => [...s, sub])
+    openSub(sub)
     setArriving(false)
   }
-  const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
   const done = main.kind === 'done' ? main.run : null
-  const doneView = done && withPlate(done.view, plate)
+  const doneView = done && withTime(withPlate(done.view, plate), time)
   // 화면이 바뀌면 맨 위에서 시작한다 — 업로드 화면 아래쪽 버튼을 누른 스크롤 위치가 다음 화면에
   // 그대로 남지 않게. 하위 화면에서 돌아올 때만 저장해 둔 자리로 간다.
   const screenKey = main.kind === 'done' ? `done-${done?.end}-${subs.join('/')}` : main.kind
@@ -401,6 +428,8 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
     if (window.scrollY !== y) window.scrollTo(0, y)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 화면이 바뀔 때만
   }, [screenKey])
+  const mainRef = useRef<HTMLElement>(null)
+  const rememberOpener = useScreenFocus(mainRef, screenKey, subs.length)
   // 고른 후보를 기준 후보로 바꿔 번호판부터 다시 준비하고, 새 후보에 대한 응답을 새로 받는다
   // (core-user-flow §8-1 — 이전 응답을 복사하지 않는다).
   // API가 생기면 여기서 SELECT_OTHER_CANDIDATE { candidate_id } + expected_case_rev를 보낸다(#216).
@@ -430,7 +459,7 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
   return (
     <>
       <AppHeader onNewReport={newReport} />
-      <main className="web-main rs-page">
+      <main className="web-main rs-page" ref={mainRef}>
         {main.kind === 'upload' && (
           <>
             <UploadScreen
@@ -513,6 +542,10 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
             onAction={onAction}
             canRun={canRun}
             plateEditedLocally={plate !== null}
+            onTime={() => open('time')}
+            timeEditedLocally={time !== null}
+            edits={edits}
+            onEdit={(key, value) => setEdits((e) => ({ ...e, [key]: value }))}
             arriving={arriving}
           />
         )}
@@ -525,6 +558,16 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
             startEditing={sub === 'plateEdit'}
             onBack={back}
             onEdit={setPlate}
+          />
+        )}
+        {doneView && sub === 'time' && (
+          <TimeEdit
+            view={doneView}
+            onBack={back}
+            onSave={(value) => {
+              setTime(value)
+              back()
+            }}
           />
         )}
         {doneView && sub === 'details' && <DetailsCheck view={doneView} onBack={back} />}
