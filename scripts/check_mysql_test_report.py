@@ -17,6 +17,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("public_a1", scenario) for scenario in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery")),
     ('exhaustion', 'cancellation'),
     ('exhaustion', 'port'),
     ('exhaustion', 'scan_policy'),

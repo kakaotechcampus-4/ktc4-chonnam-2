@@ -19,6 +19,7 @@ ROOT = Path(__file__).parents[2]
 REVISIONS = {'e50': 'e50b2976ef4edc3a030cfc5b03a5206340dd917b',
              'bridge': 'ce0750d5a3317ad1c810783d67f8a05ba88bce08',
              'preview_source': '70f1c47cbc7c08fa848d057687f7130047f1126c',
+             'preview_bridge': 'b915808898077509e6f499b7be197310e5045b7a',
              'preview_final': 'bb29d750d23765a73b7b6853b22086648684a392'}
 
 
@@ -235,7 +236,9 @@ def test_actual_preview_writer_reader_bridge(mysql_engine, tmp_path, monkeypatch
                                     ('incident_clip', _key(clip_ref))).scalar_one() > 0
         heads = {name: conn.exec_driver_sql('SELECT version_num FROM '+name+'_alembic_version').scalar_one()
                  for name in ('case', 'recording', 'runtime')}
-    assert heads == {'case': 'case_0001', 'recording': 'recording_0002', 'runtime': 'runtime_0006'}
+    # The current source adds A-1 tables; old-reader data compatibility is
+    # tested here, not old-image readiness/rollback approval at the new head.
+    assert heads == {'case': 'case_0001', 'recording': 'recording_0002', 'runtime': 'runtime_0007'}
     before = state()
     redelivery = invoke(releases, 'final', mysql_engine.url, root, 'job_reflect',
                         case_id=cid, job_kind='CANDIDATE_VIDEO_PREVIEW')

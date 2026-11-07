@@ -51,6 +51,7 @@ def composed(queue, handlers, *, stop=None, stream=None, idle_wait=None, sleep=N
     stop = stop if stop is not None else Event()
     stream = stream if stream is not None else StringIO()
     config = RuntimeConfig.from_mapping("worker", {
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
         "DAESINGO_RUNTIME_DB_URL": queue.url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": "/private/media",
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": "/private/temp",

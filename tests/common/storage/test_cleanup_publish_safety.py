@@ -14,7 +14,7 @@ from test_cleanup import link_directory
 
 def config(service, media, temp):
     return RuntimeConfig.from_mapping(service, {
-        'DAESINGO_RUNTIME_DB_URL': 'mysql+pymysql://test@127.0.0.1:1/test_cleanup',
+        'DAESINGO_RUNTIME_PUBLIC_MODE': 'internal', 'DAESINGO_RUNTIME_DB_URL': 'mysql+pymysql://test@127.0.0.1:1/test_cleanup',
         'DAESINGO_RUNTIME_MEDIA_ROOT': str(media),
         'DAESINGO_RUNTIME_'+service.upper()+'_TEMP_ROOT': str(temp),
     })

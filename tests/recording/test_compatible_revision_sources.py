@@ -9,6 +9,7 @@ def test_revision_roles_pin_real_b_and_use_current_c(tmp_path_factory):
         'e50': 'e50b2976ef4edc3a030cfc5b03a5206340dd917b',
         'bridge': 'ce0750d5a3317ad1c810783d67f8a05ba88bce08',
         'preview_source': '70f1c47cbc7c08fa848d057687f7130047f1126c',
+        'preview_bridge': 'b915808898077509e6f499b7be197310e5045b7a',
         'preview_final': 'bb29d750d23765a73b7b6853b22086648684a392',
     }
     roots = revisions.releases.__wrapped__(tmp_path_factory)

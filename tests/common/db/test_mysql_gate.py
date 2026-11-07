@@ -54,6 +54,7 @@ CANDIDATE_VIDEO_CHECKS = tuple(("candidate_video", scenario) for scenario in (
     "process_kill", "range_concurrency", "compatible_bridge"))
 
 REQUIRED_CHECKS = (
+    *(("public_a1", scenario) for scenario in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery")),
     *CANDIDATE_VIDEO_CHECKS,
     *EXHAUSTION_CHECKS,
     *OBSERVABILITY_CHECKS,

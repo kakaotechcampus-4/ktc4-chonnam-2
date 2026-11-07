@@ -26,6 +26,7 @@ pytestmark = pytest.mark.mysql
 def resources(mysql_schema_url):
     upgrade_all(mysql_schema_url)
     config = RuntimeConfig.from_mapping("worker", {
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
         "DAESINGO_RUNTIME_DB_URL": mysql_schema_url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": "/test/media",
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": "/test/temp",
@@ -245,7 +246,8 @@ def test_fatal_hook_process_boundary_preserves_db_cleanup_and_hides_original(res
             install_logging_fault(logger, sink, lambda event: event.startswith("runtime.worker."),
                                   error=Fatal("secret /private/sink payload"))
         config = RuntimeConfig.from_mapping("worker", {
-            "DAESINGO_RUNTIME_DB_URL": os.environ["P2_MYSQL_URL"],
+            "DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
+        "DAESINGO_RUNTIME_DB_URL": os.environ["P2_MYSQL_URL"],
             "DAESINGO_RUNTIME_MEDIA_ROOT": "/test/media",
             "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": "/test/temp",
             "DAESINGO_RUNTIME_STALE_SWEEP_INTERVAL_SEC": "0.01",

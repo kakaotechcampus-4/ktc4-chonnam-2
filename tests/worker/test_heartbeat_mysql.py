@@ -28,6 +28,7 @@ pytestmark = pytest.mark.mysql
 def resources(mysql_schema_url):
     upgrade_all(mysql_schema_url)
     config = RuntimeConfig.from_mapping("worker", {
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
         "DAESINGO_RUNTIME_DB_URL": mysql_schema_url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": "/private/media",
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": "/private/temp",

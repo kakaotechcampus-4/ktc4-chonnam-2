@@ -137,6 +137,28 @@ def mock_response(monkeypatch, payload):
     monkeypatch.setattr("daesingo.recording.probe.subprocess.run", run)
 
 
+@pytest.mark.parametrize("input_format", [None, "mov"])
+def test_opt_in_mov_probe_forces_parser_and_disables_external_references(monkeypatch, probe_input, input_format):
+    def run(command, **kwargs):
+        if input_format is None:
+            assert "-f" not in command and "-enable_drefs" not in command
+        else:
+            assert command[command.index("-f") + 1] == "mov"
+            assert command[command.index("-enable_drefs") + 1] == "0"
+            assert command[command.index("-use_absolute_path") + 1] == "0"
+        assert command[command.index("-protocol_whitelist") + 1] == "file"
+        return subprocess.CompletedProcess(command, 0, json.dumps({"format": {"duration": "1"},
+            "streams": [{"index": 0, "codec_type": "video", "duration": "1"}]}).encode(), b"")
+    monkeypatch.setattr("daesingo.recording.probe.subprocess.run", run)
+    assert FfprobeMediaProbe(input_format=input_format).probe(probe_input).duration_sec == 1.0
+
+
+@pytest.mark.parametrize("input_format", ["concat", "hls", "mov -enable_drefs 1", True, []])
+def test_unrecognized_forced_input_format_is_rejected(input_format):
+    with pytest.raises(ValueError):
+        FfprobeMediaProbe(input_format=input_format)
+
+
 def test_durations_are_stream_specific_and_missing_is_null(monkeypatch, probe_input):
     mock_response(monkeypatch, {
         "format": {"duration": "12.5"},

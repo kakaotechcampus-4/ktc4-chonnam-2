@@ -131,12 +131,15 @@ startup `process.started`만으로 모델 적용을 증명할 수 없다.
 
 ## 4. 선택 Runtime 키 전체 목록
 
-아래는 `common/config/__init__.py`의 **코드 기본값**이다. 모두 비secret이며 생략 가능하다.
+아래는 `common/config/__init__.py`의 **코드 기본값**이다. 키는 생략할 수 있지만 A-1 승인 policy가 없으면 분석을 거부한다.
+일반 숫자/enum 기본값은 비secret이며 실제 policy 파일 경로와 내용은 보호한다.
 값의 정책 근거·잠정성은 Baseline 원문을 따른다. 단위는 이름에 표시한 초/bytes다.
 서비스가 소비하지 않는 다른 서비스 키는 공유 파일에 있어도 허용된다.
 
 | 실제 키 | 소비 서비스 | 기본값 | 용도 |
 | --- | --- | --- | --- |
+| `DAESINGO_RUNTIME_PUBLIC_MODE` | API/Worker | `a1` | 승인된 샘플 전용. `internal`은 보호된 내부 전용 환경에만 명시 |
+| `DAESINGO_RUNTIME_PUBLIC_POLICY_FILE` | API/Worker | 없음 | 보호된 승인 policy 파일. A-1에서 누락/불일치면 분석 거부; 파일 내용은 secret |
 | `DAESINGO_RUNTIME_LOG_LEVEL` | API/Worker | `INFO` | DEBUG/INFO/WARNING/ERROR/CRITICAL |
 | `DAESINGO_RUNTIME_DB_POOL_SIZE` | API/Worker | API `5`, Worker `2` | 일반 DB pool |
 | `DAESINGO_RUNTIME_DB_MAX_OVERFLOW` | API/Worker | API `5`, Worker `2` | pool 추가 연결 |
@@ -178,6 +181,12 @@ ready budget에는 별도 env key가 없다. Case는 별도 env/config 없음
 `DAESINGO_EVAL_DATA_ROOT`, `DAESINGO_EVAL_PRIVATE_ROOT`는 eval 전용 선택 경로로 Runtime 필수 설정이 아니다.
 
 ## 5. media·temp·cleanup 경계
+
+A-1의 전용 작업은 양 서비스가 같은 shared media의 `public-temp/a1-<DB token>`을 사용한다.
+기존 서비스별 temp 설정을 바꾸지 않고 Recording과 Search의 실제 temp context에 연결한다.
+공개 모드의 설정·권한·공유 admission·예산·TTL/삭제·head7 복구 조건은
+[A-1 서버 연결](a1-public-readiness.md)을 따른다. 기본 모드가 `a1`이므로 승인값 없이 분석을
+허용하지 않는다. 이 소스 변경을 운영 적용 완료로 해석하지 않는다.
 
 Compose의 같은 named volume `/media`를 API/Worker가 공유한다. 이미지가 UID/GID
 `10001:10001`, mode `0750`으로 `/media`, `/media/api-temp`, `/media/worker-temp`를 준비한다.

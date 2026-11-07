@@ -191,7 +191,7 @@ def emit(self, *args, **kwargs):
     assert entered.wait(2)  # Prove actual sink entry before failure exit.
 module.ApiEvents.emit = emit
 config = RuntimeConfig.from_mapping("api", {
-    "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://user:PRIVATE_SECRET@127.0.0.1:1/test",
+    "DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://user:PRIVATE_SECRET@127.0.0.1:1/test",
     "DAESINGO_RUNTIME_MEDIA_ROOT": str(Path.cwd() / "PRIVATE_PATH"),
     "DAESINGO_RUNTIME_API_TEMP_ROOT": str(Path.cwd() / "PRIVATE_PATH"),
 })
@@ -290,7 +290,7 @@ def test_keyboard_interrupt_distinguishes_startup_from_serving(phase, expected):
         saved = (tuple(foreign.handlers), foreign.disabled, foreign.propagate)
         stream = io.StringIO()
         config = RuntimeConfig.from_mapping("api", {{
-            "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://user:PRIVATE_SECRET@127.0.0.1:1/test",
+            "DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://user:PRIVATE_SECRET@127.0.0.1:1/test",
             "DAESINGO_RUNTIME_MEDIA_ROOT": str(Path.cwd()),
             "DAESINGO_RUNTIME_API_TEMP_ROOT": str(Path.cwd()),
         }})
@@ -521,7 +521,7 @@ def test_actual_server_cleanup_failure_exit_and_listener_release():
         from daesingo.common.config import RuntimeConfig
         from daesingo.common.logging import configure_logging
         config = RuntimeConfig.from_mapping("api", {
-            "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://user:PRIVATE_SECRET@127.0.0.1:1/test",
+            "DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://user:PRIVATE_SECRET@127.0.0.1:1/test",
             "DAESINGO_RUNTIME_MEDIA_ROOT": str(Path.cwd()),
             "DAESINGO_RUNTIME_API_TEMP_ROOT": str(Path.cwd()),
         })

@@ -30,6 +30,7 @@ from daesingo.recording.mysql_repository import MySQLRecordingRepository
 from daesingo.case.domain import SourceNotAccepted
 from .health import Readiness
 from .storage import storage_available
+from .public_access import PublicAPI
 
 
 def _file_identity(path):
@@ -78,6 +79,7 @@ class ApiComposition:
     recording: RecordingService | None = field(default=None, repr=False, compare=False)
     cleanup: CleanupService | None = field(default=None, repr=False, compare=False)
     media: object = field(default=None, repr=False, compare=False)
+    public: PublicAPI | None = field(default=None, repr=False, compare=False)
     _lock: LockType = field(default_factory=Lock, repr=False, compare=False)
     _closed: bool = field(default=False, init=False, repr=False, compare=False)
     cleanup_failed: bool = field(default=False, init=False, repr=False, compare=False)
@@ -89,20 +91,32 @@ class ApiComposition:
             adapter_factory=stored_adapter_factory(reader=ProducedReader(), executions=read_executions, recording=facts,
             export_max_byte_size=attachment_constraint("PLATE_IMAGE")["max_byte_size"]))
 
+    def _recording_repository(self, connection):
+        return ConnectionRecordingRepository(connection, storage_root=self.startup.config.media_root)
+
     def get_view(self, case_id: str):
         started = monotonic()
         # RT-02 owns classification, and neither Case nor Runtime owns commit.
         # Do not pass a synchronous logger into the request's DB stack.
-        view = run_api_transaction(self.engine,
-            lambda conn: case_api.get_view(case_id, store=self._store(conn)))
+        def read(conn):
+            if self.public is not None:
+                self.public.require(conn, case_id)
+            return case_api.get_view(case_id, store=self._store(conn))
+        view = run_api_transaction(self.engine, read)
         with bind_context(**safe_correlation(case_id=view["case_id"])):
             self.readiness.events.emit("api.view.completed", status="200",
                                        duration_ms=(monotonic() - started) * 1000)
         return view
 
     def create_case(self):
-        case_id = run_api_transaction(self.engine,
-            lambda conn: case_api.create_case(store=self._store(conn)))
+        def create(conn):
+            if self.public is not None:
+                self.public.before_create(conn)
+            case_id = case_api.create_case(store=self._store(conn))
+            if self.public is not None:
+                self.public.claim(conn, case_id)
+            return case_id
+        case_id = run_api_transaction(self.engine, create)
         # The write is acknowledged before this separate public read begins.
         # A failed read cannot make the already committed POST safely retryable.
         try:
@@ -113,13 +127,24 @@ class ApiComposition:
 
     def execute_command(self, payload, trace_id: str):
         def operation(conn):
+            if self.public is not None:
+                if not isinstance(payload, dict) or payload.get("kind") != "STOP_ANALYSIS":
+                    self.public.ready()
+                    self.public.store.accepting(conn)
+                if isinstance(payload, dict) and isinstance(payload.get("case_id"), str):
+                    self.public.require(conn, payload["case_id"])
             with ExitStack() as resources:
                 recording = self.recording
                 if recording is None:
-                    recording = resources.enter_context(RecordingService(ConnectionRecordingRepository(
-                        conn, storage_root=self.startup.config.media_root)))
-                result = case_api.execute_command(payload, store=self._store(conn),
+                    recording = resources.enter_context(RecordingService(self._recording_repository(conn)))
+                store = self._store(conn)
+                if self.public is not None and isinstance(payload, dict) and payload.get("kind") != "STOP_ANALYSIS":
+                    case = store.load_for_update(payload.get("case_id", ""))
+                    self.public.check_sources(conn, case, self._recording_repository(conn))
+                result = case_api.execute_command(payload, store=store,
                     timelines=RecordingSequentialTimelineSource(recording))
+                if self.public is not None:
+                    self.public.admit_result(conn, payload, result)
                 if result.cancelled_job_ids:
                     request_cancel(conn, result.cancelled_job_ids)
                 if result.appended_job_records:
@@ -129,7 +154,65 @@ class ApiComposition:
         # The returned Case body was built before enqueue and is left untouched.
         return run_api_transaction(self.engine, operation)
 
+    def register_official_sample(self, case_id, sample_id):
+        from uuid import uuid4
+        from daesingo.common.public_runtime.policy import PublicDenied
+        from daesingo.common.db.errors import CommitOutcomeUnknown
+        from .official_samples import source_duration_ms
+        from .public_samples import copy_verified_sample, discard_copies, CopiedProbe
+        public = self.public
+        if public is None:
+            raise PublicDenied("UPLOAD_DISABLED")
+        public.ready()
+        assert public.catalog is not None and self.cleanup is not None
+        if not public.catalog.contains(sample_id):
+            raise PublicDenied("INPUT")
+        scanner = next(s for s in self.cleanup.scanners if s.kind == "orphan")
+        with scanner.in_use():
+            token = uuid4().hex
+            needed = public.transaction(lambda conn: public.store.begin_preparation(
+                conn, case_id, public.owner(), sample_id, token))
+            if not needed:
+                return {"case_id": case_id, "case_view": self.get_view(case_id)}
+            copied = ()
+            try:
+                # Admission/owner/reuse checks precede any hash or ffprobe work.
+                sample = public.catalog.verify(sample_id)
+                copied = copy_verified_sample(sample, self.startup.config.media_root)
+                def register(conn):
+                    public.store.accepting(conn)
+                    public.require(conn, case_id)
+                    store = self._store(conn)
+                    case = store.load_for_update(case_id)
+                    if case.stage != "INTAKE" or case.sources:
+                        raise PublicDenied("INPUT")
+                    bindings = []
+                    with RecordingService(self._recording_repository(conn), media_probe=CopiedProbe(copied)) as recording:
+                        for source in copied:
+                            item = recording.register_local_source(source.path,
+                                original_filename=source.original_filename, case_id=case_id)
+                            case_api.record_source_registered(case_id, item.source_asset.model_dump(mode="json"),
+                                media_streams=[s.model_dump(mode="json") for s in item.media_streams], store=store)
+                            bindings.append({"source_asset_ref": item.source_asset.source_asset_ref,
+                                "sha256": source.sha256, "byte_size": source.byte_size,
+                                "duration_ms": source_duration_ms(source)})
+                    public.store.bind_sample(conn, case_id, sample_id, bindings)
+                    public.store.finish_preparation(conn, token)
+                run_api_transaction(self.engine, register)
+            except CommitOutcomeUnknown:
+                # May be registered: preserve copies and marker. The owned
+                # retention scan reconciles only under an exclusive FS lease.
+                raise
+            except BaseException:
+                discard_copies(copied)
+                public.transaction(lambda conn: public.store.finish_preparation(conn, token))
+                raise
+        return {"case_id": case_id, "case_view": self.get_view(case_id)}
+
     def register_source(self, case_id, path, original_filename):
+        if self.public is not None:
+            from daesingo.common.public_runtime.policy import PublicDenied
+            raise PublicDenied("UPLOAD_DISABLED")
         if self.cleanup is None:
             raise RuntimeError('publish lease unavailable')
         scanner = next(s for s in self.cleanup.scanners if s.kind == 'orphan')
@@ -164,6 +247,8 @@ class ApiComposition:
         def operation(conn):
             # Case existence is checked with the existing public store. No new
             # association, projection mediation or Case callback is introduced.
+            if self.public is not None:
+                self.public.require(conn, case_id)
             self._store(conn).get_case(case_id)
             with RecordingService(MySQLRecordingRepository(conn,
                     storage_root=self.startup.config.media_root)) as recording:
@@ -175,6 +260,8 @@ class ApiComposition:
     def load_asset(self, case_id: str, asset_ref: str):
         validate_case_id(case_id)
         def operation(conn):
+            if self.public is not None:
+                self.public.require(conn, case_id)
             self._store(conn).get_case(case_id)
             with RecordingService(MySQLRecordingRepository(conn,
                     storage_root=self.startup.config.media_root)) as recording:
@@ -194,6 +281,8 @@ class ApiComposition:
         from daesingo.case.candidate_video import contains_clip
         validate_case_id(case_id)
         def operation(conn):
+            if self.public is not None:
+                self.public.require(conn, case_id)
             case = self._store(conn).get_case(case_id)
             if not contains_clip(case, clip_ref):
                 raise RecordingCapabilityError('UNKNOWN_REF', 'candidate video is not current')
@@ -263,7 +352,11 @@ def compose_api(startup: Startup) -> ApiComposition:
         cleanup = configured_cleanup(config, startup.logger, emit=readiness.events.emit,
                                      registration=registration)
         media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'))
-        return ApiComposition(startup, engine, ready_engine, readiness, cleanup=cleanup, media=media)
+        public = PublicAPI(startup, engine, cleanup) if config.public.mode == "a1" else None
+        if public is not None:
+            cleanup.scanners = (*cleanup.scanners, public.retention)
+            cleanup.interval_sec = min(cleanup.interval_sec, 60)
+        return ApiComposition(startup, engine, ready_engine, readiness, cleanup=cleanup, media=media, public=public)
     except BaseException:
         # Construction can fail before a composition/lifespan owner exists.
         # Try every allocated engine, retaining the original fatal/error policy.
