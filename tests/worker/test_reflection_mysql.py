@@ -19,6 +19,7 @@ from daesingo.common.jobs.schema import job_execution
 from logging_faults import install_logging_fault
 from mysql_fault_proxy import CommitResponseProxy
 from test_worker_mysql import queue, row, seed, composed
+from terminal_observation import observe_terminal_transactions
 
 pytestmark = pytest.mark.mysql
 OUTCOMES = ("APPLIED", "ALREADY_APPLIED", "STOPPED_WAITING", "CANCELLED", "SUPERSEDED")
@@ -272,13 +273,13 @@ def test_terminal_marker_zero_or_mismatch_requires_durable_confirmation(fake_cas
 def test_logger_and_observer_do_not_change_t2_result_or_retry(fake_case, mode, sink, monkeypatch, capsys):
     from daesingo.worker import composition
     execution_id, = seed(fake_case)
-    observed, waits, kills = [], [], []
+    observed, auxiliary, waits, kills = [], [], [], []
     original = composition.run_worker_transaction
-    def observer(attempt):
-        observed.append(attempt.outcome)
+    def observer(attempt, terminal):
+        (observed if terminal else auxiliary).append(attempt.outcome)
         raise sa.exc.OperationalError("private SQL", {}, Exception(1213, "secret observer"))
     def transaction(engine, operation, **kwargs):
-        return original(engine, operation, **kwargs, observe=observer)
+        return observe_terminal_transactions(original, engine, operation, **kwargs, observe=observer)
     monkeypatch.setattr(composition, "run_worker_transaction", transaction)
     with fake_case.begin() as conn:
         conn.execute(job_execution.update().values(attempt=2))
@@ -304,6 +305,7 @@ def test_logger_and_observer_do_not_change_t2_result_or_retry(fake_case, mode, s
     assert stored["status"] == "SUCCEEDED" and (stored["case_applied_at"] is not None) == (mode != "failure")
     assert waits == ([1] if mode == "db_retry" else [])
     assert observed == (["COMMITTED", "DISCONNECT", "COMMITTED"] if mode == "db_retry" else ["COMMITTED", "FAILED"] if mode == "failure" else ["COMMITTED", "COMMITTED"])
+    assert auxiliary == ["COMMITTED", "COMMITTED"]  # dispatch binding + terminal tag
     assert capsys.readouterr().err == ""
 
 
