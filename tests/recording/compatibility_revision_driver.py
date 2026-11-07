@@ -113,7 +113,7 @@ def jobs(engine, data):
         return {'terminal': 'SUCCEEDED'}
     if data['action'] == 'job_reflect':
         with engine.begin() as conn:
-            query = 'SELECT execution_id,job_id,kind,attempt,status,produced FROM job_execution WHERE case_id=%s'
+            query = 'SELECT execution_id,job_id,kind,attempt,status,produced,trace_id FROM job_execution WHERE case_id=%s'
             values = (data['case_id'],)
             if data.get('job_kind'):
                 query += ' AND kind=%s'
@@ -121,7 +121,7 @@ def jobs(engine, data):
             row = conn.exec_driver_sql(query, values).mappings().one()
             terminal = HandlerResult(status=row['status'], produced=json.loads(row['produced']))
             incoming = ReflectionInput(row['execution_id'], row['job_id'], data['case_id'], row['kind'], row['attempt'], terminal)
-            result = reflect_terminal(conn, incoming, CaseReflector(reader=ProducedReader(), timelines=Timeline()), 'trace-transition')
+            result = reflect_terminal(conn, incoming, CaseReflector(reader=ProducedReader(), timelines=Timeline()), row['trace_id'])
         return {'reflection': result.status}
     with engine.begin() as conn:
         case = cases.load(conn, data['case_id'], lock='update')

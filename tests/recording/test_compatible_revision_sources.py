@@ -31,3 +31,30 @@ def test_preview_baseline_has_same_case_worker_runtime_as_existing_bridge():
         'src/daesingo/case', 'src/daesingo/worker', 'src/daesingo/common'],
         cwd=revisions.ROOT, capture_output=True)
     assert result.returncode == 0
+
+
+def test_revision_driver_redelivery_preserves_the_real_api_trace(monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    import compatibility_revision_driver as driver
+    import daesingo.common.jobs.reflection as reflection
+    row = {'execution_id': 'exec-preview', 'job_id': 'job-preview',
+           'kind': 'CANDIDATE_VIDEO_PREVIEW', 'attempt': 1, 'status': 'SUCCEEDED',
+           'produced': '[]', 'trace_id': 'real-api-trace'}
+
+    class Connection:
+        def exec_driver_sql(self, *args):
+            return SimpleNamespace(mappings=lambda: SimpleNamespace(one=lambda: row))
+
+    class Engine:
+        @contextmanager
+        def begin(self):
+            yield Connection()
+
+    def reflect(conn, incoming, reflector, trace):
+        assert trace == row['trace_id']
+        return SimpleNamespace(status='ALREADY_APPLIED')
+
+    monkeypatch.setattr(reflection, 'reflect_terminal', reflect)
+    assert driver.jobs(Engine(), {'action': 'job_reflect', 'case_id': 'case-preview',
+                                'job_kind': 'CANDIDATE_VIDEO_PREVIEW'}) == {'reflection': 'ALREADY_APPLIED'}
