@@ -74,16 +74,21 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
 _SPAN_KEYS = ("timeline_id", "timeline_revision", "start_ms", "end_ms")
 
 
-def candidates_from_events(raw_candidates: list[dict[str, Any]]) -> list[Candidate]:
+def candidates_from_events(raw_candidates: list[dict[str, Any]], *,
+                           frame_refs: dict[str, str | None] | None = None) -> list[Candidate]:
     """search `CandidateEvent` → case `Candidate`. 동기 경로(`receive_search_candidates`)와 Worker 반영 경로
-    (`reflection.reflect_execution`)가 같은 변환을 쓴다."""
+    (`reflection.reflect_execution`)가 같은 변환을 쓴다.
+
+    `frame_refs`는 Coarse handler가 발급한 후보 썸네일(#583 E안)이다. 있으면 그 값이 Search `thumbnail_ref`(실제
+    경로에서 늘 `null`)보다 우선이고, `null`(발급 거부)이면 Search 값을 쓴다."""
+    frame_refs = frame_refs or {}
     return [
         Candidate(
             candidate_id=c["candidate_id"],
             at=None,
             at_provenance="recording.timeline_relative_only",
             observed=c["summary"],
-            thumb_ref=c["thumbnail_ref"],
+            thumb_ref=frame_refs.get(c["candidate_id"]) or c["thumbnail_ref"],
             rank=c["rank"],
             # span 좌표는 생성 당시 timeline revision 기준이다 — stale 판정과 marker_ms의 근거(#184).
             representative_ms=c["span"]["representative_ms"],

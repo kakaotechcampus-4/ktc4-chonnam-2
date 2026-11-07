@@ -32,7 +32,7 @@ from daesingo.search import (
 )
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.media import MediaPreparer
-from daesingo.search.prompts import FINE_PROMPT, load_prompt
+from daesingo.search.prompts import COARSE_PROMPT, FINE_PROMPT, load_prompt
 from daesingo.search.provider import (
     CoarseRequest,
     FineRequest,
@@ -236,7 +236,7 @@ def run_point(point: Point, scope: dict[str, str]) -> list[dict[str, object]]:
         "model": service.config.model,
         "coarse_fps": point.coarse_fps,
         "fine_fps": point.fine_fps,
-        "prompt_version": "coarse-p3",
+        "prompt_version": COARSE_PROMPT.version,
         "fine_prompt_version": point.fine_prompt_version,
         "fine_top_k": FINE_TOP_K,
         "usd_per_million": list(point.usd_per_million),

@@ -78,6 +78,51 @@ def thumbnail_candidate_ids(case: CaseAggregate, observation_input: dict[str, An
     return tuple(c.candidate_id for c in chosen)
 
 
+_SPAN_KEYS = ("timeline_id", "timeline_revision", "start_ms", "end_ms", "representative_ms")
+
+
+def _field(item: Any, name: str) -> Any:
+    return item.get(name) if isinstance(item, dict) else getattr(item, name, None)
+
+
+def coarse_thumbnail_candidate_ids(events: Iterable[Any]) -> tuple[str, ...]:
+    """Coarse handler가 T1 전에 썸네일을 발급할 후보 ID — 그 Coarse 결과의 rank 1~3, rank 순(#583 E안).
+
+    후보 목록이 아직 case에 반영되기 전이라 case 상태가 아니라 결과 `CandidateEvent`(모델 또는 JSON)만 본다.
+    위치를 정할 수 없는 후보(span 다섯 값 중 하나라도 없음 · 대표 시각 없음)는 빼고 4위로 채우지 않는다 —
+    `thumbnail_candidate_ids`와 같은 원칙이다. 위치는 후보마다 `candidate_frame_position`으로 정한다."""
+    chosen = []
+    for event in events:
+        rank, span = _field(event, "rank"), _field(event, "span")
+        if span is not None and not isinstance(span, dict):
+            span = span.model_dump(mode="json")
+        if (isinstance(rank, int) and 1 <= rank <= THUMBNAIL_MAX_RANK and span is not None
+                and all(span.get(key) is not None for key in _SPAN_KEYS)):
+            chosen.append((rank, _field(event, "candidate_id")))
+    return tuple(candidate_id for _, candidate_id in sorted(chosen, key=lambda item: item[0]))
+
+
+def coarse_frame_refs(content: dict[str, Any]) -> dict[str, str | None]:
+    """Coarse 결과에 실린 후보별 썸네일(`candidate_frame_refs`)을 검증해 돌려준다(#583 E안).
+
+    키가 없거나 `null`이면 이전 형식 · 발급 없음이라 `{}`다. 값은 `frame_ref` 문자열 또는 `null`(거부된 frame)이다.
+    case가 고르지 않은 후보(`coarse_thumbnail_candidate_ids` 밖)의 값이나 다른 모양은 배선 오류(`ValueError`)다 —
+    잘못 실린 frame을 조용히 버리면 Runtime 쪽 대조 실수가 보이지 않는다."""
+    refs = content.get("candidate_frame_refs")
+    if refs is None:
+        return {}
+    if not isinstance(refs, dict):
+        raise ValueError(f"candidate_frame_refs는 후보 ID → frame_ref 매핑이어야 한다: {type(refs).__name__}")
+    allowed = set(coarse_thumbnail_candidate_ids(content.get("candidate_events") or []))
+    unknown = set(refs) - allowed
+    if unknown:
+        raise ValueError(f"case가 고르지 않은 후보의 썸네일: {sorted(unknown)!r}")
+    for candidate_id, ref in refs.items():
+        if ref is not None and (not isinstance(ref, str) or not ref):
+            raise ValueError(f"잘못된 frame_ref: {candidate_id!r} → {ref!r}")
+    return dict(refs)
+
+
 def current_preview_frame_ref(case: CaseAggregate) -> str | None:
     """선택 후보 · 현재 세대의 가장 나중 성공 clip에 남은 근거 장면. 없으면 `None`.
 

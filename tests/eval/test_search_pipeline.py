@@ -118,6 +118,8 @@ def test_fine_runs_on_top_k_candidates_only(fake_run):
     facts = search_pipeline.run_facts({})
     assert facts["point"] == "s3"
     assert facts["fine_prompt_version"] == "fine-p3+fine-gore-v1"
+    # Coarse 프롬프트 버전은 고정 문자열이 아니라 실제로 보낸 Coarse 호출 기록을 따른다(#608)
+    assert facts["prompt_version"] == facts["usage_records"][0]["prompt_version"]
     # Coarse 2클립 + Fine 2×3
     assert len(facts["usage_records"]) == 2 + 2 * 3
 

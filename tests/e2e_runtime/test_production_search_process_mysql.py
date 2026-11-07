@@ -32,10 +32,15 @@ def public(message):
     return message["body"]
 
 
-@pytest.mark.parametrize("scenario", ["normal", "partial", "failed", "fine_failed", "hint", "clip", "clip_fractional", "clip_multisource"])
+@pytest.mark.parametrize("scenario", ["normal", "partial", "failed", "fine_failed", "hint", "clip", "clip_fractional", "clip_multisource",
+    "provider_retry_success", "provider_retry_exhausted", "provider_deadline_exhausted"])
 @pytest.mark.mysql_check("search_process", "separate_api_worker")
 def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, scenario):
     _, _, engine = async_db
+    provider_scenario = scenario.startswith("provider_")
+    coarse_failed = scenario in {"failed", "provider_retry_exhausted", "provider_deadline_exhausted"}
+    failure_kind = "SEARCH_DEADLINE_EXCEEDED" if scenario == "provider_deadline_exhausted" else "SEARCH_PROVIDER_ERROR"
+    worker_results = []
     clip_scenario = scenario.startswith("clip")
     root = tmp_path / "storage"
     root.mkdir()
@@ -89,12 +94,30 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
             assert child.exitcode == 0 and not child.is_alive()
             assert result["pid"] not in {os.getpid(), api_pid}
             is_clip = kind == "INCIDENT_CLIP_BUILD"
-            assert result["http_calls"] == (0 if is_clip else 1) and result["pool_checkedout"] == 0, result
+            expected_calls = {"provider_retry_success": 2, "provider_retry_exhausted": 4,
+                "provider_deadline_exhausted": 2}.get(scenario, 1) if kind == "COARSE_SEARCH" else 1
+            assert result["http_calls"] == (0 if is_clip else expected_calls) and result["pool_checkedout"] == 0, result
             assert result["clip_calls"] == (1 if is_clip else 0), result
             assert result["encodes"] == (2 if scenario == "clip_multisource" else 1) * int(is_clip), result
-            failed = scenario == "failed" or scenario == "fine_failed" and kind == "FINE_VERIFY"
+            failed = coarse_failed or scenario == "fine_failed" and kind == "FINE_VERIFY"
             assert result["terminals"] == [{"status": "FAILED" if failed else "SUCCEEDED",
-                "failure_kind": "SEARCH_PROVIDER_ERROR" if failed else None}], result
+                "failure_kind": failure_kind if failed else None}], result
+            if provider_scenario:
+                assert result["retry_policy"] == {"max_retries": 3, "retry_base_sec": 5.0}
+                assert result["sdk_max_retries"] == [0]
+                if kind == "COARSE_SEARCH":
+                    statuses = {"provider_retry_success": [503, 200], "provider_retry_exhausted": [503] * 4,
+                        "provider_deadline_exhausted": [503, 503]}[scenario]
+                    assert [attempt["status"] for attempt in result["http_attempts"]] == statuses
+                    assert result["run_budgets_sec"] == [600.0]
+                    timeouts = [attempt["timeout_sec"] for attempt in result["http_attempts"]]
+                    assert all(0 < timeout <= 600.0 for timeout in timeouts)
+                    assert all(later < earlier for earlier, later in zip(timeouts, timeouts[1:]))
+                    gaps = [later["at_sec"] - earlier["at_sec"] for earlier, later in
+                        zip(result["http_attempts"], result["http_attempts"][1:])]
+                    assert all(gap >= delay for gap, delay in zip(gaps, [5.0, 10.0, 20.0]))
+                    assert (result["fake_clock_advance_sec"] > 0) == (scenario == "provider_deadline_exhausted")
+                worker_results.append({"kind": kind, **result})
         if scenario == "hint":
             run_worker("HINT_EXTRACT")
             local.send(("GET", f"/cases/{identity}/view", None))
@@ -104,11 +127,11 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
             assert hinted["hints"]["situation"] == "red signal"
         run_worker("COARSE_SEARCH")
         local.send(("GET", f"/cases/{identity}/view", None)); view = public(receive(local))
-        assert bool(view["candidates"]) == (scenario != "failed")
+        assert bool(view["candidates"]) == (not coarse_failed)
         # Case selects rank=1 and issues the first Fine in Coarse T2 (W12:C2); the reflector enqueues it.
         # Runtime still invents no selection or downstream policy.
-        assert [job["kind"] for job in view["running_jobs"]] == ([] if scenario == "failed" else ["FINE_VERIFY"])
-        if scenario != "failed":
+        assert [job["kind"] for job in view["running_jobs"]] == ([] if coarse_failed else ["FINE_VERIFY"])
+        if not coarse_failed:
             run_worker("FINE_VERIFY")
             local.send(("GET", f"/cases/{identity}/view", None)); final_view = public(receive(local))
             assert [job["kind"] for job in final_view["running_jobs"]] == (["INCIDENT_CLIP_BUILD"] if clip_scenario else [])
@@ -118,14 +141,14 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
                 clip_view = public(receive(local))
                 assert {job["kind"] for job in clip_view["running_jobs"]} == {"PLATE_READ", "OVERLAY_TIME_READ"}
         with engine.begin() as conn:
-            rows = conn.exec_driver_sql("SELECT execution_id,kind,status,produced,case_applied_at FROM job_execution ORDER BY queued_at").mappings().all()
+            rows = conn.exec_driver_sql("SELECT execution_id,job_id,attempt,kind,status,failure_kind,produced,case_applied_at FROM job_execution ORDER BY queued_at").mappings().all()
             assert all(row["case_applied_at"] is not None for row in rows if row["kind"] not in {"PLATE_READ", "OVERLAY_TIME_READ"})
             coarse, = [row for row in rows if row["kind"] == "COARSE_SEARCH"]
-            assert coarse["status"] == ("FAILED" if scenario == "failed" else "SUCCEEDED")
+            assert coarse["status"] == ("FAILED" if coarse_failed else "SUCCEEDED")
             import json
             refs = json.loads(coarse["produced"]) if isinstance(coarse["produced"], str) else coarse["produced"]
             payload = ProducedReader()(conn, "COARSE_SEARCH", tuple(refs))
-            assert payload["analysis_run"]["outcome"] == {"partial": "PARTIAL", "failed": "FAILED"}.get(scenario, "SUCCEEDED")
+            assert payload["analysis_run"]["outcome"] == ("FAILED" if coarse_failed else "PARTIAL" if scenario == "partial" else "SUCCEEDED")
             if scenario == "fine_failed": assert rows[-1]["status"] == "FAILED"
             if clip_scenario:
                 from daesingo.worker.case_composition import stored_case_store
@@ -163,6 +186,51 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
                 registry = compose_registry(engine=engine, startup=SimpleNamespace())
                 for kind in ("PLATE_READ", "OVERLAY_TIME_READ"):
                     assert registry.dispatch(ExecutionContext("e", "j", identity, kind, 1, "t")).failure_kind == "RUNTIME_UNREGISTERED_KIND"
+            if provider_scenario:
+                assert coarse["attempt"] == 1  # provider retries occur within one Job attempt
+                assert coarse["failure_kind"] == (failure_kind if coarse_failed else None)
+                assert coarse["case_applied_at"] is not None
+                coarse_payload = payload
+                from daesingo.worker.case_composition import stored_case_store
+                case = stored_case_store(conn, storage_root=root).get_case(identity)
+                reflected_jobs = [job for job in case.job_records if job["job_id"] == coarse["job_id"]]
+                assert len(reflected_jobs) == 1
+                assert case.processed_executions[coarse["execution_id"]] == coarse["job_id"]
+                assert case.settled_jobs[coarse["job_id"]] == "REFLECTED"
+                assert case.candidate_search_failed is coarse_failed
+        if provider_scenario:
+            retry_request = retry_response = None
+            if coarse_failed:
+                assert view["stage"] == "SEARCHING"
+                assert next(step["state"] for step in view["progress"] if step["step"] == "coarse_search") == "FAILED"
+                notice, = [notice for notice in view["notices"] if notice["code"] == "search.candidate_search_failed"]
+                assert notice == {"code": "search.candidate_search_failed", "severity": "ERROR", "blocking": True,
+                    "message_key": "notice.candidate_search_failed", "actions": ["RETRY_SEARCH"]}
+                assert all(notice["code"] != "search.no_candidates" for notice in view["notices"])
+                retry_request = {"case_id": identity, "expected_case_rev": view["case_rev"],
+                    "kind": "RUN_NOTICE_ACTION", "payload": {"notice_code": notice["code"], "action": "RETRY_SEARCH"}}
+                local.send(("POST", f"/cases/{identity}/commands", retry_request))
+                retry_response = receive(local)
+                retried = public(retry_response)["case_view"]
+                assert retry_response["status"] == 202
+                assert [job["kind"] for job in retried["running_jobs"]] == ["COARSE_SEARCH"]
+                assert retried["running_jobs"][0]["job_id"] != coarse["job_id"]
+                assert all("RETRY_SEARCH" not in notice["actions"] for notice in retried["notices"])
+                with engine.begin() as conn:
+                    statuses = conn.exec_driver_sql("SELECT status FROM job_execution ORDER BY queued_at").scalars().all()
+                    assert statuses == ["FAILED", "QUEUED"]
+            else:
+                assert len(view["candidates"]) == 1
+                assert next(step["state"] for step in view["progress"] if step["step"] == "coarse_search") == "DONE"
+                assert all(notice["code"] != "search.candidate_search_failed" for notice in view["notices"])
+            evidence = {"scenario": scenario, "api_pid": api_pid, "test_pid": os.getpid(),
+                "workers": worker_results, "job_rows": [dict(row) for row in rows],
+                "coarse_payload": coarse_payload, "coarse_case_record": reflected_jobs[0],
+                "case_reflection": {"processed_executions": case.processed_executions,
+                    "settled_jobs": case.settled_jobs, "candidate_search_failed": case.candidate_search_failed},
+                "coarse_case_view": view, "final_case_view": view if coarse_failed else final_view,
+                "retry_request": retry_request, "retry_response": retry_response}
+            (tmp_path / "o6-evidence.json").write_text(json.dumps(evidence, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     finally:
         if api.is_alive():
             try: local.send(("stop", None, None))

@@ -15,7 +15,9 @@ from .runs import (
     AnalysisRun,
     CandidateEvent,
     ContractRef,
+    FailureKind,
     Implementation,
+    Issue,
     Operation,
     RunId,
     RunOutcome,
@@ -55,7 +57,7 @@ def _clip_relative_temporal_facts(
     facts: tuple[FineTemporalFact, ...],
     prepared: PreparedMedia,
     source_duration_sec: float,
-) -> tuple[TemporalFact, ...]:
+) -> tuple[tuple[TemporalFact, ...], tuple[Issue, ...]]:
     """모델이 답한 offset을 그대로 싣는다 — 기준은 Fine input(잘라낸 clip)의 0초다.
 
     `contract-visual-evidence.md` §7과 `adr-visual-evidence.md`가 `at_offset_ms`를
@@ -80,11 +82,28 @@ def _clip_relative_temporal_facts(
     origin_start_ms = round(prepared.origin_start_sec * 1000)
     source_duration_ms = round(source_duration_sec * 1000)
     checked: list[TemporalFact] = []
+    issues: list[Issue] = []
     for item in facts:
         offset = item.at_offset_ms
+        if offset is not None and not 0 <= offset <= clip_duration_ms:
+            # clip 밖 시각은 모델이 시간 기준을 섞은 답이다. 시각만 비우고 판정은 쓴다 —
+            # at_offset_ms 하나 때문에 Fine 전체를 버리면 신고자료 준비가 멈춘다(#601).
+            # 원인 추적용으로 수치만 남긴다(응답 원문은 남기지 않는다).
+            issues.append(
+                Issue(
+                    kind=FailureKind.TEMPORAL_ORDER_FAILURE,
+                    code="FINE_OFFSET_OUT_OF_CLIP",
+                    detail=(
+                        f"offset_ms={offset} "
+                        f"model_ms={round(offset / prepared.playback_speed)} "
+                        f"clip_ms=0..{clip_duration_ms} "
+                        f"origin_sec={prepared.origin_start_sec:g}..{prepared.origin_end_sec:g} "
+                        f"playback_speed={prepared.playback_speed:g}"
+                    ),
+                )
+            )
+            offset = None
         if offset is not None:
-            if offset < 0 or offset > clip_duration_ms:
-                raise ProviderPayloadError("Fine temporal offset outside prepared clip")
             # 방출하지는 않지만, clip이 원본 밖을 가리키면 준비 단계가 어긋난 것이다.
             if origin_start_ms + offset > source_duration_ms:
                 raise ProviderPayloadError(
@@ -97,7 +116,7 @@ def _clip_relative_temporal_facts(
                 evidence_refs=_NO_FRAME_REFS,
             )
         )
-    return tuple(checked)
+    return tuple(checked), tuple(issues)
 
 
 def normalize_event_type(value: str | VisualEventType) -> VisualEventType:
@@ -192,7 +211,7 @@ def verify_fine(
             )
         )
         response = result.response
-        temporal_facts = _clip_relative_temporal_facts(
+        temporal_facts, issues = _clip_relative_temporal_facts(
             response.temporal_facts,
             prepared,
             source.duration_sec,
@@ -207,10 +226,10 @@ def verify_fine(
             prompt_version=FINE_PROMPT_VERSION,
             config_version=config.version,
         ),
-        outcome=RunOutcome.SUCCEEDED,
+        outcome=RunOutcome.PARTIAL if issues else RunOutcome.SUCCEEDED,
         started_at=started,
         completed_at=datetime.now(UTC),
-        issues=(),
+        issues=issues,
         usage_refs=(
             (f"usage:{source.source_id}",) if usage is None else tuple(usage.issued)
         ),

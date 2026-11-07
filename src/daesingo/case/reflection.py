@@ -20,6 +20,7 @@ from typing import Any, Literal, Protocol
 from daesingo.case import observation
 from daesingo.case.analysis_start import InitialSearchBudget, reflect_hint_extraction
 from daesingo.case.domain import CaseAggregate
+from daesingo.case.preview_frame import coarse_frame_refs
 from daesingo.case.service import candidates_from_events, mark_ready_if_package_ready, utc_now
 from daesingo.case.store import CaseStore
 from daesingo.case.timeline_source import CaseTimelineSource
@@ -132,7 +133,11 @@ def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, stor
     if str(content["outcome"]) == "FAILED":
         case.record_candidate_search_failure(job_id=outcome.job_id)
         return
-    case.receive_candidates(candidates_from_events(content["candidate_events"]), job_id=outcome.job_id)
+    # 후보 썸네일은 Coarse handler가 T1 전에 발급해 실은 값이다(#583 E안) — 검증은 상태를 바꾸기 전에 하고, 여기서
+    # 다시 발급하지 않는다. 늦은 결과 · 재전달은 위 guard에서 이미 걸러져 현재 세대 후보에만 남는다.
+    frame_refs = coarse_frame_refs(content)
+    case.receive_candidates(candidates_from_events(content["candidate_events"], frame_refs=frame_refs),
+                            job_id=outcome.job_id)
     # 가장 유력한 후보를 자동으로 고르고 첫 Fine을 발주한다(W12:C2, #168 결정 1). rank=1이 없거나 stale이면 고르지
     # 않고 CANDIDATE_REVIEW에 머문다(`select_top_ranked`).
     if case.select_top_ranked() is not None:
