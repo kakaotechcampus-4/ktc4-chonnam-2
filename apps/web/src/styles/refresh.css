@@ -468,17 +468,17 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 
 /* 단계 목록 — ProgressPanel 모양을 이 화면에서만 바꾼다(개발용 ?dev 화면은 그대로) */
 .rs.flow .panel { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
-.rs.flow .flow-steps .sec-label { align-items: baseline; padding-bottom: 14px; margin-bottom: 8px; border-bottom: 1px solid var(--rs-line); font-size: 18px; font-weight: 650; line-height: 1.3; color: var(--rs-ink); }
+.rs.flow .flow-steps .sec-label { align-items: baseline; padding-bottom: 14px; padding-right: 12px; margin-bottom: 8px; border-bottom: 1px solid var(--rs-line); font-size: 18px; font-weight: 650; line-height: 1.3; color: var(--rs-ink); }
 .flow-steps-count { font-size: 14px; font-weight: 500; color: var(--rs-sub); }
 .rs.flow .sec-label { margin: 0 0 4px; padding: 0; border: 0; font-size: 14px; font-weight: 600; color: var(--rs-sub); }
 .rs.flow .timeline { display: flex; flex-direction: column; gap: 2px; padding: 0; }
 .rs.flow .timeline li {
   align-items: center; gap: 12px; min-height: 54px;
-  padding: 12px 0 12px 70px; border-left: 0; border-bottom: 0;
+  padding: 12px 12px 12px 78px; border-left: 0; border-bottom: 0;
   font-size: 16px;
 }
 .rs.flow .timeline li::before {
-  left: 40px; top: 50%; width: 16px; height: 16px; margin-top: -8px;
+  left: 48px; top: 50%; width: 16px; height: 16px; margin-top: -8px;
   background: #fff; border: 1.5px solid var(--rs-line);
   animation: none;
 }
@@ -487,7 +487,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 /* 완료 — 검정 원 + 흰 체크 */
 .rs.flow .timeline .tl-done::before { background: var(--rs-ink); border-color: var(--rs-ink); }
 .rs.flow .timeline .tl-done::after {
-  content: ''; position: absolute; left: 46px; top: 50%; width: 4px; height: 8px; margin-top: -6px;
+  content: ''; position: absolute; left: 54px; top: 50%; width: 4px; height: 8px; margin-top: -6px;
   border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
 }
 /* 진행 중 — 검정 원형 로딩 */
@@ -496,12 +496,14 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
   animation: rs-spin 1s linear infinite;
 }
 .rs.flow .timeline .tl-running .tl-label { font-weight: 650; }
-/* 진행 중인 행은 회색 카드로 살짝 떠 보인다 — 경로 칸(왼쪽 30px) 밖, 상태 아이콘부터. 여럿이 진행 중이면 모두 띄운다.
+/* 진행 중인 행은 회색 카드로 살짝 떠 보인다 — 경로 칸(왼쪽 36px) 밖, 자동차와 겹치지 않게. 여럿이 진행 중이면 모두 띄운다.
+   카드 안쪽 여백을 고르게 둔다: 왼쪽(카드 끝 → 상태 아이콘) · 오른쪽(상태 글자 → 카드 끝) 12px, 위아래는 줄 padding 12px.
+   그래서 모든 행의 아이콘은 48px, 글자는 78px에서 시작하고 오른쪽을 12px 비운다(행끼리 줄을 맞춘다).
    ::before는 상태 아이콘이라 카드는 ::after에 그리고 글자 뒤(z-index -1)로 보낸다. 단계가 바뀌면 카드가 다음 행으로 옮겨 간다 */
 .rs.flow .timeline .tl-running { isolation: isolate; }
 .rs.flow .timeline .tl-running::after,
 .rs.flow .timeline .scene-search-step.tl-running::after {
-  content: ''; display: block; position: absolute; inset: 0 0 0 30px; z-index: -1;
+  content: ''; display: block; position: absolute; inset: 0 0 0 36px; z-index: -1;
   border-radius: 12px; background: var(--rs-fill);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 16px rgba(0, 0, 0, .08);
   animation: rs-fade-in .3s var(--rs-ease) both;
@@ -524,18 +526,18 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 /* 진행 중인 작업 목록(running_jobs) */
 .rs.flow .timeline .scene-search-step {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px;
-  padding: 14px 12px 14px 70px; min-height: 80px;
+  padding: 14px 12px 14px 78px; min-height: 80px;
 }
 .rs.flow .timeline .scene-search-step::before,
 .rs.flow .timeline .scene-search-step::after { display: none; }
-.scene-search-mark { position: absolute; left: 38px; top: 17px; width: 20px; height: 20px; color: var(--rs-ink); }
+.scene-search-mark { position: absolute; left: 48px; top: 19px; width: 16px; height: 16px; color: var(--rs-ink); }
 .scene-search-ring { display: block; width: 100%; height: 100%; transform: rotate(-90deg); fill: none; stroke-width: 3; }
 .scene-search-track { stroke: var(--rs-line); }
 .scene-search-fill { stroke: currentColor; transition: stroke-dashoffset .45s var(--rs-ease); }
 .scene-search-step.is-active.is-preparing .scene-search-ring { animation: scene-search-spin 1s linear infinite; }
 .scene-search-step.tl-done .scene-search-mark { display: grid; place-items: center; background: var(--rs-ink); color: var(--rs-bg); border-radius: 50%; }
-.scene-search-mark > svg:not(.scene-search-ring) { width: 14px; height: 14px; stroke-width: 2.5; }
-.scene-search-detail { grid-column: 1 / -1; margin: 0; padding-left: 16px; min-height: 24px; font-size: 14px; line-height: 24px; color: var(--rs-sub); word-break: keep-all; overflow-wrap: anywhere; }
+.scene-search-mark > svg:not(.scene-search-ring) { width: 11px; height: 11px; stroke-width: 3; }
+.scene-search-detail { grid-column: 1 / -1; margin: 0; padding-left: 0; min-height: 24px; font-size: 14px; line-height: 24px; color: var(--rs-sub); word-break: keep-all; overflow-wrap: anywhere; }
 .scene-search-detail > span { display: inline-block; max-width: 100%; vertical-align: top; }
 .scene-search-detail.is-running > span {
   background: linear-gradient(105deg, var(--rs-sub) 36%, var(--rs-ink) 50%, var(--rs-sub) 64%);
@@ -551,7 +553,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
   50% { -webkit-text-stroke-color: color-mix(in srgb, var(--rs-ink) 35%, transparent); text-shadow: 0 0 3px color-mix(in srgb, var(--rs-ink) 24%, transparent); }
 }
 @media (max-width: 460px) {
-  .scene-search-detail { padding-left: 8px; min-height: 48px; font-size: 13px; }
+  .scene-search-detail { min-height: 48px; font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .scene-search-step .scene-search-ring, .scene-search-detail > span { animation: none !important; }
