@@ -273,8 +273,8 @@ minimal A로 수집을 확인한 뒤 짧은 대표→긴 대표→경계 인접 
 | Runtime / Case | queue wait, started→terminal, T1→T2, Case requested→최초 결과/timeout notice 관측, settled reason. Recording 준비·Search 실행 시계를 분리 |
 | resource / cleanup | Worker/API/MySQL RSS·ffmpeg/ffprobe RSS/CPU·cgroup·temp disk peak 표본, durable DB/media 증가, 종료 후 자식/파일/메모리 추세 |
 
-현재 [Case 대기 결정](../../modules/case/decisions/case-wait-timeout.md)의 Coarse 150초 + 큐 여유 30초와 비교하되
-P2가 이 값을 바꾸지 않는다. Recording 준비/Search 재인코딩/provider를 합쳤을 때 지원 안의 입력도
+실행 revision의 [Case 대기 마감](../../modules/case/decisions/case-wait-timeout.md)과 비교한다(§3-2·§3-8·§3-10). Coarse 150초 + 큐 여유 30초는 이 계획의 초기 기준이었다.
+P2는 실행 revision의 예산이나 대기 마감을 변경하지 않는다. Recording 준비/Search 재인코딩/provider를 합쳤을 때 지원 안의 입력도
 Case timeout이면 그대로 결과에 남겨 Case/Search/Recording Owner에게 전달한다.
 byte limit 이하여도 driver/packet 오류가 나면 해당 **baseline 실행은 FAIL로 보존**한다.
 운영 packet/limit을 올려 이 acceptance를 PASS로 덮어쓰지 않는다. 근거·복귀 계획이 있는
