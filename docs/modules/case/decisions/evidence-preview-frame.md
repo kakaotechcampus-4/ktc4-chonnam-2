@@ -1,6 +1,6 @@
 # 근거 장면(`evidence.preview_ref`) — case가 선택 후보의 IncidentClip에서 FrameRef를 발급받아 채운다
 
-> **상태: 결정 · 구현(handler 발급 연결 [PR #527](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/527), 2026-11-03) · 배포본 표시 확인 전** · 2026-10-29 · 상위 3개 썸네일 범위 확대 2026-11-02(#523, §7) · Owner 정책 검토 2026-11-04(§7-6 · 7) · 발급 위치 확정 2026-10-30(정철원, [PR #470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470)) · 결정 추적 [#446](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/446) Case 확인 요청 6 · Search 답(4 · 5번, 서어진 2026-10-29) · 관련 `contract-source-asset-media-stream.md` §5.3 · `adr-data-contract-call-closure-2026-09-08.md`(「thumbnail 이미지 전달 방식」 Pending)
+> **상태: 결정 · 구현(handler 발급 연결 [PR #527](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/527), 2026-11-03) · 배포본 표시 확인 전** · 2026-10-29 · 상위 3개 썸네일 범위 확대 2026-11-02(#523, §7) · 썸네일 발급을 Coarse로 옮김 2026-11-07(#583, §7-8 · case 쪽만, Runtime 배선 전) · Owner 정책 검토 2026-11-04(§7-6 · 7) · 발급 위치 확정 2026-10-30(정철원, [PR #470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470)) · 결정 추적 [#446](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/446) Case 확인 요청 6 · Search 답(4 · 5번, 서어진 2026-10-29) · 관련 `contract-source-asset-media-stream.md` §5.3 · `adr-data-contract-call-closure-2026-09-08.md`(「thumbnail 이미지 전달 방식」 Pending)
 >
 > **후보 영상 재생**(상위 3개 썸네일을 poster로 쓰고 그 위에 영상을 더함)은 `candidate-video-preview.md`(#554).
 
@@ -70,13 +70,22 @@ Search는 썸네일을 채우지 않기로 답했다(#446 4번). 이유는 셋�
 2. **위치는 후보 자기 구간에서 정한다.** 선택 후보 clip의 provenance에 다른 후보를 맞추지 않는다. 후보 구간의 `SpanResolution`에서 대표 시각이 든 원본 span이 정확히 하나일 때만 위치를 낸다 — 해석은 결정 3 · 4 · 6과 같다.
 3. **결과 형태는 `incident_clip_result.payload.candidate_frame_refs`** — 후보 ID → `frame_ref` 문자열 또는 `null`(최대 3개). 키가 없는 이전 결과는 「썸네일 없음」이다. 반영 때 다시 발급하지 않는다(결정 5와 같다).
 4. **투영은 현재 세대 성공 clip들의 값이다.** 다른 후보를 고르면 그 후보 clip이 다시 발급한다 — 나중 frame이 앞의 것을 덮고, 나중 `null`은 앞서 만든 frame을 지우지 않는다. 세대가 바뀌면 앞 세대 값은 쓰지 않는다. `thumb_ref`는 이 값이 우선이고 없으면 Search `thumbnail_ref`(실제 경로에서 늘 `null`)다.
-5. **썸네일은 clip이 끝난 뒤에 나온다.** clip 실패 전에 썸네일이 먼저 보이는 것은 보장하지 않는다(A안의 한계).
+5. **썸네일은 clip이 끝난 뒤에 나온다.** clip 실패 전에 썸네일이 먼저 보이는 것은 보장하지 않는다(A안의 한계). → §7-8에서 Coarse 발급으로 푼다.
 6. **나중 `null`이 앞 frame을 지우지 않는 것은 맞다(Owner 검토 2026-11-04).** 썸네일 위치는 선택 후보 clip이 아니라 후보 자기 구간에서 정하고, 같은 세대 · 같은 timeline revision일 때만 낸다(결정 2, `_source_position`). 그래서 A를 골랐을 때 만든 frame과 B를 골랐을 때 만든 frame은 같은 위치다. 나중 `null`은 「그 장면이 틀렸다」가 아니라 「이번에 발급하지 못했다」이므로 앞의 것을 남긴다. 4위로 채우지 않는 것(1)도 그대로 둔다.
 7. **stale이 된 후보의 썸네일은 이번 RC에서 가리지 않는다(Owner 결정 2026-11-04).** stale 후보에는 새로 발급하지 않지만(1), stale이 되기 전에 발급한 frame은 투영에 남는다 — `current_candidate_frame_refs`는 stale을 보지 않는다. 같은 카드의 `marker_ms`는 stale이면 `null`이라(`view.py`) 기준이 다르다.
-   - 그대로 두는 이유: 그 frame은 그 후보 구간의 실제 원본 장면이라 틀린 그림이 아니다. 이번 RC는 촬영 순서 · 연속성이 확인된 입력으로 제한해(#510) 같은 세대 안에서 rebase가 사실상 일어나지 않는다. 제출(11/7) 직전에 투영 규칙을 바꾸지 않는다.
+   - 그대로 두는 이유: 그 frame은 그 후보 구간의 실제 원본 장면이라 틀린 그림이 아니다. 이번 RC는 촬영 순서 · 연속성이 확인된 입력으로 제한해(#510) 같은 세대 안에서 rebase가 사실상 일어나지 않는다. 제출(11/11) 직전에 투영 규칙을 바꾸지 않는다.
    - 고르지 않은 것: stale이면 `thumb_ref`도 `null`로 가리기 — `marker_ms`와 기준이 같아지지만 위 이유로 지금 바꿀 근거가 약하다. #510의 Recording 정렬로 `CaseTimelineSource`를 교체할 때 다시 본다.
    - 알고 가는 한계: stale 후보 카드에 rebase 전 장면이 보일 수 있다. 서어진 2026-11-02 #523 댓글 표의 「빠진 후보는 카드 자체가 없음」은 발급 기준 설명이다 — CaseView는 stale 후보도 카드로 낸다.
 
-case 쪽 구현은 `case/preview_frame.py` `thumbnail_candidate_ids` · `candidate_frame_position` · `current_candidate_frame_refs`, `reflection.py`(`candidate_frame_refs` 저장), `view.py`(`thumb_ref` 투영), 테스트 `tests/case/test_candidate_thumbnails.py`다. handler 주입과 production 연결은 #527(2026-11-03)로 끝났다.
+8. **썸네일은 Coarse handler가 T1 전에 발급한다(#583 E안, 2026-11-07).** A안은 첫 Fine이 `NOT_OBSERVED`거나 실패하면 clip이 발주되지 않아, 다른 후보 썸네일도 처음부터 만들어지지 않았다(멘토 리뷰 #563). PM이 P0 · RC 필수 수정으로 정했고(`docs/management/rc-scope-2026-11-05.md`), 정철원 · 유소연이 E를 골랐다(#583 댓글 2026-11-05 · 06).
+   - **고르는 후보:** 그 Coarse 결과의 rank 1~3, rank 순(`coarse_thumbnail_candidate_ids`). 후보 목록이 아직 case에 반영되기 전이라 결과 `CandidateEvent`만 본다. span 다섯 값 중 하나라도 없으면 빼고 4위로 채우지 않는다(1과 같다). 위치는 후보 자기 구간에서 `candidate_frame_position`으로 정한다(2와 같다).
+   - **결과 형태:** Coarse 결과 `candidate_frame_refs` — 후보 ID → `frame_ref` 또는 `null`(최대 3개). 키가 없거나 `null`이면 이전 형식 · 발급 없음이다. case가 고르지 않은 후보의 값 · 빈 문자열 · 다른 모양은 배선 오류(`ValueError`)로 반영하지 않는다(`coarse_frame_refs`).
+   - **반영 · 투영:** Coarse 반영 때 후보 `thumb_ref`에 남긴다. Search `thumbnail_ref`보다 우선이고 `null`이면 Search 값이다. 늦은 결과 · 재전달은 반영 guard가 막으므로 현재 세대 후보에만 남는다. 다시 찾으면 후보 목록과 함께 바뀐다.
+   - **A안 경로는 그대로 둔다.** clip이 낸 frame이 여전히 우선이고, clip의 `null`은 Coarse frame을 지우지 않는다(6과 같다). 같은 후보 · 같은 대표 시각이라 같은 장면이다. clip handler 쪽 발급을 걷어낼지는 Runtime이 정한다.
+   - **근거 장면에도 닿는다.** `evidence.preview_ref`는 clip frame이 없으면 선택 후보 `thumb_ref`를 쓰므로(`view.py`), clip 전에도 Coarse frame이 보인다. 같은 대표 시각 frame이라 결정 1의 장면과 다르지 않다.
+   - **Runtime 몫(#583 정철원 댓글 2026-11-06):** Coarse handler 접합, 후보 frame 발급기를 clip에서 분리, `FRAME_REFUSALS` 4종만 `null`, 후보 0개면 호출 안 함, Coarse 결과 validator. frame 발급 · 저장 실패로 Coarse 전체를 재시도해 유료 호출이 반복되는 위험은 Runtime이 대조한다 — 피하기 어려우면 A(전용 job)로 다시 본다.
+   - **남는 한계:** Coarse 자체가 실패하면 후보도 썸네일도 없다. 썸네일 3장의 추가 시간은 재지 않았다[확인 필요].
+
+case 쪽 구현은 `case/preview_frame.py` `coarse_thumbnail_candidate_ids` · `coarse_frame_refs` · `thumbnail_candidate_ids` · `candidate_frame_position` · `current_candidate_frame_refs`, `reflection.py`(`candidate_frame_refs` 저장), `view.py`(`thumb_ref` 투영), `service.candidates_from_events`(`frame_refs`), 테스트 `tests/case/test_candidate_thumbnails.py` · `tests/case/test_coarse_candidate_thumbnails.py`(#583)다. handler 주입과 production 연결은 #527(2026-11-03)로 끝났다.
 
 남은 확인: 다른 후보 카드의 「미리보기 준비 중」은 web이 `running_jobs`가 있는지만으로 정해, 썸네일과 무관한 Fine · export가 돌 때도 준비 중이 될 수 있다(`docs/runtime/rt10b-preview-frames.md` #525 판정의 한계 표). case가 썸네일 발급 대기를 따로 알려야 하는지 정하지 않았다.

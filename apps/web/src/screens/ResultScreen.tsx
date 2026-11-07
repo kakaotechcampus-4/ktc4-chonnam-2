@@ -45,6 +45,7 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
 const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
 const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요'
+const PLATE_FRAME_FAILED = '번호판 장면을 받지 못했어요'
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 // 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
@@ -194,6 +195,11 @@ export function ResultScreen(props: {
     video !== 'ready' ? VIDEO_STATUS[video] : !props.videoHref ? NO_DOWNLOAD_LINK : failedDownload ? DOWNLOAD_FAILED : null
   const plateFailed = props.plateImageHref !== undefined && downloadFailed.includes(props.plateImageHref)
   const canDownloadPlate = !!props.plateImageHref && !plateFailed && !downloading
+  // 번호판을 읽은 장면 전체(#600) — 잘라낸 번호판 이미지로는 어느 차량인지 대조하기 어렵다.
+  // 번호판 확인 화면의 장면과 같은 주소라, 그 화면이 장면을 그리지 않을 때(plate_preview_ref null · 시연)는 버튼도 두지 않는다
+  const plateFrameHref = frame(ev?.plate_preview_ref) ?? undefined
+  const plateFrameFailed = plateFrameHref !== undefined && downloadFailed.includes(plateFrameHref)
+  const canDownloadPlateFrame = !!plateFrameHref && !plateFrameFailed && !downloading
   // 링크로 열지 않고 받아서 저장한다 — 서버가 UNAVAILABLE을 돌려주면 화면이 알아야 한다. 파일 전체가 메모리에 올라간다.
   // 받는 동안은 버튼을 막아 두 번 받지 않게 한다.
   const download = async (href: string | undefined, prefix: string, ext: string) => {
@@ -445,6 +451,25 @@ export function ResultScreen(props: {
                   {plateFailed && (
                     <p id="res-plate-why" className="res-hint is-fail">
                       {PLATE_DOWNLOAD_FAILED}
+                    </p>
+                  )}
+                  {plateFrameHref && (
+                    <button
+                      type="button"
+                      className="rs-btn sec sm"
+                      aria-disabled={!canDownloadPlateFrame}
+                      onClick={() => {
+                        if (canDownloadPlateFrame) void download(plateFrameHref, 'daesingo_plate_scene', 'png')
+                      }}
+                      aria-describedby={plateFrameFailed ? 'res-plate-frame-why' : undefined}
+                    >
+                      <Download size={16} strokeWidth={2} aria-hidden />
+                      번호판 장면 다운로드
+                    </button>
+                  )}
+                  {plateFrameFailed && (
+                    <p id="res-plate-frame-why" className="res-hint is-fail">
+                      {PLATE_FRAME_FAILED}
                     </p>
                   )}
                   {others > 0 && (
