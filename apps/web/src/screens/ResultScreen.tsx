@@ -124,7 +124,8 @@ export function ResultScreen(props: {
   // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
   const [downloadFailed, setDownloadFailed] = useState<string[]>([])
   const [downloading, setDownloading] = useState(false)
-  const reviewSent = useRef(false)
+  // 최종 검토를 보낸 EvidenceRecord — 다른 후보를 고르면 그 기록에는 다시 보낸다
+  const reviewSent = useRef<string | null | undefined>(undefined)
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const pkg = view.package
   const ev = view.evidence
@@ -652,9 +653,10 @@ export function ResultScreen(props: {
                 onClick={() => {
                   // 새 창은 클릭 안에서 바로 연다(팝업 차단). 최종 검토 기록은 처음 한 번만 남긴다(#597, §20)
                   window.open(SAFETY_REPORT_URL, '_blank', 'noopener')
-                  // user_reviewed는 새 view가 와야 바뀌어서, 그 전에 두 번 눌러도 한 번만 보낸다(#621 대원 님 리뷰)
-                  if (!view.user_reviewed && !reviewSent.current) {
-                    reviewSent.current = true
+                  // user_reviewed는 새 view가 와야 바뀌어서, 그 전에 두 번 눌러도 한 번만 보낸다(#621 리뷰)
+                  const record = ev?.record_id ?? null
+                  if (!view.user_reviewed && reviewSent.current !== record) {
+                    reviewSent.current = record
                     props.onReviewed?.()
                   }
                 }}
@@ -805,7 +807,7 @@ function SituationFix(props: {
   const [open, setOpen] = useState(false)
   const [picked, setPicked] = useState<VisualEventType | null>(null)
   const [sent, setSent] = useState(false)
-  // 폼이 닫히면 누른 버튼도 사라지므로 초점을 「다른 상황이었어요」로 돌린다(#621 대원 님 리뷰, #577과 같은 방식)
+  // 폼이 닫히면 누른 버튼도 사라지므로 초점을 「다른 상황이었어요」로 돌린다(#621 리뷰, #577과 같은 방식)
   const toggle = useRef<HTMLButtonElement>(null)
   const wasOpen = useRef(false)
   useEffect(() => {

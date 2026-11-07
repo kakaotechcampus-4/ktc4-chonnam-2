@@ -379,12 +379,18 @@ describe('#597 — 응답 없이 초안 · 번호판 장면 · 최종 검토 기
     fireEvent.click(r.getByRole('button', { name: /안전신문고로 이동/ })) // 새 view가 오기 전 두 번째 클릭
     expect(open).toHaveBeenCalled()
     expect(onReviewed).toHaveBeenCalledTimes(1)
+    // 다른 후보를 골라 기록이 바뀌면 그 기록의 검토는 다시 보낸다
+    const other = { ...ready, evidence: { ...ready.evidence!, record_id: 'ev_other' } }
+    r.rerender(<ResultScreen view={other} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onReviewed={onReviewed} />)
+    fireEvent.click(r.getByRole('button', { name: /안전신문고로 이동/ }))
+    expect(onReviewed).toHaveBeenCalledTimes(2)
+    onReviewed.mockClear()
     cleanup()
     const again = render(
       <ResultScreen view={{ ...ready, user_reviewed: true }} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onReviewed={onReviewed} />,
     )
     fireEvent.click(again.getByRole('button', { name: /안전신문고로 이동/ }))
-    expect(onReviewed).toHaveBeenCalledTimes(1)
+    expect(onReviewed).not.toHaveBeenCalled()
     open.mockRestore()
   })
 })
