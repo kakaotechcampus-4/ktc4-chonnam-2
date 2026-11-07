@@ -327,11 +327,12 @@ body:has(.rs-bgcar) { overflow-x: clip; }
 
 .rs-label-opt { margin-left: 4px; font-size: 14px; font-weight: 400; color: var(--rs-sub); }
 
-/* 분석 전 개인정보·외부 처리 안내(공개 운영 정책 §4) — 찾아보기 버튼 바로 위 */
-.rs-consent { margin-top: 32px; padding: 16px 20px; border: 1px solid var(--rs-line); border-radius: 12px; font-size: 14px; color: var(--rs-sub); }
-.rs-consent ul { margin: 0 0 12px; padding-left: 18px; line-height: 1.7; }
-.rs-consent-check { display: flex; gap: 8px; align-items: flex-start; color: var(--rs-ink); font-weight: 600; cursor: pointer; }
-.rs-consent-check input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; }
+/* 업로드 전 개인정보·외부 처리 동의(공개 운영 정책 §4) — 파일을 고른 직후 뜨는 모달(#606 리뷰) */
+.rs-consent { max-width: min(480px, calc(100vw - 32px)); padding: 24px; border: 0; border-radius: 16px; font-size: 15px; color: var(--rs-sub); background: var(--rs-bg); }
+.rs-consent::backdrop { background: rgb(0 0 0 / 0.4); }
+.rs-consent h2 { margin: 0 0 12px; font-size: 18px; color: var(--rs-ink); }
+.rs-consent ul { margin: 0 0 20px; padding-left: 18px; line-height: 1.7; }
+.rs-consent-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
 .rs-actions { display: flex; justify-content: flex-end; margin-top: 32px; }
 

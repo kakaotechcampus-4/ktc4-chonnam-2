@@ -149,7 +149,23 @@ export function UploadScreen(props: {
   consent?: boolean
 }): JSX.Element {
   const situationId = useId()
-  const [agreed, setAgreed] = useState(false)
+  // 동의를 기다리는 파일 — 동의하기 전에는 onFiles(서버 업로드)를 부르지 않는다
+  const [pending, setPending] = useState<File[] | null>(null)
+  const consentBox = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    const d = consentBox.current
+    if (!pending || !d || d.open) return
+    // jsdom에는 showModal이 없어 open 속성만 붙인다 — 브라우저에서는 모달(배경 차단·Esc 닫기)
+    if (typeof d.showModal === 'function') d.showModal()
+    else d.setAttribute('open', '')
+  }, [pending])
+  const closeConsent = (agree: boolean) => {
+    const files = pending
+    consentBox.current?.close?.()
+    consentBox.current?.removeAttribute('open')
+    setPending(null)
+    if (agree && files) send(files)
+  }
   const [over, setOver] = useState(false)
   const [pointerIn, setPointerIn] = useState(false)
   const [intro, setIntro] = useState(!introPlayed)
@@ -162,11 +178,14 @@ export function UploadScreen(props: {
   const choose = () => input.current?.click()
   const pick = (files: FileList | null) => {
     if (!files?.length) return
-    picked = [...files]
+    if (props.consent) setPending([...files])
+    else send([...files])
+  }
+  const send = (files: File[]) => {
+    picked = files
     props.onFiles(picked)
   }
   const { state } = props
-  const ready = state === 'done' && (!props.consent || agreed)
 
   // 업로드가 끝나면 올라간 파일(건너뛴 파일 제외)의 촬영 시각을 읽는다. 파일 앞부분만 읽고 보내지 않는다.
   // 화면이 받은 목록에 없는 원본(이전 신고에서 고른 것)은 쓰지 않는다.
@@ -474,20 +493,34 @@ export function UploadScreen(props: {
         <ExampleButton example={EXAMPLE} value={props.situation} onChange={props.onSituation} inputId={situationId} />
 
         {props.consent && (
-          // 공개 운영 정책 §4 — 외부 AI 전송은 분석을 시작할 때 일어나므로 찾아보기 직전에 동의를 받는다.
-          // 원본 보관(24시간)은 업로드 칸 안내 문구로 올리기 전에 알린다
-          <div className="rs-consent">
+          // 공개 운영 정책 §4 — 파일을 고르는 순간 서버로 올라가므로 고른 직후·보내기 전에 동의를 받는다(#606 리뷰).
+          // Esc는 cancel 이벤트 → 취소와 같다(업로드하지 않음)
+          <dialog
+            ref={consentBox}
+            className="rs-consent"
+            aria-labelledby={`${situationId}-consent`}
+            onCancel={(e) => {
+              e.preventDefault()
+              closeConsent(false)
+            }}
+          >
+            <h2 id={`${situationId}-consent`}>영상을 올리기 전에 확인해 주세요</h2>
             <ul>
-              <li>찾아보기를 누르면 장면을 찾기 위해 영상 일부가 외부 AI 서비스로 전송돼요.</li>
               <li>영상에는 번호판 · 얼굴 · 위치 같은 개인정보가 담길 수 있어요.</li>
-              <li>분석 결과와 신고자료는 7일 뒤 지워져요.</li>
+              <li>장면을 찾기 위해 영상 일부가 외부 AI 서비스로 전송돼요.</li>
+              <li>올린 영상은 24시간, 분석 결과와 신고자료는 7일 뒤 지워져요.</li>
+              <li>직접 찍었거나 올릴 권한이 있는 영상만 올려 주세요.</li>
               <li>대신고는 신고를 대신 접수하거나 위반을 확정하지 않아요.</li>
             </ul>
-            <label className="rs-consent-check">
-              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-              위 내용을 확인했고, 직접 찍었거나 올릴 권한이 있는 영상으로 찾아볼게요.
-            </label>
-          </div>
+            <div className="rs-consent-actions">
+              <button type="button" className="rs-btn sec" onClick={() => closeConsent(false)}>
+                취소
+              </button>
+              <button type="button" className="rs-btn pri" onClick={() => closeConsent(true)}>
+                동의하고 올리기
+              </button>
+            </div>
+          </dialog>
         )}
 
         <div className="rs-actions">
@@ -495,17 +528,17 @@ export function UploadScreen(props: {
           <button
             type="button"
             className="rs-btn pri lg"
-            aria-disabled={!ready}
-            aria-describedby={!ready ? `${situationId}-why` : undefined}
+            aria-disabled={state !== 'done'}
+            aria-describedby={state !== 'done' ? `${situationId}-why` : undefined}
             onClick={() => {
-              if (ready) props.onSearch()
+              if (state === 'done') props.onSearch()
             }}
           >
             영상에서 찾아보기
           </button>
-          {!ready && (
+          {state !== 'done' && (
             <span id={`${situationId}-why`} className="sr-only">
-              {state === 'done' ? '위 안내를 확인하고 체크해 주세요.' : SEARCH_OFF_WHY[state]}
+              {SEARCH_OFF_WHY[state]}
             </span>
           )}
         </div>

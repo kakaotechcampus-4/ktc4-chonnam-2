@@ -65,15 +65,14 @@ it('영상을 고르면 올라가고, [영상에서 찾아보기]에서 상황 �
   const { container, getByRole, getByText, findByText } = render(<ApiFlow api={api} />)
 
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  expect(m.uploadSource).not.toHaveBeenCalled() // 개인정보·외부 처리 안내에 동의하기 전에는 서버로 보내지 않는다
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText(/^업로드 완료/)
   expect(m.createCase).toHaveBeenCalledOnce()
   expect(m.uploadSource).toHaveBeenCalledWith('c1', expect.objectContaining({ name: 'a.mp4' }))
   expect(m.sendCommand).not.toHaveBeenCalled() // 고르는 것만으로 분석이 시작되지 않는다
 
   fireEvent.change(getByRole('textbox'), { target: { value: '흰 SUV가 끼어들었어요' } })
-  fireEvent.click(getByText('영상에서 찾아보기'))
-  expect(m.sendCommand).not.toHaveBeenCalled() // 개인정보·외부 처리 안내에 동의하기 전에는 시작하지 않는다
-  fireEvent.click(getByRole('checkbox'))
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
   expect(m.sendCommand).toHaveBeenCalledWith('c1', 1, { kind: 'START_ANALYSIS', payload: { description: '흰 SUV가 끼어들었어요' } })
@@ -84,12 +83,14 @@ it('올리는 중에 고른 파일은 받지 않고 목록에도 올리지 않�
   const { m, api } = setup()
   let finish!: (r: unknown) => void
   m.uploadSource.mockImplementationOnce(() => new Promise((r) => (finish = r)))
-  const { container, findByText, queryByText } = render(<ApiFlow api={api} />)
+  const { container, findByText, getByText, queryByText } = render(<ApiFlow api={api} />)
   const input = container.querySelector('input[type=file]')!
 
   fireEvent.change(input, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText('업로드 중')
   fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
   finish(ok({ case_id: 'c1', source_asset_ref: 'sa', case_view: view({ manifest_summary: { ...BASE.manifest_summary, file_count: 1, ok_file_count: 1 } }) }, 201))
   await findByText(/^업로드 완료/)
 
@@ -104,7 +105,6 @@ it('시작 전에 이어받은 case는 서버에 있는 영상을 개수로 보�
   const { findByText, getByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText('이미 올린 영상 1개')
   expect(getByText(/^업로드 완료/)).toBeTruthy()
-  fireEvent.click(getByText(/위 내용을 확인했고/))
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
   expect(m.uploadSource).not.toHaveBeenCalled()
@@ -212,8 +212,8 @@ it('[영상에서 찾아보기] 뒤 진행 화면이 열리면 업로드 겉모�
   m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
   const { container, getByText, findByText } = render(<ApiFlow api={api} />)
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText(/^업로드 완료/)
-  fireEvent.click(getByText(/위 내용을 확인했고/))
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
   const ghost = container.querySelector('.rs-upload-exit')!
@@ -646,7 +646,18 @@ it('하위 화면을 연 채 새로고침해 남은 기록 깊이는 처음 열 
 it('서버가 업로드를 거절하면 그 이유를 업로드 칸에 보인다', async () => {
   const { m, api } = setup()
   m.uploadSource.mockResolvedValue({ ok: false, status: 413, error: { code: 'http.payload_too_large', message_key: 'http.payload_too_large' }, caseView: null })
-  const { container, findByText } = render(<ApiFlow api={api} />)
+  const { container, findByText, getByText } = render(<ApiFlow api={api} />)
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'big.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
   expect(await findByText(/서버가 받을 수 있는 크기보다 커요/)).toBeTruthy()
+})
+
+it('업로드 전 동의에서 취소하면 서버에 아무것도 보내지 않는다', () => {
+  const { m, api } = setup()
+  const { container, getByText, queryByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('취소'))
+  expect(m.createCase).not.toHaveBeenCalled()
+  expect(m.uploadSource).not.toHaveBeenCalled()
+  expect(queryByText(/^업로드 중/)).toBeNull()
 })
