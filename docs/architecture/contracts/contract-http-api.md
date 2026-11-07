@@ -51,6 +51,7 @@ web이 backend를 부르는 HTTP 경로 · status · header · body를 정한다
 | `GET` | `/cases/{case_id}/view` | `200` | CaseView 그대로 | CaseView |
 | `GET` | `/cases/{case_id}/frames/{frame_ref}` | `200` | 이미지 bytes | FrameRef |
 | `GET` | `/cases/{case_id}/assets/{asset_ref}` | `200` | 파일 bytes | DerivedAsset · ReportPackage |
+| `GET` | `/cases/{case_id}/candidate-videos/{clip_ref}` | `200` · `206` | 후보 미리보기 MP4 bytes | [후보 영상 조회](#후보-영상-조회-2026-11-02-로컬-구현) · IncidentClip |
 | `GET` | `/health/live` | `200` | `{status}` | Tech Spec §14 |
 | `GET` | `/health/ready` | `200` · `503` | `{status}` | Tech Spec §14 |
 

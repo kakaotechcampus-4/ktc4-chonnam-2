@@ -6,6 +6,8 @@
 >
 > **관련:** 정지 이미지(근거 장면 · 상위 3개 후보 썸네일)는 `evidence-preview-frame.md`(#446 · [PR #459](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/459), 상위 3개는 #523 §7). 이 문서는 그 위에 영상 재생을 더한다.
 
+> **릴리스별 발주 상태 (2026-11-07):** #622 호환 중간 release는 신규 발주와 FAILED 재요청을 `case.command.not_allowed`로 거부한다. 아직 요청하지 않은 후보는 `UNAVAILABLE`로 표시하고 기존 PREPARING/READY 요청 재사용과 READY 조회는 지원한다. 고정 최종 후보 `bb29d750`은 아래 §2의 발주 동작을 제공한다. 전환 검증은 대상 배포의 증거에 따른다. [호환 release 절차](../../../runtime/rt14-preview-bridge.md)
+
 ## 1. 문제
 
 후보 비교 화면은 후보마다 정지 이미지 한 장(`thumb_ref`)만 보여 준다. 사용자는 그 구간에서 사건이 실제로 일어났는지 영상으로 보지 못한 채 후보를 고른다. 후보가 하나뿐인 결과, 상황 확인, 위반 미관찰, 실패 화면에서도 영상을 볼 길이 없다.
@@ -15,7 +17,7 @@
 #532의 정지 이미지는 poster로 유지하고, 후보 비교에서 영상을 재생한다.
 
 - 현재 후보 목록의 rank 1~3만 대상이다. 0/1/2개면 있는 만큼, 빈 카드와 4위 보충은 없다. stale·구간 없음은 카드에 재생 불가를 표시한다.
-- 첫 재생은 `REQUEST_CANDIDATE_VIDEO_PREVIEW {candidate_id}` command다. 현재 세대·후보 span·원본 stream 선택을 고정해 `CANDIDATE_VIDEO_PREVIEW` job을 발주한다. 기다리는 요청과 성공 결과는 재사용한다. 실패는 사용자가 다시 요청할 수 있다.
+- 신규 발주를 지원하는 release에서 첫 재생은 `REQUEST_CANDIDATE_VIDEO_PREVIEW {candidate_id}` command다. 현재 세대·후보 span·원본 stream 선택을 고정해 `CANDIDATE_VIDEO_PREVIEW` job을 발주한다. 기다리는 요청과 성공 결과는 재사용한다. 실패는 사용자가 다시 요청할 수 있다.
 - preview는 선택·selection revision·상황 응답·신고자료와 무관하다. Fine/OCR/export와 READY gate를 실행하지 않는다. 여러 후보의 미리보기 작업은 서로 supersede하지 않는다.
 - 후보 구간은 Search가 준 span 그대로다. Recording의 `resolve_span`과 `build_incident_clip`을 쓰며 디코딩 중 DB connection을 보유하지 않는다. 자동 인프라 재실행의 T1 이전 재인코딩은 기존 Worker 정책을 따른다.
 - `candidates[].video_preview`는 `{status, clip_ref}`다. status는 `NOT_REQUESTED | PREPARING | READY | FAILED | UNAVAILABLE`. rank 밖·stale·span 없음·세대 없음은 UNAVAILABLE. clip_ref는 READY에서만 문자열이다. 결과는 후보·현재 세대·span으로 묶고 세대 변경 후 이전 ref를 투영하지 않는다.
