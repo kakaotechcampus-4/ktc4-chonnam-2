@@ -5,6 +5,52 @@ Recording은 파일명, 배열 순서, 해상도, role 또는 opaque ref에서 �
 Canonical RecordingTimeline/AssetSpan/SpanResolution은 변경하지 않는다.
 `relative_rebase_001`의 revision 2처럼 여러 placement와 사이 gap을 표현한다.
 
+## 정렬 책임과 현재 RC 범위 — #510
+
+여러 원본의 실제 촬영 순서·gap·동시 촬영 overlap을 해석해 RecordingTimeline을
+구성하는 최종 책임은 **Recording**에 있다. [아키텍처의 Recording 책임](../../architecture/module-architecture.md)과
+현재 capability의 차이는 책임 이전이 아니라 **자동 정렬 구현의 유예**다.
+[Recording Owner 확인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6547366917)과
+[PM의 RC 범위 결정](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6553548214)을 따른다.
+
+현재 Recording이 제공하는 것은 **호출자가 명시한 placement의 구성·검증과 해소**다.
+명시된 시작 시각으로 정렬하고 gap을 표현하는 기능을, 원본 관찰에서 실제 순서·gap을
+자동으로 알아내는 기능으로 설명하지 않는다. 파일명·불확실한 시각 후보·stream 순서로
+카메라나 시간 관계를 추정하지 않는다.
+
+### RC의 Case 임시 구현과 입력 제한
+
+Case의 `RecordingSequentialTimelineSource`는 등록 순서대로 각 원본을 앞 원본 끝에
+틈 없이 배치한다. 이는 실제 녹화 순서·연속성·동시 촬영 여부를 확인한 결과가 아니다.
+이번 RC에서는 이 임시 구현을 유지하고 다음 조건이 사전에 확인된 입력으로 제한한다.
+
+- 촬영 순서가 확인됐고 그 순서대로 등록한 입력
+- 파일 사이 실제 gap이 없고 연속 입력임이 확인된 경우
+- 사용할 카메라와 VIDEO stream이 확인된 입력
+
+이 조건은 **지원 범위이며 제품이 조건을 자동 검증·차단한다는 뜻이 아니다.**
+임의 업로드 순서의 복원, 실제 gap의 추론·복원, 전방/후방 별도 파일의 동시 촬영 정렬은
+보장하지 않는다. 명시적 placement capability가 gap을 표현할 수 있어도, Case의 임시
+sequential 배치가 실제 끊김을 복원하지는 않는다.
+
+실제 끊김을 걸친 IncidentClip·신고용 영상의 동작은 #510에서 미확인으로 남긴다.
+연속성이 확인된 입력의 연결 성공으로 실제 gap이 있는 입력의 안전성을 대신하지 않는다.
+Case 측 결정과 한계는 [분석 시작 §3-1](../case/decisions/start-analysis.md)에 있다.
+
+### 후속 capability와 교체 조건
+
+Recording이 실제 순서·gap·overlap을 해석하는 공개 capability의 **입력·실패 계약을
+공개하고 구현을 준비하면**, Case의 `CaseTimelineSource` 임시 구현을 교체한다.
+구현 클래스·API/Worker 조립 지점·관련 테스트를 각 Owner와 함께 대조한다.
+capability 이름·구현 일정·추가 입력·카메라 선택 주체·동일 입력의 timeline 재사용
+identity와 기존 Case 재처리 정책은 아직 확정하지 않는다.
+
+기존 scope·후보·관찰이 가리키는 timeline ID/revision을 새 의미로 덮어쓰거나,
+기존 Case를 자동 재계산하는 전환으로 해석하지 않는다.
+[Case 교체 범위](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6556860866)와
+[Recording 수락](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/510#issuecomment-6559421773)이 후속 검토 기준이다.
+이번 문서화는 RC 유예·책임·교체 조건을 기록하며 자동 정렬 구현 완료나 #510 전체 종료를 뜻하지 않는다.
+
 ## 공개 capability
 
 ```python
