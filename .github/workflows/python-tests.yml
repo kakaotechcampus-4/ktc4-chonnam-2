@@ -140,7 +140,8 @@ jobs:
 
   mysql:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # 3m setup + 40m canonical + 1m strict + 5m mutations + 1m cleanup.
+    timeout-minutes: 50
     services:
       mysql:
         image: mysql:8.4
