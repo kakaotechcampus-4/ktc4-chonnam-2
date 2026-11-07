@@ -1,7 +1,6 @@
 """`case.report_video_not_generated` — #351 [R-2] case 결정.
 
-발동 조건: evidence가 있고(`record_id` non-null — 응답 전 부분 투영이 아니다), 선택된 후보의 신고 상황 응답이
-끝났고(`CONFIRMED` · `CORRECTED` · `USER_UNSURE`), FINAL 요건의 `package.asset.report_video.exists`가 `PASS`가
+발동 조건: evidence가 있고(`record_id` non-null — 응답 전 부분 투영이 아니다), 선택된 후보가 하나이고, FINAL 요건의 `package.asset.report_video.exists`가 `PASS`가
 아닐 때. 실행 중에도 붙인다 — web은 이 notice가 없으면 응답 대기가 아닐 때 영상 칸을 있는 것처럼 그린다.
 「신고용 영상 만들기」(`GENERATE_REPORT_VIDEO`)는 이전 `REPORT_VIDEO_EXPORT` JobRecord가 있고 그 kind가
 `running_jobs`에 없을 때만 싣는다 — 버튼은 실패 뒤 재시도다(#351 [R-3]).
@@ -75,10 +74,20 @@ def test_notice_stays_without_button_while_export_runs():
     assert notice["actions"] == []
 
 
-def test_no_notice_before_situation_response():
-    # 응답 전에는 신고용 영상을 만들지 않는다(Flow 「신고자료 묶음 전」) — 이유는 `case.situation_response_pending`.
+def test_notice_without_situation_response_once_evidence_is_assembled():
+    # #597 B안 — 조립된 evidence(Fine `OBSERVED`)는 응답 없이 영상을 만든다. 응답 대기 notice는 붙지 않는다.
     view = service.derive_notices(_responded_view_without_video("NOT_ASKED"))
-    assert _notice(view) is None
+    assert _notice(view) is not None
+    assert "case.situation_response_pending" not in {n["code"] for n in view["notices"]}
+
+
+def test_no_notice_on_partial_projection_before_response():
+    # `UNCERTAIN` 응답 전 부분 투영(`record_id` null)은 아직 영상을 만들지 않는다 — 이유는 응답 대기 notice다.
+    view = _responded_view_without_video("NOT_ASKED")
+    view["evidence"]["record_id"] = None
+    derived = service.derive_notices(view)
+    assert _notice(derived) is None
+    assert "case.situation_response_pending" in {n["code"] for n in derived["notices"]}
 
 
 def test_no_notice_when_report_video_is_available():

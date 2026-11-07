@@ -7,8 +7,9 @@ B절 `notices[].code`, 2026-09-14 등재). 정답지는 이 notice가 들어간 
 경우는 fixture 값에 검색어를 채운 사본으로 확인한다.
 
 `case.situation_response_pending` — #171 C-2(Case 결정): Package 전 결과 화면의 「준비 전」
-이유를 notice로 내린다. 발동 조건은 evidence가 있고, 선택된 후보의 `situation_confirmation`이
-`NOT_ASKED`이며, `package`가 없을 때다(ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태).
+이유를 notice로 내린다. 발동 조건은 evidence가 조립 전 부분 투영(`record_id` null)이고, 선택된 후보의
+`situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때다. 조립된 evidence(Fine `OBSERVED`)는
+응답을 기다리지 않는다(#597 B안).
 """
 import copy
 import json
@@ -24,6 +25,10 @@ MOCK_ROOT = Path(__file__).resolve().parents[2] / "data" / "mock"
 CODE = "evidence.location_search_keyword_missing"
 PENDING_CODE = "case.situation_response_pending"
 DERIVED_CODES = {CODE, PENDING_CODE}
+# #597 B안 — Fine `OBSERVED`는 응답 없이 영상을 발주하고 응답 대기 notice를 띄우지 않는다. `data/mock/case/`의 응답 전
+# 스냅샷은 web 데모 · 테스트도 쓰므로 아직 이전 흐름 그대로다(web과 함께 B안 흐름으로 바꾼다, #597). 그때까지 이 두 code는
+# fixture와 대조하지 않는다.
+B597_FIXTURE_LAG = {"case.situation_response_pending", "case.report_video_not_generated"}
 
 
 def _case_views(scenario_id: str) -> list[dict]:
@@ -47,7 +52,8 @@ def test_derives_notice_when_search_keyword_is_null(scenario_id):
             continue
         assert expected["evidence"]["location_display"]["search_keyword"] is None
         derived = service.derive_notices(_without_notice(expected))
-        assert derived["notices"] == expected["notices"]
+        lag = lambda notices: [n for n in notices if n["code"] not in B597_FIXTURE_LAG]  # noqa: E731
+        assert lag(derived["notices"]) == lag(expected["notices"])
 
 
 def test_notice_shape_matches_contract():
@@ -115,11 +121,21 @@ def test_pending_notice_shape_matches_contract():
 
 
 @pytest.mark.parametrize("scenario_id", ["correction_rerun_001", "plate_reread_001"])
-def test_pending_notice_on_evidence_without_response(scenario_id):
-    """P·R은 evidence가 있지만 상황 응답 전이라 Package가 없다 — 모든 스냅샷이 대상이다."""
+def test_no_pending_notice_on_assembled_evidence_without_response(scenario_id):
+    """P·R은 조립된 evidence가 있고 상황 응답 전이라 Package가 없다 — #597 B안에서는 응답을 기다리지 않는다."""
     for expected in _case_views(scenario_id):
-        assert expected["evidence"] is not None and expected["package"] is None
+        assert expected["evidence"]["record_id"] is not None and expected["package"] is None
         codes = [n["code"] for n in service.derive_notices(_without_notice(expected))["notices"]]
+        assert PENDING_CODE not in codes
+
+
+@pytest.mark.parametrize("scenario_id", ["correction_rerun_001", "plate_reread_001"])
+def test_pending_notice_on_partial_projection_without_response(scenario_id):
+    """조립 전 부분 투영(`record_id` null, Fine `UNCERTAIN` 응답 전)은 응답을 기다린다."""
+    for expected in _case_views(scenario_id):
+        view = _without_notice(expected)
+        view["evidence"]["record_id"] = None
+        codes = [n["code"] for n in service.derive_notices(view)["notices"]]
         assert PENDING_CODE in codes
 
 
