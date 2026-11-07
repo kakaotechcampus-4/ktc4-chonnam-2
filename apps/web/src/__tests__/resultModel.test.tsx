@@ -191,6 +191,44 @@ describe('번호판 이미지 다운로드', () => {
   })
 })
 
+describe('번호판 장면 다운로드 (#600)', () => {
+  const noop = vi.fn()
+  const frameSrc = (ref: string) => `/cases/c1/frames/${ref}`
+  const show = (view = HAPPY, demo = false) =>
+    render(<ResultScreen view={view} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref="/cases/c1/assets/v1" frameSrc={demo ? undefined : frameSrc} />)
+  const query = (r: ReturnType<typeof show>) => r.queryByRole('button', { name: '번호판 장면 다운로드' })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('번호판을 읽은 장면(plate_preview_ref)이 없거나 시연(frameSrc 없음)이면 버튼을 두지 않는다', () => {
+    expect(query(show({ ...HAPPY, evidence: { ...HAPPY.evidence!, plate_preview_ref: null } }))).toBeNull()
+    cleanup()
+    expect(query(show(HAPPY, true))).toBeNull()
+  })
+
+  it('번호판 확인 화면과 같은 frame 주소를 png로 받고, 실패하면 막고 이유를 말한다. 번호판 이미지 버튼과 따로다', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['png']) }).mockResolvedValueOnce({ ok: false })
+    vi.stubGlobal('fetch', fetchMock)
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    URL.revokeObjectURL = vi.fn()
+    const names: string[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      names.push(this.download)
+    })
+    const r = show()
+    expect(r.queryByRole('button', { name: '번호판 이미지 다운로드' })).toBeNull()
+    fireEvent.click(query(r)!)
+    await vi.waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalled(), { timeout: 3000 })
+    expect(fetchMock).toHaveBeenCalledWith(`/cases/c1/frames/${HAPPY.evidence!.plate_preview_ref}`)
+    expect(names).toEqual([expect.stringMatching(/^daesingo_plate_scene_\d{8}_\d{6}\.png$/)])
+    fireEvent.click(query(r)!)
+    await r.findByText('번호판 장면을 받지 못했어요')
+    expect(query(r)!.getAttribute('aria-disabled')).toBe('true')
+  })
+})
+
 describe('프레임 이미지', () => {
   it('ref가 없으면 자리 표시를 두고, 있으면 이미지를 그리고, 받지 못하면 자리 표시로 돌아간다', () => {
     const r = render(<FrameSlot className="f" src={null} alt="장면">자리</FrameSlot>)
