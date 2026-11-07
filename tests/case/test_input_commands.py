@@ -82,7 +82,8 @@ def test_manual_plate_input_records_correction_and_reaches_evidence():
     assert (record["previous_value"], record["new_value"]) == (before, "34나5678")
     assert record["supersedes_ref"] is None
     view = result.response["case_view"]
-    assert view["case_rev"] == rev + 1
+    # Fixture에 이미 신고용 영상이 있어 OBSERVED 무응답이어도 READY 전이가 가능하다(#597).
+    assert view["case_rev"] == rev + 1 + (view["stage"] == "READY")
     assert view["evidence"]["plate_display"]["value"] == "34나5678"
     assert view["evidence"]["plate_display"]["info_state"] == "INFO_USER_CONFIRMED"
 
@@ -192,6 +193,7 @@ def test_corrected_records_situation_change_and_response_in_one_revision():
     # 정정과 응답이 각자 올리지 않는다(§12-3). 응답으로 Package가 풀려 READY로 오르면 그 전이가 한 번 더 올린다(§5).
     assert case.case_rev == rev + 1 + (case.stage == "READY")
     assert case.situation_response["value"] == "CORRECTED"
+    assert result.appended_job_records == []
     record = case.correction_records[-1]
     assert (record["kind"], record["target_field"]) == ("SITUATION_CHANGE", "event.visual_event_type")
     assert (record["previous_value"], record["new_value"]) == ("SOLID_LINE_LANE_CHANGE", "CENTER_LINE_CROSSING")

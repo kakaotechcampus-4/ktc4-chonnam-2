@@ -361,6 +361,7 @@ def test_real_adapter_recomputes_evidence_after_report_type_change_correction():
     case.select_candidate(candidates[0].candidate_id)
 
     record_before = real.get_evidence_record()
+    assert record_before["event"]["safety_report_type"]["value"] == "TRAFFIC_VIOLATION"
     jobs_before = list(case.job_records)
     correction.apply_correction(
         case,
@@ -384,8 +385,7 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     """recording→search→후보 선택→readout→evidence 전부 real로 돌려서 `CaseView`까지
     도달하는지 확인한다 — 이번 W5/W6 마감의 증빙 테스트다.
 
-    `READY`는 Package가 실제로 준비됐을 때만이다(#167). 상황 응답 전에는 ADR-EVIDENCE-005
-    D2-c로 Package가 막혀 `EVIDENCE_REVIEW`에 머문다."""
+    #597에 따라 OBSERVED의 필수 자산이 확보되면 무응답으로도 READY에 도달한다."""
     scope = _real_scope()
     case = CaseAggregate.intake(case_id="case_h001_full_e2e", hints=_real_hints(), manifest_summary={})
     real = RealAdapter(case_id="case_h001_full_e2e", case=case, search_scope=scope, mock_root=MOCK_ROOT)
@@ -406,9 +406,8 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
 
     view = service.build_view_from_adapter(case, real)
 
-    # READY ⇔ Package 존재(#167). 상황 응답 전이라 지금은 둘 다 아니다.
-    assert (view["stage"] == "READY") == (view["package"] is not None)
-    assert view["stage"] == "EVIDENCE_REVIEW"
+    assert view["candidates"][0]["situation_confirmation"] == "NOT_ASKED"
+    assert view["stage"] == "READY"
     assert view["evidence"]["plate_display"]["value"] == "12가3456"
     assert view["evidence"]["event_time_display"]["value"] == "2026-08-24T18:05:12+09:00"
     assert view["evidence"]["location_display"]["value"] == "상무중앙로 사거리 부근"
@@ -416,8 +415,7 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     assert view["requirements_evidence"]["readiness"] == "PASS"
     # 이슈 #103 — hints가 더 이상 {}로 고정되지 않는다.
     assert view["hints"] != {}
-    # package는 알려진 단순화 2 때문에 None일 수 있다 — 존재 자체를 요구하지 않는다.
-    assert view["package"] is None or "package_ref" in view["package"]
+    assert "package_ref" in view["package"]
 
 
 def test_real_adapter_runs_other_scenario():

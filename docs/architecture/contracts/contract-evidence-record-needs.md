@@ -302,6 +302,7 @@ vehicle_number confirmed
 - `candidate_ref`는 응답이 어느 후보/값 snapshot을 대상으로 했는지 가리킨다. `CONFIRMED`/`CORRECTED`는 반드시 존재해야 하고, `USER_UNSURE`만 `null`을 허용한다(응답 대상이 특정되지 않을 수 있으므로).
 - 이 필드는 **응답 이력**이고 `CorrectionRecord`는 **값 변경 계보**다 — `CORRECTED` 한 건이 두 기록 모두에 나타나는 것은 책임 분리이지 중복이 아니다.
 - `situation_response`가 없으면 아직 사용자에게 확인을 요청하지 않았거나 응답을 받지 못한 상태다(`CaseView.candidates[].situation_confirmation=NOT_ASKED`로 투영, `contract-job-record-case-view.md` 소유).
+- [#597 B안](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/597#issuecomment-6703544277)에서 Fine이 관찰한 유형으로 조립한 Record는 응답 없이 초안 및 묶음 요건 평가에 사용할 수 있다. 무응답인 Record에는 이 필드를 생략하고 응답이 생기면 위 값 공간으로 보존한다.
 - 기존 필드와 마찬가지로 correction/reassemble 시 새 `record_ref`를 가진 Record로 옮겨가며, 과거 응답은 supersede된 Record의 snapshot으로 남는다.
 
 ## 4.7 사건시각과 영상 내 표시 분리
