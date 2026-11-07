@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import type { CaseView } from '../contracts/caseView'
+import type { Candidate, CaseView } from '../contracts/caseView'
 import { CandidateAxis } from '../components/CandidateAxis'
 import { CandidateVideo, type CandidatePlayback } from '../components/CandidateVideo'
 import { CandidateCard, ThumbPlaceholder } from '../components/CandidateCard'
@@ -20,21 +20,45 @@ import { Panel } from '../components/Panel'
 // 한계: case-view에 재선택 가능 신호가 없어 kind로 추정한다. 후보 · 세대는 view에 없어 case보다 넓게 막을 수 있다(decisions §4) — 신호가 생기면 이 목록을 지운다.
 const PREPARING_KINDS = ['FINE_VERIFY', 'INCIDENT_CLIP_BUILD', 'PLATE_READ', 'OVERLAY_TIME_READ']
 
+// 후보 카드에 장면 이미지와 영상 미리보기를 붙인다. 후보 그리드와 「어떻게 정했는지」의 기준 후보 카드가 같이 쓴다.
+export function PlayableCandidateCard(props: {
+  view: CaseView
+  candidate: Candidate
+  ordinal: number
+  selectedLabel?: string
+} & CandidatePlayback): JSX.Element {
+  const c = props.candidate
+  // 후보 장면은 thumb_ref(#523 상위 후보). 기준 후보는 아직 thumb_ref가 없으면 근거 장면(evidence.preview_ref, #470)을 쓴다
+  const ref = c.thumb_ref ?? (c.selected ? props.view.evidence?.preview_ref ?? null : null)
+  const src = ref && props.frameSrc ? props.frameSrc(ref) : null
+  // 후보 장면과 근거 장면은 사건 클립을 만드는 작업이 함께 발급한다(#523 · #470). 그 작업이 돌 때만 「준비 중」이라 한다
+  const pending = props.view.running_jobs.some((j) => j.kind === 'INCIDENT_CLIP_BUILD')
+  return (
+    <CandidateCard
+      candidate={c}
+      ordinal={props.ordinal}
+      selectedLabel={props.selectedLabel}
+      src={src}
+      pending={pending}
+      preview={c.video_preview && (props.videoSrc || props.onPreview) && (
+        <CandidateVideo preview={c.video_preview} ordinal={c.rank ?? props.ordinal}
+          src={c.video_preview.clip_ref && props.videoSrc ? props.videoSrc(c.video_preview.clip_ref) : undefined}
+          poster={src ?? undefined}
+          placeholder={<ThumbPlaceholder pending={pending} />}
+          onRequest={props.onPreview ? () => props.onPreview?.(c.candidate_id) : undefined}
+          busy={props.previewBusy} />
+      )}
+    />
+  )
+}
+
 export function CandidatesScreen(props: {
   view: CaseView
   onSelect?: (candidateId: string) => void
   /** 기준 후보 태그 문구 — 신고자료가 없는 화면에서 바꾼다(CandidateCard) */
   selectedLabel?: string
 } & CandidatePlayback): JSX.Element {
-  const { onSelect, frameSrc } = props
-  // 후보 장면은 thumb_ref(#523 상위 후보). 기준 후보는 아직 thumb_ref가 없으면 근거 장면(evidence.preview_ref, #470)을 쓴다
-  const preview = props.view.evidence?.preview_ref ?? null
-  const src = (c: (typeof props.view.candidates)[number]) => {
-    const ref = c.thumb_ref ?? (c.selected ? preview : null)
-    return ref && frameSrc ? frameSrc(ref) : null
-  }
-  // 후보 장면과 근거 장면은 사건 클립을 만드는 작업이 함께 발급한다(#523 · #470). 그 작업이 돌 때만 「준비 중」이라 한다
-  const pending = props.view.running_jobs.some((j) => j.kind === 'INCIDENT_CLIP_BUILD')
+  const { onSelect } = props
   const preparing = props.view.running_jobs.some((j) => PREPARING_KINDS.includes(j.kind))
   return (
     <Panel title="찾은 장면">
@@ -48,24 +72,7 @@ export function CandidatesScreen(props: {
         })
       }}>
         {props.view.candidates.map((c, i) => {
-          const card = (
-            <CandidateCard
-              key={c.candidate_id}
-              candidate={c}
-              ordinal={i + 1}
-              selectedLabel={props.selectedLabel}
-              src={src(c)}
-              pending={pending}
-              preview={c.video_preview && (props.videoSrc || props.onPreview) && (
-                <CandidateVideo preview={c.video_preview} ordinal={c.rank ?? i + 1}
-                  src={c.video_preview.clip_ref && props.videoSrc ? props.videoSrc(c.video_preview.clip_ref) : undefined}
-                  poster={src(c) ?? undefined}
-                  placeholder={<ThumbPlaceholder pending={pending} />}
-                  onRequest={props.onPreview ? () => props.onPreview?.(c.candidate_id) : undefined}
-                  busy={props.previewBusy} />
-              )}
-            />
-          )
+          const card = <PlayableCandidateCard key={c.candidate_id} {...props} candidate={c} ordinal={i + 1} />
           if (!onSelect) return card
           return (
             <div key={c.candidate_id} className="cand-col">
