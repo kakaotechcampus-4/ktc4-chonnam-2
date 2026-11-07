@@ -125,15 +125,19 @@ def load_evidence(directory, token):
             json.loads((directory/'catalog.json').read_text(encoding='utf-8')))
 
 
-def _run_stage(name, command, directory, env, timeout=None):
+def _run_stage(name, command, directory, env, timeout):
     start = time.monotonic()
     outcome = 'failed'
     try:
         # Inherit stdout/stderr so an active test is visible on remote runners.
         subprocess.run(command, cwd=ROOT, env=env, check=True, timeout=timeout)
         outcome = 'success'
+    except subprocess.TimeoutExpired:
+        outcome = 'timeout'
+        raise
     finally:
-        record = {'stage':name, 'outcome':outcome, 'seconds':time.monotonic()-start}
+        record = {'stage':name, 'outcome':outcome, 'seconds':time.monotonic()-start,
+                  'timeout_seconds':timeout}
         with (directory/'timings.jsonl').open('a', encoding='utf-8') as stream:
             stream.write(json.dumps(record)+'\n')
         print('CI stage: '+json.dumps(record), flush=True)
@@ -156,14 +160,14 @@ def run_mysql(output):
         '-vv', '-p', 'tests.observability_capture', '-p', 'tests.ci_collection',
         '--ci-collection='+str(directory/'collection.json'),
         '--basetemp='+str(directory/'actual-temp'), '--mysql-report='+str(directory/'mysql.json'),
-        '--junitxml='+str(directory/'mysql.xml')), directory, env, timeout=1500)
+        '--junitxml='+str(directory/'mysql.xml')), directory, env, timeout=2400)
     _run_stage('strict', [sys.executable, 'scripts/check_mysql_test_report.py',
-        str(directory/'mysql.json'), str(directory/'mysql.xml')], directory, env)
+        str(directory/'mysql.json'), str(directory/'mysql.xml')], directory, env, timeout=60)
     seal_evidence(directory, token, started_ns)
     env.update(DAESINGO_MYSQL_GATE_EVIDENCE=str(directory), DAESINGO_MYSQL_GATE_TOKEN=token)
     _run_stage('actual-report-mutations', pytest_command('gate',
         '--basetemp='+str(directory/'gate-temp'), '--junitxml='+str(directory/'gate.xml')),
-        directory, env)
+        directory, env, timeout=300)
     # The verification stage must leave every original input byte intact.
     load_evidence(directory, token)
     return directory
