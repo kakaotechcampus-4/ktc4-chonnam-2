@@ -353,6 +353,9 @@ describe('#597 — 응답 없이 초안 · 번호판 장면 · 최종 검토 기
     fireEvent.click(r.getByLabelText('중앙선을 넘었어요'))
     fireEvent.click(r.getByRole('button', { name: '이 상황으로 고치기' }))
     expect(onCorrect).toHaveBeenCalledWith('CENTER_LINE_CROSSING')
+    // 폼이 닫히면 초점은 「다른 상황이었어요」로 돌아오고, 보낸 것을 알린다
+    expect(document.activeElement).toBe(r.getByRole('button', { name: /다른 상황이었어요/ }))
+    expect(r.getByText('고친 상황으로 다시 준비하고 있어요.').getAttribute('role')).toBe('status')
   })
 
   it('「잘 모르겠어요」로 남긴 판별 유형은 다시 확인하거나 고칠 수 있다 — 유형이 없으면(UNCERTAIN) 고치기를 두지 않는다', () => {
@@ -373,6 +376,7 @@ describe('#597 — 응답 없이 초안 · 번호판 장면 · 최종 검토 기
     const ready = { ...HAPPY, user_reviewed: false, notices: HAPPY.notices.filter((n) => !n.blocking) }
     const r = render(<ResultScreen view={ready} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onReviewed={onReviewed} />)
     fireEvent.click(r.getByRole('button', { name: /안전신문고로 이동/ }))
+    fireEvent.click(r.getByRole('button', { name: /안전신문고로 이동/ })) // 새 view가 오기 전 두 번째 클릭
     expect(open).toHaveBeenCalled()
     expect(onReviewed).toHaveBeenCalledTimes(1)
     cleanup()

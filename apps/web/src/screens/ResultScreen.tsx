@@ -124,6 +124,7 @@ export function ResultScreen(props: {
   // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
   const [downloadFailed, setDownloadFailed] = useState<string[]>([])
   const [downloading, setDownloading] = useState(false)
+  const reviewSent = useRef(false)
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const pkg = view.package
   const ev = view.evidence
@@ -651,7 +652,11 @@ export function ResultScreen(props: {
                 onClick={() => {
                   // 새 창은 클릭 안에서 바로 연다(팝업 차단). 최종 검토 기록은 처음 한 번만 남긴다(#597, §20)
                   window.open(SAFETY_REPORT_URL, '_blank', 'noopener')
-                  if (!view.user_reviewed) props.onReviewed?.()
+                  // user_reviewed는 새 view가 와야 바뀌어서, 그 전에 두 번 눌러도 한 번만 보낸다(#621 대원 님 리뷰)
+                  if (!view.user_reviewed && !reviewSent.current) {
+                    reviewSent.current = true
+                    props.onReviewed?.()
+                  }
                 }}
               >
                 안전신문고로 이동
@@ -799,6 +804,16 @@ function SituationFix(props: {
 }): JSX.Element {
   const [open, setOpen] = useState(false)
   const [picked, setPicked] = useState<VisualEventType | null>(null)
+  const [sent, setSent] = useState(false)
+  // 폼이 닫히면 누른 버튼도 사라지므로 초점을 「다른 상황이었어요」로 돌린다(#621 대원 님 리뷰, #577과 같은 방식)
+  const toggle = useRef<HTMLButtonElement>(null)
+  const wasOpen = useRef(false)
+  useEffect(() => {
+    if (wasOpen.current && !open) toggle.current?.focus()
+    wasOpen.current = open
+  }, [open])
+  // 고친 유형이 새 view로 오면 안내를 지운다
+  useEffect(() => setSent(false), [props.current])
   const choices = (Object.keys(VISUAL_EVENT_CHOICES) as VisualEventType[]).filter((t) => t !== props.current)
   return (
     <div className="res-situation-fix">
@@ -818,7 +833,7 @@ function SituationFix(props: {
               이 상황이 맞아요
             </button>
           )}
-          <button type="button" className="res-link" onClick={() => setOpen(true)}>
+          <button type="button" className="res-link" ref={toggle} onClick={() => setOpen(true)}>
             다른 상황이었어요
             <ChevronRight size={16} strokeWidth={2} aria-hidden />
           </button>
@@ -830,6 +845,7 @@ function SituationFix(props: {
             e.preventDefault()
             if (!picked) return
             props.onCorrect(picked)
+            setSent(true)
             setOpen(false)
           }}
         >
@@ -852,6 +868,10 @@ function SituationFix(props: {
           </div>
         </form>
       )}
+      {/* 안내가 없을 때는 빈 줄이 자리를 차지하지 않게 숨겨 두되, 알림 영역은 미리 있어야 읽힌다 */}
+      <p role="status" className={sent ? 'res-hint' : 'sr-only'}>
+        {sent ? '고친 상황으로 다시 준비하고 있어요.' : ''}
+      </p>
     </div>
   )
 }
