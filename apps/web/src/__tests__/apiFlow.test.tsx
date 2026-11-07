@@ -90,7 +90,7 @@ it('올리는 중에 고른 파일은 받지 않고 목록에도 올리지 않�
   fireEvent.click(getByText('동의하고 올리기'))
   await findByText('업로드 중')
   fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
-  fireEvent.click(getByText('동의하고 올리기'))
+  expect(queryByText('동의하고 올리기')).toBeNull() // 받지 않을 파일이라 동의도 묻지 않는다(#606 리뷰)
   finish(ok({ case_id: 'c1', source_asset_ref: 'sa', case_view: view({ manifest_summary: { ...BASE.manifest_summary, file_count: 1, ok_file_count: 1 } }) }, 201))
   await findByText(/^업로드 완료/)
 
@@ -660,4 +660,24 @@ it('업로드 전 동의에서 취소하면 서버에 아무것도 보내지 않
   expect(m.createCase).not.toHaveBeenCalled()
   expect(m.uploadSource).not.toHaveBeenCalled()
   expect(queryByText(/^업로드 중/)).toBeNull()
+})
+
+it('같은 신고에서는 한 번 동의하면 파일을 더 골라도 다시 묻지 않는다(새 신고는 페이지를 새로 열어 다시 묻는다)', async () => {
+  const { m, api } = setup()
+  const { container, findByText, getByText, queryByText } = render(<ApiFlow api={api} />)
+  const input = container.querySelector('input[type=file]')!
+  fireEvent.change(input, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
+  await findByText(/^업로드 완료/)
+  fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
+  expect(queryByText('동의하고 올리기')).toBeNull()
+  await waitFor(() => expect(m.uploadSource).toHaveBeenCalledTimes(2))
+})
+
+it('동의 창을 닫으면 포커스가 「파일 선택」으로 돌아온다', () => {
+  const { api } = setup()
+  const { container, getByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('취소'))
+  expect(document.activeElement?.textContent).toBe('파일 선택')
 })

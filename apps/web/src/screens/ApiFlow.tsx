@@ -229,7 +229,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
         files={files}
         skipped={skipped}
         failReason={failCode ? errorMessage(failCode) : undefined}
-        consent
+        // 같은 신고에서는 한 번만 묻는다 — case가 생기면 동의를 받은 뒤다. 새 신고(caseId 없음)는 다시 묻는다
+        consent={!state.caseId}
         situation={situation}
         onFiles={(picked) => void addFiles(picked)} // 올리는 중에 고른 파일은 store가 받지 않는다
         onSituation={setSituation}

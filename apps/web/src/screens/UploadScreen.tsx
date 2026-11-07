@@ -145,7 +145,7 @@ export function UploadScreen(props: {
   departing?: boolean
   /** 서버가 거절한 이유(실패 때). 없으면 원인을 단정하지 않는 문구를 쓴다 */
   failReason?: string
-  /** 실제 영상을 서버로 보내는 흐름(ApiFlow)만 — 분석 전 개인정보·외부 처리 안내에 동의해야 찾아보기가 된다 */
+  /** 올리기 전에 개인정보·외부 처리 안내 동의를 받는다. ApiFlow가 신고(case)마다 첫 업로드에만 켠다 */
   consent?: boolean
 }): JSX.Element {
   const situationId = useId()
@@ -164,6 +164,8 @@ export function UploadScreen(props: {
     consentBox.current?.close?.()
     consentBox.current?.removeAttribute('open')
     setPending(null)
+    // 닫힌 모달 안에 포커스가 남지 않게 「파일 선택」으로 돌려준다(#606 리뷰). 동의 뒤에도 같은 버튼이 남는다
+    pickButton.current?.focus()
     if (agree && files) send(files)
   }
   const [over, setOver] = useState(false)
@@ -175,11 +177,14 @@ export function UploadScreen(props: {
     return () => clearTimeout(t)
   }, [])
   const input = useRef<HTMLInputElement>(null)
+  const pickButton = useRef<HTMLButtonElement>(null)
   const choose = () => input.current?.click()
   const pick = (files: FileList | null) => {
     if (!files?.length) return
-    if (props.consent) setPending([...files])
-    else send([...files])
+    // 올리는 중에 고른 파일은 받지 않으므로 동의도 묻지 않는다(#606 리뷰)
+    if (props.consent) {
+      if (props.state !== 'uploading') setPending([...files])
+    } else send([...files])
   }
   const send = (files: File[]) => {
     picked = files
@@ -405,6 +410,7 @@ export function UploadScreen(props: {
               </div>
             )}
             <button
+              ref={pickButton}
               type="button"
               // 고르기 전·실패 때는 주 동작, 고른 뒤에는 「영상에서 찾아보기」가 주 동작이라 보조로 낮춘다.
               className={`rs-btn ${canClickArea ? 'pri' : 'sec'}`}
