@@ -84,6 +84,7 @@ class SourceFrame:
     frame_ref: str
     offset_sec: float
     image: object
+    frame_offset_sec: float | None = None
 
 
 @dataclass
@@ -243,11 +244,12 @@ class RecordingFrameSource:
             for ratio in self._ratios:
                 # Preserve decimal sample instants across the strict Recording boundary.
                 offset_sec = float(Decimal(str(clip.duration_sec)) * Decimal(str(ratio)))
-                frame, content = clip_frames.read_at(offset_sec)
+                frame, content, frame_offset_sec = clip_frames.read_at_with_frame_offset(offset_sec)
                 frames.append(SourceFrame(
                     frame_ref=frame.frame_ref,
                     offset_sec=round(offset_sec, 3),
                     image=_decode_image(content),
+                    frame_offset_sec=frame_offset_sec,
                 ))
             return frames
         except ProviderError:
@@ -429,6 +431,7 @@ class PaddleOcrProvider(OcrProvider):
                     frame_ref=frame.frame_ref,
                     offset_sec=frame.offset_sec,
                     raw_text=line.text,
+                    frame_offset_sec=frame.frame_offset_sec,
                 ))
         # 날짜 줄을 못 찾은 것을 「overlay가 없다」로 단정하지 않는다. 우리가 못 본 것과 화면에
         # 없는 것은 다르고, 없다고 하면 사용자가 화면을 다시 보지 않는다(failure-taxonomy.md).

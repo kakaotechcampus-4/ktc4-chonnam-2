@@ -12,7 +12,7 @@
 
 **Contract:** `PlateReadout` / `OverlayTimeReadout`
 
-**Contract Version:** `plate-readout/v1.3` · `overlay-time-readout/v1.2`
+**Contract Version:** `plate-readout/v1.3` · `overlay-time-readout/v1.3`
 
 **Related ADR:** `adr/adr-plate-overlay-readout.md` · `adr/adr-data-contract-call-closure-2026-09-07.md` §4.3 (v1.1 근거) · `adr/adr-data-contract-call-closure-2026-09-08.md` §4.9 (v1.2 근거)
 
@@ -399,6 +399,8 @@ OCR 문자열이 정확해 보여도 `target_association`이 `LOW_CONFIDENCE`, `
 | `monotonic_ok` | sample들의 시간이 frame offset 증가에 따라 역행하지 않는지 | false이면 overlay OCR 오인식 또는 영상/시각 불일치 가능성이 있음 |
 | `duration_match_ok` | sample 간 timestamp 차이가 sample 간 `offset_sec` 차이와 허용 오차 내에서 맞는지 | false이면 overlay timestamp를 강한 근거로 쓰기 어렵다 |
 | `sample_count` | 검증에 사용한 OCR sample 수 | 너무 적으면 검증 신뢰도가 낮을 수 있다 |
+
+**v1.3의 샘플 좌표.** `samples[].offset_sec`는 IncidentClip 실제 시작점 기준의 프레임 요청 위치(초)다. Recording이 요청 이후 프레임을 반환할 수 있어 그 프레임의 좌표와 다를 수 있다. 선택 필드 `samples[].frame_offset_sec`는 Recording이 반환한 프레임 PTS를 요청에 사용한 AssetSpan으로 역매핑한 IncidentClip 기준 위치(초)다. 프레임이 해당 원본 구간을 벗어나거나 실제 좌표가 확인되지 않으면 이 필드를 생략한다. 이전 버전은 이 필드 없이 읽을 수 있다. `observation.value`와 검증 플래그 산출 규칙은 유지한다.
 
 `samples[]`는 sample별 OCR 원문과 parse 결과를 보존한다. eval은 이를 통해 overlay OCR 실패 원인이 형식 문제인지, 특정 sample 오인식인지, 시간 흐름 불일치인지 진단할 수 있다.
 

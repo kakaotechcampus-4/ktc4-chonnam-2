@@ -74,7 +74,7 @@ from .contracts import (
 # 값의 원문은 계약 문서다. fixture가 쓰는 것과 같은 문자열을 쓴다.
 READOUT_RUN_VERSION = "readout-run/v1"
 PLATE_READOUT_VERSION = "plate-readout/v1.3"
-OVERLAY_TIME_READOUT_VERSION = "overlay-time-readout/v1.2"
+OVERLAY_TIME_READOUT_VERSION = "overlay-time-readout/v1.3"
 OBSERVATION_VERSION = "observation/v1"
 
 MODULE = "readout"
@@ -712,6 +712,7 @@ def _interpret_overlay(reading):
             offset_sec=s.offset_sec,
             raw_text=s.raw_text,
             parsed_at=_parse_overlay_text(s.raw_text, reading.tz_offset),
+            frame_offset_sec=s.frame_offset_sec,
         )
         for s in reading.samples
     ]

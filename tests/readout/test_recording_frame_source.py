@@ -2,7 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from daesingo.readout import paddle_provider
+from daesingo.readout import api, paddle_provider
+from daesingo.readout.contracts import InputRef, OverlayTimeReadout
 from daesingo.readout.providers import ProviderError
 from daesingo.recording import RecordingCapabilityError
 
@@ -31,7 +32,10 @@ class FakeRecording:
 
     def resolve_frame(self, locator):
         self.offsets.append(locator["source_offset_sec"])
-        return SimpleNamespace(frame_ref=f"fr_{locator['source_offset_sec']:.1f}")
+        return SimpleNamespace(
+            frame_ref=f"fr_{locator['source_offset_sec']:.1f}",
+            source_offset_sec=locator["source_offset_sec"] + 0.05,
+        )
 
     def read_frame(self, frame_ref):
         return b"png-bytes"
@@ -47,6 +51,7 @@ def test_recording_frame_source_preserves_recording_frame_refs(monkeypatch):
     offsets = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]  # SAMPLE_RATIOS × 10초
     assert [frame.frame_ref for frame in frames] == [f"fr_{100 + o:.1f}" for o in offsets]
     assert [frame.offset_sec for frame in frames] == pytest.approx(offsets)
+    assert [frame.frame_offset_sec for frame in frames] == pytest.approx([o + 0.05 for o in offsets])
     assert [frame.image for frame in frames] == [marker] * len(offsets)
     assert recording.offsets == pytest.approx([100 + o for o in offsets])
 
@@ -87,3 +92,38 @@ def test_incident_position_mapping_does_not_add_float_dust():
     span.source_range = _range(0.1, 3.1)
     IncidentClipFrames(recording, "clip_real").read_at(0.2)
     assert recording.offsets == [0.3]
+
+
+def test_frame_after_requested_asset_span_has_no_overlay_anchor():
+    from daesingo.readout.providers import IncidentClipFrames
+
+    recording = FakeRecording()
+    # Request at source 109.98s, but Recording's next frame is at 110.03s.
+    frame, _, offset = IncidentClipFrames(recording, "clip_real").read_at_with_frame_offset(9.98)
+    assert frame.source_offset_sec == pytest.approx(110.03)
+    assert offset is None
+
+
+def test_overlay_readout_serializes_the_decoded_frame_offset(monkeypatch):
+    monkeypatch.setattr(paddle_provider, "_decode_image", lambda content: object())
+    provider = paddle_provider.PaddleOcrProvider(
+        paddle_provider.RecordingFrameSource(FakeRecording(), sample_ratios=(0.2, 0.3))
+    )
+
+    def boxes(clip_ref, frame):
+        return [paddle_provider.TextBox(f"2026-10-31 14:00:1{int(frame.offset_sec)}", 1.0, ())]
+
+    monkeypatch.setattr(provider, "_boxes", boxes)
+    request = api.ReadRequest(
+        case_id="case_1",
+        candidate_id="candidate_1",
+        input_ref=InputRef("clip_real", "readout-native", "SOURCE_DERIVED_INCIDENT_CLIP"),
+    )
+    run, readout = api.read_overlay_time(request, provider=provider)
+    assert run.outcome == "SUCCEEDED"
+    payload = readout.to_dict()
+    assert payload["contract_version"] == "overlay-time-readout/v1.3"
+    assert payload["observation"]["value"] == "2026-10-31T14:00:12+09:00"
+    assert [sample["offset_sec"] for sample in payload["samples"]] == [2.0, 3.0]
+    assert [sample["frame_offset_sec"] for sample in payload["samples"]] == [2.05, 3.05]
+    assert OverlayTimeReadout.from_dict(payload).to_dict() == payload

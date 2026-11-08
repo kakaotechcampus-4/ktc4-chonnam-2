@@ -9,6 +9,8 @@ from __future__ import annotations
 import unittest
 from datetime import datetime
 
+import pytest
+
 from daesingo.evidence import ContractInputError, resolve_time, validate_contract
 from daesingo.recording import TimeSourceCandidate
 
@@ -39,6 +41,9 @@ def _clip(*spans, requested=None, timeline=TIMELINE):
     requested = requested or (spans[0]["timeline_range"]["start_sec"], spans[-1]["timeline_range"]["end_sec"])
     return {
         "incident_clip_ref": "clip_multi",
+        "timeline_ref": dict(timeline),
+        "timeline_range": {"start_sec": requested[0], "end_sec": requested[1]},
+        "duration_sec": requested[1] - requested[0],
         "source_provenance": {
             "timeline_ref": dict(timeline),
             "requested_range": {"start_sec": requested[0], "end_sec": requested[1]},
@@ -72,6 +77,120 @@ def _resolve(candidates, representative_ms, clip, *, overlay=None, corrections=(
 
 def _reasons(result):
     return {item["input_ref"]["ref"]: item.get("reason_code") for item in result["considered"]}
+
+
+def _overlay(*points):
+    return {
+        "readout_id": "overlay_kind",
+        "input_ref": {"incident_clip_ref": "clip_multi"},
+        "observation": {"status": "OK", "value": f"2026-10-31T14:00:{points[0][1]}+09:00"},
+        "validation": {"format_ok": True, "monotonic_ok": True, "duration_match_ok": True},
+        "samples": [
+            {
+                "frame_ref": f"fr_{index}",
+                "offset_sec": offset,
+                "frame_offset_sec": offset,
+                "parsed_at": f"2026-10-31T14:00:{seconds}+09:00" if seconds is not None else None,
+            }
+            for index, (offset, seconds) in enumerate(points)
+        ],
+    }
+
+
+@pytest.mark.parametrize(("clip_start", "source_start"), [(0, 0), (45, 45), (60, 3)])
+@pytest.mark.parametrize(("event_offset", "seconds", "delta_ms"), [(2, "12", 0), (9, "19", 2000), (12, "22", 0)])
+def test_overlay_time_resolves_at_the_representative_position(clip_start, source_start, event_offset, seconds, delta_ms):
+    clip = _clip(_span(0, "sa_a", (clip_start, clip_start + 15), (source_start, source_start + 15)))
+    # The request may start before the actual materialized clip; OCR offsets use the latter.
+    if clip_start:
+        clip["source_provenance"]["requested_range"]["start_sec"] = clip_start - 1
+    overlay = _overlay((2, "12"), (7, "17"), (12, "22"))
+    result = _resolve([], (clip_start + event_offset) * 1000, clip, overlay=overlay)
+
+    assert result["status"] == "OK"
+    resolved = result["resolved"]
+    assert resolved["value"] == f"2026-10-31T14:00:{seconds}+09:00"
+    assert resolved["verification"] == "VERIFIED"
+    assert resolved["source"]["input_ref"] == result["provenance"]["selected_input_ref"]
+    considered = result["considered"][0]
+    assert considered["used"]
+    assert considered["value"] == f"2026-10-31T14:00:{'17' if delta_ms else seconds}+09:00"
+    assert resolved["computation"]["mode"] == ("BASE_PLUS_OFFSET" if delta_ms else "DIRECT")
+    if delta_ms:
+        assert resolved["computation"]["base_input_ref"] == considered["input_ref"]
+        assert resolved["computation"]["source_offset_ms"] == delta_ms
+    assert result["post_stamp"]["needed"] is False
+    assert validate_contract(result) == []
+
+
+def test_overlay_time_does_not_borrow_a_sample_across_the_source_boundary():
+    overlay = _overlay((14, "14"), (16, "16"), (20, "20"))
+    boundary = _resolve([A, B], 60_000, A_AND_B, overlay=overlay)
+    assert boundary["status"] == "NEEDS_REVIEW"
+    assert boundary["resolved"]["value"] == "2026-10-31T12:01:00+09:00"
+    assert _reasons(boundary)["overlay_kind"] == "time.overlay_event_not_covered"
+    later = _resolve([A, B], 63_000, A_AND_B, overlay=overlay)
+    assert later["status"] == "OK"
+    assert later["resolved"]["value"] == "2026-10-31T14:00:18+09:00"
+
+
+def test_overlay_time_does_not_resolve_a_timeline_gap():
+    clip = _clip(_span(0, "sa_a", (45, 60), (45, 60)), _span(1, "sa_b", (70, 80), (0, 10)))
+    overlay = _overlay((14, "14"), (19, "19"), (26, "26"))
+    result = _resolve([A, B], 64_000, clip, overlay=overlay)
+    assert result["status"] == "UNKNOWN"
+    assert "resolved" not in result
+    assert result["post_stamp"]["requires_user_notice"] is True
+    assert _reasons(result)["overlay_kind"] == "time.overlay_event_not_covered"
+
+
+@pytest.mark.parametrize(("points", "reason"), [
+    ([(2, "12"), (7, "17"), (12, None)], "time.overlay_samples_unusable"),
+    ([(2, "12"), (7, "10"), (12, "22")], "time.overlay_samples_unusable"),
+    ([(2, "12"), (7, "20"), (12, "22")], "time.overlay_samples_unusable"),
+    ([(2, "12"), (7, "17"), (16, "26")], "time.overlay_event_not_covered"),
+    ([(2, "12"), (2, "12"), (12, "22")], "time.overlay_samples_unusable"),
+    ([(2, "12"), (float("nan"), "17"), (12, "22")], "time.overlay_samples_unusable"),
+    ([(2, "12"), (7, "17"), (8, "18")], "time.overlay_event_not_covered"),
+])
+def test_overlay_time_falls_back_when_samples_do_not_support_the_event(points, reason):
+    result = _resolve([B], 69_000, ONLY_B, overlay=_overlay(*points))
+    assert result["status"] == "NEEDS_REVIEW"
+    assert result["resolved"]["value"] == "2026-10-31T12:01:09+09:00"
+    assert result["post_stamp"]["needed"] is True
+    assert _reasons(result)["overlay_kind"] == reason
+
+
+def test_overlay_time_uses_decoded_frame_position_instead_of_requested_position():
+    overlay = _overlay((2, "12"), (7, "17"), (12, "22"))
+    overlay["samples"][1]["offset_sec"] = 6.5
+    result = _resolve([], 69_000, ONLY_B, overlay=overlay)
+    assert result["resolved"]["value"] == "2026-10-31T14:00:19+09:00"
+    assert result["resolved"]["computation"]["source_offset_ms"] == 2000
+
+
+def test_overlay_can_anchor_to_a_later_sample_with_a_negative_delta():
+    overlay = _overlay((2, "12"), (7, "17"), (12, "22"))
+    result = _resolve([], 71_000, ONLY_B, overlay=overlay)
+    assert result["resolved"]["value"] == "2026-10-31T14:00:21+09:00"
+    assert result["resolved"]["computation"]["source_offset_ms"] == -1000
+
+
+def test_legacy_overlay_without_decoded_positions_needs_review():
+    overlay = _overlay((2, "12"), (7, "17"), (12, "22"))
+    for sample in overlay["samples"]:
+        del sample["frame_offset_sec"]
+    result = _resolve([B], 69_000, ONLY_B, overlay=overlay)
+    assert result["status"] == "NEEDS_REVIEW"
+    assert _reasons(result)["overlay_kind"] == "time.overlay_samples_unusable"
+
+
+def test_overlay_time_rejects_samples_from_another_clip():
+    overlay = _overlay((2, "12"), (7, "17"), (12, "22"))
+    overlay["input_ref"]["incident_clip_ref"] = "clip_other"
+    result = _resolve([], 69_000, ONLY_B, overlay=overlay)
+    assert result["status"] == "UNKNOWN"
+    assert _reasons(result)["overlay_kind"] == "time.overlay_event_not_covered"
 
 
 class EventSourceTimeTests(unittest.TestCase):
@@ -153,11 +272,7 @@ class TimeSourceKindTests(unittest.TestCase):
         }).model_dump(mode="json")
 
     def _overlay(self):
-        return {
-            "readout_id": "overlay_kind",
-            "observation": {"status": "OK", "value": "2026-10-31T12:01:06+09:00"},
-            "validation": {"format_ok": True, "monotonic_ok": True, "duration_match_ok": True},
-        }
+        return _overlay((5, "06"), (10, "11"))
 
     def _correction(self):
         return {

@@ -93,6 +93,7 @@ class OverlaySampleReading:
     frame_ref: str
     offset_sec: float
     raw_text: Optional[str]
+    frame_offset_sec: Optional[float] = None
 
 
 @dataclass
@@ -123,10 +124,16 @@ class IncidentClipFrames:
         self._clip = recording.get_incident_clip(incident_clip_ref)
 
     def read_at(self, offset_sec: float):
+        frame, content, _ = self.read_at_with_frame_offset(offset_sec)
+        return frame, content
+
+    def read_at_with_frame_offset(self, offset_sec: float):
+        """Also return the decoded frame's clip offset, if it is within the selected AssetSpan."""
         from decimal import Decimal
         if offset_sec < 0:
             raise ValueError("offset_sec는 0 이상이어야 합니다")
-        at_decimal = Decimal(str(self._clip.timeline_range.start_sec)) + Decimal(str(offset_sec))
+        clip_start = Decimal(str(self._clip.timeline_range.start_sec))
+        at_decimal = clip_start + Decimal(str(offset_sec))
         at_sec = float(at_decimal)
         spans = [
             span for span in self._clip.source_provenance.asset_spans
@@ -138,13 +145,19 @@ class IncidentClipFrames:
                 "clip 위치를 하나의 MediaStream frame으로 해석할 수 없습니다",
             )
         span = spans[0]
+        source_start = Decimal(str(span.source_range.start_sec))
+        span_start = Decimal(str(span.timeline_range.start_sec))
         frame = self._recording.resolve_frame({
             "kind": "STREAM_POSITION",
             "media_stream_ref": span.media_stream_ref,
-            "source_offset_sec": float(Decimal(str(span.source_range.start_sec))
-                + at_decimal - Decimal(str(span.timeline_range.start_sec))),
+            "source_offset_sec": float(source_start + at_decimal - span_start),
         })
-        return frame, self._recording.read_frame(frame.frame_ref)
+        frame_offset_sec = None
+        if span.source_range.start_sec <= frame.source_offset_sec < span.source_range.end_sec:
+            frame_at = Decimal(str(frame.source_offset_sec)) - source_start + span_start
+            if frame_at < Decimal(str(span.timeline_range.end_sec)):
+                frame_offset_sec = float(frame_at - clip_start)
+        return frame, self._recording.read_frame(frame.frame_ref), frame_offset_sec
 
 
 class RecordingOcrProvider(OcrProvider):
@@ -289,6 +302,7 @@ class FixtureOcrProvider(OcrProvider):
             samples=[
                 OverlaySampleReading(
                     frame_ref=s.frame_ref, offset_sec=s.offset_sec, raw_text=s.raw_text,
+                    frame_offset_sec=s.frame_offset_sec,
                 )
                 for s in overlay.samples
             ],
