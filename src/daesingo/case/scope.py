@@ -2,15 +2,14 @@
 §2). search에게 "무엇을·언제 범위에서·얼마의 예산으로 분석할지"만 넘기고, case_id/
 selection_rev/파일 참조/location 같은 case 내부 상태는 절대 섞지 않는다(§10-1).
 
-⚠️ 1차 구현 범위: `scope_id`/`time_ranges`/`target_event_types`/`budget`은 이 모듈이
-스스로 판단해서 만들어내지 않는다 — case 내부 어디에도 아직 "어떤 시간대를, 어떤
-이벤트 유형으로, 얼마의 예산으로 검색할지"를 결정하는 로직이 없다(intake 시점 UI
-흐름이 아직 §11 제외 범위). 그래서 이 값들은 호출자가 그대로 공급하고, 이 모듈은
-§10 불변조건을 검증해서 "계약을 어기는 요청은 애초에 만들지 않는다"(§9 「입력 검증
-실패 → case 측에서 요청 자체를 생성하지 않음」)는 책임만 진다.
+`scope_id`/`time_ranges`/`target_event_types`/`budget`은 이 모듈이 정하지 않는다 —
+첫 탐색에서는 `analysis_start.issue_initial_search()`가 정해서 넘긴다(타임라인 전체 ·
+`TARGET_EVENT_TYPES` · `InitialSearchBudget`). 이 모듈은 §10 불변조건을 검증해서
+"계약을 어기는 요청은 애초에 만들지 않는다"(§9 「입력 검증 실패 → case 측에서 요청
+자체를 생성하지 않음」)는 책임만 진다.
 
 `hint.vehicle`/`hint.free_text`는 다르다 — `case.hints`(B절 hints 스키마: time/vehicle/
-situation/location)에서 직접 파생한다. 5개 시나리오 fixture 교차 확인(2026-09-14):
+situation/location)에서 직접 파생한다. 6개 시나리오 fixture 교차 확인(2026-09-14):
 `hint.vehicle == case.hints["vehicle"]`, `hint.free_text == case.hints["situation"]`
 (sanitize 이전 원문 기준) — `scenario_correction_rerun_001`/`scenario_empty_001`/
 `scenario_plate_reread_001`/`scenario_unknown_abstain_partial_001`/

@@ -1,5 +1,7 @@
 # 관찰 job 입력 고정 · IncidentClip 준비 단위 · 발주 순서 (8-6 2단계 · RT-10(b))
 
+> 용어: `8-6 2단계` = CaseStore MySQL 작업(W7 고도화 목록 8-6)의 2단계(`observation-storage.md`). `RT-10` = Runtime 구현 Task 「Worker 실제 kind handler 등록」(`docs/runtime/runtime-implementation-plan.md` §6). `6.6순위` = W7 고도화 목록(`../design-refinement-w7-baseline.md`)의 재선택 가드 항목.
+
 > **상태: RT-10 Implementer(정철원) · Runtime/Ops Owner(김준영) 확인 완료 — web(신유민) label 확인 대기** · 작성 2026-10-23 · 갱신 2026-10-24 · 담당 유소연(`case`) · 근거 #297 [정철원 10-22 제안](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6338265847) · [김준영 10-22 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6340336360) · [서어진 10-23 Search 답변](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6364998000) · [정철원 10-24 확인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6380237333) · [정철원 10-24 요청 정리](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6380318817) · [김준영 10-24 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/297#issuecomment-6380794802) · `observation-storage.md` §1 · §6 미결 · 6.6순위 조건 2 · `reselect-observation-reuse.md` · `contract-case-command.md` 초기 선택(#168 결정 1)
 > 어느 후보를 언제 관찰하고 무엇을 다시 발주하는지는 case 결정 범위다(Tech Spec §12 「Worker가 orchestration 결정을 새로 만듦」 금지). IncidentClip 본체의 durable 보관 · 복원 · 동일성은 recording(REC) 몫이고, handler 등록 · T1 처리 · 재시도는 Runtime 몫이다. 이 문서는 그 둘이 기대는 **case 쪽 입력과 순서**만 정한다.
 
@@ -15,6 +17,8 @@
 **범위 밖:** IncidentClip 본체 보관 · close/restart 복원 · 생성 후 T1 전 crash 처리(recording · Runtime) · T1 persistence retry · COMMIT 불명 복구(Runtime) · handler 내부 구현 · `EvidenceNeeds` 자동 재발주(`observation-storage.md` §1과 같음) · 6.6순위 조건 1(준비 중 재선택 금지) · `REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT` 입력.
 
 ## 2. 지금
+
+> (2026-11-08 현재: 이 표는 2026-10-23 작성 당시 상태다. 지금은 §9 4단계까지 들어가 비동기 경로가 §3 흐름대로 돈다 — Coarse T2 자동 선택(`reflection._apply_coarse_search`), 관찰 입력 고정(`CaseStore.observation_input`), 재선택 뒤 빠진 단계 발주(`observation.issue_missing_for_selected`). clip 본체는 recording MySQL 저장소에 남는다(`src/daesingo/recording/mysql_repository.py` `get_incident_clip`).)
 
 | 무엇 | 지금 |
 | --- | --- |
@@ -87,7 +91,7 @@
 
 ## 5. 알려진 한계
 
-- clip 본체가 recording에 durable하게 남기 전에는(§1 범위 밖) `INCIDENT_CLIP_BUILD`와 판독이 다른 process에서 같은 clip을 열 수 없다. 첫 비동기 E2E는 recording 쪽 보관이 들어온 뒤 돈다.
+- clip 본체가 recording에 durable하게 남기 전에는(§1 범위 밖) `INCIDENT_CLIP_BUILD`와 판독이 다른 process에서 같은 clip을 열 수 없다. 첫 비동기 E2E는 recording 쪽 보관이 들어온 뒤 돈다. (2026-11-08 현재: recording MySQL 저장소가 clip을 보관한다 — §2 주석.)
 - `observation_inputs`는 case state JSON에 쌓인다. case당 관찰 job이 몇십 개 수준이라 지금은 문제 삼지 않는다.
 
 ## 6. 미결 (채우지 않는다)

@@ -8,7 +8,7 @@
 것은 그 결정이 문서로만 존재하는 게 아니라 실제 코드가 재현한다는 뜻이다.
 
 이 시나리오를 재현하려고 이번에 `labels.py`/`view.py`에 추가/정정한 것(§7 원문 근거):
-  - `case_type_display`: `visual_event_type.value == null`일 때 `INFO_UNKNOWN`(B절 §7-(1) 규칙 1).
+  - `case_type_display`: `visual_event_type.value == null`일 때 `INFO_UNKNOWN`(CaseView 계약 B절 §7-(1) 규칙 1).
   - `report_type_display`/`package.report_field_states.safety_report_type`: `needs_review == true`가
     `observability`보다 우선한다는 §7-(1) 규칙 3 — 이전 코드는 이 우선순위를 누락하고 있었다.
   - `event_time_display.needs_review`: `resolution_status == NEEDS_REVIEW` 그대로 옮김(§7-(2)) —

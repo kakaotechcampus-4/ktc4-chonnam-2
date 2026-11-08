@@ -1,6 +1,6 @@
 # 후보 시각 출처(`at_provenance`) 값 공간 정의 + `at_provenance_label_key` 신설
 
-> 결정일 2026-09-14 · 담당 유소연(`case`) · 근거 `docs/erd-review-case-decisions` PR 리뷰 코멘트 Q-3(신유민 지적) · 이슈 #39 Required-3 후속
+> 결정일 2026-09-14 · 담당 유소연(`case`) · 근거 `docs/erd-review-case-decisions` 브랜치 PR 리뷰 코멘트 Q-3(신유민 지적) · 이슈 #39 Required-3 후속
 
 ## 배경
 
@@ -54,6 +54,8 @@ correction이 `event_time_display`는 갱신하지만 `at_provenance`는 건드�
 값이 없는 상태(「시각 미확정」)가 출처 문구보다 먼저 보여야 한다는 web 제안은 case 원칙(값이 없으면 `INFO_UNKNOWN`이 먼저 표시되는 `report_field_states` 패턴)과 충돌이 없다. 필드 순서 자체를 스키마가 강제하지는 않으며 web 렌더링 재량이다.
 
 ## 아직 미결로 남는 것
+
+> (2026-11-08 현재: 아래 첫째·둘째 항목은 끝났다. 매핑표는 `src/daesingo/case/labels.py` `at_provenance_label_key()`에 있고 `view.py`가 쓴다. `data/mock/case/`에서 후보가 있는 6개 fixture에 값이 들어 있다(`scenario_empty_001`은 후보가 없다).)
 
 - `data/mock/case/` 7개 fixture 파일의 candidates 14곳(post-evidence 12 · pre-evidence 2)에 `at_provenance_label_key` 실값 반영 — 이 문서/계약 확정의 후속 커밋.
 - `src/daesingo/case`의 `_build_candidates_view()`(또는 동등 projection 로직)에 매핑 테이블 구현 — 위 fixture 반영과 같은 후속 작업.

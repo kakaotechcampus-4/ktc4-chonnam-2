@@ -61,6 +61,7 @@ GPT-5 Nano는 평균 12,745ms로 나머지 둘(2,676ms/3,417ms)보다 **3.7~4.8�
 ## 8. 남은 것 — 이 결정이 안 끝낸 일
 
 - **실제 프로덕션 배선은 이 결정의 범위 밖이다.** `CaseAggregate.intake()`가 아직 구조화된 `hints`만 받고, 원문 자연어를 GPT-5 Nano로 실제 호출하는 코드는 `domain.py`/`scope.py` 어디에도 없다 — 이건 별도 구현 작업(설계 고도화 우선순위 목록 3순위)이다.
+  (2026-11-08 현재: 배선됐다. `src/daesingo/case/analysis_start.py`의 `start_analysis()` · `edit_hint()`가 `HINT_EXTRACT` job을 비동기로 발주하고, 호출은 `src/daesingo/search/intent.py`가 한다. 기본 모델은 `gemini-3.8-flash`다.)
 - `research/...` §4 테스트 문장을 실사용자 로그로 교체(v2 dataset) — 미결. §9가 찾은 case-04류 위치 단서 판정 기준 공백도 v2에서 같이 메운다.
 - Elice 쪽 `ELICE_API_KEY`/`ELICE_URL_*`/`JUDGE_MODEL_URL` 실제 값은 `.env`(gitignore 대상)에만 있고 이 문서·리포 어디에도 값 자체를 남기지 않는다.
 
@@ -100,8 +101,9 @@ GPT-5 Nano는 평균 12,745ms로 나머지 둘(2,676ms/3,417ms)보다 **3.7~4.8�
 3. **§5의 latency 트레이드오프가 더 나빠졌다.** "12.7초는 비동기 job이라 괜찮다"는 논리는 그대로지만, 실제 latency가 처음 추정보다 더 벌어졌다(16.9~17.5초, Gemini 3.8 Flash 대비 4~9배). 품질 우위가 사라진 상태에서 이 격차만 남았다 — PM이 "latency가 마냥 긍정적으로 안 보인다"고 지적한 지점이 맞았다.
 4. **Gemini 3.8 Flash는 3차례 실측 전부에서 최고 또는 최상위권**이었다(field 정확도·hallucination 둘 다) — 특히 GPT-5 Nano가 가장 약했던 correction 안전성 카테고리를 가장 잘 처리했다(97~100%).
 5. **§4가 Gemini 3.1 Flash-Lite를 배제한 이유(Preview 상태)가 3.8 Flash에는 없다.** 2026-09-02 GA 전환 확인(Google 공식 발표, WebSearch로 검증). search 모듈이 이미 Elice로 실사용 중인 모델이라 신규 벤더 온보딩 비용도 없다(`src/daesingo/search/config.py`).
+   (2026-11-08 현재: search의 Coarse · Fine 기본 모델은 2026-10-27에 `gemini-4-argon`으로 바뀌었다. intent는 `src/daesingo/search/intent.py`의 `DEFAULT_INTENT_MODEL`로 따로 `gemini-3.8-flash`를 유지한다.)
 
-**하지 않은 것 — 비용 단가.** *(2026-10-05 해소: 입력 ₩1,141 · 출력 ₩5,709 / 1M 토큰, Elice 모델 카드 확인 — `scripts/pricing.py`, §13.)* Elice가 이 모델에 매기는 정확한 KRW 단가를 아직 못 구했다(`pricing.py`에 없음, Elice 모델 카드 직접 확인 필요 — 소연님 확인 대기). Google 공식 요율($0.75/$3.75)은 참고치일 뿐 Elice 마크업이 반영된 값이 아니다. 다만 search 모듈이 이미 이 모델을 실사용 중이라는 사실 자체가 팀이 감당 가능한 비용 수준이라는 간접 근거로 본다 — 확정 단가가 나오면 이 문서를 갱신한다.
+**하지 않은 것 — 비용 단가.** *(2026-10-05 해소: 입력 ₩1,141 · 출력 ₩5,709 / 1M 토큰, Elice 모델 카드 확인 — `experiments/intent-llm-model-comparison/scripts/pricing.py`, §13.)* Elice가 이 모델에 매기는 정확한 KRW 단가를 아직 못 구했다(`pricing.py`에 없음, Elice 모델 카드 직접 확인 필요 — 소연님 확인 대기). Google 공식 요율($0.75/$3.75)은 참고치일 뿐 Elice 마크업이 반영된 값이 아니다. 다만 search 모듈이 이미 이 모델을 실사용 중이라는 사실 자체가 팀이 감당 가능한 비용 수준이라는 간접 근거로 본다 — 확정 단가가 나오면 이 문서를 갱신한다.
 
 **하지 않은 것 — 실사용자 로그 기반 확인.** §1이 원래 갖고 있던 표본 문제(실사용자 로그로 재측정)는 아직 실행 전이다(`research/intent-hint-real-text-collection-plan.md`, 설문 계획만 준비됨). 다만 세 번의 독립적인 synthetic 실측(27/34/48케이스, 서로 다른 케이스 구성)에서 순위가 일관되게 나왔다는 것으로, 이 확인을 기다리지 않고 지금 결정을 내려도 된다고 판단했다 — 실사용자 로그 실측이 나중에 다른 결과를 보이면 §11 트리거로 다시 연다.
 

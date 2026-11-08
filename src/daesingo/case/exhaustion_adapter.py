@@ -1,4 +1,8 @@
-"""Case-owned #405 adapter. The service owns policy; Runtime owns delivery."""
+"""Runtime이 보낸 job 소진 알림(재시도까지 `STALE`로 끝남)을 case에 반영하는 어댑터.
+
+호출자 DB 연결로 `CaseStore`를 만들고 `service.receive_hint_exhaustion()`에 넘긴다.
+정책은 service가, 알림 전달은 Runtime이 맡는다(#405).
+"""
 from collections.abc import Callable
 
 from sqlalchemy.engine import Connection

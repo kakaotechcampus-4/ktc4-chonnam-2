@@ -1,3 +1,9 @@
+"""후보 영상 미리보기(`CANDIDATE_VIDEO_PREVIEW`) — 후보 카드에서 볼 짧은 clip의 상태 계산과 발주.
+
+rank 1~3의 현재 세대 후보만 대상이다. 상태는 JobRecord · 고정 입력 · 반영 결과로 계산한다
+(`NOT_REQUESTED` · `PREPARING` · `READY` · `FAILED` · `UNAVAILABLE`). 결정은
+`docs/modules/case/decisions/candidate-video-preview.md`.
+"""
 from typing import Final, Literal, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -10,6 +16,8 @@ PREVIEW_KIND: Final = CANDIDATE_VIDEO_PREVIEW
 MAX_PREVIEW_RANK: Final = 3
 # Intermediate release identity: readers/workers stay enabled; no env override.
 # Fixed final bb29d750 retains its original enabled issuance path.
+# (bb29d750 = 고정 최종 배포 후보 커밋. 이 중간 호환 release에서는 신규 발주를 끈다 —
+#  `docs/runtime/rt14-preview-bridge.md`)
 PREVIEW_REQUESTS_ENABLED: Final = False
 
 

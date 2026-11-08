@@ -1,6 +1,6 @@
 # 빈 case 생성과 업로드마다 `manifest_summary` 갱신
 
-> **상태: 결정 · 구현** · 결정일 2026-10-05 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-12 · 8-17(case 쪽)(`design-refinement-w7-baseline.md`), #247 H-2, HTTP API Contract Draft §5.1 · §5.2 · §9(#265)
+> **상태: 결정 · 구현** · 결정일 2026-10-05 · 담당 유소연(`case`) · 근거 W7(7주차) 설계 고도화 목록 8순위 8-12 · 8-17(case 쪽)(`../design-refinement-w7-baseline.md`), #247 H-2, HTTP API Contract Draft §5.1 · §5.2 · §9(#265)
 > case 공개 함수 · aggregate 초기값 · `manifest_summary` 갱신 규칙이라 case 단독 결정 범위다. `failed_file_count`의 의미 · `duration_sec` · `range`는 정하지 않는다(아래 「남은 것」).
 
 ## 배경
@@ -49,10 +49,12 @@ HTTP API Contract는 case를 **빈 상태로 먼저 만들고**(`POST /cases`, b
 ## 배선 조건 (recording 리뷰, #270 @cheol1203)
 
 - **입력 형식:** recording 공개 capability는 `SourceAsset` typed model(pydantic)을 돌려준다. `record_source_registered()`는 계약 dict를 받으므로 composition root가 `model_dump(mode="json")`로 바꿔 넘긴다 — 변환은 composition root의 일이고 case는 typed model을 import하지 않는다.
-- **같은 transaction의 rollback은 아직 전제다.** 「recording 등록과 case 반영이 한 DB transaction이라 함께 rollback된다」는 recording persistence(RD-17) 구현 뒤에 성립한다. 지금 recording 등록은 process-local이라 case가 `SourceNotAccepted`로 거부해도 recording 쪽 등록은 남는다 — 향후 통합 전제로 구분한다.
+- **같은 transaction의 rollback은 아직 전제다.** 「recording 등록과 case 반영이 한 DB transaction이라 함께 rollback된다」는 recording persistence(RD-17) 구현 뒤에 성립한다. 지금 recording 등록은 process-local이라 case가 `SourceNotAccepted`로 거부해도 recording 쪽 등록은 남는다 — 향후 통합 전제로 구분한다. (2026-11-08 현재: 성립한다. api composition root(`src/daesingo/api/composition.py` `_register_source()`)가 `MySQLRecordingRepository`와 case 반영을 한 `run_api_transaction` 안에서 부른다.)
 
 ## 남은 것
 
 - **`failed_file_count`의 의미** — 계약은 「파일 등록 실패 수」인데 거부된 upload(`422`)는 기록 없이 버려져 셀 수 없다. case 제안은 「손상 파일을 recording이 `UNAVAILABLE`로 등록 · 연결하면 case가 센다」이고 recording · web과 정한다(#265 §9). 그 전까지 0이라 `UNAVAILABLE` · `UNKNOWN` 파일이 오면 `file_count ≠ ok_file_count + failed_file_count`다 — web은 `file_count - ok_file_count`를 「실패」로 계산하지 않는다.
 - **`duration_sec` · `range`** — recording timeline 정의가 나오면(#184) 그 값을 옮긴다.
 - **분석 시작(8-1)** 때 adapter를 붙이는 지점 · 8-6(CaseStore MySQL, #267)에서 `store`가 `repository, conn`으로 바뀌는 것.
+
+> (2026-11-08 현재: `duration_sec`은 분석 시작이 받는 timeline 길이로 채운다(`timeline-duration.md`). `range`는 그대로 `null`이다. `CaseStore`는 `repository` · `conn`을 받는다(`src/daesingo/case/store.py`). `failed_file_count`는 여전히 0이다.)

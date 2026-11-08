@@ -1,6 +1,6 @@
 # case 대기 timeout — 타이머 없이 마감을 계산하고, 늦은 결과는 반영하지 않는다
 
-> **상태: 결정 · 구현(탐색 `COARSE_SEARCH`만)** · 결정일 2026-10-13 · 준비 여유 추가 2026-11-04(#452, §3-8 · 계수 2.0 · 상한 60분 PM 잠정 승인) · 탐색 예산 E2E 한정 예외 2026-11-05(#452, §3-9) → 공개 RC 동안 600초 유지 2026-11-07(§3-10) · 갱신 2026-10-26(web · Runtime 확인 반영) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-9(`../design-refinement-w7-baseline.md`), `timeout-fallback.md`(잠정값 · 「진행 중인 Job은 강제 취소하지 않는다」), `stop-analysis.md`(같은 guard), `running-jobs-derivation.md`(정산 사유 `STOPPED_WAITING`), Runtime Tech Spec §12.2 · Provisional Baseline §3.2(RD-04b), #291(`runtime.retry.after_case_stopped_count` 의미)
+> **상태: 결정 · 구현(탐색 `COARSE_SEARCH`만)** · 결정일 2026-10-13 · 준비 여유 추가 2026-11-04(#452, §3-8 · 계수 2.0 · 상한 60분 PM 잠정 승인) · 탐색 예산 E2E 한정 예외 2026-11-05(#452, §3-9) → 공개 RC 동안 600초 유지 2026-11-07(§3-10) · 갱신 2026-10-26(web · Runtime 확인 반영) · 담당 유소연(`case`) · 근거 W7(7주차) 설계 고도화 목록 8순위 8-9(`../design-refinement-w7-baseline.md`), `timeout-fallback.md`(잠정값 · 「진행 중인 Job은 강제 취소하지 않는다」), `stop-analysis.md`(같은 guard), `running-jobs-derivation.md`(정산 사유 `STOPPED_WAITING`), Runtime Tech Spec §12.2 · Provisional Baseline §3.2(RD-04b), #291(`runtime.retry.after_case_stopped_count` 의미)
 > 「얼마나 기다린 뒤 부분 결과로 넘어가는가」와 「그때 어떤 job을 유지 · 취소하는가」는 case 소유다(`timeout-fallback.md`). 실행 상한 값(`AnalysisScope.budget.max_latency_sec`)은 그 문서와 #149 A안이 정했고 여기서 다시 정하지 않는다.
 
 ## 1. 목표 · 범위

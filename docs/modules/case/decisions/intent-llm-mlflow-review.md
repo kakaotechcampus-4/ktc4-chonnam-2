@@ -36,11 +36,11 @@ MLflow(`mlflow.genai.evaluate()`)는 평가 실행 · metric 추적 · run 비�
 | 단일 점수(정확도 × 일관성) · 5회 반복 확정(멘토 Q2, 10/05) | robustness-v3 100케이스 × 5회 × 2모델 | 아니요 — `consistency_eval.py` |
 | challenger 검증 — GPT-6 Luna · reasoning effort(#281, 10/06) | 6개 설정 | 아니요 — 하네스에 `model@effort` 옵션 추가 |
 
-- 집계는 손으로 하지 않는다 — 스크립트가 낸다. 결과 해석은 `results/*.md`와 결정 문서(`intent-llm-model-selection.md` §12~14)에 남겼다.
+- 집계는 손으로 하지 않는다 — 스크립트가 낸다. 결과 해석은 `experiments/intent-llm-model-comparison/results/*.md`와 결정 문서(`intent-llm-model-selection.md` §12~14)에 남겼다.
 - **원본 관리는 멘토 리뷰 #146으로 정해졌다.** 모델 출력 · judge 판정 JSON은 레포에 두지 않고 실험마다 zip으로 팀 공유 드라이브에 두며, 결과 문서 첫머리 「원본」 줄에 파일 이름을 적는다(`experiments/intent-llm-model-comparison/README.md`, 같은 폴더 `.gitignore`). MLflow artifact store가 맡을 자리를 이 규칙이 채우고 있다.
 **셋업 비용 — 무엇이 가볍고 무엇이 무거운가**
 - **저장소는 가볍다(9/24 판 근거 정정).** 트래킹 서버가 필요하지 않다. `mlflow.set_tracking_uri("sqlite:///…")` 한 줄이면 로컬 SQLite 파일에 기록하고, 파일이 없으면 MLflow가 만든다. 그래서 「트래킹 서버/스토어 구성이 비용」이라는 9/24 서술은 근거로 쓰지 않는다.
-- **judge 연결이 무겁다.** 우리 후보 · judge 모델은 Anthropic · Google API를 직접 부르지 않는다. Elice 프록시를 모델마다 다른 OpenAI 호환 `base_url`로 부른다(`scripts/candidates.py` — 후보는 모델별 환경변수, judge는 `JUDGE_MODEL_URL`).
+- **judge 연결이 무겁다.** 우리 후보 · judge 모델은 Anthropic · Google API를 직접 부르지 않는다. Elice 프록시를 모델마다 다른 OpenAI 호환 `base_url`로 부른다(`experiments/intent-llm-model-comparison/scripts/candidates.py` — 후보는 모델별 환경변수, judge는 `JUDGE_MODEL_URL`).
   - MLflow의 직접 provider 방식(`anthropic:/…` · `gemini:/…`)은 각 사의 공식 API 키를 전제한다. 그래서 그대로는 붙지 않는다.
   - 붙이는 방법은 두 가지다. ① AI Gateway에 OpenAI provider endpoint를 모델마다 만들고 `openai_api_base`를 지정한 뒤 `gateway:/<endpoint>`로 부른다(Gateway 설정 · 실행이 추가된다). ② custom scorer 안에서 지금처럼 직접 호출한다(이러면 judge 호출 코드는 그대로 우리가 들고 간다).
 - **기존 결과 이전.** 원본 JSON은 #146 규칙대로 레포가 아니라 공유 드라이브 zip에 있어, 옮기려면 받아서 변환해야 한다.

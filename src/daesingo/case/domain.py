@@ -5,6 +5,9 @@
   - selection_rev 단일 현재값 저장(별도 이력 테이블 없음):
     `docs/modules/case/decisions/case-selection-revision-persistence.md` (2026-09-13)
   - CaseView에는 절대 selection_rev를 노출하지 않는다(위 결정 그대로) — `view.py` 참고.
+  - 본문의 `§3-E`는 `docs/modules/case/checklists/phase1-completion-checklist.md` §3-E다 — `case_rev`는
+    「요청 시점 케이스 리비전」이라 사용자 요청만 올리고 실행 결과는 올리지 않는다. `A§` · `B§`는
+    `contract-job-record-case-view.md`의 A절(JobRecord) · B절(CaseView) 절 번호다.
 
 ⚠️ 역행 전이 구현 범위(2026-09-14 갱신): `module-architecture.md` §4-모듈5 ②는 "`TIME_HINT_EDIT`,
 major `TIMELINE_REBASE`, candidate 변경 등에 의해 뒤 단계에서 앞 단계로 돌아갈 수 있다"고만
@@ -13,13 +16,14 @@ major `TIMELINE_REBASE`, candidate 변경 등에 의해 뒤 단계에서 앞 단
 구체화한다. 그 표 기준으로 실제 구현 가능한 것과 막힌 것을 나눴다:
   - `TIME_HINT_EDIT` — 표 1행 그대로 `SEARCHING`으로 역행(`regress_to_searching()`). case가
     소유한 순수 workflow state라 case 혼자 구현 가능.
-  - `OTHER_CANDIDATE`("candidate 변경") — 표 2행을 보면 실제로는 역행이 **아니다**: 뒤 단계
-    (`EVIDENCE_REVIEW`)에 "제자리"로 머문다(`reselect_candidate()`). §4-모듈5 ②의 "candidate
+  - `OTHER_CANDIDATE`("candidate 변경") — 표 2행을 보면 `EVIDENCE_REVIEW`에서는 역행이 **아니다**:
+    "제자리"로 머문다(`reselect_candidate()`). 단 `READY`에서는 새 초안을 준비해야 하므로
+    `EVIDENCE_REVIEW`로 내려간다(#173 E-4). §4-모듈5 ②의 "candidate
     변경"이라는 표현이 역행을 뜻하는 것처럼 읽히지만, 더 구체적인 이 연구 메모가 실제로는
     아니라고 정정한다 — 문서 간 불일치이며 원문(module-architecture.md)을 고치는 건 이 세션
     범위 밖이라 그대로 뒀다(2026-09-14 체크리스트 §11 노트 참고).
-  - major `TIMELINE_REBASE` — 표 맨 아래 자체가 "신유민(web)이랑 화면 흐름 확인 안 하면 나
-    혼자 추천하기 어려운 지점"이라고 명시한다. 접합부 문제라 이번에도 구현하지 않는다.
+  - major `TIMELINE_REBASE` — 표 맨 아래 자체가 web Owner와 화면 흐름을 확인해야 정할 수
+    있는 지점이라고 적는다. 접합부 문제라 구현하지 않았다.
   - 나머지 6개 kind(`PLATE_MANUAL_EDIT`/`PLATE_REREAD`/`SPAN_ADJUST`/`REPORT_TYPE_CHANGE`/
     `EVENT_TIME_MANUAL`/`SITUATION_CHANGE`)는 표에서도 stage 전이가 "제자리"라 별도 domain
     메서드가 필요 없다 — `correction.apply_correction()` 하나로 이미 충분하다.
@@ -42,7 +46,8 @@ STAGES = (
     "READY",
 )
 
-# 전진 전이만 1차로 구현한다. 역행 전이는 §11 제외 범위.
+# `_advance()`가 검사하는 전진 전이. 역행 전이는 이 표가 아니라 전용 메서드가 맡는다
+# (`regress_to_searching()` · `reselect_candidate()` · `leave_ready()`).
 _FORWARD_EDGES: dict[str, str] = {
     "INTAKE": "SEARCHING",
     "SEARCHING": "CANDIDATE_REVIEW",
@@ -72,7 +77,7 @@ class InvalidTransition(Exception):
 
 
 class SourceNotAccepted(Exception):
-    """원본 연결은 `INTAKE`에서만 받는다(8-17 case 쪽) — 분석 시작 뒤 추가 업로드는 거부한다.
+    """원본 연결은 `INTAKE`에서만 받는다(`design-refinement-w7-baseline.md` 8-17의 case 쪽) — 분석 시작 뒤 추가 업로드는 거부한다.
     HTTP status · code는 HTTP API Contract가 정한다."""
 
 
@@ -183,7 +188,7 @@ class CaseAggregate:
     settled_jobs: dict[str, str] = field(default_factory=dict)
 
     # Worker T2로 반영을 마친 execution(`execution_id` → `job_id`). 같은 execution이 다시 오면 반영하지 않는다 —
-    # T1 · T2 사이 Worker가 죽거나 T2 commit 응답을 잃으면 Runtime이 다시 넘긴다(Tech Spec §12.2 · #245 D-5,
+    # T1 · T2 사이 Worker가 죽거나 T2 commit 응답을 잃으면 Runtime이 다시 넘긴다(Runtime Tech Spec §12.2 · #245 D-5,
     # `decisions/result-reflection.md`). CaseView 비노출.
     processed_executions: dict[str, str] = field(default_factory=dict)
 
@@ -306,13 +311,13 @@ class CaseAggregate:
 
     def record_candidate_search_failure(self, *, job_id: str | None = None, range_too_long: bool = False,
                                         unsupported_input: bool = False) -> bool:
-        """후보 탐색 Run이 `FAILED`로 끝났다. 계약 §7(`RESUME_SEARCH` 행): 실패 Run은 투영 대상을
+        """후보 탐색 Run이 `FAILED`로 끝났다. CaseView 계약 B절 §7(`RESUME_SEARCH` 행): 실패 Run은 투영 대상을
         바꾸지 않는다 — 후보 목록을 교체하지 않고, `CANDIDATE_REVIEW`로 진행하지도 않는다(그러면
         web이 「결과 없음」으로 그린다). stage는 `SEARCHING`에 머물고 실패 사실만 남긴다.
         실패는 사용자 요청이 아니라 실행 결과라 `case_rev`를 올리지 않는다(§3-E).
 
         `job_id`(Worker 반영 경로)를 주면 그 job을 아직 기다릴 때만 받고 그 job만 정산한다 — 중단 · 대체된 job의
-        늦은 결과면 아무것도 바꾸지 않고 `False`(8-9). 주지 않으면(동기 경로) 기다리던 탐색 job을 모두 정산한다."""
+        늦은 결과면 아무것도 바꾸지 않고 `False`(`decisions/stop-analysis.md`). 주지 않으면(동기 경로) 기다리던 탐색 job을 모두 정산한다."""
         if job_id is not None and not self.awaits_result(job_id):
             return False
         if self.stage != "SEARCHING":
@@ -345,7 +350,7 @@ class CaseAggregate:
     def stop_analysis(self) -> list[str]:
         """사용자가 「분석 진행」을 중단한다(`STOP_ANALYSIS`, #245 C-1). `SEARCHING`에서 기다리던 `HINT_EXTRACT` ·
         `COARSE_SEARCH`만 `CANCELLED`로 정산하고 그 `job_id`를 돌려준다 — 다른 kind의 job은 그대로 기다린다
-        (C-1a B). 사용자 요청이라 `case_rev`를 올린다(§3-E). stage는 `SEARCHING`에 머문다 — 탐색 실패와 같이
+        (#245 C-1a B안 — 지정한 탐색 job만 무효화). 사용자 요청이라 `case_rev`를 올린다(§3-E). stage는 `SEARCHING`에 머문다 — 탐색 실패와 같이
         「후보 없음」으로 보이지 않게 한다(`decisions/stop-analysis.md`)."""
         if self.stage != "SEARCHING":
             raise InvalidTransition(f"{self.stage}에서는 분석을 중단할 수 없다(SEARCHING 전용)")
@@ -386,7 +391,7 @@ class CaseAggregate:
         """case가 이 job의 결과를 기다리는 마감 — 발주 시각 + 실행 상한 + 큐 대기 여유 + 준비 여유, 전체 상한 있음
         (`decisions/case-wait-timeout.md`).
         지금은 `COARSE_SEARCH`만 마감이 있다. 실행 상한은 그 job의 AnalysisScope `budget.max_latency_sec`이고(#149 A안 —
-        단일 권위), scope를 모르면 마감을 지어내지 않는다(`None`)."""
+        scope 예산을 유일한 기준으로 쓴다), scope를 모르면 마감을 지어내지 않는다(`None`)."""
         if record["kind"] != "COARSE_SEARCH":
             return None
         scope = self.analysis_scopes.get(record.get("scope_ref") or "")
@@ -446,6 +451,7 @@ class CaseAggregate:
         ready-only라 존재 자체가 FINAL `PASS`/`WARN`의 증거다 — 없으면 전이를 거부한다(#167).
         downstream 스냅샷에서 판단하는 호출자는 `service.mark_ready_if_package_ready()`를 쓴다."""
         if report_package is None:
+            # #167: READY는 준비된 Package가 있을 때만 성립한다(`PACKAGE_READY` gate).
             raise InvalidTransition("READY는 준비된 ReportPackage 없이 들어갈 수 없다(#167)")
         self._advance("EVIDENCE_REVIEW", "READY")
 
@@ -472,8 +478,9 @@ class CaseAggregate:
         self.bump_revision()
 
     def check_regress_to_searching(self) -> None:
-        """`TIME_HINT_EDIT` 역행을 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(`check_reselect()`와
-        같은 원칙, #166). `correction.edit_time_hint()`가 CorrectionRecord를 남기기 전에 먼저 부른다 —
+        """`SEARCHING` 역행(`TIME_HINT_EDIT` 등)을 받아도 되는지 **아무것도 바꾸지 않고** 검사한다
+        (`check_reselect()`와 같은 원칙, #166). `correction.edit_time_hint()`가 CorrectionRecord를 남기기
+        전에 먼저 부른다 —
         예전엔 기록·`hints`·`case_rev`를 먼저 바꾼 뒤 역행이 거부돼 그것들만 남았다(탐색 실패로
         `SEARCHING`에 머문 case, orchestration 지표 4차 측정)."""
         if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
@@ -487,8 +494,10 @@ class CaseAggregate:
         아예 갖고 있지 않다 — 애초에 지울 게 없다). `selection_rev`는 건드리지 않는다(과거
         correction_records가 스냅샷해 둔 값과의 정합성을 깨지 않기 위해 — 단조 증가만 유지).
 
-        `case_rev`는 여기서 올리지 않는다 — 이 메서드를 부르는 `correction.edit_time_hint()`가
-        `apply_correction()`으로 이미 한 번 올린다(한 사용자 요청 = 한 case_rev 증가, §3-E).
+        `case_rev`는 여기서 올리지 않는다 — 호출 경로가 따로 올린다(한 사용자 요청 = 한 case_rev
+        증가, §3-E). 호출자: `correction.edit_time_hint()`(`apply_correction()`으로 올림),
+        `analysis_start.edit_hint()`(`EDIT_HINT`), `command._run_notice_action()`(결과 없음에서
+        다시 찾기, #426).
         """
         self.check_regress_to_searching()
         self.stage = "SEARCHING"
@@ -527,7 +536,7 @@ class CaseAggregate:
 
     def preparing_selected_candidate(self) -> bool:
         """선택 후보의 신고자료를 준비하는 중인가 — 선택 후보 · 현재 세대로 입력이 고정된 관찰 job 중 아직 결과를
-        기다리는 것이 있다(6.6순위 조건 1, `decisions/reselect-while-preparing.md`). 입력 없이 발주된 job(동기 · 데모
+        기다리는 것이 있다(`design-refinement-w7-baseline.md` 6.6순위 조건 1, `decisions/reselect-while-preparing.md`). 입력 없이 발주된 job(동기 · 데모
         경로)은 보지 않는다."""
         selected = next((c.candidate_id for c in self.candidates if c.selected), None)
         generation = self.current_generation_job_id()

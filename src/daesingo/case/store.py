@@ -108,15 +108,16 @@ class InMemoryCaseRepository:
         self._rows[case.case_id] = new
 
 
-# case · 호출자 transaction의 conn → 이번 요청의 adapter(8-6 2단계 `observation-storage.md` §4-3). composition root가 꽂는다.
+# case · 호출자 transaction의 conn → 이번 요청의 adapter(`observation-storage.md` §4-3). composition root가 꽂는다.
 AdapterFactory = Callable[[CaseAggregate, Any], ModuleAdapter | None]
 
 
 class AdapterRegistry:
-    """case_id → adapter(process 메모리). adapter는 2단계에서 없앨 대상이라 DB에 넣지 않는다.
+    """case_id → adapter(process 메모리). adapter는 DB에 넣지 않는다 — 운영 경로(API · Worker)는
+    `adapter_factory`를 쓰고, 이 registry는 테스트 · 데모용이다.
 
     `RealAdapter` · `RealVideoAdapter`는 생성 때 받은 aggregate를 들고 있다. load가 늘 새 객체를 주므로
-    요청마다 방금 로드한 aggregate를 `bind_case`로 다시 붙인다(spec §5)."""
+    요청마다 방금 로드한 aggregate를 `bind_case`로 다시 붙인다(`case-store-mysql.md` §5)."""
 
     def __init__(self) -> None:
         self._by_case: dict[str, ModuleAdapter | None] = {}
@@ -138,7 +139,7 @@ class CaseStore:
     만든다. 기본값은 in-memory(테스트 · 로컬)이고, `executions`가 없으면 실행 기록이 없는 것으로 본다. MySQL transaction은 READ COMMITTED여야 한다 — `MySQLCaseRepository` docstring 참고.
 
     `adapter_factory`가 있으면 진입점은 registry 대신 그것으로 요청마다 adapter를 만든다(`adapter_for`) — process
-    메모리에 case별 adapter를 들지 않는 경로다(8-6 2단계 §4-3). 없으면 지금처럼 registry에서 꺼낸다(테스트 · 데모)."""
+    메모리에 case별 adapter를 들지 않는 경로다(`observation-storage.md` §4-3). 없으면 지금처럼 registry에서 꺼낸다(테스트 · 데모)."""
 
     def __init__(
         self,

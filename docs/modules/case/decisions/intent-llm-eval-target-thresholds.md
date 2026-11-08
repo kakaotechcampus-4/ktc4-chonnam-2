@@ -7,6 +7,8 @@
 
 `experiments/intent-llm-model-comparison/scripts/aggregate.py`가 이미 집계하는 지표에 아래 목표치를 1차로 건다. **아직 실측(§7 미결 — API 키/모델 ID 확정) 전이라 전부 잠정치**이고, `datasets/intent-hint-eval-v1.jsonl`로 GPT-5 Nano / Gemini 3.1 Flash-Lite / Claude Haiku 4.5 3개 후보를 실제로 돌려본 뒤 이 문서를 갱신하거나 새 결정 문서로 승격한다.
 
+> (2026-11-08 현재: 실측은 2026-09-19에 끝났다. 결과 대조는 §4, 모델 선택은 `decisions/intent-llm-model-selection.md`.)
+
 | 지표 (aggregate.py 기준) | 목표치 (1차) | 표본 크기(n, 후보 1개 기준) | 딥리서치 제안치 대비 |
 | --- | --- | --- | --- |
 | `schema_compliance_rate` | 99% 이상 | 7 (case 1건당 1) | 조사에선 별도 수치 없음 — Structured Outputs strict mode 강제 시 "거의 100%"라는 서술 근거로 신설 |
@@ -26,7 +28,7 @@
   - 곱으로 둔 이유: 둘 중 하나만 낮아도 점수가 내려가게 — 정확하지만 흔들리는 모델과 일관되지만 틀리는 모델을 둘 다 걸러 낸다.
 - **통과 조건(점수와 별개):** `hallucination_rate` 5% 이하(위 표 그대로). 지어내는 모델은 점수가 높아도 탈락이다.
 - 점수가 비슷하면(차이 0.02 이내) latency · 비용을 본다.
-- 측정 · 결과: `experiments/intent-llm-model-comparison/results/consistency-robustness-v3.md`, 하네스 `scripts/consistency_eval.py`.
+- 측정 · 결과: `experiments/intent-llm-model-comparison/results/consistency-robustness-v3.md`, 하네스 `experiments/intent-llm-model-comparison/scripts/consistency_eval.py`.
 
 ### 1.1 표본 크기 한계 — 퍼센트를 소수점 단위로 믿지 않는다
 

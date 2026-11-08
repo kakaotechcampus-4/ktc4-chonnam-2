@@ -78,7 +78,7 @@ Coarse가 엉뚱한 진로변경 후보를 찾아왔던 것이다.
 않는다 — case 내부 어디에도 아직 어떤 이벤트 유형으로 검색할지 결정하는 로직이 없다(intake
 시점 UI 흐름이 아직 범위 밖). 그래서 이 값들은 호출자가 그대로 공급한다."* 즉 하드코딩은
 architecture가 요구하는 게 아니라, "월요일 대표 영상 1건"짜리 스모크 테스트용 임시값(변수명
-자체가 `_MONDAY_...`)이 다른 호출자에게도 새 나간 것 — 영구히 유지할 이유가 없었다.
+자체가 `_MONDAY_...`)이 다른 호출자에게도 새어 나간 것 — 영구히 유지할 이유가 없었다.
 
 **수정:** `prepare_real_video_context()`/`build_real_video_evidence_bundle()`/
 `RealVideoAdapter.__init__()`에 `target_event_types` 매개변수를 추가하고(생략 시 기존

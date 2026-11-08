@@ -1,23 +1,24 @@
-"""Mock 시나리오 fixture용 real E2E 파이프라인(기본 `scenario_happy_001`) — recording → search →
-readout → evidence까지 전부 실제 공개 함수를 호출한다(W5/W6, 2026-09-22 월 20:00
-회의 데드라인 대응).
+"""선택한 후보 하나에 대해 recording → search(Fine) → readout → evidence를 실제 공개 함수로
+이어 부르는 파이프라인이다. Mock 시나리오 fixture 경로(기본 `scenario_happy_001`)와 로컬 영상
+경로(`build_real_video_evidence_bundle()` 등) 두 가지가 있다. 처음 만든 때는 2026-09-22
+대표 시나리오 E2E 확인이다.
 
 기준은 "대표 시나리오 1개가 전체 흐름을 실제로 통과하는가"이지 모든 단계가 PASS
 등급을 받는가가 아니다(요청 문서 "이번엔 안 해도 되는 것" — 모든 edge case·완성된
 Worker 배선은 이번 범위 밖).
 
-## 알려진 단순화 (정직하게 남김 — W7에서 메운다)
+## 알려진 단순화 (정직하게 남김)
 
 - **`time_source_candidates`**: recording의 `RecordingFixture` pydantic 모델에 이
-  필드 자체가 없다(1차 구현 범위 밖) — 공개 함수로 노출된 적이 없으므로 recording의
+  필드 자체가 없다(1차 구현 범위 밖) — fixture 로더가 이 값을 주지 않으므로(로컬 영상 경로는 `observe_time_sources()`) recording의
   raw fixture JSON에서 그대로 읽는다. 이 한 곳만 mock이고 나머지는 전부 real 함수
   호출이다.
 - **`situation_response`**: 2026-09-28부터 `CaseAggregate.record_situation_response()`로
   기록된 사용자 응답을 `assemble_evidence_bundle()`에 그대로 전달한다(#171 B-2 · 통합 항목
-  I1). 응답 전에는 `None`(= `NOT_ASKED`)이고, ADR-EVIDENCE-005 D2-c에 따라 Package가 나가지
-  않는다. web에서 응답을 보내는 경로(#106 command)는 아직 없다.
-- **`observation_facts`**: case에 이 값을 만드는 로직이 아직
-  없어 `None`으로 둔다. 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
+  I1). 응답 전에는 `None`(= `NOT_ASKED`)이다. Fine이 OBSERVED면 응답 없이도 Package가 나갈 수 있고
+  (#597), UNCERTAIN이면 「잘 모르겠어요」 응답 전까지 조립하지 않는다.
+- **`observation_facts`**: 이 파일의 fixture·로컬 영상 경로는 `None`으로 둔다(저장된 관찰을
+  읽는 `stored_observation.py`는 export 결과로 이 값을 채운다). 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
   못 미쳐 `build_report_package()`가 `PackageNotReady`를 던질 수 있다 — 이건 실패가
   아니라 "정보가 부족해 아직 패키지를 못 만든다"는 실제 도메인 상태이고, `CaseView`의
   partial 표현이 원래 이런 상태를 위해 있다(`module-architecture.md` §5-12).
@@ -48,8 +49,8 @@ IncidentClip·readout·TimeResolution·evidence를 **시작하지 않고** 정�
 사용자가 "잘 모르겠지만 진행"을 택한 generic 신고 경로이고, `NOT_OBSERVED`는 Fine이 후보를
 기각한 것이라 둘을 합치면 관찰되지 않은 위반으로 신고문을 만들게 된다.
 
-다음 후보를 자동으로 Fine하거나 가장 높은 후보를 자동 채택하는 정책은 여기 없다 —
-`core-user-flow.md`가 정본화된 뒤 Product/Case/Evidence/Web이 함께 정할 후속 변경이다.
+다음 후보를 자동으로 Fine하거나 가장 높은 후보를 자동 채택하는 정책은 이 파일에 없다 —
+rank=1 자동 선택과 첫 Fine 발주는 Worker 경로 `reflection._apply_coarse_search()`가 한다(#168 결정 1).
 
 ## 의존성 — 2026-09-21 develop 병합 완료(PR #128 search·#129 recording·#130 readout·#113 PaddleOCR)
 
@@ -71,13 +72,13 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
   (`get_incident_clip()` → `resolve_frame()` → `read_frame()`)로 프레임과 recording이 발급한
   `frame_ref`를 넘긴다. 예전엔 `LocalVideoFrameSource(원본 경로)`로 원본 파일 전체의
   30/50/70% 지점을 읽어 위반 구간 밖의 프레임을 볼 수 있었다. 샘플링 간격·장수는 readout이
-  정한다(계약 §13 미결).
+  정한다(readout 계약 §13 — Tech Spec으로 넘긴 항목).
 - **`time_source_candidates = []` — 종결.** `rec_service.observe_time_sources()`
   결과를 그대로 전달한다.
 
 ## `build_real_video_evidence_bundle()` — 월요일 real 영상 경로, 알려진 단순화
 
-- **`profile_ref`**: 정철원 확인(2026-09-21, 이슈 #95 D2와는 별개 — D2는 이미 책임
+- **`profile_ref`**: recording Owner 확인(2026-09-21, 이슈 #95 D2와는 별개 — D2는 이미 책임
   경계가 종결돼 월요일 실행이 기다릴 필요 없음) — 480p H.264, preset=veryfast,
   crf=23, audio off. 이 설정은 `profile_ref` 문자열에 인코딩되지 않고 실행 조립 시
   `LocalAnalysisMaterializer`에 명시적으로 등록한다. **최종 canonical profile
@@ -85,21 +86,20 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
   동일성/재사용 판단용 opaque 설정일 뿐 계약 기본값이 아니다.
 - **`AnalysisScope`의 `budget`/`target_event_types`**: case Producer 소유(recording
   소유 아님). 공용 Mock Pack의 happy 기준(`target_event_types=["SOLID_LINE_LANE_CHANGE"]`,
-  `max_cost_krw:1000`)을 월요일 GT 없는 배관 E2E에 재사용한다(정철원 확인,
+  `max_cost_krw:1000`)을 월요일 GT 없는 배관 E2E에 재사용한다(recording Owner 확인,
   2026-09-21) — `SOLID_LINE_LANE_CHANGE`는 실제 영상의 정답을 단정하는 값이 아니라
-  search에 요청하는 탐지 대상이다. `max_latency_sec`는 2026-09-28부터 A-1 잠정값
+  search에 요청하는 탐지 대상이다. `max_latency_sec`는 2026-09-28부터 A-1(`cross-cutting-decisions.md` timeout 결정) 잠정값
   「Coarse 클립당 150초」(`docs/modules/case/decisions/timeout-fallback.md`, #72)를 쓴다 —
   이 경로는 영상 전체를 한 번에 올려 사실상 클립 1개이고, 인라인 상한을 넘는 영상은
-  search가 `MediaTooLargeError`로 막는다. 클립 분할 발주는 #168 후속 결정 뒤 구현한다.
+  search가 `MediaTooLargeError`로 막는다. 클립 분할 발주는 MVP 범위 밖이다(`decisions/long-analysis-range.md`).
 - **candidate 선택은 `candidates[0]`으로 고정한다.** GT 없는 배관 확인이 목적이라
   "어느 candidate가 맞는지"는 이번 범위 밖이다 — `happy_001`이 후보 1개라 우연히
   안전했던 것과 같은 자리다. 후보가 여럿이면 이 단순화가 그대로 드러난다.
-- **readout provider는 여전히 `FixtureOcrProvider`다.** 실제 영상엔 맞지 않는
-  provider이지만, 이건 readout Owner가 확인해야 할 별도 gap이라 이 파일이 대신
-  풀지 않는다.
+- **readout provider는 `PaddleOcrProvider`다**(`_build_ocr_provider()`). `FixtureOcrProvider`는
+  fixture 경로(`observe_fixture_candidate()`)에서만 쓴다.
 - **`RecordingService.close()`는 이 함수가 부르지 않는다.** search가
   `open_analysis_source()`로 바이트를 다 읽기 전에 닫으면 실행 중인 AnalysisSource가
-  해제된다(정철원 확인, 2026-09-21) — 반환값에 `rec_service`를 포함해 호출자가 언제
+  해제된다(recording Owner 확인, 2026-09-21) — 반환값에 `rec_service`를 포함해 호출자가 언제
   닫을지 스스로 결정하게 한다.
 - **2026-09-22 실행 현황(`docs/modules/case/experiments/real-e2e-20260922-monday-baseline.md`
   참고, 상세 기록은 git 커밋 안 되는 `doc/`가 아니라 이 경로에 있다):** 대표 영상
@@ -158,10 +158,11 @@ from daesingo.search.sources import RecordingAnalysisSourceResolver, SourceMeta
 
 DEFAULT_SCENARIO_ID = "scenario_happy_001"
 
-# 공용 Mock Pack happy 기준(정철원 확인, 2026-09-21) — 계약 기본값으로 확정된 게
+# 공용 Mock Pack happy 기준(recording Owner 확인, 2026-09-21) — 계약 기본값으로 확정된 게
 # 아니라 월요일 GT 없는 배관 E2E용 재사용 값이다.
 _MONDAY_TARGET_EVENT_TYPES = ["SOLID_LINE_LANE_CHANGE"]
-# A-1 잠정값(timeout-fallback.md, #72) — Coarse 클립당 150초. runtime 머신 재측정 후 확정.
+# 이 동기 경로 전용 Coarse 클립당 150초 — `timeout-fallback.md` 2026-09-28 잠정값(A-1, #72).
+# Worker 경로 첫 탐색은 `analysis_start.InitialSearchBudget`(600초)를 쓴다.
 _COARSE_CLIP_TIMEOUT_SEC = 150
 _MONDAY_BUDGET = {"max_cost_krw": 1000, "max_latency_sec": _COARSE_CLIP_TIMEOUT_SEC}
 
@@ -200,12 +201,12 @@ def _unique_video_media_stream_ref(media_streams: Any) -> str:
     """등록된 `MediaStream` 중 `media_type == "VIDEO"`가 정확히 하나인지 검증하고 그
     ref를 반환한다.
 
-    정철원(recording) 확인(2026-09-21) — 이건 "여러 VIDEO 후보 중 하나를 임의로
+    recording Owner 확인(2026-09-21) — 이건 "여러 VIDEO 후보 중 하나를 임의로
     고르는 것"이 아니라 **유일성 검증**이다. 월요일 대표 파일(`20260620_141956_EVT_1.avi`)은
     ffprobe 결과 VIDEO 1개/AUDIO 1개뿐이라(subtitle/data는 recording이 등록에서
     제외) 이 검증이 항상 통과해야 정상이다. VIDEO가 0개거나 여러 개면 recording이
     임의로 고르지 않듯 case도 임의로 고르지 않고 여기서 실패시킨다 — 일반적인 복수
-    카메라 선택 정책은 W7 후속이다.
+    카메라 선택 정책은 아직 없다(`docs/modules/recording/multi-source-timeline.md`).
     """
     video_refs = [s.media_stream_ref for s in media_streams if s.media_type == "VIDEO"]
     if len(video_refs) != 1:
@@ -226,7 +227,7 @@ def _match_analysis_source_streams(
     변환한다.
 
     누락(매칭 0개)되거나 중복 매칭(2개 이상)되면 fixture 값으로 보정하지 않고 여기서
-    실패시킨다(정철원 확인, 2026-09-21) — search가 stream을 임의로 고르지 않는 것과
+    실패시킨다(recording Owner 확인, 2026-09-21) — search가 stream을 임의로 고르지 않는 것과
     같은 원칙이다.
     """
     streams: list[Any] = []
@@ -321,7 +322,7 @@ class ObservationBundle:
     """선택된 candidate 하나에 대한 관찰 단계(Fine·IncidentClip·OCR·시간 source·AssetFacts)
     결과. 사용자 정정과 무관하게 정해지는 값만 담는다.
 
-    이슈 #73 WARN ① — 부분 재실행 정책 표에서 `EVENT_TIME_MANUAL`·`REPORT_TYPE_CHANGE` 등은
+    이슈 #73 WARN ①(정정 후 evidence가 다시 계산되지 않던 문제) — 부분 재실행 정책 표에서 `EVENT_TIME_MANUAL`·`REPORT_TYPE_CHANGE` 등은
     "요건 검사만 다시, 절대 안 건드리는 것: 전부"다. 정정이 들어오면 이 묶음은 그대로 두고
     `assemble_evidence_bundle()`(시각·evidence·요건·Package)만 다시 부른다. `NOT_OBSERVED`면
     조립할 것이 없어 `incident_clip` 이하가 전부 `None`/빈 값이다.
@@ -342,11 +343,11 @@ class ObservationBundle:
 
 
 def select_case_assets(incident_clip_ref: str, asset_facts: Iterable[Any]) -> list[Any]:
-    """선택 후보의 IncidentClip 자신과, `lineage`에 그 clip이 있는 asset만 남긴다(5순위,
+    """선택 후보의 IncidentClip 자신과, `lineage`에 그 clip이 있는 asset만 남긴다(`design-refinement-w7-baseline.md` 5순위,
     `decisions/real-e2e-scenarios.md` §4-2). 입력 순서를 지킨다.
 
     역할(`derived_role`)로는 거르지 않는다 — 어느 역할이 패키지에 쓰이는지는 evidence가 정한다. 후보 목록은
-    호출자가 준다: fixture 경로는 fixture에 등록된 전부, 8-6 2단계는 recording 공개 조회 결과. 원소는 recording
+    호출자가 준다: fixture 경로는 fixture에 등록된 전부, 저장된 관찰 경로(`stored_observation.py`)는 recording 공개 조회 결과. 원소는 recording
     `AssetFacts` 모델이나 그 JSON dict다."""
     target = ("incident_clip", incident_clip_ref)
 
@@ -488,7 +489,7 @@ def assemble_evidence_bundle(
         evaluated_at=now,
         time_resolution=time_resolution,
         asset_facts=obs.asset_facts,
-        # 알려진 단순화 2와 같은 이유로 None (모듈 docstring 참고).
+        # 이 파일의 경로에서는 None이다(모듈 docstring 「알려진 단순화」의 `observation_facts` 항목).
         observation_facts=obs.observation_facts,
     )
 
@@ -533,8 +534,9 @@ def build_fixture_evidence_bundle(
     location_hint: str | None = None,
 ) -> EvidenceBundle:
     """recording → `search.verify_visual_with_stream_context` → readout → evidence까지
-    실제 함수로 이어서 실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw
-    fixture/`None`이고 나머지는 전부 각 모듈의 공개 함수 호출 결과다.
+    실제 함수로 이어서 실행한다. 모듈 docstring 「알려진 단순화」의 항목(raw
+    `time_source_candidates`, `observation_facts`·`gps_observation`은 `None`)을 빼면 각 모듈의
+    공개 함수 호출 결과다. OCR provider는 `FixtureOcrProvider`다.
 
     `observe_fixture_candidate()` + `assemble_evidence_bundle()`을 이어 부른다. 정정 후
     다시 계산할 때는 관찰 결과를 재사용하고 조립만 다시 부른다(이슈 #73, `RealAdapter`).
@@ -593,7 +595,7 @@ def observe_fixture_candidate(
         fixture.analysis_sources[0].profile_ref,
     )
 
-    # search와 합의한 stream 선택 경계(2026-09-21, 정철원·서어진) — search가 실제로
+    # search와 합의한 stream 선택 경계(2026-09-21, recording · search Owner) — search가 실제로
     # 분석에 쓴 VIDEO stream ref 하나를 `CandidateEvent`/`VisualVerificationResult`의
     # canonical 계약은 바꾸지 않고 별도 실행 문맥으로 돌려준다. media_type은 월요일
     # 범위에서 `fixture.media_streams`로 읽는다(실제 영상에서는
@@ -610,8 +612,8 @@ def observe_fixture_candidate(
     # Fine 결과를 downstream(두 번째 resolve_span·IncidentClip 포함)으로 밀어넣기 전에
     # 먼저 분류한다(이슈 #137). `NOT_OBSERVED`는 실행 실패가 아니라 "이 후보는 아니다"라는
     # 유효한 관찰 결과이므로, IncidentClip·readout·TimeResolution·evidence 조립을
-    # 시작하지 않고 여기서 정상 종료한다. 다음 후보를 자동으로 고르는 정책은 이번 범위가
-    # 아니다 — `core-user-flow.md`가 정본화된 뒤 별도로 결정한다.
+    # 시작하지 않고 여기서 정상 종료한다. 다음 후보를 자동으로 고르는 정책은 없다
+    # — 사용자가 결과 화면에서 다른 후보를 고른다.
     disposition = classify_visual_evidence(visual_evidence)
     if disposition.decision == NOT_ASSEMBLED:
         return ObservationBundle(
@@ -621,7 +623,7 @@ def observe_fixture_candidate(
             disposition=disposition,
         )
 
-    # 두 번째 resolve_span() (정철원 정정, 2026-09-21) — recording이 이제
+    # 두 번째 resolve_span() (recording Owner 정정, 2026-09-21) — recording이 이제
     # media_stream_ref를 직접 받아 검증·좁히므로, search가 고른 stream으로 다시
     # 명시적으로 부른다. 실제 로컬 영상(`register_local_source`로 등록된 source)에서는
     # media_stream_ref 없이는 이 호출 자체가 실패하므로, 첫 호출과 동일 인자를 그냥
@@ -656,13 +658,13 @@ def observe_fixture_candidate(
         _read_request("readout-native"), provider=readout_providers.FixtureOcrProvider()
     )
 
-    # 알려진 단순화 1 (모듈 docstring 참고) — recording이 아직 공개 함수로 노출 안 함.
+    # 알려진 단순화 1 (모듈 docstring 참고) — recording fixture 로더가 이 값을 주지 않는다.
     raw_recording = json.loads(
         (mock_root / "recording" / f"{scenario_id}.json").read_text(encoding="utf-8")
     )
     time_source_candidates = raw_recording.get("time_source_candidates", [])
 
-    # 5순위 — fixture에 등록된 asset 전부가 아니라 이 후보 clip의 것만 넘긴다.
+    # asset 선택(`real-e2e-scenarios.md` §4-2) — fixture에 등록된 asset 전부가 아니라 이 후보 clip의 것만 넘긴다.
     related = select_case_assets(incident_clip.incident_clip_ref, fixture.asset_facts)
     asset_facts_real = [
         rec_service.lookup_asset_facts(facts.asset_ref).model_dump(mode="json") for facts in related
@@ -714,22 +716,21 @@ def prepare_real_video_context(
     탐색 이전 단계. 이 단계는 candidate와 무관하게 한 번만 한다(전체 영상 범위
     AnalysisSource 하나 재사용 — 모듈 docstring 참고).
 
-    `target_event_types`는 `scope.py`가 이미 명시한 대로("1차 구현 범위" —
-    case에는 아직 intake UI가 이 값을 스스로 결정하는 로직이 없어 호출자가 그대로
-    공급해야 한다) 호출자 책임이다. 생략하면 월요일 대표 영상용 값
+    `target_event_types`는 호출자 책임이다(이 실험 경로는 `analysis_start.TARGET_EVENT_TYPES`를
+    쓰지 않는다). 생략하면 월요일 대표 영상용 값
     (`_MONDAY_TARGET_EVENT_TYPES`)으로 fallback한다 — 이건 계약 기본값이 아니라
     그 영상 하나를 위한 opaque 재사용값일 뿐이다(모듈 docstring 참고, 2026-09-23
     real_e2e_yt0002 실행에서 다른 영상엔 안 맞는다는 게 드러나 매개변수화함).
     """
     # 월요일 대표 파일(20260620_141956_EVT_1.avi) 기준 profile 설정 — 480p H.264,
-    # preset=veryfast, crf=23, audio off(정철원 확인, 2026-09-21). canonical profile
+    # preset=veryfast, crf=23, audio off(recording Owner 확인, 2026-09-21). canonical profile
     # 값 공간이 아니라 이번 실행 전용 opaque 설정이다(모듈 docstring 참고).
     profile_ref = f"prof_{uuid4().hex}"
     materializer = LocalAnalysisMaterializer(
         {profile_ref: AnalysisProfile(height=480, preset="veryfast", crf=23)}
     )
     # `build_incident_clip()`은 local source에 대해 analysis_materializer와 별도로
-    # incident_materializer가 필요하다(recording/service.py:606) — 처음엔 이걸 몰라서
+    # incident_materializer가 필요하다(recording/service.py `build_incident_clip()`) — 처음엔 이걸 몰라서
     # `LocalIncidentMaterializer` 없이 실행했다가 "실행 중인 단일 VIDEO 생성 설정이
     # 필요합니다"로 실패했다. 같은 인코딩 값을 재사용한다(모듈 docstring 참고 —
     # canonical 값이 아니라 이번 실행 전용).
@@ -743,7 +744,7 @@ def prepare_real_video_context(
     registered = rec_service.register_local_source(local_video_path)
     timeline = rec_service.create_relative_timeline(registered.source_asset.source_asset_ref)
 
-    # 부트스트랩 stream 선택 — 정철원 확인(2026-09-21): 유일성 검증이지 임의 선택이
+    # 부트스트랩 stream 선택 — recording Owner 확인(2026-09-21): 유일성 검증이지 임의 선택이
     # 아니다(모듈 docstring 참고).
     bootstrap_ref = _unique_video_media_stream_ref(registered.media_streams)
 
@@ -921,7 +922,7 @@ def observe_real_video_candidate(
     )
     if on_visual_result is not None:
         on_visual_result(visual_result, media_stream_ref)
-    # 정철원 확인(2026-09-21) — 월요일 대표 파일은 VIDEO가 하나뿐이라 search가
+    # recording Owner 확인(2026-09-21) — 월요일 대표 파일은 VIDEO가 하나뿐이라 search가
     # 부트스트랩과 다른 stream을 고를 수 없다. 다르면 조용히 넘어가지 않고 실패시켜
     # 배선 버그를 표면화한다.
     if media_stream_ref != bootstrap_ref:

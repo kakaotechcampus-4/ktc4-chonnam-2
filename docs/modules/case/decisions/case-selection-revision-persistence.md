@@ -1,6 +1,7 @@
 # Case 내부 `selection_rev` 저장 설계 — 단일 현재값, 별도 이력 테이블 없음
 
 > 결정일 2026-09-13 · 담당 유소연(`case`) · 근거 `docs/architecture/erd-draft.md`(`codex/erd`, 미머지) 리뷰 항목 ①
+> (2026-11-08 현재: `erd-draft.md`는 develop에 있다. 이 결정대로 `selection_rev`는 aggregate 필드이자 MySQL `cases.selection_rev` 칼럼 하나이고 이력 테이블은 없다 — [`case-store-mysql.md`](case-store-mysql.md) §4. CaseView에도 여전히 내리지 않는다.)
 
 ## 배경
 
