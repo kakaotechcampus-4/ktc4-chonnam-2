@@ -133,3 +133,7 @@ src/daesingo/search/video/
 # search 실험 결과 원본은 로컬에만 보관하고 요약 보고서만 커밋한다.
 /docs/modules/search/experiments/**/*.json
 /docs/modules/search/experiments/**/*.jsonl
+
+# Playwright(A11Y-08)
+apps/web/test-results/
+apps/web/playwright-report/

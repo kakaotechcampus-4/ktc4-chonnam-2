@@ -2,6 +2,8 @@ from copy import deepcopy
 
 import pytest
 
+from tests.preview_writer_fixture import final_preview_writer  # noqa: F401
+
 from daesingo.case import command, jobs, observation
 from daesingo.case.view import build_case_view
 from tests.case.test_observation_chain import _after_coarse, _event, _reflect

@@ -31,7 +31,7 @@ C의 총 media M이 P보다 커도 청크 command가 예산 안이면 SQL 전송
 1. runtime `check_prepared_packet`이 실제 image 안 `mysql_repository.PREPARED_WRITE_FORMAT`을 읽어 분기한다. host 입력/env로 writer를 위장하는 toggle은 없다. 알 수 없는 format은 거부한다.
 2. legacy는 기존 제약과 실제 escaping guard를 유지한다. 최대 입력 보장이 필요하면 별도 검증된 보수적 전체 command 상한을 추가한다. 고정 B 이미지는 수정되지 않으며 B에도 개선을 적용하면 B′ SHA/image가 필요하다.
 3. chunked는 총 M을 packet과 직접 비교하지 않는다. 기존 writer 계산을 `prepared_command_limits(packet, *, write_format, command_budget=None)`로 추출하여 **실제 writer와 runtime이 같이 사용**한다. 양의 정수 packet, 지원 형식, 유효한 optional cap, 양수 chunk size를 검증하고 runtime은 기존 `check_packet(command_budget,P,margin)`를 재사용한다. 이는 일부 작은 P를 더 보수적으로 거부할 수 있다. 총 M의 양수·업무 한도·MAX_DURATION_MS 설정 검증은 유지한다.
-4. metadata·재전달·무결성·SAVEPOINT·RR·실제 SQL mogrify guard는 변경하지 않는다. M은 IncidentClip 전체 크기 상한이 아니며, startup 성공만으로 최대 metadata/IncidentClip·메모리·실제 데이터 호환을 승인하지 않는다. Coarse 600초/종료 후150초 복귀와 #583 분리는 유지한다.
+4. metadata·재전달·무결성·SAVEPOINT·RR·실제 SQL mogrify guard는 변경하지 않는다. M은 IncidentClip 전체 크기 상한이 아니며, startup 성공만으로 최대 metadata/IncidentClip·메모리·실제 데이터 호환을 승인하지 않는다. 당시의 Coarse 600초 실험 예산과 종료 후 150초 복귀 계획, #583은 이 변경의 범위 밖이었다. 공개 RC의 Coarse 예산은 [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-10을 따른다.
 
 예시 P64MiB·M256MiB·margin8MiB에서는 chunked budget1MiB/size256KiB로 기동 검사를 통과하고 legacy는 거부한다. P1MiB에서는 budget960KiB라 margin64KiB의 동등 경계를 거부하고 margin65535B는 통과한다. P81921B는 size0으로 거부한다. P81922B는 size1이므로 margin1B에서 계산상 통과할 수 있으나, 실제 metadata/SQL/메모리 수용 보장은 별도 guard·실측 대상이다. 예시는 운영값이 아니다.
 

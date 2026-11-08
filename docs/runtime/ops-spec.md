@@ -4,7 +4,7 @@
 **Owner:** common/runtime — 김준영  
 **Deployment baseline:** EC2 1대 + Docker Compose + MySQL  
 **AWS 환경 입력:** [`official-inputs/aws-environment.md`](./official-inputs/aws-environment.md) — 카테캠 제공 조건 · 2026-10-02 / 10-30 실환경 snapshot  
-**Last synced:** 2026-10-30 — `develop` `f208d65f`(#479 · #478 포함)  
+**2026-10-30 배포 준비 snapshot:** `develop` `f208d65f`(#479 · #478 포함). 이후 실행 근거와 남은 검증은 §3·§21 참조
 **Architecture SoT:** [`docs/architecture/module-architecture.md`](../architecture/module-architecture.md)  
 **Logical Data Model:** [`docs/architecture/erd-draft.md`](../architecture/erd-draft.md)  
 **Alignment ADR:** [ERD ↔ Runtime 정합화](../architecture/contracts/adr/adr-erd-runtime-alignment-2026-09-19.md)
@@ -14,12 +14,12 @@
 **2026-10-31 구현 갱신:** 승인값은 유지하며 [공개 배포·복구 Notes](rt14-public-deployment.md)에
 rollback tip 독립·release-bound Web·pointer/state·Caddy/DDNS·외부 smoke와 현재 검증을 연결한다.
 아래 2026-10-30 snapshot 표는 당시 이력이다. #483/#484/#488의 quality/import/secret gate는
-현재 CI에 있으며 이번 변경에서 완화하지 않았다. 실제 AWS/public acceptance는 완료하지 않았다.
+현재 CI에 있다. 이 구현 기록은 AWS 실행 전 상태이며, 첫 제한 접근 검증은 아래 실행 기록에 있다.
 
 **2026-10-31 실행 갱신:** 첫 AWS 배포, 검증자 1명(`/32`)으로 제한한 public acceptance, 실영상 E2E 1회를
 수행했다([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 같은 날 팀 계정에서 Elastic IP를
 할당·연결할 수 있음을 확인해 공개 주소에 쓰기로 했고(§2-2, RD-14a), `AWS_ACCOUNT_ID`는 Secret으로
-공급하도록 바꿨다(§2-1). 두 번째 deploy·rollback·restore rehearsal과 장기 공개 hardening은 남았다.
+공급하도록 바꿨다(§2-1). 이후 배포·복원 증거와 남은 검증은 §3에 구분해 기록한다.
 
 ## 1. 문서 경계
 
@@ -274,7 +274,7 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 | **둘 다 불가** | 실제 유료 분석 공개 보류 | 비실행 안내·사전 생성 결과 시연은 실제 분석과 구분해 별도 검토. 이를 A-1 성공으로 표시하지 않음 |
 
 - **공개 URL 접근과 유료 분석 수락은 별개**다. 웹 진입 허용은 임의 Case/API 호출 허가가 아니다. 현재 [HTTP API 인증 경계](../architecture/contracts/contract-http-api.md#36-인증)는 `case_id`를 아는 것을 사실상 접근 조건으로 두므로, 이를 사용자 간 격리의 검증 증거로 간주하지 않는다. A-1에서도 이 위험은 남는다.
-- 공식 기본 샘플은 **1~2분**짜리 사용·공개 권한이 확인된 영상 1~2개를 목표로 한다. 사용자 영상은 **최대 10분 지원 목표**지만, 실제 허용 길이/바이트는 배포 환경의 Recording → Search → Case → 신고자료 다운로드 E2E로 검증된 상한만 사용한다. 현재 확인된 초기 4분/48 MiB 설정은 [Recording 한도](../modules/recording/analysis-source-limits.md)에 있으며, 목표를 근거로 값을 변경하지 않는다.
+- 공식 기본 샘플은 **1~2분**짜리 사용·공개 권한이 확인된 영상 1~2개를 목표로 한다. 사용자 영상은 **최대 10분 지원 목표**지만, 실제 허용 길이/바이트는 배포 환경의 Recording → Search → Case → 신고자료 다운로드 E2E로 검증된 상한만 사용한다. 초기 재현용 4분/48 MiB 설정과 이후 실험 조건은 [Recording 한도](../modules/recording/analysis-source-limits.md)에 구분해 기록한다.
 - 20분 이상 지원은 이후 확장·검증 목표이지 이번 공개 보장 범위가 아니다. 실제 Go/No-Go와 release revision·검증 증거는 §21에 기록한다. **이 문서 변경은 코드 구현, 설정 적용 또는 공개 승인으로 간주하지 않는다.**
 
 ### 2-4. 외부 체험 운영 보호 · 부하 시험
@@ -298,7 +298,7 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 
 - **초과 요청은 일찍 거절한다.** 과부하에서 일부 요청을 의도적으로 거절해 수락한 요청의 지연을 낮게 유지하는 load shedding 접근을 따른다([AWS Builders' Library](https://builder.aws.com/content/3Eun1EEyX6p2e3VYNyRLSJzLuMV/using-load-shedding-to-avoid-overload)).
 - **전역 connection 한도 하나로 끝내지 않는다.** Uvicorn `--limit-concurrency`는 한도를 넘는 새 요청에 바로 `503`을 주고 idle keep-alive 연결도 한도에 센다([Uvicorn 문서](https://uvicorn.dev/server-behavior/)). 요청 종류를 구분하지 못해 조회 · health까지 막을 수 있으므로 위 표처럼 종류별 경계를 둔다.
-- **queue 대기가 Case 대기 예산을 넘으면 수락하지 않는다.** Case는 탐색 job을 `requested_at + 실행 예산 + 30초`까지만 기다린다([case 대기 timeout](../modules/case/decisions/case-wait-timeout.md)). queue가 길어지면 실행이 성공하기 전에 Case가 기다리기를 멈춘다. timeout을 늘려 숨기지 않는다.
+- **queue 대기가 Case 대기 예산을 넘으면 수락하지 않는다.** Case는 탐색 job의 `requested_at`부터 실행 예산, 큐 여유 30초, 타임라인 범위에 따른 준비 여유를 합산해 대기 마감을 계산한다. 공개 RC 기본 발주의 대기는 최대 60분이며, 첫 Coarse 실행 예산은 600초다. [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-2·§3-8·§3-10을 따른다. queue가 길어지면 실행이 성공하기 전에 Case가 기다리기를 멈춘다. timeout을 늘려 숨기지 않는다.
 - **IP 단위 제한만으로 공정성 · 비용 상한을 삼지 않는다.** 같은 네트워크의 여러 사용자가 한 공인 IP를 쓸 수 있다. 서버 전체 상한을 우선하고, 인증 없는 case 생성으로 반복 상한을 우회할 수 있는지 함께 본다.
 - **Worker 증설로 해결하지 않는다.** §17 조건이 그대로다.
 - **운영 통제 절차가 필요하다.** 신규 분석만 일시 중단하고 기존 결과 조회 · 다운로드는 유지하는 방법을 공개 전에 정한다.
@@ -351,7 +351,7 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 
 ## 3. 현재 상태와 목표 상태
 
-### 현재 develop에서 확인된 것 — 2026-10-30 (`7bab60bc` 기준)
+### 2026-10-30 배포 준비 snapshot (`7bab60bc` 기준)
 
 Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-implementation-plan.md) §6 · [Implementation Log](./runtime-implementation-log.md)가 소유한다. 로컬 구성 절차는 [로컬 Runtime 실행환경](./local-runtime-environment.md)이다.
 
@@ -367,7 +367,13 @@ Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-imple
 - EC2 배포 준비 구현 — OIDC 인증 · ECR publish · SSM host controller · rollback 도구와 Worker 8종 등록 marker (RT-14 #479, §2-1). OIDC 인증 · ECR publish만 실제 실행했고 EC2 배포는 실행하지 않았다
 - CI: MySQL gate · 배포 image media/OCR acceptance · boundary/contract · web (§19)
 
-### 아직 없는 것
+### 이후 실행 증거
+
+- 10/31 실제 EC2 배포에서 release artifact를 사용했고, 검증자 1명(`/32`) 환경에서 외부 TLS·Web/API smoke를 통과했다. 해당 실영상 Case는 신고영상 다운로드까지 도달했다. [10/31 실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)
+- DB·PAX media의 단회 백업·격리 복원·비교는 운영자 제공 결과상 PASS였다. 운영 DB 복원 전환과 RPO/RTO는 별도 검증 항목이다. 로컬 파일 기반 백업 도구의 후속 변경은 #592에서 머지됐다. [복원 acceptance](rt14-recovery-acceptance.md) · [파일 기반 도구 #592](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/592)
+- #452에서 C′ `70f1c47c`로 보고된 EC2 배포 조건의 20개·20분 단회 실행은 `READY`와 다운로드·재생까지 기록됐다. 이후 #622가 머지한 호환 중간 release와 고정 최종 후보 `bb29d750`은 각각 별도 소스다. 실제 전환·rollback 판정에는 해당 배포 실행의 증거가 필요하다. [20분 실행 기록](experiments/2026-11-07-ec2-20file-product-e2e-result.md) · [호환 release 절차](rt14-preview-bridge.md)
+
+### 2026-10-30 준비 당시 남은 항목
 
 - EC2 실제 배포 — 승인한 구현 변경 · AWS 입력 등록 · 첫 publish/deploy · rollback rehearsal(RT-14, RD-12b ~ f. Gate는 2026-10-30 승인)
 - 배포 후 검증의 실제 실행(RD-12h). 준비 구현의 smoke는 host 내부 loopback이고, 외부 경로 smoke는 RD-14에 달려 있다
@@ -379,7 +385,7 @@ Task별 상세와 검증 기록은 [Runtime Implementation Plan](./runtime-imple
 - Ruff · type checker · secret scan(RT-15)
 - P2 Runtime Capacity Smoke — baseline EC2에서 working set · concurrency 실측
 
-따라서 local runtime 절(§4 · §6 · §9 일부)은 현재 동작을 가리키고, **EC2 배포 · 운영 관측 · capacity 절은 아직 구현 목표와 운영 acceptance criteria**다.
+위 목록은 10/30 당시 상태다. 후속 운영 검증 상태는 §21·§23 및 각 실행 기록을 따른다.
 
 ## 4. Docker / Process 운영
 
@@ -1110,7 +1116,7 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [x] local Dockerfile / Compose exact service command — RT-13(a), §4
 - [x] production restart policy — RD-13c 승인(2026-10-30): api · worker · mysql `unless-stopped` · migrate `no`. restart rehearsal은 RT-14 acceptance
 - [x] local MySQL volume · logical backup/restore 도구 — RT-13(a) · RT-13(b)
-- [ ] EC2 운영 backup 주기 · 보관 위치 · restore 절차(RD-12f · RD-12g) — deploy role은 `ec2:CreateVolume`이 거부돼 EBS snapshot에서 새 volume을 만드는 복원 경로가 막혀 있다([`aws-environment.md`](./official-inputs/aws-environment.md) §10)
+- [ ] EC2 운영 backup 주기 · 보관 위치 · restore 절차(RD-12f · RD-12g) — DB·PAX media 단회 격리 복원은 §3에 기록됐다. 정기 운영 백업 정책과 운영 복원 전환 검증이 남았다. EBS snapshot 경로의 권한 관측은 [`aws-environment.md`](./official-inputs/aws-environment.md) §10 참조
 - [ ] production log transport — RD-13a 승인(2026-10-30): service별 `awslogs` + dual local cache. 운영 Log Group 생성 · 실제 수신 acceptance가 남았다
 - [x] log retention(운영 log) — RD-11a 승인(2026-10-30): host dual cache 20m × 5 · CloudWatch 30일. 영상 · 파생물 · UsageRecord retention은 아래 별도 항목
 - [ ] health alert/restart threshold — `/health/live` · `/health/ready` 구현은 완료. RD-13c alert는 공개 운영 hardening 후속으로 넘겼다(2026-10-30 Gate)
@@ -1122,11 +1128,11 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [ ] P2 Runtime Capacity Smoke 수행 — #95 P0/P1 기반 concurrency=1 baseline, working set, cleanup, restart/reuse 관측
 - [ ] capacity/scaling threshold — P2 결과 없이 숫자를 선결하지 않음
 - [ ] P2 이후 필요 시 P3 30분~1시간 Runtime E2E 계획
-- [ ] OIDC + SSM deployment workflow — 준비 구현은 `develop`에 있다(#479, §2-1). Gate는 2026-10-30 승인. OIDC 실제 인증 · publish는 같은 날 확인. 승인한 구현 변경 · remote용 Secret/Variable 등록 · 첫 배포가 남았다(RT-14, [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450))
-- [ ] 배포 artifact 전달 방식 — RD-12b 승인(2026-10-30): Actions build once → 같은 image acceptance → ECR immutable SHA tag · digest. deploy role ECR push는 2026-10-30 확인(§2-1). EC2 instance role pull acceptance가 남았다
+- [ ] OIDC + SSM deployment workflow — 10/31 첫 배포와 후속 실험 실행 기록은 §3 참조. 차기 release의 실제 revision·digest와 전환 증거는 해당 실행에 결속한다. [RT-14 #450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450)
+- [ ] 배포 artifact 전달 방식 — RD-12b 승인(2026-10-30): Actions build once → 같은 image acceptance → ECR immutable SHA tag · digest. 10/31에는 publish한 production image를 실제 EC2 배포에 사용했다(§3). 이후 release도 SHA·digest와 실제 pull을 대조한다
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
-- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 후보 명령은 [RT-14 실행 절차](./rt14-deployment.md) §6 · §7. rollback tip gate 변경 · 최초 배포 recovery runbook · rehearsal이 남았다
-- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 준비 구현은 health · 8종 등록 · host 내부 read-only smoke까지다. 공개 배포의 외부 smoke(DNS · HTTPS · Web → API) 추가가 남았다([RT-14 배포 설계](./rt14-deployment-design.md) §10). 2026-10-31: 외부 smoke는 [공개 배포 Notes](rt14-public-deployment.md)로 구현됐고 검증자 PC에서 PASS했다. Caddy `/32` 제한 중 workflow 단계 smoke는 runner에서 403이라 공개 범위 확대 때 함께 정한다(§2-2)
+- [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 구현·복구 절차는 [RT-14 공개 배포 Notes](rt14-public-deployment.md)와 [호환 release 절차](rt14-preview-bridge.md) 참조. 대상 release의 실제 rollback rehearsal 증거가 필요하다
+- [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 2026-10-31 제한 접근의 외부 smoke는 [공개 배포 Notes](rt14-public-deployment.md)로 구현됐고 검증자 PC에서 PASS했다. Caddy `/32` 제한 중 workflow 단계 smoke는 runner에서 403이라 공개 범위 확대 때 함께 정한다(§2-2)
 - [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** 공개 모델(same-origin · HTTPS · Caddy host 인프라 · release-bound Web artifact · SG 80/443만 · ~~DDNS 우선 · EIP 비필수~~ EIP + DuckDNS, updater는 백업)은 [RT-14 배포 설계](./rt14-deployment-design.md) §13, 2026-10-30 Gate 승인 · 2026-10-31 RD-14a 갱신. 2026-10-31 검증자 1명(`/32`) 제한 public acceptance PASS([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 공개 범위 확대가 남았다
 - [x] **공개 운영 방향 결정**(2026-11-05) — C 제한형 Public Beta 목표, 미충족 시 A-1 공식 샘플 실분석 대체, 종료일 11/20(§2-3). **코드 구현·게이트 검증·실제 공개 승인은 아직 미완료**
 - [ ] C/A-1 실제 공개 Go/No-Go, 공식 샘플·사용 안내·권한 격리·예산 확인(§21-1)

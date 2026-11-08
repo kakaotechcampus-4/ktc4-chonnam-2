@@ -35,7 +35,7 @@ def api_peer(pipe, env_file):
     finally: pipe.close()
 
 
-def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
+def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False, *, legacy_coarse_frames=False):
     import httpx
     import openai
     from daesingo.worker.bootstrap import bootstrap
@@ -174,6 +174,13 @@ def worker_peer(pipe, env_file, scenario, kind, interrupt_reflection=False):
                     stack.enter_context(patch.object(readout, function, invoke_readout))
                 else:
                     stack = __import__("contextlib").ExitStack()
+                if legacy_coarse_frames:
+                    # Explicit old-producer fixture for clip-only acceptance.
+                    # Current Coarse issuance is covered separately, never disabled in production.
+                    if kind != "COARSE_SEARCH":
+                        raise ValueError("legacy frame seed is Coarse-only")
+                    from daesingo.worker.coarse_frames import CoarseFrameIssuer
+                    stack.enter_context(patch.object(CoarseFrameIssuer, "__call__", lambda *args: {}))
                 for export_name in ("export_report_video", "export_plate_image"):
                     actual_export = getattr(RecordingService, export_name)
                     def export(service, _actual=actual_export, _name=export_name, **kw):

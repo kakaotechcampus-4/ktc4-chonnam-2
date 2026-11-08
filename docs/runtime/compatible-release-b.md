@@ -2,6 +2,8 @@
 
 **LOCAL IMPLEMENTATION · NOT DEPLOYED · Refs #452.** 2026-11-05, 전용 브랜치 `codex/issue452-compatible-release`. 시작 HEAD/고정 최종 후보 C는 `ceb6f5fa010f1f541179e9d3ab95aecd5a82d3cb`, O는 운영자 보고 `e50b2976ef4edc3a030cfc5b03a5206340dd917b`다. 서버 최신 current/previous/schema/controller는 미조회다. 이 미커밋 B에는 release SHA/image/승인 tuple이 없다.
 
+> **Coarse 예산 후속 결정:** 아래 150초 복귀 절차는 이 기록 작성 당시의 계획이다. 공개 RC에서는 [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-10에 따라 첫 Coarse 실행 예산 600초를 유지한다.
+
 ## 제품 변경과 release 정책
 
 제품 변경은 Recording repository의 신규 prepared-media 쓰기 정책이다. `mysql_repository.PREPARED_WRITE_FORMAT="legacy"`가 B의 기본이며, API/Worker의 기존 repository facade도 이 기본을 소비한다. env/runtime 설정은 추가하지 않는다. 테스트에서 명시하는 `prepared_write_format="chunked"`는 유지된 청크 writer를 검증하는 seam이며 운영 설정 완료의 증거가 아니다.
@@ -33,7 +35,7 @@
 2. 병합된 B 위에서 별도 C PR을 만든다. `PREPARED_WRITE_FORMAT` 기본값을 `chunked`로 복귀해 청크 content와 metadata envelope를 함께 활성화하고, 이번 reader·exact 비교·SAVEPOINT·RR 보완을 유지한다. env 토글이나 B image 재명명으로 C를 만들지 않는다.
 3. C에서는 release별 기본값 검사를 구분한다. B의 legacy 계약 검사는 명시 legacy writer 또는 고정 B source를 대상으로 남기고, C의 실제 API/Worker facade 기본 쓰기가 chunk/envelope임을 별도로 검증한다. 실제 revision 하네스의 `bridge=ROOT`도 C 작업 tree를 B라고 부르지 않도록 고정 B SHA source로 바꾸고 C는 새로운 후보로 대조한다.
 4. C의 canonical gate와 B→C→B 데이터/schema/job 검증을 새 source에서 실행한다. 현재 `ceb6f5fa`는 이번 대조에 사용한 과거 chunked-writer source이며, B 병합 후 만들어질 C의 최종 SHA를 미리 대신하지 않는다.
-5. 운영자는 B/C 각각의 실제 SHA·image digest·config·controller 승인·DB/media 복구 증거를 결속한다. 승인된 O→B→C 순서로만 전환하고 C 이후 rollback 대상은 검증된 B다. E2E 이후 D는 새 형식 reader를 유지하며 기본 Coarse를150초로 복귀한다. 이번에는 병합·C 구현·배포를 실행하지 않는다.
+5. 운영자는 B/C 각각의 실제 SHA·image digest·config·controller 승인·DB/media 복구 증거를 결속한다. 승인된 O→B→C 순서로만 전환하고 C 이후 rollback 대상은 검증된 B다. 당시 계획에는 E2E 이후 새 형식 reader를 유지하며 기본 Coarse를 150초로 복귀하는 D가 있었다. 이번에는 병합·C 구현·배포를 실행하지 않는다.
 
 ## 검증 구성과 범위
 
@@ -158,7 +160,7 @@ Windows Docker Desktop pipe가 없었다. 첫 Ubuntu 조사 이후 Docker 이미
 
 B는 현재 `InitialSearchBudget.max_latency_sec=600`, Fine70초, 준비 여유와 60분 Case ceiling, late `STOPPED_WAITING`을 유지한다. 이 B의 기능은 현재 E2E 예산을 일반 운영값으로 확정하지 않는다.
 
-E2E 종료 후 D는 새 reader와 데이터 호환을 유지하면서 기본 예산을150초로 복귀하는 별도 PR/source/image다. 이미 저장된600초 scope는 기본값 변경으로 수정되지 않는다. 실행/재전달·기존 scope를 정산하고 새 발주150초를 확인해야 한다. O로 code rollback하여150초 복귀를 대신하지 않는다.
+당시 계획의 D는 E2E 종료 후 새 reader와 데이터 호환을 유지하며 기본 예산을 150초로 복귀하는 별도 PR/source/image였다. 이미 저장된600초 scope는 기본값 변경으로 수정되지 않는다. D 검증에는 실행/재전달·기존 scope 정산과 새 발주 150초 확인이 포함됐으며, O로의 code rollback은 복귀 방법에서 제외됐다.
 
 ## NOT_RUN / 승인 미완료
 
