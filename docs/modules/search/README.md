@@ -17,6 +17,11 @@
 - 신고요건/신고유형 규칙
 - 파일 경계 계산
 - 평가 정답지를 search 내부에 종속시키기
+
+## 입력 · 출력 · 테스트
+
+공개 함수의 입력과 출력, 실행 방법, 테스트 명령은 코드 폴더의 [`src/daesingo/search/README.md`](../../../src/daesingo/search/README.md)에 있다.
+
 ## 문서 운영
 
 - `research/`: 조사·비교·Spike
@@ -26,6 +31,7 @@
 
 ## 설계 문서
 
-- [`search-design-advancement-2026-09-18.md`](./search-design-advancement-2026-09-18.md): 현재 Search 설계와 W7 Quality / Risk Burn-down의 우선순위·완료 기준을 정리한 실행 기준 초안
+- 현재 구조: [`decisions/search-structure-2026-10-28.md`](./decisions/search-structure-2026-10-28.md). 모든 결정 목록은 [`decisions/README.md`](./decisions/README.md)에 있다.
+- [`search-design-advancement-2026-09-18.md`](./search-design-advancement-2026-09-18.md): 2026-09-18 시점 Search 설계와 W7(7주차) 품질·위험 개선의 우선순위·완료 기준 초안. 이후 모델·구조는 위 결정 문서로 바뀌었다.
 
 빈 spec을 미리 만들지 않는다. 필요해질 때 Owner가 생성한다.
