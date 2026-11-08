@@ -437,13 +437,15 @@ it('번호판 수정: 취소·Esc·뒤로는 고치던 글자만 버리고, 저�
 
 it('안전신문고로 이동은 준비됐을 때만 새 창으로 열고, 대신고 화면은 그대로 둔다', () => {
   const opened = vi.spyOn(window, 'open').mockReturnValue(null)
-  const { wait, getByText, container, answer } = start('main')
+  const { text, wait, getByText, container, answer } = start('main')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   answer()
   fireEvent.click(getByText('안전신문고로 이동'))
   expect(opened).toHaveBeenCalledWith('https://www.safetyreport.go.kr/#safereport/safereport3', '_blank', 'noopener')
+  // 신고 양식으로 바로 열리므로 메뉴를 찾아 들어가는 안내는 두지 않는다
+  expect(text()).not.toContain('안전신문고에서는 이렇게 들어가세요')
   expect(container.querySelector('.rs.result')).not.toBeNull()
 })
 
@@ -677,12 +679,6 @@ it('결과 화면에서 제목·신고 내용·위치·발생 시각을 고치�
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   answer()
-  // 안전신문고 첫 화면에서 신고 양식까지 가는 순서
-  expect(text()).toContain('안전신문고에서는 이렇게 들어가세요')
-  expect([...container.querySelectorAll('.res-steps li')].map((l) => l.textContent)).toEqual([
-    '위쪽 메뉴에서 「신고하기」를 누르세요',
-    '「자동차·교통위반」을 누르세요',
-  ])
   expect(text()).not.toContain('이 화면에서만 바꿨어요')
 
   fireEvent.click(getByText('제목 수정하기'))

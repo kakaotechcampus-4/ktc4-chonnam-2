@@ -56,8 +56,6 @@ const TIME_EDIT_LINK = { none: '시각 입력하기', some: '시각 수정하기
 const DATE_EDIT_LINK = { none: '일자 입력하기', some: '일자 수정하기' }
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
-// 안전신문고 첫 화면에서 신고 양식까지 — 실제 메뉴 이름(11/1 확인). 이동 버튼은 첫 화면을 연다
-const HANDOFF_STEPS = ['위쪽 메뉴에서 「신고하기」를 누르세요', '「자동차·교통위반」을 누르세요']
 const PREPARING_TITLE = '신고자료를 준비하고 있어요.'
 // 번호판은 형식만 맞으면 「출처 확인됨」이다 — 대상 차량의 번호판인지는 사용자가 장면에서 본다(#597 코멘트)
 const PLATE_SCENE_CHECK = '신고할 차량의 번호판인지 확인해 주세요'
@@ -673,18 +671,6 @@ export function ResultScreen(props: {
           </p>
         )}
         {pkg && !ready && <p className="res-block-note">위 문제가 해결돼야 안전신문고로 넘어갈 수 있어요.</p>}
-        {pkg?.capabilities.includes('OPEN_DESTINATION') && (
-          <div className="res-steps">
-            <p id="res-steps-h" className="res-steps-h">
-              안전신문고에서는 이렇게 들어가세요
-            </p>
-            <ol aria-labelledby="res-steps-h">
-              {HANDOFF_STEPS.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ol>
-          </div>
-        )}
         <p className="res-toast" role="status" aria-live="polite">
           {toast && <span key={toast.id}>{toast.text}</span>}
         </p>
