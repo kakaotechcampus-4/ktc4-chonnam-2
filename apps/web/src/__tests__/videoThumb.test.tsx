@@ -89,6 +89,19 @@ it('원본 없음·주소 생성 실패에서도 선택하기 전에는 미리�
   expect(r.queryByTestId('waiting-drive')).toBeNull()
 })
 
+it('브라우저에 원본이 없거나 그리지 못하면 서버의 후보 장면 이미지(fallbackSrc)를 대신 보인다', () => {
+  const r = render(<VideoThumb file={null} name="a.mp4" fallbackSrc="/frames/thumb-1" />)
+  expect(r.container.querySelector('img')?.getAttribute('src')).toBe('/frames/thumb-1')
+  expect(r.queryByText('미리보기를 표시할 수 없어요')).toBeNull()
+  // 원본 주소를 못 만들어 실패해도 같은 이미지로 대신한다
+  createUrl.mockImplementation(() => { throw new Error('unavailable') })
+  r.rerender(<VideoThumb file={file()} name="b.mp4" fallbackSrc="/frames/thumb-1" />)
+  expect(r.container.querySelector('img')?.getAttribute('src')).toBe('/frames/thumb-1')
+  // 대신할 이미지도 못 불러오면 원래 안내로 돌아간다
+  fireEvent.error(r.container.querySelector('img')!)
+  expect(r.getByText('미리보기를 표시할 수 없어요')).toBeTruthy()
+})
+
 it('게임 중 미리보기가 완성돼도 화면을 강제로 바꾸지 않는다', () => {
   const r = render(<VideoThumb file={file()} name="a.mp4" canDrive />)
   fireEvent.click(r.getByRole('button', { name: invitation }))

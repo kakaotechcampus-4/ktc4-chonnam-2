@@ -257,6 +257,11 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             startedAt={startedAt}
             pushIn={!!leaving}
             onStop={view.stage === 'SEARCHING' ? () => run({ kind: 'STOP_ANALYSIS', payload: {} }) : undefined}
+            // 결과 화면에서 다시 준비하거나 창을 닫았다 오면 브라우저에 원본이 없다 — 고른 후보의 장면 이미지로 대신한다
+            fallbackSrc={(() => {
+              const thumb = view.candidates.find((c) => c.selected)?.thumb_ref
+              return thumb && frameSrc ? frameSrc(thumb) : null
+            })()}
           />
         )
       case 'STOPPED':
