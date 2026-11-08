@@ -41,7 +41,8 @@ def compose_incident_clip_registry(*, engine, startup, service_factory=None):
     settings = getattr(startup, "modules", {}).get("recording")
     if service_factory is None and settings is not None and settings.incident_encoding is not None:
         cleanup = configured_cleanup(startup.config, startup.logger)
-        media = MediaRoot(next(s for s in cleanup.scanners if s.kind == "temp"))
+        media = MediaRoot(next(s for s in cleanup.scanners if s.kind == "temp"),
+                          public_root=startup.config.media_root / "public-temp")
         service_factory = IncidentRecordingFactory(transaction=transaction, storage_root=startup.config.media_root,
             temp_root=startup.config.temp_root, settings=settings, media=media)
     previews = CandidateVideoInputs(transaction=transaction,
