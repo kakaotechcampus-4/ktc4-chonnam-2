@@ -15,7 +15,7 @@ from daesingo.search.usage import ProviderUsage
 
 
 def test_prompt_versions_placeholders_and_fingerprints_are_stable_metadata():
-    assert COARSE_PROMPT.version == "coarse-p3"
+    assert COARSE_PROMPT.version == "coarse-p3+coarse-brief-v1"
     assert COARSE_PROMPT.placeholders == frozenset({"event_types", "duration_sec"})
     assert FINE_PROMPT.version == "fine-p3"
     assert {
@@ -29,6 +29,7 @@ def test_prompt_versions_placeholders_and_fingerprints_are_stable_metadata():
     assert "{event_types}" not in rendered
     assert "점선처럼 보이거나" in rendered
     assert "법적 위반 여부를 확정하지 마세요" in rendered
+    assert "최대 5개" in rendered
     lane = fine_prompt_for(VisualEventType.SOLID_LINE_LANE_CHANGE)
     signal = fine_prompt_for(VisualEventType.SIGNAL)
     assert lane.fingerprint != signal.fingerprint

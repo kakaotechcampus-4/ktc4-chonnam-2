@@ -36,7 +36,16 @@ def load_prompt(version: str) -> PromptTemplate:
     )
 
 
-COARSE_PROMPT = load_prompt("coarse-p3")
+_COARSE_BASE = load_prompt("coarse-p3")
+# 프록시가 non-streaming 응답을 2,000토큰에서 자르므로 후보 수·설명 길이를 줄인다(#608).
+_COARSE_BRIEF = load_prompt("coarse-brief-v1")
+_coarse_text = f"{_COARSE_BASE.text.rstrip()}\n\n{_COARSE_BRIEF.text}"
+COARSE_PROMPT = PromptTemplate(
+    version=f"{_COARSE_BASE.version}+{_COARSE_BRIEF.version}",
+    text=_coarse_text,
+    fingerprint=sha256(_coarse_text.encode("utf-8")).hexdigest(),
+    placeholders=_COARSE_BASE.placeholders | _COARSE_BRIEF.placeholders,
+)
 FINE_PROMPT = load_prompt("fine-p3")
 # 분기부 안전지대 오탐을 UNCERTAIN으로 돌리는 문장(experiments/search-structure-confirmation-plan-2026-10-26.md §6.4).
 FINE_GORE_NOTE = load_prompt("fine-gore-v1")
