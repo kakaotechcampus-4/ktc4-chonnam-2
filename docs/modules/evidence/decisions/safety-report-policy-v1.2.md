@@ -7,6 +7,8 @@
 > 대체 대상: `safety-report-policy/v1.1`
 > 근거: #146 9/25 Evidence/Product Owner 답변 · #172 D-3 · [`ADR-EVIDENCE-008`](../adr/adr-plate-identification-failure-boundary.md) §6
 
+> 2026-11-07 [#597 B안](observed-report-draft.md)은 specific template의 사용 조건에 Fine이 관찰한 유형의 무응답을 추가했다. 아래 v1.2 당시 조건은 결정 이력이며, registry·문구·슬롯은 v1.2를 사용한다.
+
 ## 개정 범위
 
 v1.1의 SafetyReportType registry, 초기 4종 매핑, `잘 모르겠어요` fallback, template 네 종(specific/generic × 위치 있음/없음)의 제목과 본문은 **그대로** 유지한다. v1.2는 `report_inputs.vehicle_number=null`인 Package — 번호판 판독을 수행했지만 차량번호를 식별하지 못한 경우 — 를 위해 **차량번호 슬롯이 없는 template 네 종**을 추가한다. 번호판 값·대체 번호·`UNKNOWN` 같은 표지는 생성하지 않는다.

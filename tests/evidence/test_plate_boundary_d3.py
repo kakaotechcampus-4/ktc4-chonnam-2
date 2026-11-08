@@ -154,10 +154,10 @@ class PlateBoundaryD3Tests(unittest.TestCase):
 
     # --- catalog ------------------------------------------------------------------------------
 
-    def test_active_catalog_is_v6_superseding_v5(self):
+    def test_active_catalog_is_v7_superseding_v6(self):
         catalog = load_requirement_catalog()
-        self.assertEqual("policy/requirement-rules-v6", catalog["policy_ref"])
-        self.assertEqual("policy/requirement-rules-v5", catalog["supersedes_policy_ref"])
+        self.assertEqual("policy/requirement-rules-v7", catalog["policy_ref"])
+        self.assertEqual("policy/requirement-rules-v6", catalog["supersedes_policy_ref"])
         self.assertEqual("safety-report-policy/v1.2", catalog["referenced_policies"]["report_template"])
 
     def test_v5_revision_is_preserved_with_its_i4_rules(self):
