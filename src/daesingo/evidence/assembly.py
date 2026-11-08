@@ -176,6 +176,22 @@ def _location(
     return location or None
 
 
+def _plate_value_before_corrections(head: Contract, correction_records: list[Contract]) -> str | None:
+    """Find the observed value the first edit in this selection replaced."""
+    by_id = {
+        record["correction_id"]: record
+        for record in correction_records
+        if record.get("case_id") == head["case_id"] and record.get("selection_rev") == head["selection_rev"]
+    }
+    correction = head
+    while prior_ref := correction.get("supersedes_ref"):
+        prior = by_id.pop(prior_ref["ref"], None)
+        if prior is None:
+            return None
+        correction = prior
+    return correction["previous_value"]
+
+
 def _independent_facts(
     *,
     case_id: str,
@@ -184,6 +200,7 @@ def _independent_facts(
     location_hint: str | None,
     gps_observation: Contract | None,
     heads: dict[str, Contract],
+    correction_records: list[Contract],
 ) -> Contract:
     facts: Contract = {}
     resolution_ref = time_resolution.get("resolution_ref")
@@ -235,13 +252,19 @@ def _independent_facts(
         if target != "vehicle_number" and not target.startswith("location."):
             continue
         corrected_ref = contract_ref("correction_record", correction["correction_id"])
+        support_refs = [corrected_ref]
+        if target == "vehicle_number" and (observed_plate := facts.get("vehicle_number")) is not None:
+            # A later readout can arrive after direct input. Only retain the readout
+            # whose adopted value the correction chain started from.
+            if observed_plate["value"] == _plate_value_before_corrections(correction, correction_records):
+                support_refs.append(observed_plate["source"]["ref"])
         corrected = _evidence_value(
             correction["new_value"],
             source_kind="case.user_correction",
             source_ref=corrected_ref,
             observability="OBSERVED",
             label_key=None,
-            support_refs=[corrected_ref],
+            support_refs=support_refs,
             user_corrected=True,
         )
         if target == "vehicle_number":
@@ -274,13 +297,15 @@ def resolve_independent_facts(
     from it here (ADR-EVIDENCE-009 §2.1 — no final Record before the user's response).
     """
     require(isinstance(selection_rev, int) and not isinstance(selection_rev, bool) and selection_rev >= 1, "selection_rev must be >= 1")
+    correction_records = correction_records or []
     return _independent_facts(
         case_id=case_id,
         time_resolution=time_resolution,
         plate_readout=plate_readout,
         location_hint=location_hint,
         gps_observation=gps_observation,
-        heads=correction_heads(correction_records or [], case_id=case_id, selection_rev=selection_rev),
+        heads=correction_heads(correction_records, case_id=case_id, selection_rev=selection_rev),
+        correction_records=correction_records,
     )
 
 
@@ -335,7 +360,8 @@ def assemble_evidence(
     if supersedes_id:
         record["supersedes_ref"] = contract_ref("evidence_record", supersedes_id)
 
-    heads = correction_heads(correction_records or [], case_id=case_id, selection_rev=selection_rev)
+    correction_records = correction_records or []
+    heads = correction_heads(correction_records, case_id=case_id, selection_rev=selection_rev)
     # occurred_at · vehicle_number · location (with their corrections) come from the same
     # resolution `resolve_independent_facts()` exposes for the pre-response projection.
     record.update(
@@ -346,6 +372,7 @@ def assemble_evidence(
             location_hint=location_hint,
             gps_observation=gps_observation,
             heads=heads,
+            correction_records=correction_records,
         )
     )
 

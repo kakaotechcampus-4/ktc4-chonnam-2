@@ -80,6 +80,48 @@ def test_reread_job_reads_hires_and_clears_need():
     assert real.get_evidence_needs()[0]["items"] == []
 
 
+def test_manual_input_after_abstain_has_no_preview():
+    case, real = _plate_reread_case()
+    before = service.build_view_from_adapter(case, real)
+    assert real.get_plate_readouts()[0]["abstained"]
+    assert _plate(before) is None
+    assert before["evidence"]["plate_preview_ref"] is None
+
+    correction.apply_correction(
+        case, kind="PLATE_MANUAL_EDIT", target_field="vehicle_number",
+        previous_value=None, new_value="17나2868",
+    )
+    view = service.build_view_from_adapter(case, real)
+    assert _plate(view) == "17나2868"
+    assert view["evidence"]["plate_preview_ref"] is None
+
+
+def test_consecutive_edits_keep_the_successful_reread_frame():
+    case, real = _plate_reread_case()
+    before = service.build_view_from_adapter(case, real)
+    assert before["evidence"]["plate_preview_ref"] is None
+    _reread(case, real)
+    reread = service.build_view_from_adapter(case, real)
+    readout_ref = real.get_evidence_record()["vehicle_number"]["source"]["ref"]
+    frame = reread["evidence"]["plate_preview_ref"]
+    assert frame == "fr_p001_plate3"
+
+    previous = _plate(reread)
+    for new_value in ("17나2868", "17나2869"):
+        edit = correction.apply_correction(
+            case, kind="PLATE_MANUAL_EDIT", target_field="vehicle_number",
+            previous_value=previous, new_value=new_value,
+        )
+        view = service.build_view_from_adapter(case, real)
+        plate = real.get_evidence_record()["vehicle_number"]
+        edit_ref = {"kind": "correction_record", "ref": edit["correction_id"]}
+        assert _plate(view) == new_value
+        assert plate["source"]["ref"] == edit_ref
+        assert plate["support_refs"] == [edit_ref, readout_ref]
+        assert view["evidence"]["plate_preview_ref"] == frame
+        previous = new_value
+
+
 def test_reread_belongs_to_issuing_candidate(profiles):
     """A에서 낸 재판독은 A의 것 — B로 바꾸면 B는 native로 읽고, 돌아온 A는 다시 읽지 않는다(A→B→A 재사용)."""
     case, real = _plate_reread_case()
