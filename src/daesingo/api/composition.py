@@ -101,7 +101,8 @@ class ApiComposition:
         def read(conn):
             if self.public is not None:
                 self.public.require(conn, case_id)
-            return case_api.get_view(case_id, store=self._store(conn))
+            view = case_api.get_view(case_id, store=self._store(conn))
+            return self.public.decorate_view(conn, view) if self.public is not None else view
         view = run_api_transaction(self.engine, read)
         with bind_context(**safe_correlation(case_id=view["case_id"])):
             self.readiness.events.emit("api.view.completed", status="200",
@@ -128,9 +129,8 @@ class ApiComposition:
     def execute_command(self, payload, trace_id: str):
         def operation(conn):
             if self.public is not None:
-                if not isinstance(payload, dict) or payload.get("kind") != "STOP_ANALYSIS":
-                    self.public.ready()
-                    self.public.store.accepting(conn)
+                self.public.configured()
+                self.public.store.locked(conn)
                 if isinstance(payload, dict) and isinstance(payload.get("case_id"), str):
                     self.public.require(conn, payload["case_id"])
             with ExitStack() as resources:
@@ -138,13 +138,39 @@ class ApiComposition:
                 if recording is None:
                     recording = resources.enter_context(RecordingService(self._recording_repository(conn)))
                 store = self._store(conn)
-                if self.public is not None and isinstance(payload, dict) and payload.get("kind") != "STOP_ANALYSIS":
-                    case = store.load_for_update(payload.get("case_id", ""))
-                    self.public.check_sources(conn, case, self._recording_repository(conn))
+                deferred = []
+                public = self.public
+                def admission(records):
+                    from types import SimpleNamespace
+                    from daesingo.common.public_runtime.policy import PublicDenied
+                    from daesingo.common.public_runtime.work import local_only
+                    if public is None or not local_only(records):
+                        return True
+                    try:
+                        with conn.begin_nested():
+                            case = store.load_for_update(payload["case_id"])
+                            public.check_sources(conn, case, self._recording_repository(conn), local=True)
+                            public.admit_result(conn, payload, SimpleNamespace(appended_job_records=records))
+                    except PublicDenied as error:
+                        deferred.append(error.code)
+                        return False
+                    return True
                 result = case_api.execute_command(payload, store=store,
-                    timelines=RecordingSequentialTimelineSource(recording))
+                    timelines=RecordingSequentialTimelineSource(recording),
+                    admit_auto_exports=admission if self.public is not None else None)
                 if self.public is not None:
+                    if result.appended_job_records:
+                        from daesingo.common.public_runtime.work import local_only
+                        case = store.load_for_update(payload["case_id"])
+                        self.public.check_sources(conn, case, self._recording_repository(conn),
+                                                  local=local_only(result.appended_job_records))
                     self.public.admit_result(conn, payload, result)
+                    if deferred:
+                        from daesingo.common.public_runtime import schema as public_schema
+                        view = result.response["case_view"]
+                        conn.execute(public_schema.cases.update().where(public_schema.cases.c.case_id == payload["case_id"])
+                            .values(local_work_state={"case_rev": view["case_rev"], "reason": deferred[-1]}))
+                    self.public.decorate_view(conn, result.response["case_view"])
                 if result.cancelled_job_ids:
                     request_cancel(conn, result.cancelled_job_ids)
                 if result.appended_job_records:

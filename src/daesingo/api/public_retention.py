@@ -139,6 +139,7 @@ class PublicRetention:
                         state="DELETED", sources=[], deletion_plan=None, sample_id=None,
                         manifest_hash=None, sources_deleted_at=now(conn)))
                     conn.execute(t.admissions.update().where(t.admissions.c.case_id == case_id).values(active=False))
+                    conn.execute(t.local_admissions.update().where(t.local_admissions.c.case_id == case_id).values(active=False))
                 self.transaction(finish)
                 return {"state": "DELETED", "files": removed, "shared_entries_preserved": plan["shared_entries"]}
         except (PublicDenied, PurgeBlocked) as error:
@@ -170,7 +171,7 @@ class PublicRetention:
                 # Keep same-day receipts after DELETE, so deleting a Case never
                 # resets its IP/session quota. Cost/reservation ledgers survive.
                 deleted = sa.select(t.cases.c.case_id).where(t.cases.c.state == "DELETED")
-                for table in (t.admissions, t.preparations):
+                for table in (t.admissions, t.local_admissions, t.preparations):
                     conn.execute(table.delete().where(table.c.case_id.in_(deleted), table.c.created_at < cutoff))
                 conn.execute(t.cases.update().where(t.cases.c.state == "DELETED", t.cases.c.created_at < cutoff)
                              .values(session_hash=None, ip_hash=None))

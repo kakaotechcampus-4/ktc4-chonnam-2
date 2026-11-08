@@ -1,4 +1,4 @@
-"""Shared public state, introduced by frozen runtime_0007; no cross-domain FK."""
+"""Shared public state, runtime_0007/0008; no cross-domain FK."""
 import sqlalchemy as sa
 from sqlalchemy.dialects.mysql import BINARY
 
@@ -19,6 +19,7 @@ control = table("public_control",
     sa.Column("id", sa.Integer, primary_key=True, autoincrement=False),
     sa.Column("accepting", sa.Boolean, nullable=False),
     sa.Column("policy_hash", sa.LargeBinary(32)),
+    sa.Column("jobs_stopped", sa.Boolean, nullable=False, server_default=sa.true()),
     sa.CheckConstraint("id = 1", name="ck_public_control_singleton"))
 
 sessions = table("public_session",
@@ -42,6 +43,7 @@ cases = table("public_case",
     sa.Column("deletion_plan", sa.JSON),
     sa.Column("temp_token", sa.String(32), nullable=False),
     sa.Column("sources_deleted_at", sa.DateTime),
+    sa.Column("local_work_state", sa.JSON),
     sa.Index("ix_public_case_owner", "session_hash", "created_at"),
     sa.Index("ix_public_case_expiry", "state", "expires_at"),
     sa.CheckConstraint("state IN ('ACTIVE','DELETING','DELETED')", name="ck_public_case_state"))
@@ -66,6 +68,18 @@ preparations = table("public_preparation",
     sa.Column("finished_at", sa.DateTime),
     sa.Index("ix_public_preparation_case", "case_id"),
     sa.Index("ix_public_preparation_ip", "ip_hash", "created_at"))
+
+local_admissions = table("public_local_admission",
+    sa.Column("case_id", sa.String(128), primary_key=True),
+    sa.Column("request_hash", sa.LargeBinary(32), primary_key=True),
+    sa.Column("session_hash", sa.LargeBinary(32), nullable=False),
+    sa.Column("ip_hash", sa.LargeBinary(32), nullable=False),
+    sa.Column("created_at", sa.DateTime, nullable=False),
+    sa.Column("job_ids", sa.JSON, nullable=False),
+    sa.Column("job_count", sa.Integer, nullable=False),
+    sa.Column("active", sa.Boolean, nullable=False),
+    sa.CheckConstraint("job_count > 0", name="ck_public_local_job_count"),
+    sa.Index("ix_public_local_ip", "ip_hash", "created_at"))
 
 reservations = table("public_reservation",
     sa.Column("usage_id", sa.String(128), primary_key=True),

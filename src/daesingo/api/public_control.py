@@ -24,16 +24,19 @@ def control(engine, policy, action, *, verify_catalog=None):
     def operation(conn):
         store.locked(conn)
         if action != "status":
-            store.set_open(conn, action == "open")
+            if action == "pause-analysis":
+                store.pause_analysis(conn)
+            else:
+                store.set_open(conn, action == "open")
         state = conn.execute(select(schema.control).where(schema.control.c.id == 1)).mappings().one()
-        return {"accepting": bool(state["accepting"]), "policy_available": policy is not None,
+        return {"accepting": bool(state["accepting"]), "jobs_stopped": bool(state["jobs_stopped"]), "policy_available": policy is not None,
                 "policy_matches": policy is not None and state["policy_hash"] == policy.fingerprint()}
     return run_api_transaction(engine, operation)
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("status", "stop", "open"))
+    parser.add_argument("action", choices=("status", "stop", "pause-analysis", "open"))
     parser.add_argument("--env-file", required=True)
     args = parser.parse_args(argv)
     engine = None

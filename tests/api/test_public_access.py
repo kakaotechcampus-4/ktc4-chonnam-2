@@ -80,6 +80,72 @@ def test_catalog_selects_only_safe_presentation_fields(a1_app):
         assert all(x not in text for x in ("authorization_ref", "sha256", "part.mp4", "samples_root"))
 
 
+def test_closed_gate_does_not_hide_jobless_domain_validation_or_owner_view(a1_app):
+    app, engine, store = a1_app
+    with TestClient(app, base_url="https://testserver") as client:
+        session(client)
+        created = client.post("/cases", headers={"Origin": "https://testserver"}).json()
+        cid, rev = created["case_id"], created["case_view"]["case_rev"]
+        with engine.begin() as conn:
+            store.set_open(conn, False)
+        assert client.get(f"/cases/{cid}/view").status_code == 200
+        result = client.post(f"/cases/{cid}/commands", headers={"Origin": "https://testserver"},
+            json={"case_id": cid, "expected_case_rev": rev, "kind": "MARK_REVIEWED", "payload": {}})
+        # INTAKE does not allow MARK_REVIEWED; this must be Case's validation,
+        # rather than a public 503 before learning whether a job is generated.
+        assert result.status_code == 409 and result.json()["error"]["code"] == "case.command.not_allowed"
+
+
+@pytest.mark.parametrize("local_work", [False, True])
+def test_source_object_cannot_replace_admission_class(monkeypatch, local_work):
+    from types import SimpleNamespace
+    from daesingo.api.public_access import PublicAPI
+    public = object.__new__(PublicAPI)
+    seen = []
+    public.ready = lambda: None
+    public.store = SimpleNamespace(accepting=lambda conn: None, local_accepting=lambda conn: None,
+        _bound_case=lambda conn, cid, **kw: seen.append(kw["local"]))
+    bound = [{"source_asset_ref": "source", "sha256": "a"*64, "byte_size": 10, "duration_ms": 1000}]
+    public.require = lambda conn, cid: {"sources": bound}
+    monkeypatch.setattr("daesingo.api.public_access.source_duration_ms", lambda source: 1000)
+    repository = SimpleNamespace(get_local_source=lambda ref: SimpleNamespace(sha256="a"*64, byte_size=10))
+    public.check_sources(None, SimpleNamespace(case_id="owned", sources=[{"source_asset_ref": "source"}]), repository,
+                         local=local_work)
+    assert seen == [local_work] and type(seen[0]) is bool
+
+
+def test_api_preserves_saved_change_and_persistent_not_queued_notice_during_stop(a1_app, monkeypatch):
+    # This substitutes only the Case command to isolate Runtime's save/defer
+    # port. Actual Case correction semantics have separate domain tests.
+    from daesingo.api.composition import case_api
+    from daesingo.case.command import CommandResult
+    app, engine, store = a1_app
+    def saved(payload, *, store, admit_auto_exports, **kwargs):
+        case = store.load_for_update(payload["case_id"])
+        case.description = "TEST_ONLY_SAVED_CHANGE"
+        case.case_rev += 1
+        store.save(case)
+        assert admit_auto_exports([{"job_id": "TEST_ONLY_EXPORT", "case_id": case.case_id, "kind": "REPORT_VIDEO_EXPORT"}]) is False
+        return CommandResult({"ok": True, "error": None, "case_view": case_api.get_view(case.case_id, store=store)})
+    with TestClient(app, base_url="https://testserver") as client:
+        session(client)
+        created = client.post("/cases", headers={"Origin": "https://testserver"}).json()
+        cid, rev = created["case_id"], created["case_view"]["case_rev"]
+        with engine.begin() as conn:
+            store.set_open(conn, False)
+        monkeypatch.setattr(case_api, "execute_command", saved)
+        response = client.post(f"/cases/{cid}/commands", headers={"Origin": "https://testserver"},
+            json={"case_id": cid, "expected_case_rev": rev, "kind": "MARK_REVIEWED", "payload": {}})
+        assert response.status_code == 200
+        view = response.json()["case_view"]
+        assert view["description"] == "TEST_ONLY_SAVED_CHANGE" and view["case_rev"] == rev + 1
+        note = [n for n in view["notices"] if n["code"] == "public.local_work_not_queued"]
+        assert len(note) == 1 and note[0]["message_key"] == "notice.public_local_jobs_stopped" and note[0]["actions"] == []
+        assert [n for n in client.get(f"/cases/{cid}/view").json()["notices"] if n["code"] == note[0]["code"]] == note
+        client.cookies.clear()
+        assert client.get(f"/cases/{cid}/view").status_code == 404
+
+
 def test_cross_origin_session_and_case_creation_are_rejected(a1_app):
     app, _, _ = a1_app
     with TestClient(app, base_url="https://testserver") as client:

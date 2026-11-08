@@ -26,6 +26,7 @@ class PublicDenied(UsageError):
     def status(self):
         return {"NOT_FOUND": 404, "ORIGIN": 403, "UPLOAD_DISABLED": 403,
                 "LIMIT": 429, "CONCURRENT": 429, "BUDGET": 429,
+                "LOCAL_LIMIT": 429, "LOCAL_CONCURRENT": 429,
                 "INPUT": 422, "BUSY": 409}.get(self.code, 503)
 
 
@@ -35,6 +36,13 @@ class Bound(BaseModel):
     provider_label: Annotated[str, Field(min_length=1, max_length=191)]
     reserve_micros: Positive
     evidence_ref: Annotated[str, Field(min_length=1, max_length=256)]
+
+
+class LocalWorkLimits(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+    case_jobs: Positive
+    ip_daily_jobs: Positive
+    global_concurrent: Positive
 
 
 class PublicPolicy(BaseModel):
@@ -59,6 +67,7 @@ class PublicPolicy(BaseModel):
     daily_budget_micros: Positive
     total_budget_micros: Positive
     bounds: Annotated[tuple[Bound, ...], Field(min_length=1, max_length=64)]
+    local_work: LocalWorkLimits | None = None
 
     @field_validator("bounds", mode="before")
     @classmethod

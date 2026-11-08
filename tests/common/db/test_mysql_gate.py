@@ -54,7 +54,7 @@ CANDIDATE_VIDEO_CHECKS = tuple(("candidate_video", scenario) for scenario in (
     "process_kill", "range_concurrency", "compatible_bridge"))
 
 REQUIRED_CHECKS = (
-    *(("public_a1", scenario) for scenario in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery")),
+    *(("public_a1", scenario) for scenario in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery", "local_work", "stop_modes", "export_deferral")),
     *CANDIDATE_VIDEO_CHECKS,
     *EXHAUSTION_CHECKS,
     *OBSERVABILITY_CHECKS,
@@ -146,6 +146,9 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *(("public_a1", "local_work", mode) for mode in ("repeat", "concurrent", "ip_limit")),
+    *(("public_a1", "stop_modes", kind) for kind in ("REPORT_VIDEO_EXPORT", "FINE_VERIFY", "exhaustion_pause", "exhaustion_stop")),
+    *(("public_a1", "export_deferral", mode) for mode in ("capacity", "repeat", "stop")),
     *EXHAUSTION_PARAMETERS,
     *OBSERVABILITY_PARAMETERS,
     *ASSET_PARAMETERS,

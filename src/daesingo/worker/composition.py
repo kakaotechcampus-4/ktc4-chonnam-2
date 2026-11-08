@@ -34,6 +34,7 @@ from daesingo.common.public_runtime.policy import load_policy, PublicDenied
 from daesingo.common.public_runtime.repository import PublicStore
 from daesingo.common.public_runtime import schema as public_schema
 from daesingo.common.public_runtime.temporary import case_temp_scope, public_temp_root
+from daesingo.worker.public_reflection import PublicResultReflector, PublicExhaustionReceiver
 
 _CANCEL_TERMINAL_LATENCY = text("""SELECT
 TIMESTAMPDIFF(MICROSECOND, cancel_requested_at, NOW(6)) / 1000.0
@@ -197,15 +198,19 @@ def compose_worker(
                          interval=settings.heartbeat_interval_sec, logger=startup.logger,
                          observe=heartbeat_observe)
 
+    guarded_reflector = PublicResultReflector(reflector, public) if reflector is not None else None
+    guarded_exhaustion = PublicExhaustionReceiver(exhaustion_receiver, public) if exhaustion_receiver is not None else None
+
     def reflect(context: ExecutionContext, terminal: HandlerResult):
         # This callback is installed below only with a reflector.
         assert reflector is not None
+        assert guarded_reflector is not None
         incoming = ReflectionInput(context.execution_id, context.job_id, context.case_id,
                                    context.kind, context.attempt, terminal)
         with bind_context(**safe_correlation(trace_id=context.trace_id, case_id=context.case_id,
                                             job_id=context.job_id, execution_id=context.execution_id)):
             result = run_worker_transaction(
-                engine, lambda conn: reflect_terminal(conn, incoming, reflector, context.trace_id),
+                engine, lambda conn: reflect_terminal(conn, incoming, guarded_reflector, context.trace_id),
                 sleep=sleep, logger=startup.logger,
             )
             # A recovered/completed receipt is ALREADY_APPLIED, so no double count.
@@ -228,7 +233,7 @@ def compose_worker(
     def dispatch_public(context):
         def binding(conn):
             public.locked(conn)
-            row = public._bound_case(conn, context.case_id)
+            row = public.dispatch_case(conn, context)
             return None if row is None else row["temp_token"]
         token = run_worker_transaction(engine, binding, sleep=sleep, logger=startup.logger)
         if token is None:
@@ -263,9 +268,10 @@ def compose_worker(
             settings=settings, stop=stop, logger=startup.logger,
             hooks=(partial(reconcile_once, engine, sleep=sleep, logger=startup.logger, observe=usage_observe),
                    *sweep_hooks),
-            redeliver=partial(redeliver_once, engine, reflector, sleep=sleep, logger=startup.logger)
-                if reflector is not None else None,
-            redeliver_exhaustion=partial(redeliver_exhaustion_once, engine, exhaustion_receiver,
-                sleep=sleep, logger=startup.logger) if exhaustion_receiver is not None else None,
+            redeliver=partial(redeliver_once, engine, guarded_reflector, sleep=sleep, logger=startup.logger,
+                              transaction_guard=public.locked)
+                if guarded_reflector is not None else None,
+            redeliver_exhaustion=partial(redeliver_exhaustion_once, engine, guarded_exhaustion,
+                sleep=sleep, logger=startup.logger, transaction_guard=public.locked) if guarded_exhaustion is not None else None,
         ),
     )

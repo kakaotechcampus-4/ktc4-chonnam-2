@@ -42,7 +42,7 @@ def public_db(mysql_schema_url, tmp_path):
     store = PublicStore(PublicPolicy.model_validate(policy_values(tmp_path)), require_public=True, worker_id="worker")
     with engine.begin() as conn:
         assert conn.execute(sa.select(t.control.c.accepting)).scalar_one() is False
-        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0007"
+        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0008"
     yield engine, store
     engine.dispose()
 
@@ -211,7 +211,7 @@ def test_real_worker_default_gate_reserves_before_each_fake_http_and_keeps_obser
                     operation="SEARCH_COARSE", provider_label="fake:test")
     with engine.begin() as conn, pytest.raises(PublicDenied) as stopped:
         store.reserve(conn, snapshot)
-    assert stopped.value.code == "STOPPED"
+    assert stopped.value.code == "JOBS_STOPPED"
     with engine.connect() as conn:
         assert conn.exec_driver_sql("SELECT COUNT(*) FROM usage_inflight WHERE state='OBSERVED'").scalar_one() == 1
 

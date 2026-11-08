@@ -39,7 +39,7 @@ def test_real_head6_to7_keeps_old_jobs_and_readiness_but_old_migrator_refuses_un
     engine = sa.create_engine(mysql_schema_url, hide_parameters=True)
     try:
         with engine.connect() as conn:
-            assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0007"
+            assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0008"
             assert conn.execute(sa.select(t.control.c.accepting)).scalar_one() is False
         assert invoke(releases, old, mysql_schema_url, root, "job_finish", case_id="retained")["ok"]
         assert invoke(releases, old, mysql_schema_url, root, "job_reflect", case_id="retained")["ok"]
@@ -55,7 +55,7 @@ def test_real_head6_to7_keeps_old_jobs_and_readiness_but_old_migrator_refuses_un
         assert not refused["ok"] and refused["error"] == "MigrationFailure"
         upgrade_all(mysql_schema_url)
         with engine.connect() as conn:
-            assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0007"
+            assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0008"
             assert conn.exec_driver_sql("SELECT COUNT(*) FROM cases WHERE case_id='retained'").scalar_one() == 1
     finally:
         engine.dispose()
@@ -79,7 +79,7 @@ def test_old_source_serves_head7_data_without_session_and_is_not_public_safe(pub
     assert old_read["result"]["body"]["case_id"] == cid
     with engine.connect() as conn:
         assert conn.execute(sa.select(t.control.c.accepting)).scalar_one() is False
-        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0007"
+        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0008"
     # This is a negative compatibility control, not approval of this target.
     # DB CLOSED alone cannot protect an old API; closed public ingress would
     # have to be independently proved before any maintenance-only rollback.
@@ -122,7 +122,7 @@ def test_existing_controller_can_restart_current_guarded_tuple_without_schema_or
         assert restarted.post(f"/cases/{cid}/commands", headers=headers, json={"kind": "START_ANALYSIS"}).status_code == 503
     with engine.connect() as conn:
         assert dict(conn.execute(sa.select(t.reservations)).mappings().one()) == before
-        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0007"
+        assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0008"
     refused = Host(root)
     with pytest.raises(controller.HostError):
         controller.transition(root, {**guarded, "config_id": "NOT_APPROVED"}, "rollback", refused)

@@ -18,6 +18,7 @@ from daesingo.common.public_runtime import schema as public_schema
 from sqlalchemy import select
 from .official_samples import OfficialSamples, SampleRejected, source_duration_ms
 from .upload import _storage_call
+from daesingo.common.public_runtime.work import local_only
 
 COOKIE = "__Host-daesingo_a1"
 _actor: ContextVar[bytes | None] = ContextVar("public_owner", default=None)
@@ -61,7 +62,12 @@ class PublicAPI:
         return run_api_transaction(self.engine, callback)
 
     def ready(self):
-        if self.policy is None or self.catalog is None:
+        self.configured()
+        if self.catalog is None:
+            raise PublicDenied()
+
+    def configured(self):
+        if self.policy is None:
             raise PublicDenied()
 
     def owner(self):
@@ -81,31 +87,41 @@ class PublicAPI:
     def claim(self, conn, case_id):
         self.ownership.claim_case(conn, case_id, self.owner())
 
-    def check_sources(self, conn, case, repository):
+    def check_sources(self, conn, case, repository, *, local=False):
         self.ready()
-        self.store.accepting(conn)
+        self.store.local_accepting(conn) if local else self.store.accepting(conn)
         row = self.require(conn, case.case_id)
         bound = row["sources"]
         if (not bound or [s["source_asset_ref"] for s in case.sources]
                 != [s["source_asset_ref"] for s in bound]):
             raise PublicDenied("INPUT")
         for item in bound:
-            local = repository.get_local_source(item["source_asset_ref"])
-            if (local is None or local.sha256 != item["sha256"] or local.byte_size != item["byte_size"]
-                    or source_duration_ms(local) != item["duration_ms"]):
+            source = repository.get_local_source(item["source_asset_ref"])
+            if (source is None or source.sha256 != item["sha256"] or source.byte_size != item["byte_size"]
+                    or source_duration_ms(source) != item["duration_ms"]):
                 raise PublicDenied("INPUT")
-        self.store._bound_case(conn, case.case_id)
+        self.store._bound_case(conn, case.case_id, local=local)
 
     def admit_result(self, conn, payload, result):
         if not result.appended_job_records:
             return
-        # All user-issued jobs share the queue admission bound, including new
-        # kinds. Automatic successors retain the active original admission.
         key = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).digest()
+        if local_only(result.appended_job_records):
+            return self.store.admit_local(conn, payload["case_id"], key, result.appended_job_records)
         self.store.admit(conn, payload["case_id"], key, initial=payload.get("kind") == "START_ANALYSIS")
 
+    def decorate_view(self, conn, view):
+        if view is None:
+            return view
+        row = self.require(conn, view["case_id"])
+        state = row["local_work_state"]
+        if state and state["case_rev"] == view["case_rev"]:
+            view["notices"].append({"code": "public.local_work_not_queued", "severity": "WARN", "blocking": False,
+                "message_key": "notice.public_local_" + state["reason"].lower(), "actions": []})
+        return view
+
     def origin(self, headers):
-        self.ready()
+        self.configured()
         if headers.get("origin") != self.policy.origin:
             raise PublicDenied("ORIGIN")
 
@@ -113,7 +129,7 @@ class PublicAPI:
         token = request.cookies.get(COOKIE, "")
         if not re.fullmatch(r"[A-Za-z0-9_-]{43}", token):
             raise PublicDenied("NOT_FOUND")
-        self.ready()
+        self.configured()
         return self.store.fingerprint("session:" + token)
 
     def issue_session(self, request):

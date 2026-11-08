@@ -238,7 +238,7 @@ def test_actual_preview_writer_reader_bridge(mysql_engine, tmp_path, monkeypatch
                  for name in ('case', 'recording', 'runtime')}
     # The current source adds A-1 tables; old-reader data compatibility is
     # tested here, not old-image readiness/rollback approval at the new head.
-    assert heads == {'case': 'case_0001', 'recording': 'recording_0002', 'runtime': 'runtime_0007'}
+    assert heads == {'case': 'case_0001', 'recording': 'recording_0002', 'runtime': 'runtime_0008'}
     before = state()
     redelivery = invoke(releases, 'final', mysql_engine.url, root, 'job_reflect',
                         case_id=cid, job_kind='CANDIDATE_VIDEO_PREVIEW')

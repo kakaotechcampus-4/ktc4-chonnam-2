@@ -408,7 +408,7 @@ def test_forward_migration_and_schema_boundaries(mysql_schema_url, mode):
         api()
         with engine.connect() as conn:
             inspector = sa.inspect(conn)
-            assert conn.exec_driver_sql('SELECT version_num FROM runtime_alembic_version').scalar_one() == 'runtime_0007'
+            assert conn.exec_driver_sql('SELECT version_num FROM runtime_alembic_version').scalar_one() == 'runtime_0008'
             columns = {c['name']:c for c in inspector.get_columns('job_exhaustion_notice')}
             assert set(columns) == {'notice_id','job_id','case_id','kind','final_execution_id','attempt','terminal_status','reason','exhausted_at','trace_id','case_acknowledged_at'}
             assert {k for k,c in columns.items() if c['nullable']} == {'case_acknowledged_at'}
