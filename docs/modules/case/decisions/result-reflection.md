@@ -56,6 +56,19 @@ Worker가 terminal execution 하나를 넘기면 case가 한 번만, 기다리�
 - `tests/case/test_case_repository_contract.py::test_processed_executions_survive_save_and_load` — in-memory · MySQL.
 - `tests/case/test_result_reflection_mysql.py`(MySQL opt-in, CI 필수) — 실제 Runtime `enqueue` · `claim_one` · `finish` · `reflect_terminal`에 어댑터로 꽂아 `APPLIED` → 재전달 `ALREADY_APPLIED` · `case_applied_at` 표식 · `running_jobs=[]`, rollback이면 case · 표식 둘 다 남지 않음.
 
+## A-1 완료 정산과 자동 export 보류 (2026-11-08 로컬 구현, #629)
+
+관찰/export terminal의 settle·관측 결과를 먼저 반영한다. 자동 export는 그 뒤 후보 aggregate에 만들고
+선택적 admission이 거부하면 후보만 폐기한다. 완료 aggregate의 processed_executions와 Runtime T2 표식은
+같은 호출자 transaction에서 commit되어 기존 terminal 재전달은 ALREADY_APPLIED가 된다.
+따라서 active export2/상한2에서 정정 후 후속이 거부되어도 이전 terminal이 슬롯 해제를 막지 않는다.
+이 규칙은 추가 자동 REPORT_VIDEO_EXPORT/PLATE_IMAGE_EXPORT에만 적용한다.
+Fine→clip·clip→판독·HINT→Coarse 등 필수 후속은 기존 admission/원자성 규칙을 유지한다.
+수락한 자동 발주는 같은 transaction의 receipt/Case JobRecord/enqueue로 결속하고 중복 차감하지 않는다.
+일반 pause에서는 승인 상한 내 무료 발주만 허용, 긴급 stop에서는 자동 무료 발주도 보류한다.
+기존 완료 결과·T1·산출물·비용/예약은 지우지 않는다. 보류는 성공 응답/재조회 notice로 구분하고 READY로 꾸미지 않는다.
+재개 후 이전 terminal을 재전달해 새 job을 만들지 않으며, 사용자의 명시 action은 현재 입력으로 별도 admission을 받는다.
+
 ## 6. 남은 것
 
 - RT-09(#296) · RT-06(T2 재전달)이 composition root에서 이 함수를 `ResultReflector`로 꽂는다.

@@ -152,12 +152,10 @@ describe('화면 선택', () => {
     }
   })
 
-  it('응답 뒤 신고자료를 준비하는 동안(running_jobs)은 진행이고, 응답 대기 중이면 job이 있어도 결과다', () => {
+  it('신고자료를 준비하는 동안(running_jobs)에도 결과 화면이다 — 초안을 먼저 보인다(#597)', () => {
     const evidence = views.find((v) => v.stage === 'EVIDENCE_REVIEW' && v.evidence !== null)!
     const job = { job_id: 'j', kind: 'REPORT_VIDEO_EXPORT', label_key: 'job.generic_processing', status: 'RUNNING' } as const
-    const pending = { code: 'case.situation_response_pending', severity: 'INFO' as const, blocking: false, message_key: 'notice.situation_response_pending', actions: [] }
-    expect(selectScreen({ ...evidence, notices: [], running_jobs: [job] }).kind).toBe('PROGRESS')
-    expect(selectScreen({ ...evidence, notices: [pending], running_jobs: [job] }).kind).not.toBe('PROGRESS')
+    expect(selectScreen({ ...evidence, notices: [], running_jobs: [job] }).kind).toBe('EVIDENCE')
     expect(selectScreen({ ...evidence, notices: [], running_jobs: [] }).kind).toBe('EVIDENCE')
   })
 

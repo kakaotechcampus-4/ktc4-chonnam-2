@@ -212,3 +212,84 @@ handshake가 timeout되고 MySQL 접속은 실패한다. 따라서 Windows TCP �
 3,132 phase/JUnit, 원본 digest, mutation rejection 기록, append-only Log를 독립 대조했다.
 리뷰어가 테스트·DB·제품 프로세스를 새로 실행한 결과는 아니다. 전체 regression·새 Ubuntu
 원격 CI·원격 timeout 해소·최종 전체 wall 개선 및 merge 준비는 여전히 판단 보류다.
+
+## #619 MySQL 시간 예산 보완 (2026-11-07)
+
+위 2026-10-28 설계·검증 수치와 timeout은 당시 기록이다. 이번 변경은 검사 선택이나
+제품 코드 변경 없이 현재 canonical 제한 1,500초와 MySQL job 제한 30분을 함께 보완한다.
+
+### 확인한 원격 증거
+
+- [#617 run 42350662704, MySQL job 128337886110](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42350662704/job/128337886110):
+  PR HEAD `71624afa05d66c0575ac81c1aa65424d6ea07100`을 base에 합친 checkout은
+  `0f35ec3416effd1eda1c98849ec9f1290a948588`이다. 1,313 selected 중 PASSED 출력
+  1,272건 뒤 canonical이 1,500.039초에 `TimeoutExpired`, CLI exit 1로 끝났다.
+  공백을 한 칸으로만 세면 Case 2건을 놓쳐 1,270건이 된다. 테스트 FAILED/ERROR 출력은
+  없지만 최종 summary·strict·실제 report mutation 완료는 없다. collection의 4 skipped는
+  별도 관측이며 MySQL skip=0을 입증한 완료 보고서로 취급하지 않는다.
+  신규 Coarse MySQL 4개 PASSED도 이 미완료 실행의 일부다. #617 변경은 이번 브랜치에 포함하지 않는다.
+- [#613 같은 run의 성공 재실행 job 128339570630](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42349266405/job/128339570630):
+  checkout `8e443cce`, canonical 1,099.863초, strict 0.052초, 실제 report mutation
+  42.307초다. canonical summary 1,309 passed와 strict의 MySQL skip=0/xfail=0을 확인했다.
+  [#619 원문](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/619)에 인용된 같은 run의
+  이전 실패 job `128333710794`와 구별한다. 서로 다른 revision의 시간을 직접 성능 비교하지 않는다.
+- runner 첫 로그부터 orchestration step 시작까지 직접 계산한 준비 구간은 #617 약 56초,
+  #613 성공 재실행 약 49초다. 서비스 준비·checkout·의존성·ffmpeg 설치를 포함한다.
+  #617에는 후속 검증 시간이 없으므로 위 성공 실행과 기존 로컬 mutation 기록(95.83초)을
+  참고하되 현재 revision의 전체 소요시간으로 단정하지 않는다.
+
+### 적용한 유한 예산
+
+| 구간 | 이전 제한 | 새 예산 | 의미 |
+| --- | ---: | ---: | --- |
+| 준비 | job 제한 안 | 180초 여유 | 개별 step 제한이 아닌 설치·서비스 준비 예산 |
+| canonical-mysql | 1,500초 | 2,400초 | 실제 MySQL inventory를 기존 선택으로 1회 실행 |
+| strict | subprocess 제한 없음 | 60초 | 기존 JSON/JUnit strict CLI 그대로 실행 |
+| actual-report-mutations | subprocess 제한 없음 | 300초 | 실제 보고서 기반 기존 전체 mutation 그대로 실행 |
+| 후처리 | job 제한 안 | 60초 여유 | sealing·최종 digest 검사·checkout/service 정리 예산 |
+| MySQL job 전체 | 30분 | 50분(3,000초) | 위 예산 합계; GitHub Actions의 최종 상한 |
+
+2,400초는 완료 실측치가 아닌 한시적 상한이다. canonical만 40분으로 늘리면 기존 30분
+job이 먼저 취소하므로 두 제한을 함께 바꾼다. 준비·후처리 예산은 보장된 최대 시간이 아니다.
+strict 60초와 mutation 300초는 위 관측치보다 여유를 둔 제한이며 무제한 대기를 없앤다.
+서비스·설치가 예산보다 길어지면 최종 job 제한이 먼저 적용될 수 있다.
+
+`CI stage` stdout과 `timings.jsonl`은 `stage`, `outcome`, 실제 `seconds`, 설정한
+`timeout_seconds`를 남긴다. subprocess 제한 초과는 `outcome=timeout`, 비정상 종료는
+`outcome=failed`, 정상 종료만 `success`다. timeout과 비정상 종료 모두 원래 예외를 다시
+발생시키므로 CLI가 실패하고 후속 단계를 실행하지 않는다. job 자체 취소는 orchestrator
+기록을 남기지 못할 수 있으므로 Actions의 job 결과도 확인한다. 집계 `test`는 여전히
+정확한 success만 수락한다.
+
+MySQL marker/경로·assertion·skip/xfail 정책·strict checker·catalog·실제 report mutation·
+원본 digest 검증은 바꾸지 않는다. 병렬 분할·제품 코드·#617 구현도 추가하지 않는다.
+`CLAUDE.md`와 `.github/CODEOWNERS`, ownership §6에 따라 운영진 소유 4개 파일은 그대로다.
+팀 소유 `.github/workflows/python-tests.yml`의 MySQL job 제한만 수정 가능하므로 별도
+운영진 변경 요청은 필요 없다. 만약 별도 외부 승인 정책으로 workflow 변경이 막히면,
+담당자가 이 파일의 `jobs.mysql.timeout-minutes: 30 → 50`과 예산 주석을 함께 적용해야 한다.
+그 적용 전에는 2,400초 canonical 예산을 원격에서 온전히 사용할 수 없다.
+
+### 검증과 후속 확인
+
+실제 child subprocess의 성공·비정상 종료·timeout을 구분하는 CLI control과, 세 단계
+각각의 실패/timeout 후 중단 control을 추가했다. orchestration controls는 기존 36개
+PASS에서 TDD RED 10 failed/35 passed를 확인한 뒤 GREEN 45 passed다.
+관련 orchestration·strict gate·mutation helper·schema policy·nested inventory controls는
+**9,586 passed / 174.99초**다. 이 수에는 orchestration 45개가 포함된다.
+전체 collection 감사는 full 16,428 = regression 15,117 + MySQL 1,309 + media 1 + gate 1로
+Counter 누락·중복 없이 통과했다. 이는 로컬 Python 3.12.14 수집이며 #617 집합과 구별한다.
+Runtime Ruff 및 Linux/Windows mypy(각 91 files), 변경 orchestration Ruff, actionlint,
+boundary 위반 0, Contract 62/26/104 검사, diff check를 통과했다.
+테스트 파일 Ruff는 기존 HEAD와 동일한 F401 1건·E701 13건, 합계 14건이 남아 있으며
+신규 진단은 0이다. 범위 밖 lint 정리는 하지 않았다.
+최초 baseline 시도는 scratch 부모 디렉터리 부재로 18 setup errors였고, 디렉터리 생성 후
+수정 전 baseline은 36 passed다. 이 환경 오류를 기능 부재 RED로 계산하지 않는다.
+독립 리뷰어는 별도 orchestration 실행 45 passed와 원격 로그를 재확인했고 actionable finding은
+없었다. 리뷰어 최초 실행의 기본 temp 권한 오류도 전용 scratch basetemp 재실행과 구별한다.
+진단 로그와 상세 검증 결과는 `.codex-scratch/issue619-mysql-ci-timeout/`에 보관하며 PR에서 제외한다.
+
+이번에는 실제 전체 MySQL·전체 regression·새 Ubuntu workflow를 실행하지 않았다.
+후속 PR merge revision의 CI에서 canonical 최종 summary, strict skip=0/xfail=0, catalog,
+전체 실제-report mutation, 최종 digest, 세 stage success와 집계 `test` success를 확인해야 한다.
+각 stage 및 준비·후처리 시간도 함께 확인해야 하며 이 변경만으로 #617 또는 #619의
+전체 MySQL 통과나 원격 시간 초과 해소를 주장하지 않는다.

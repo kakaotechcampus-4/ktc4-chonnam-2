@@ -1,9 +1,11 @@
 # 대신고 — 모듈 기반 역할 배정안 v2
 
 > **전제 문서:** `product/product-spec.md`·`product/core-user-flow.md` (제품) · `architecture/module-architecture.md` **v4** (구조) · `management/cross-cutting-decisions.md` (운영 역할)
-> **이 문서가 하는 일:** 모듈 7개 + 공통 기반/운영을 6명에게 배정하고, 모듈 경계 밖 운영 역할의 담당을 정하고, 각자 **지금 단계에서 무엇을 내놓을지**까지 정한다.
+> **이 문서가 하는 일:** 모듈 7개 + 공통 기반/운영을 6명에게 배정하고, 모듈 경계 밖 운영 역할의 담당을 정하고, 단계별 산출물 계획의 이력도 함께 보존한다.
 > **v1 → v2에서 바뀐 것:** 절 번호를 v4로 교체 · 운영 역할 표 신설(cross-cutting 결정 11건) · 자료조사 단계 완료 표시 · 배정 근거를 사람이 아니라 **일의 특성**으로 서술 · 계약 표를 v4 §5-1에 맞춤.
 > **결정 방식:** 병렬 개발 효율을 1순위로 두고, 그 안에서 PM이 사전 공유한 분배안을 최대한 따랐다. 6명 전원이 사전 분배안과 일치한다.
+
+**초기 통합 계획 기록**
 
 ```text
 ① 담당 파트 자료조사 ✓  →  ② 모듈안 고도화 ✓ (v4)  →  ③ 데이터 계약 확정 ✓ (계약 BLOCK 축 종결 2026-09-08 · W04·N02 잔여)  →  ④ 목데이터 1차 통합 ◀ 다음
@@ -485,7 +487,7 @@ workflow 변경은 없다. 새 pytest fixture는 기존 `python-tests` regressio
 >
 > **현재 계약 상태:** canonical 계약 16건은 모두 `Final — Accepted`. 다만 `contract-job-execution.md` §11의 W04 소비자 확인처럼 Final Contract 내부에 명시적으로 남은 후속 확인은 그대로 유효하며 임의 종결하지 않는다.
 >
-> **현재 구현 상태:** Mock integration과 `src/daesingo/{case,search,readout,recording,evidence,common}` 구현·테스트, `apps/web` 구현, `eval/` runner/scorer가 존재한다. 반면 실제 `api`/worker composition root와 모듈 간 실제 AI 호출 기반 E2E는 아직 없다. **현재 구현 현황의 Source of Truth는 루트 `README.md`와 각 모듈 README/checklist**이며, 이 ownership 문단은 milestone 기준만 보존한다.
+> **후속 구현 상태 (2026-11-07):** API·Worker composition root가 구현됐고 실모델을 사용한 제품 E2E 실행 기록이 있다. 현재 구현 현황은 루트 [README](../../README.md)와 각 모듈 README/checklist에서 확인한다. 아래는 목데이터 통합 milestone의 기준이다. [EC2 제품 E2E 기록](../runtime/experiments/2026-11-07-ec2-20file-product-e2e-result.md)
 
 **통합 담당: 유소연.** 이 시점에 확인하는 것은 기능이 아니라 **계약이 실제로 맞물리는지**다.
 

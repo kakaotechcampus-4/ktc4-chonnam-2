@@ -10,9 +10,11 @@ from daesingo.common.storage.cleanup import configured_cleanup
 from daesingo.common.storage.media import MediaRoot
 from daesingo.case.search_progress import record_search_progress
 from daesingo.common.logging import log_event_best_effort
+from daesingo.worker.coarse_frames import CoarseFrameIssuer
+from daesingo.case import preview_frame
 
 
-def compose_search_registry(*, engine, startup, service_factory=None, failures=None):
+def compose_search_registry(*, engine, startup, service_factory=None, failures=None, coarse_frames=None):
     def transaction(callback):
         return run_worker_transaction(engine, callback, logger=startup.logger)
 
@@ -26,6 +28,12 @@ def compose_search_registry(*, engine, startup, service_factory=None, failures=N
         service_factory = ProductionMediaFactory(transaction=transaction,
             storage_root=startup.config.media_root, temp_root=startup.config.temp_root,
             settings=recording, search_settings=modules["search"], media=media)
+        # #604 is a required Case dependency. No silent selector copy/fallback.
+        candidate_ids = getattr(preview_frame, 'coarse_thumbnail_candidate_ids', None)
+        if not callable(candidate_ids):
+            raise ValueError('Case Coarse thumbnail capability (#604) required')
+        coarse_frames = CoarseFrameIssuer(recording_factory=service_factory.frame_service,
+            candidate_ids=candidate_ids, candidate_position=preview_frame.candidate_frame_position)
 
     def intent():
         settings = startup.modules["search"]
@@ -43,4 +51,4 @@ def compose_search_registry(*, engine, startup, service_factory=None, failures=N
             log_event_best_effort(startup.logger, "search.progress_unavailable")
 
     return search_registry(load=inputs, intent_factory=intent, service_factory=service_factory,
-                           failures=failures, report_progress=report_progress)
+                           failures=failures, report_progress=report_progress, coarse_frames=coarse_frames)

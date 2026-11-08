@@ -84,3 +84,32 @@ def test_checkpoint_and_case_ownership_prevent_media_preparation(make_media, mon
     with pytest.raises(CancellationRequested if mode == "cancel" else ValueError):
         with factory(data): pytest.fail("invalid source entered Search")
     assert len(closes) == 1 and not active
+
+
+def test_coarse_frame_context_persists_owned_png_without_repreparing_analysis(make_media, monkeypatch, tmp_path):
+    from daesingo.worker.coarse_frames import CoarseFrameIssuer
+    from daesingo.case.preview_frame import candidate_frame_position
+    from daesingo.search import CandidateEvent
+    from daesingo.common.jobs.execution import ExecutionContext
+    from test_search_handlers import fixtures
+    factory, data, repo, closes, active = setup_media(make_media, monkeypatch, tmp_path)
+    raw = fixtures()[1].candidates[0].model_dump(mode='json')
+    timeline = data.scope.time_ranges[0].timeline_ref
+    raw['span'].update(timeline_id=timeline.timeline_id, timeline_revision=timeline.revision,
+                       start_ms=0, end_ms=1000, representative_ms=100)
+    candidate = CandidateEvent.model_validate(raw)
+    def no_analysis(*args, **kwargs): pytest.fail('frame issuance must not prepare analysis again')
+    monkeypatch.setattr(RecordingService, 'prepare_analysis_source_from_resolution', no_analysis)
+    original = RecordingService.resolve_frame
+    def frame(service, locator):
+        assert not active
+        return original(service, locator)
+    monkeypatch.setattr(RecordingService, 'resolve_frame', frame)
+    issuer = CoarseFrameIssuer(recording_factory=factory.frame_service,
+        candidate_ids=lambda events: (candidate.candidate_id,), candidate_position=candidate_frame_position)
+    ctx = ExecutionContext('exec', 'job', 'case-a', 'COARSE_SEARCH', 1, 'trace')
+    result = issuer(ctx, data, (candidate,))
+    assert result[candidate.candidate_id] and not active and len(closes) == 1
+    with RecordingService(repo) as restarted:
+        image = restarted.read_owned_frame_image('case-a', result[candidate.candidate_id])
+        assert image.content.startswith(b'\x89PNG')

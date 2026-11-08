@@ -4,7 +4,7 @@
 
 `codex/rt14-publish-fixed-revision`, 기준 HEAD `8d6a0979ff68e3273587ec08397ce05d92f4c865`에서 구현했다. 이번 미커밋 변경의 제어 revision은 아직 고정되지 않았다. B=`ce0750d5a3317ad1c810783d67f8a05ba88bce08`, C 후보=`8d6a0979ff68e3273587ec08397ce05d92f4c865`는 build target이다. 제어 PR SHA와 애플리케이션 target SHA를 같은 것으로 부르지 않는다.
 
-Draft PR 준비이며 실제 Actions·secret scanner·image build/acceptance·AWS·ECR·publish·서버 변경·배포는 **NOT_RUN**이다. 로컬 Docker 재구축·image 복제·staging·commit·push·외부 게시는 하지 않았다. #583·packet/Recording/controller·공개 운영 정책 구현은 변경하지 않았다. 이번 E2E의 Coarse 600초 및 종료 후150초 복귀 조건도 변경하지 않는다.
+Draft PR 준비이며 실제 Actions·secret scanner·image build/acceptance·AWS·ECR·publish·서버 변경·배포는 **NOT_RUN**이다. 로컬 Docker 재구축·image 복제·staging·commit·push·외부 게시는 하지 않았다. #583·packet/Recording/controller·공개 운영 정책 구현은 변경하지 않았다. 당시의 Coarse 600초 실험 예산과 종료 후 150초 복귀 계획도 이 변경의 범위 밖이었다. 공개 RC의 Coarse 예산은 [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-10을 따른다.
 
 이 문서는 현재 publish 경로를 설명한다. [배포 설계](rt14-deployment-design.md)의 publish identity를 함께 정합화하며 deploy/rollback의 기존 계약은 유지한다.
 

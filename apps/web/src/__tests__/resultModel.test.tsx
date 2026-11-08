@@ -143,14 +143,29 @@ describe('신고용 영상 다운로드', () => {
     expect(button(r).getAttribute('aria-disabled')).toBe('false')
   })
 
-  it('서버가 못 준다고 하면 실패 안내로 바뀌고 버튼이 다시 막힌다. 다른 주소(다른 후보)면 다시 열린다', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
+  it('받지 못하면 실패 안내를 보이고 버튼은 열어 둔다. 다시 누르면 안내를 지우고 다시 받는다(#563 리뷰)', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503 })
+      .mockRejectedValueOnce(new TypeError('network'))
+      .mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['mp4']) })
+    vi.stubGlobal('fetch', fetchMock)
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    URL.revokeObjectURL = vi.fn()
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
     const r = show('/cases/c1/assets/ref1')
+    const failed = '신고용 영상을 받지 못했어요. 다시 눌러 받아 주세요.'
     fireEvent.click(button(r))
-    await r.findByText('신고용 영상을 받지 못했어요')
-    expect(button(r).getAttribute('aria-disabled')).toBe('true')
-    r.rerender(<ResultScreen view={HAPPY} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref="/cases/c1/assets/ref2" />)
+    await r.findByText(failed)
     expect(button(r).getAttribute('aria-disabled')).toBe('false')
+    // 연결이 끊긴 실패도 같다
+    fireEvent.click(button(r))
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    await r.findByText(failed)
+    fireEvent.click(button(r))
+    await vi.waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalled(), { timeout: 3000 })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(r.queryByText(failed)).toBeNull()
   })
 })
 
@@ -168,7 +183,7 @@ describe('번호판 이미지 다운로드', () => {
     expect(query(show())).toBeNull()
   })
 
-  it('주소가 있으면 누를 때 png로 받고, 실패하면 막고 이유를 말한다. 영상 버튼은 그대로다', async () => {
+  it('주소가 있으면 누를 때 png로 받고, 실패하면 이유를 말하고 다시 받을 수 있게 둔다. 영상 버튼은 그대로다', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['png']) }).mockResolvedValueOnce({ ok: false })
     vi.stubGlobal('fetch', fetchMock)
     URL.createObjectURL = vi.fn(() => 'blob:x')
@@ -185,8 +200,8 @@ describe('번호판 이미지 다운로드', () => {
     expect(fetchMock).toHaveBeenCalledWith('/cases/c1/assets/p1')
     expect(names).toEqual([expect.stringMatching(/^daesingo_plate_\d{8}_\d{6}\.png$/)])
     fireEvent.click(query(r)!)
-    await r.findByText('번호판 이미지를 받지 못했어요')
-    expect(query(r)!.getAttribute('aria-disabled')).toBe('true')
+    await r.findByText('번호판 이미지를 받지 못했어요. 다시 눌러 받아 주세요.')
+    expect(query(r)!.getAttribute('aria-disabled')).toBe('false')
     expect(r.getByRole('button', { name: '신고용 영상 다운로드' }).getAttribute('aria-disabled')).toBe('false')
   })
 })
@@ -208,7 +223,7 @@ describe('번호판 장면 다운로드 (#600)', () => {
     expect(query(show(HAPPY, true))).toBeNull()
   })
 
-  it('번호판 확인 화면과 같은 frame 주소를 png로 받고, 실패하면 막고 이유를 말한다. 번호판 이미지 버튼과 따로다', async () => {
+  it('번호판 확인 화면과 같은 frame 주소를 png로 받고, 실패하면 이유를 말하고 다시 받을 수 있게 둔다. 번호판 이미지 버튼과 따로다', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['png']) }).mockResolvedValueOnce({ ok: false })
     vi.stubGlobal('fetch', fetchMock)
     URL.createObjectURL = vi.fn(() => 'blob:x')
@@ -224,8 +239,39 @@ describe('번호판 장면 다운로드 (#600)', () => {
     expect(fetchMock).toHaveBeenCalledWith(`/cases/c1/frames/${HAPPY.evidence!.plate_preview_ref}`)
     expect(names).toEqual([expect.stringMatching(/^daesingo_plate_scene_\d{8}_\d{6}\.png$/)])
     fireEvent.click(query(r)!)
-    await r.findByText('번호판 장면을 받지 못했어요')
-    expect(query(r)!.getAttribute('aria-disabled')).toBe('true')
+    await r.findByText('번호판 장면을 받지 못했어요. 다시 눌러 받아 주세요.')
+    expect(query(r)!.getAttribute('aria-disabled')).toBe('false')
+  })
+})
+
+describe('동영상 칸 — 후보 미리보기를 둘 수 없을 때 (#636)', () => {
+  const noop = vi.fn()
+  const frameSrc = (ref: string) => `/frames/${ref}`
+  const withThumb = (thumb: string | null): CaseView => ({
+    ...HAPPY,
+    candidates: HAPPY.candidates.map((c) => (c.selected ? { ...c, thumb_ref: thumb } : c)),
+  })
+  // videoSrc가 없으면 후보 미리보기(CandidateVideo)를 두지 않는다
+  const show = (view: CaseView) =>
+    render(<ResultScreen view={view} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref="/cases/c1/assets/v1" frameSrc={frameSrc} />)
+  const preview = (r: ReturnType<typeof show>) => r.container.querySelector('.res-preview')!
+
+  it('고른 후보의 썸네일을, 없으면 근거 장면을 보이고, 이미지를 못 불러오면 지금의 안내로 돌아간다', () => {
+    const r = show(withThumb('fr_thumb'))
+    expect(preview(r).querySelector('img')?.getAttribute('src')).toBe('/frames/fr_thumb')
+    expect(preview(r).querySelector('img')?.getAttribute('alt')).toBe('고른 후보 장면')
+    cleanup()
+    const r2 = show(withThumb(null))
+    expect(preview(r2).querySelector('img')?.getAttribute('src')).toBe(`/frames/${HAPPY.evidence!.preview_ref}`)
+    fireEvent.error(preview(r2).querySelector('img')!)
+    expect(preview(r2).querySelector('img')).toBeNull()
+    expect(preview(r2).querySelector('svg')).not.toBeNull()
+  })
+
+  it('장면 이미지가 하나도 없으면 지금처럼 아이콘과 안내만 둔다', () => {
+    const r = show({ ...withThumb(null), evidence: { ...HAPPY.evidence!, preview_ref: null } })
+    expect(preview(r).querySelector('img')).toBeNull()
+    expect(preview(r).querySelector('svg')).not.toBeNull()
   })
 })
 
@@ -255,6 +301,18 @@ describe('프레임 이미지', () => {
     withApi.unmount()
     const demo = render(<PlateCheck view={HAPPY} onBack={vi.fn()} />)
     expect(demo.container.querySelector('img')).toBeNull()
+  })
+
+  it('번호판 확대 칸은 신고자료의 번호판 이미지(다운로드와 같은 plate_image_ref)를 보인다. 주소가 없으면 자리 표시만 둔다 (#446)', () => {
+    const withImage = render(<PlateCheck view={HAPPY} onBack={vi.fn()} plateImageSrc="/assets/plate.png" />)
+    const crop = withImage.container.querySelector('.plate-crop')
+    expect(crop?.querySelector('img')?.getAttribute('src')).toBe('/assets/plate.png')
+    expect(crop?.querySelector('img')?.getAttribute('alt')).toBe('번호판 확대')
+    expect(withImage.container.textContent).not.toContain('번호판 이미지가 없어요')
+    withImage.unmount()
+    const without = render(<PlateCheck view={{ ...HAPPY, running_jobs: [] }} onBack={vi.fn()} />)
+    expect(without.container.querySelector('.plate-crop img')).toBeNull()
+    expect(without.container.textContent).toContain('번호판 이미지가 없어요')
   })
 
   it('이미지가 없을 때 도는 job이 있으면 「준비 중」, 없으면 「없어요」 — 오지 않을 이미지를 기다리게 하지 않는다', () => {
@@ -294,5 +352,103 @@ describe('프레임 이미지', () => {
     }
     fireEvent.submit(input2.form!)
     expect(onEdit).toHaveBeenLastCalledWith('12가 3456')
+  })
+})
+
+describe('#597 — 응답 없이 초안 · 번호판 장면 · 최종 검토 기록', () => {
+  afterEach(cleanup)
+  const noop = vi.fn()
+  const job = { job_id: 'j', kind: 'REPORT_VIDEO_EXPORT', label_key: 'job.report_video_export', status: 'RUNNING' } as const
+  // 묶음 전, 영상을 만드는 중 — 상황 응답 대기 notice가 없다
+  const draftView: CaseView = {
+    ...HAPPY,
+    stage: 'EVIDENCE_REVIEW',
+    package: null,
+    notices: [],
+    running_jobs: [job],
+    report_draft: { title: '초안 제목', description: '초안 신고 내용' },
+    evidence: { ...HAPPY.evidence!, plate_preview_ref: 'frame_plate' },
+  }
+
+  it('묶음 전에는 report_draft를 보이고, 영상을 만드는 중이면 「준비하고 있어요」다', () => {
+    const r = render(<ResultScreen view={draftView} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} />)
+    expect(r.getByRole('heading', { level: 1 }).textContent).toBe('신고자료를 준비하고 있어요.')
+    expect(r.getByText('초안 제목')).toBeTruthy()
+    expect(r.getByText('초안 신고 내용')).toBeTruthy()
+    expect(r.queryByRole('button', { name: '맞아요' })).toBeNull()
+  })
+
+  it('번호판을 읽은 장면을 썸네일로 두고, 누르면 번호판 확인 화면으로 간다 — 장면 주소가 없으면(시연) 두지 않는다', () => {
+    const onPlate = vi.fn()
+    const r = render(
+      <ResultScreen view={draftView} onCandidates={noop} onPlate={onPlate} onDetails={noop} onAction={noop} canRun={() => true} frameSrc={(ref) => `/f/${ref}`} />,
+    )
+    const thumb = r.getByAltText('번호판을 읽은 장면 — 눌러서 크게 보기')
+    expect(thumb.getAttribute('src')).toBe('/f/frame_plate')
+    fireEvent.click(thumb)
+    expect(onPlate).toHaveBeenCalledTimes(1)
+    // 안내는 하나만 — 「번호가 틀렸다면…」 대신 확인 문구
+    expect(r.getByText('신고할 차량의 번호판인지 확인해 주세요')).toBeTruthy()
+    expect(r.queryByText('번호가 틀렸다면 여기서 고칠 수 있어요')).toBeNull()
+    cleanup()
+    const demo = render(<ResultScreen view={draftView} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} />)
+    expect(demo.queryByAltText('번호판을 읽은 장면 — 눌러서 크게 보기')).toBeNull()
+    expect(demo.getByText('번호가 틀렸다면 여기서 고칠 수 있어요')).toBeTruthy()
+  })
+
+  const withType = (code: string | null, confirmation: 'NOT_ASKED' | 'USER_UNSURE'): CaseView => ({
+    ...draftView,
+    evidence: { ...draftView.evidence!, case_type_display: { ...draftView.evidence!.case_type_display, code } },
+    candidates: draftView.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: confirmation } : c)),
+  })
+
+  it('「다른 상황이었어요」는 지금 유형을 뺀 상황 설명 중에서 골라 CORRECTED로 보낸다', () => {
+    const onCorrect = vi.fn()
+    const r = render(<ResultScreen view={withType('SIGNAL', 'NOT_ASKED')} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onCorrect={onCorrect} />)
+    fireEvent.click(r.getByRole('button', { name: /다른 상황이었어요/ }))
+    expect(r.queryByLabelText('신호를 지키지 않고 지나갔어요')).toBeNull()
+    expect(r.getByRole('button', { name: '이 상황으로 고치기' }).hasAttribute('disabled')).toBe(true)
+    fireEvent.click(r.getByLabelText('중앙선을 넘었어요'))
+    fireEvent.click(r.getByRole('button', { name: '이 상황으로 고치기' }))
+    expect(onCorrect).toHaveBeenCalledWith('CENTER_LINE_CROSSING')
+    // 폼이 닫히면 초점은 「다른 상황이었어요」로 돌아오고, 보낸 것을 알린다
+    expect(document.activeElement).toBe(r.getByRole('button', { name: /다른 상황이었어요/ }))
+    expect(r.getByText('고친 상황으로 다시 준비하고 있어요.').getAttribute('role')).toBe('status')
+  })
+
+  it('「잘 모르겠어요」로 남긴 판별 유형은 다시 확인하거나 고칠 수 있다 — 유형이 없으면(UNCERTAIN) 고치기를 두지 않는다', () => {
+    const onRespond = vi.fn()
+    const props = { onCandidates: noop, onPlate: noop, onDetails: noop, onAction: noop, canRun: () => true, onCorrect: noop, onRespond }
+    const r = render(<ResultScreen view={withType('SIGNAL', 'USER_UNSURE')} {...props} />)
+    fireEvent.click(r.getByRole('button', { name: '이 상황이 맞아요' }))
+    expect(onRespond).toHaveBeenCalledWith('CONFIRMED')
+    cleanup()
+    const uncertain = render(<ResultScreen view={withType(null, 'USER_UNSURE')} {...props} />)
+    expect(uncertain.queryByRole('button', { name: /다른 상황이었어요/ })).toBeNull()
+    expect(uncertain.queryByRole('button', { name: '이 상황이 맞아요' })).toBeNull()
+  })
+
+  it('안전신문고로 이동하면 최종 검토를 한 번만 기록한다', () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const onReviewed = vi.fn()
+    const ready = { ...HAPPY, user_reviewed: false, notices: HAPPY.notices.filter((n) => !n.blocking) }
+    const r = render(<ResultScreen view={ready} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onReviewed={onReviewed} />)
+    fireEvent.click(r.getByRole('button', { name: /안전신문고로 이동/ }))
+    fireEvent.click(r.getByRole('button', { name: /안전신문고로 이동/ })) // 새 view가 오기 전 두 번째 클릭
+    expect(open).toHaveBeenCalled()
+    expect(onReviewed).toHaveBeenCalledTimes(1)
+    // 다른 후보를 골라 기록이 바뀌면 그 기록의 검토는 다시 보낸다
+    const other = { ...ready, evidence: { ...ready.evidence!, record_id: 'ev_other' } }
+    r.rerender(<ResultScreen view={other} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onReviewed={onReviewed} />)
+    fireEvent.click(r.getByRole('button', { name: /안전신문고로 이동/ }))
+    expect(onReviewed).toHaveBeenCalledTimes(2)
+    onReviewed.mockClear()
+    cleanup()
+    const again = render(
+      <ResultScreen view={{ ...ready, user_reviewed: true }} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onReviewed={onReviewed} />,
+    )
+    fireEvent.click(again.getByRole('button', { name: /안전신문고로 이동/ }))
+    expect(onReviewed).not.toHaveBeenCalled()
+    open.mockRestore()
   })
 })

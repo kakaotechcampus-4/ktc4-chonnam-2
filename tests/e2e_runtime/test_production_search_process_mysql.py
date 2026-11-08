@@ -53,7 +53,7 @@ def test_public_api_worker_search_t1_t2_across_processes(async_db, tmp_path, sce
     subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "lavfi", "-i",
         f"color=c=red:s=64x48:r={rate}:d=1", "-frames:v", str(frames), "-c:v", "mpeg4", "-pix_fmt", "yuv420p", str(video)],
         check=True, capture_output=True, timeout=30)
-    values = {"DAESINGO_RUNTIME_DB_URL": engine.url.render_as_string(hide_password=False),
+    values = {"DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": engine.url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(root), "DAESINGO_RUNTIME_API_TEMP_ROOT": str(api_temp),
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(worker_temp), "GEMINI_API_KEY": "offline-key",
         "DAESINGO_RECORDING_ANALYSIS_PROFILE_REF": "process-profile",

@@ -32,6 +32,7 @@ class Startup:
     config: RuntimeConfig
     modules: Mapping[str, object] = field(repr=False)
     logger: logging.Logger = field(repr=False)
+    revision: str = "unknown"
 
 
 def bootstrap_service(service: Literal["api", "worker"], *, env_file: str, revision: str,
@@ -70,7 +71,7 @@ def bootstrap_service(service: Literal["api", "worker"], *, env_file: str, revis
                 raise ConfigError(registration.keys) from None
         log_event(logger, "process.started", revision=revision)
         logger.setLevel(config.log_level)
-        return Startup(config, MappingProxyType(modules), logger)
+        return Startup(config, MappingProxyType(modules), logger, revision)
     except ConfigError as error:
         invalid = error.keys
     except (OSError, UnicodeError, ValueError):

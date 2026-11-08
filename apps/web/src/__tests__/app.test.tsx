@@ -10,6 +10,9 @@ import { App } from '../App'
 vi.mock('../screens/ApiFlow', () => ({
   ApiFlow: (p: { caseId?: string | null; remembered?: boolean }) => <p>api {p.caseId ?? '-'}{p.remembered ? ' (기억)' : ''}</p>,
 }))
+vi.mock('../screens/OfficialSampleEntry', () => ({
+  OfficialSampleEntry: (p: { caseId?: string | null; remembered?: boolean }) => <p>sample {p.caseId ?? '-'}{p.remembered ? ' (기억)' : ''}</p>,
+}))
 vi.mock('../screens/DemoFlow', () => ({ DemoFlow: (p: { casePicker?: boolean }) => <p>demo {String(!!p.casePicker)}</p> }))
 
 afterEach(cleanup)
@@ -18,6 +21,8 @@ beforeEach(() => localStorage.clear())
 it.each([
   ['', 'api - (기억)'],
   ['?case=c1', 'api c1'],
+  ['?sample', 'sample - (기억)'],
+  ['?sample&case=c1', 'sample c1'],
   ['?api', 'api - (기억)'],
   ['?api&case=c1', 'api c1'],
   ['?demo', 'demo false'],

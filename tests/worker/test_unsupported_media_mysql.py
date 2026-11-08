@@ -74,7 +74,8 @@ def test_production_unsupported_terminal_receipt_and_projection(
     cfg = RuntimeConfig.from_mapping(
         "worker",
         {
-            "DAESINGO_RUNTIME_DB_URL": queue.url.render_as_string(hide_password=False),
+            "DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
+        "DAESINGO_RUNTIME_DB_URL": queue.url.render_as_string(hide_password=False),
             "DAESINGO_RUNTIME_MEDIA_ROOT": str(root),
             "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(temp),
         },

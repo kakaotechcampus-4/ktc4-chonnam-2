@@ -7,7 +7,7 @@ import {
   type InfoState,
   type Notice,
 } from '../contracts/caseView'
-import { ACTION_LABELS, INFO_STATE_LABELS, formatValue, jobLabel, noticeMessage, sourceLabel } from '../contracts/labels'
+import { ACTION_LABELS, INFO_STATE_LABELS, VISUAL_EVENT_CHOICES, formatValue, jobLabel, noticeMessage, sourceLabel, type VisualEventType } from '../contracts/labels'
 import { PREVIEW_UNAVAILABLE } from '../contracts/labels.flow'
 import { PENDING_TEXT } from '../components/DisplayRow'
 import { LocationMap } from '../components/LocationMap'
@@ -25,7 +25,8 @@ import { reportVideoState, splitDateTime } from '../state/resultModel'
 // 제출 단계로의 연결은 READY(= PACKAGE_READY)이고 blocking notice가 없을 때만 연다(#171 C, #172).
 // 안전신문고는 새 창으로 연다 — 이 화면을 옆에 두고 보며 직접 제출한다(§21). 자료를 보내거나 자동으로
 // 채우지 않는다. 대신고에는 접수 버튼이 없다.
-const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/'
+// 첫 화면이 아니라 「자동차·교통 위반 신고」 양식으로 바로 연다 — 사용자가 메뉴를 다시 찾지 않게 한다.
+const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/#safereport/safereport3'
 const COPIED = '복사했습니다'
 const COPY_FAILED = '복사하지 못했어요. 값을 직접 선택해 복사해 주세요.'
 const TOAST_MS = 3000
@@ -43,9 +44,10 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
   held: '영상은 준비됐어요 · 신고자료가 완성되면 받을 수 있어요',
 }
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
-const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
-const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요'
-const PLATE_FRAME_FAILED = '번호판 장면을 받지 못했어요'
+// 받기 실패는 일시적인 연결 문제일 수 있다 — 버튼은 열어 두고 다시 누르게 한다(#563 리뷰). 다시 받기는 새 작업을 만들지 않는다
+const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요. 다시 눌러 받아 주세요.'
+const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요. 다시 눌러 받아 주세요.'
+const PLATE_FRAME_FAILED = '번호판 장면을 받지 못했어요. 다시 눌러 받아 주세요.'
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 // 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
@@ -55,8 +57,10 @@ const TIME_EDIT_LINK = { none: '시각 입력하기', some: '시각 수정하기
 const DATE_EDIT_LINK = { none: '일자 입력하기', some: '일자 수정하기' }
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
-// 안전신문고 첫 화면에서 신고 양식까지 — 실제 메뉴 이름(11/1 확인). 이동 버튼은 첫 화면을 연다
-const HANDOFF_STEPS = ['위쪽 메뉴에서 「신고하기」를 누르세요', '「자동차·교통위반」을 누르세요']
+const PREPARING_TITLE = '신고자료를 준비하고 있어요.'
+// 번호판은 형식만 맞으면 「출처 확인됨」이다 — 대상 차량의 번호판인지는 사용자가 장면에서 본다(#597 코멘트)
+const PLATE_SCENE_CHECK = '신고할 차량의 번호판인지 확인해 주세요'
+const UNSURE_AGAIN = '「잘 모르겠어요」로 남긴 상황이에요. 근거 장면을 보고 다시 골라 주세요.'
 
 /** 제목·신고 내용·위치를 이 화면에서만 고친 값. 이 칸들을 고치는 command가 아직 없다 */
 export type ReportEdits = Partial<Record<'title' | 'description' | 'location', string>>
@@ -111,11 +115,17 @@ export function ResultScreen(props: {
   videoHref?: string
   /** 번호판 이미지를 받을 주소. 선택 첨부라 없으면(시연 · 아직 못 만듦) 버튼을 두지 않는다 */
   plateImageHref?: string
+  /** `[다른 상황]` 정정(#545). 없으면 고치기 입구를 두지 않는다 */
+  onCorrect?: (type: VisualEventType) => void
+  /** 안전신문고로 넘어갈 때 최종 검토를 기록한다(MARK_REVIEWED). 없으면(시연) 이동만 한다 */
+  onReviewed?: () => void
 } & CandidatePlayback): JSX.Element {
   const { view } = props
   // 받기에 실패한 주소를 기억한다 — 주소가 바뀌면(다른 후보의 영상) 다시 받을 수 있다
   const [downloadFailed, setDownloadFailed] = useState<string[]>([])
   const [downloading, setDownloading] = useState(false)
+  // 최종 검토를 보낸 EvidenceRecord — 다른 후보를 고르면 그 기록에는 다시 보낸다
+  const reviewSent = useRef<string | null | undefined>(undefined)
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const pkg = view.package
   const ev = view.evidence
@@ -167,8 +177,8 @@ export function ResultScreen(props: {
   )
   const when = splitDateTime(occurred?.value ?? null)
   // 제목·신고 내용은 case가 만든 신고문(package.report, v1.7)을 그대로 보여 주고 복사만 한다.
-  // 계약상 package가 있으면 report도 항상 있다. 옛 판본 응답이 와도 깨지지 않게 없으면 예전처럼 둔다.
-  const shownReport = pkg?.report ?? null
+  // 묶음 전에는 초안(report_draft, #597)을 보인다. 둘 다 없으면(옛 판본 · 필수 입력 없음) 예전처럼 둔다.
+  const shownReport = pkg?.report ?? view.report_draft ?? null
   const report = shownReport && {
     title: edits.title ?? shownReport.title,
     // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다(#563 멘토 리뷰).
@@ -187,24 +197,31 @@ export function ResultScreen(props: {
   for (const s of Object.values(pkg?.report_field_states ?? {})) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
   const others = view.candidates.filter((c) => !c.selected).length
   const ready = view.stage === 'READY' && !!pkg && !view.notices.some((n) => n.blocking)
+  // 신고용 영상 등을 만드는 중 — 끝나지 않은 것을 「완성하지 못했어요」로 보이지 않는다
+  const preparing = view.running_jobs.some((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW')
+  const plateScene = plate?.value ? frame(ev?.plate_preview_ref) : null
+  // 상황을 고칠 수 있는 때 — 조립된 evidence에 판별된 유형(Fine OBSERVED)이 있을 때만이다.
+  // UNCERTAIN은 유형이 null이고 정정 조립을 지원하지 않는다(#597 evidence 결정). 응답 대기 중에는 위 「신고 상황」이 묻는다
+  const typeCode = !awaiting && ev?.record_id ? (ev.case_type_display.code as VisualEventType | null) : null
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
   const failedDownload = props.videoHref !== undefined && downloadFailed.includes(props.videoHref)
-  const canDownload = video === 'ready' && !!props.videoHref && !failedDownload && !downloading
+  const canDownload = video === 'ready' && !!props.videoHref && !downloading
   const videoHint =
     video !== 'ready' ? VIDEO_STATUS[video] : !props.videoHref ? NO_DOWNLOAD_LINK : failedDownload ? DOWNLOAD_FAILED : null
   const plateFailed = props.plateImageHref !== undefined && downloadFailed.includes(props.plateImageHref)
-  const canDownloadPlate = !!props.plateImageHref && !plateFailed && !downloading
+  const canDownloadPlate = !!props.plateImageHref && !downloading
   // 번호판을 읽은 장면 전체(#600) — 잘라낸 번호판 이미지로는 어느 차량인지 대조하기 어렵다.
   // 번호판 확인 화면의 장면과 같은 주소라, 그 화면이 장면을 그리지 않을 때(plate_preview_ref null · 시연)는 버튼도 두지 않는다
   const plateFrameHref = frame(ev?.plate_preview_ref) ?? undefined
   const plateFrameFailed = plateFrameHref !== undefined && downloadFailed.includes(plateFrameHref)
-  const canDownloadPlateFrame = !!plateFrameHref && !plateFrameFailed && !downloading
+  const canDownloadPlateFrame = !!plateFrameHref && !downloading
   // 링크로 열지 않고 받아서 저장한다 — 서버가 UNAVAILABLE을 돌려주면 화면이 알아야 한다. 파일 전체가 메모리에 올라간다.
-  // 받는 동안은 버튼을 막아 두 번 받지 않게 한다.
+  // 받는 동안은 버튼을 막아 두 번 받지 않게 한다. 실패한 주소도 다시 누르면 실패 안내를 지우고 다시 받는다.
   const download = async (href: string | undefined, prefix: string, ext: string) => {
     if (!href) return
     setDownloading(true)
+    setDownloadFailed((list) => list.filter((h) => h !== href))
     try {
       const res = await fetch(href)
       if (!res.ok) throw new Error(String(res.status))
@@ -296,7 +313,7 @@ export function ResultScreen(props: {
       <header className="res-head">
         <ArrivingCar arriving={props.arriving} />
         <p className="state-context">신고자료</p>
-        <h1 className="res-title">{ready ? '신고자료가 준비됐어요.' : awaiting ? '신고 상황을 확인해 주세요.' : '신고자료를 완성하지 못했어요.'}</h1>
+        <h1 className="res-title">{ready ? '신고자료가 준비됐어요.' : awaiting ? '신고 상황을 확인해 주세요.' : preparing ? PREPARING_TITLE : '신고자료를 완성하지 못했어요.'}</h1>
         {counts.size > 0 && (
           <ul className="res-counts">
             {COUNT_ORDER.filter((s) => counts.has(s)).map((s) => (
@@ -364,10 +381,8 @@ export function ResultScreen(props: {
           </ul>
           {/* 「잘 모르겠어요」도 진행을 막지 않는다. 값은 AI 추정으로 남는다(core-user-flow 「신고 상황」) */}
           <div className="res-actions">
-            <button type="button" className="rs-btn pri" onClick={() => props.onRespond!('CONFIRMED')}>
-              맞아요
-            </button>
-            <button type="button" className="rs-btn sec" onClick={() => props.onRespond!('USER_UNSURE')}>
+            {/* B안(#597)에서 응답 대기는 UNCERTAIN에만 생기고, UNCERTAIN은 「맞아요」를 지원하지 않는다 */}
+            <button type="button" className="rs-btn pri" onClick={() => props.onRespond!('USER_UNSURE')}>
               잘 모르겠어요
             </button>
           </div>
@@ -395,6 +410,15 @@ export function ResultScreen(props: {
 
           <Item label="유형" review={reportType?.state} pick>
             <Value f={reportType} pending={partial} />
+            {typeCode && props.onCorrect && (
+              <SituationFix
+                current={typeCode}
+                unsure={selected?.situation_confirmation === 'USER_UNSURE'}
+                onConfirm={props.onRespond && (() => props.onRespond!('CONFIRMED'))}
+                onDetails={props.onDetails}
+                onCorrect={props.onCorrect}
+              />
+            )}
           </Item>
 
           {/* 신고용 영상은 응답 뒤 조립에서 만들어진다. 응답 전(v1.8 부분 투영 포함)에는 영상 칸을 그리지 않는다.
@@ -405,12 +429,14 @@ export function ResultScreen(props: {
                 {/* 후보 영상 재생과 신고용 영상 다운로드는 각각의 준비 상태를 따른다 */}
                 {/* 왼쪽은 후보 미리보기(Search 구간 그대로)다. 시각을 새긴 신고용 영상은 오른쪽 다운로드로 받는다(#554 리뷰) */}
                 <div className="res-preview">
-                  <div className="res-frame">
-                    {candidateVideo || <>
+                  {/* 후보 미리보기를 둘 수 없으면 고른 후보의 장면 이미지를 둔다(#636) — 포스터와 같은 순서(thumb_ref → 근거 장면).
+                      이미지도 없거나 못 불러오면 지금의 안내를 둔다 */}
+                  {candidateVideo ? <div className="res-frame">{candidateVideo}</div> : (
+                    <FrameSlot className="res-frame" src={frame(selected?.thumb_ref ?? ev?.preview_ref)} alt="고른 후보 장면">
                       <Film size={26} strokeWidth={1.5} aria-hidden />
                       <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
-                    </>}
-                  </div>
+                    </FrameSlot>
+                  )}
                   {candidateVideo && <p className="res-preview-label">후보 미리보기</p>}
                 </div>
                 <div className="res-video-side">
@@ -542,7 +568,17 @@ export function ResultScreen(props: {
 
           <Item label="차량 번호" review={plate?.state}>
             <div className="res-plate">
-              <p className={`res-plate-v${plate?.value ? '' : ' is-none'}`}>{plate?.value ?? '알 수 없음'}</p>
+              <div className="res-plate-row">
+                <p className={`res-plate-v${plate?.value ? '' : ' is-none'}`}>{plate?.value ?? '알 수 없음'}</p>
+                {/* 번호판을 읽은 장면 — 누르면 번호판 확인 화면이 같은 장면을 크게 보인다(#597) */}
+                {plateScene && (
+                  <button type="button" className="res-plate-thumb" onClick={props.onPlate}>
+                    <FrameSlot className="res-plate-thumb-img" src={plateScene} alt="번호판을 읽은 장면 — 눌러서 크게 보기">
+                      <span>장면 크게 보기</span>
+                    </FrameSlot>
+                  </button>
+                )}
+              </div>
               <div className="res-plate-meta">
                 {plate && <StatusBadge state={plate.state} />}
                 {plate?.source && <span className="res-src">{plate.source}</span>}
@@ -556,7 +592,7 @@ export function ResultScreen(props: {
                     <ChevronRight size={16} strokeWidth={2} aria-hidden />
                   </button>
                   <span id="res-plate-edit-why" className="res-src">
-                    {PLATE_EDIT_WHY}
+                    {plateScene ? PLATE_SCENE_CHECK : PLATE_EDIT_WHY}
                   </span>
                 </p>
               )}
@@ -615,7 +651,16 @@ export function ResultScreen(props: {
                 type="button"
                 className="rs-btn pri"
                 disabled={!ready}
-                onClick={() => window.open(SAFETY_REPORT_URL, '_blank', 'noopener')}
+                onClick={() => {
+                  // 새 창은 클릭 안에서 바로 연다(팝업 차단). 최종 검토 기록은 처음 한 번만 남긴다(#597, §20)
+                  window.open(SAFETY_REPORT_URL, '_blank', 'noopener')
+                  // user_reviewed는 새 view가 와야 바뀌어서, 그 전에 두 번 눌러도 한 번만 보낸다(#621 리뷰)
+                  const record = ev?.record_id ?? null
+                  if (!view.user_reviewed && reviewSent.current !== record) {
+                    reviewSent.current = record
+                    props.onReviewed?.()
+                  }
+                }}
               >
                 안전신문고로 이동
                 <ExternalLink size={16} strokeWidth={2} aria-hidden />
@@ -630,18 +675,6 @@ export function ResultScreen(props: {
           </p>
         )}
         {pkg && !ready && <p className="res-block-note">위 문제가 해결돼야 안전신문고로 넘어갈 수 있어요.</p>}
-        {pkg?.capabilities.includes('OPEN_DESTINATION') && (
-          <div className="res-steps">
-            <p id="res-steps-h" className="res-steps-h">
-              안전신문고에서는 이렇게 들어가세요
-            </p>
-            <ol aria-labelledby="res-steps-h">
-              {HANDOFF_STEPS.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ol>
-          </div>
-        )}
         <p className="res-toast" role="status" aria-live="polite">
           {toast && <span key={toast.id}>{toast.text}</span>}
         </p>
@@ -748,5 +781,88 @@ function EditText(props: {
         </button>
       </div>
     </form>
+  )
+}
+
+// 상황 고치기(#545) — 판별된 유형이 틀렸으면 상황 설명 중에서 다시 고른다. 지금 유형은 선택지에서 뺀다(case-command §12-3).
+// 「잘 모르겠어요」로 남긴 경우에는 근거 장면을 보고 「맞아요」로 확인하거나 다른 상황을 고르게 한다(#597 evidence 결정).
+function SituationFix(props: {
+  current: VisualEventType
+  unsure: boolean
+  onConfirm?: () => void
+  onDetails: () => void
+  onCorrect: (type: VisualEventType) => void
+}): JSX.Element {
+  const [open, setOpen] = useState(false)
+  const [picked, setPicked] = useState<VisualEventType | null>(null)
+  const [sent, setSent] = useState(false)
+  // 폼이 닫히면 누른 버튼도 사라지므로 초점을 「다른 상황이었어요」로 돌린다(#621 리뷰, #577과 같은 방식)
+  const toggle = useRef<HTMLButtonElement>(null)
+  const wasOpen = useRef(false)
+  useEffect(() => {
+    if (wasOpen.current && !open) toggle.current?.focus()
+    wasOpen.current = open
+  }, [open])
+  // 고친 유형이 새 view로 오면 안내를 지운다
+  useEffect(() => setSent(false), [props.current])
+  const choices = (Object.keys(VISUAL_EVENT_CHOICES) as VisualEventType[]).filter((t) => t !== props.current)
+  return (
+    <div className="res-situation-fix">
+      {props.unsure && (
+        <p className="res-hint">
+          {UNSURE_AGAIN}{' '}
+          <button type="button" className="res-link" onClick={props.onDetails}>
+            근거 장면 보기
+            <ChevronRight size={16} strokeWidth={2} aria-hidden />
+          </button>
+        </p>
+      )}
+      {!open ? (
+        <p className="res-plate-edit">
+          {props.unsure && props.onConfirm && (
+            <button type="button" className="rs-btn sec sm" onClick={props.onConfirm}>
+              이 상황이 맞아요
+            </button>
+          )}
+          <button type="button" className="res-link" ref={toggle} onClick={() => setOpen(true)}>
+            다른 상황이었어요
+            <ChevronRight size={16} strokeWidth={2} aria-hidden />
+          </button>
+        </p>
+      ) : (
+        <form
+          className="res-edit"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!picked) return
+            props.onCorrect(picked)
+            setSent(true)
+            setOpen(false)
+          }}
+        >
+          <fieldset>
+            <legend>어떤 상황이었나요?</legend>
+            {choices.map((t) => (
+              <label key={t}>
+                <input type="radio" name="situation" value={t} checked={picked === t} onChange={() => setPicked(t)} />
+                {VISUAL_EVENT_CHOICES[t]}
+              </label>
+            ))}
+          </fieldset>
+          <div className="res-edit-actions">
+            <button type="submit" className="rs-btn pri sm" disabled={!picked}>
+              이 상황으로 고치기
+            </button>
+            <button type="button" className="rs-btn sec sm" onClick={() => setOpen(false)}>
+              취소
+            </button>
+          </div>
+        </form>
+      )}
+      {/* 안내가 없을 때는 빈 줄이 자리를 차지하지 않게 숨겨 두되, 알림 영역은 미리 있어야 읽힌다 */}
+      <p role="status" className={sent ? 'res-hint' : 'sr-only'}>
+        {sent ? '고친 상황으로 다시 준비하고 있어요.' : ''}
+      </p>
+    </div>
   )
 }

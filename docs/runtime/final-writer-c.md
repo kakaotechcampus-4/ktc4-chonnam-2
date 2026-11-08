@@ -79,6 +79,6 @@ C 신규 형식 생성 후 e50을 rollback 대상으로 승인하지 않는다. 
 
 배포 전에는 실제 B/C SHA·image digest·config, controller current/previous/schema authority·승인 tuple, write-stop의 일관된 DB/media backup 및 빈 target restore rehearsal를 결속해야 한다. 운영 image build/publish·startup/health·복구 검증은 NOT_RUN이다. 새 데이터 생성 전의 code rollback, 생성 후 B rollback, backup 시점으로의 restore와 이후 쓰기 정산, 전진 복구를 서로 구분한다.
 
-현재 Coarse 기본600초는 유지한다. 실제15개/약26분 Upload→Search/Case→후보 확인→Export→Package READY→다운로드 이후에는 새 reader를 유지하는 별도 source/image에서 기본150초로 복귀한다. 이미 저장된600초 scope는 별도 정산한다. O로 rollback해150초 복귀를 대신하지 않는다.
+작성 당시에는 Coarse 기본 600초를 유지하고, 실제 15개/약 26분 Upload→Search/Case→후보 확인→Export→Package READY→다운로드 이후 새 reader를 유지하는 별도 source/image에서 기본 150초로 복귀할 계획이었다. 당시 계획은 이미 저장된 600초 scope의 별도 정산을 포함했고 O로의 code rollback을 복귀 방법에서 제외했다. 공개 RC에는 [Case 대기 결정](../modules/case/decisions/case-wait-timeout.md) §3-10의 600초 유지가 적용된다.
 
 AWS·운영 DB·publish·배포·원본 E2E·provider·backup/restore·600→150 복귀 배포·commit·push·외부 게시는 NOT_RUN이다. 기존 원본·보호 증거·volume을 삭제하거나 시험 입력/DB로 사용하지 않았다.

@@ -13,6 +13,7 @@ Runtime Worker가 terminal execution 하나를 넘기면(Tech Spec §12.2) 호�
 from __future__ import annotations
 
 import copy
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal, Protocol
@@ -81,6 +82,7 @@ def reflect_execution(
     timelines: CaseTimelineSource,
     budget: InitialSearchBudget | None = None,
     now: datetime | None = None,
+    admit_auto_exports: Callable[[list[dict[str, Any]]], bool] | None = None,
 ) -> ReflectionOutcome:
     """execution 하나를 반영한다. 반영했을 때만 저장하고, 예외는 그대로 올린다 — rollback · retry는 호출자 몫이다
     (#245 D-2). 이 case의 job이 아니거나 kind가 다르거나 반영기가 없는 kind면 배선 오류(`ValueError`)다.
@@ -108,19 +110,22 @@ def reflect_execution(
         return ReflectionOutcome("NOT_APPLIED", reason=reason)
 
     jobs_before = len(case.job_records)
-    apply(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget or InitialSearchBudget())
+    updated = apply(case, outcome, store=store, reader=reader, timelines=timelines,
+                    budget=budget or InitialSearchBudget(), admit_auto_exports=admit_auto_exports)
+    if updated is not None:
+        case = updated
     case.processed_executions[outcome.execution_id] = outcome.job_id
     store.save(case)
     return ReflectionOutcome("APPLIED", appended_job_records=copy.deepcopy(case.job_records[jobs_before:]))
 
 
-def _apply_hint_extract(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+def _apply_hint_extract(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> None:
     # 실행이 실패해도 빈 단서로 탐색을 이어 간다(case-command Draft §11 — 실패 notice 없음).
     result = reader(store.conn, outcome.kind, outcome.produced) if outcome.status == "SUCCEEDED" else {"status": "FAILED"}
     reflect_hint_extraction(case, result, job_id=outcome.job_id, timelines=timelines, budget=budget)
 
 
-def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> None:
     if outcome.status == "FAILED":
         case.record_candidate_search_failure(
             job_id=outcome.job_id,
@@ -144,7 +149,7 @@ def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, stor
         observation.issue_fine_for_selected(case)
 
 
-def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> CaseAggregate:
     # 관찰 결과는 정산만 한다(`observation-storage.md` §4-5) — 내용은 case state에 복사하지 않고 CaseView 조립 때
     # adapter가 읽는다(§4-2). 실패 terminal도 같고, 실패 notice는 view가 read port의 실행 상태로 계산한다. 이전 후보의
     # 결과라도 기다리던 job이면 정산한다 — 투영은 선택 후보 필터가, READY는 gate의 현재 선택 확인(#191)이 막는다.
@@ -156,23 +161,32 @@ def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
         from daesingo.case.service import build_view_from_adapter
         adapter = store.adapter_for(case)
         if adapter is not None and hasattr(adapter, "get_export_requests"):
-            issue_missing_exports(case, adapter, build_view_from_adapter(case, adapter, executions=store.read_executions(case)))
+            # Completion is already settled. Only speculative automatic export
+            # effects are discarded if admission refuses; never undo this T2.
+            candidate = copy.deepcopy(case) if admit_auto_exports is not None else case
+            before_exports = len(candidate.job_records)
+            issue_missing_exports(candidate, adapter, build_view_from_adapter(case, adapter, executions=store.read_executions(case)))
+            fresh = candidate.job_records[before_exports:]
+            if not fresh or admit_auto_exports is None or admit_auto_exports(copy.deepcopy(fresh)):
+                case = candidate
         mark_ready_if_package_ready(case, adapter)
+    return case
 
 
-def _apply_fine_verify(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
-    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+def _apply_fine_verify(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> CaseAggregate:
+    case = _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget, admit_auto_exports=admit_auto_exports)
     if outcome.status == "SUCCEEDED":
         content = reader(store.conn, outcome.kind, outcome.produced)
         visual = content["visual_evidence"]
         observation.record_outcome(case, outcome.job_id, status=outcome.status,
                                    verification=None if visual is None else visual.get("verification"))
         observation.follow_fine(case, outcome.job_id, visual)
+    return case
 
 
-def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> CaseAggregate:
     # clip 실패는 정산만 한다 — 다시 준비는 case가 새 job_id로 발주한다(§6, notice · action은 후속).
-    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+    case = _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget, admit_auto_exports=admit_auto_exports)
     if outcome.status == "SUCCEEDED":
         content = reader(store.conn, outcome.kind, outcome.produced)
         # 근거 장면 · 후보 썸네일은 handler가 T1 전에 발급해 실은 값을 그대로 남긴다(#446 결정 5, #523). 싣지 않은
@@ -182,16 +196,17 @@ def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *
                                    preview_frame_ref=content.get("preview_frame_ref"),
                                    candidate_frame_refs=dict(content.get("candidate_frame_refs") or {}))
         observation.follow_clip(case, outcome.job_id, content["incident_clip_ref"])
+    return case
 
 
-def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> CaseAggregate:
     # export가 만든 파생 asset은 recording이 clip lineage로 등록해 CaseView 조립 때 case asset 목록에서 고른다
     # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice는 view가 실행 상태로
     # 계산하고(`exports.export_notices`), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
-    _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget)
+    return _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget, admit_auto_exports=admit_auto_exports)
 
 
-def _apply_candidate_video_preview(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget) -> None:
+def _apply_candidate_video_preview(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> None:
     from daesingo.case.candidate_video import PreviewResult
     result = (PreviewResult.model_validate(reader(store.conn, outcome.kind, outcome.produced))
               if outcome.status == "SUCCEEDED" else None)

@@ -4,6 +4,11 @@
 
 2026-11-03 Web build 전달 경로 추가: 지정 브랜치 기준이며 #541 consumer와 실제 배포의 통합·검증은 별도다([검증 기록](../runtime/reviews/kakao-map-build-config-2026-11-03.md)). 기존 운영 snapshot의 기준일은 유지한다.
 
+A-1 서버 연결 변경: `DAESINGO_RUNTIME_PUBLIC_MODE` 기본값은 `a1`이고 보호된
+`DAESINGO_RUNTIME_PUBLIC_POLICY_FILE`이 없거나 맞지 않으면 분석을 거부한다.
+기존 내부 전용 설정은 `internal`을 명시한다. 정책·head7·공유 temp·복구 조건과
+운영 미적용 상태는 [A-1 준비 기록](../runtime/a1-public-readiness.md)을 확인한다.
+
 서버를 띄우거나 Local E2E · AWS E2E · publish/deploy를 할 때 필요한 **설정 이름**과
 그 값이 공개 가능한지, 실제 값이 어디에 있는지를 한 곳에서 찾기 위한 문서다.
 
@@ -60,7 +65,7 @@ GitHub **Variable** 값은 공개 Actions 로그의 step `env`에 그대로 찍�
 | Recording | `DAESINGO_RECORDING_FILENAME_OFFSET` | 선택(근거 없으면 생략) | Worker | 공개 |
 | Search override | `DAESINGO_GEMINI_{MODEL,BASE_URL,MEDIA_RESOLUTION}`, `DAESINGO_INTENT_{MODEL,BASE_URL}` | 선택(생략하면 코드 기본값) | Worker | 공개 |
 | Search 가격 | `DAESINGO_GEMINI_{INPUT,OUTPUT}_USD_PER_MILLION`, `DAESINGO_GEMINI_MAX_COST_USD` | 선택(기본 `0.0` = 미설정) | Worker | 공개 |
-| Runtime 선택 | `DAESINGO_RUNTIME_*` 32개(log level · DB pool/timeout · heartbeat · lease · upload · cleanup · readiness) | 선택 | API · Worker | 공개. 목록과 기본값은 [canonical guide §4](../runtime/local-runtime-environment.md#4-선택-runtime-키-전체-목록) |
+| Runtime 선택 | `DAESINGO_RUNTIME_*` 34개(log level · DB pool/timeout · heartbeat · lease · upload · cleanup · readiness · public policy 연결) | 선택. A-1 승인 policy는 분석 전에 필요 | API · Worker | 키 이름·기본값 공개, 실제 policy 경로/내용은 보호. 목록과 기본값은 [canonical guide §4](../runtime/local-runtime-environment.md#4-선택-runtime-키-전체-목록) |
 
 - 선택 키는 빈 문자열로 두지 말고 줄을 생략한다. Coarse/Fine용 `DAESINGO_GEMINI_*`에 빈 값을 넣으면 기본값으로 돌아가지 않는다(Intent는 빈 값을 기본값으로 처리).
 - Search Coarse/Fine은 `gemini-4-argon`, Intent는 `gemini-3.8-flash`가 코드 기본값이다([Search Owner 결정](../modules/search/decisions/search-argon-model-2026-10-27.md)). 예전 Flash override가 남아 있으면 Coarse/Fine도 Flash로 간다.

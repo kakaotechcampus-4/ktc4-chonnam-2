@@ -325,6 +325,15 @@ body:has(.rs-bgcar) { overflow-x: clip; }
 /* 상황 설명칸 아래 「예시 문장 넣기」 — Tab 대신 쓰는 명시적 버튼(#509 #4) */
 .rs-example { align-self: flex-start; margin: 8px 0 0; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--rs-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
+.rs-label-opt { margin-left: 4px; font-size: 14px; font-weight: 400; color: var(--rs-sub); }
+
+/* 업로드 전 개인정보·외부 처리 동의(공개 운영 정책 §4) — 파일을 고른 직후 뜨는 모달(#606 리뷰) */
+.rs-consent { max-width: min(480px, calc(100vw - 32px)); padding: 24px; border: 0; border-radius: 16px; font-size: 15px; color: var(--rs-sub); background: var(--rs-bg); }
+.rs-consent::backdrop { background: rgb(0 0 0 / 0.4); }
+.rs-consent h2 { margin: 0 0 12px; font-size: 18px; color: var(--rs-ink); }
+.rs-consent ul { margin: 0 0 20px; padding-left: 18px; line-height: 1.7; }
+.rs-consent-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
 .rs-actions { display: flex; justify-content: flex-end; margin-top: 32px; }
 
 /* 시연용 경우 고르기 — 화면 끝에 작게 */
@@ -785,6 +794,14 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-plate { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .res-plate-v { margin: 0; font-size: 44px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .res-plate-v.is-none { font-size: 24px; font-weight: 600; color: var(--rs-sub); }
+.res-plate-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+/* 번호판을 읽은 장면 썸네일 — 누르면 번호판 확인 화면에서 크게 본다(#597) */
+.res-plate-thumb { padding: 0; border: 1px solid var(--rs-line); border-radius: 8px; background: none; cursor: pointer; overflow: hidden; }
+.res-plate-thumb-img { width: 160px; aspect-ratio: 16 / 9; display: grid; place-items: center; font-size: 13px; }
+.res-plate-thumb-img > img { width: 100%; height: 100%; object-fit: cover; }
+.res-situation-fix fieldset { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.res-situation-fix legend { margin-bottom: 8px; font-weight: 600; }
+.res-situation-fix label { display: flex; align-items: center; gap: 8px; }
 .res-plate-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .res-src { font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
 .res-plate-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; }
@@ -803,10 +820,6 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-disclaimer { margin: 0; font-size: 15px; line-height: 1.65; color: var(--rs-ink); }
 .res-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
 .res-block-note { grid-column: 1 / -1; margin: 0; font-size: 14px; line-height: 1.55; color: var(--rs-sub); }
-/* 안전신문고 첫 화면에서 신고 양식까지 가는 순서 */
-.res-steps { grid-column: 1 / -1; padding-top: 16px; border-top: 1px solid var(--rs-line); }
-.res-steps-h { margin: 0 0 8px; font-size: 15px; font-weight: 600; color: var(--rs-ink); }
-.res-steps ol { margin: 0; padding-left: 22px; font-size: 15px; line-height: 1.7; color: var(--rs-ink); }
 /* 복사 결과 — 버튼 아래 여백에 잠깐 뜬다(자리를 차지하지 않음) */
 .res-toast { position: absolute; right: 32px; bottom: 6px; margin: 0; font-size: 14px; }
 .res-toast span { font-weight: 600; color: var(--rs-ink); animation: rs-fade-in .2s var(--rs-ease) both; }

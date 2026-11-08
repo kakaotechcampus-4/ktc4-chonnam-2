@@ -1,7 +1,7 @@
 """Worker wiring: reuse RT-01 config and RT-02/03 DB transaction boundaries."""
 
 from collections.abc import Callable, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 from functools import partial
 from threading import Event
 import time
@@ -28,8 +28,13 @@ from daesingo.common.logging import bind_context, log_event_best_effort, safe_co
 from daesingo.worker.registry import KindRegistry
 from daesingo.common.usage.sink import DurableUsageSink
 from daesingo.common.usage.reconciliation import reconcile_once
-from daesingo.common.storage.cleanup import configured_cleanup
+from daesingo.common.storage.cleanup import configured_cleanup, _lease
 from daesingo.common.storage.media import MediaRoot
+from daesingo.common.public_runtime.policy import load_policy, PublicDenied
+from daesingo.common.public_runtime.repository import PublicStore
+from daesingo.common.public_runtime import schema as public_schema
+from daesingo.common.public_runtime.temporary import case_temp_scope, public_temp_root
+from daesingo.worker.public_reflection import PublicResultReflector, PublicExhaustionReceiver
 
 _CANCEL_TERMINAL_LATENCY = text("""SELECT
 TIMESTAMPDIFF(MICROSECOND, cancel_requested_at, NOW(6)) / 1000.0
@@ -57,6 +62,31 @@ def compose_worker(
         raise ValueError("Worker composition requires Worker configuration")
     owner = worker_id if worker_id is not None else "worker_" + uuid4().hex
     settings = startup.config.worker
+    public = PublicStore(load_policy(startup.config.public.policy_file, revision=startup.revision),
+                         require_public=startup.config.public.mode == "a1", worker_id=owner)
+
+    def usage_sink(context):
+        def before_begin(conn, snapshot):
+            context.ownership.check()
+            context.checkpoint()
+            try:
+                public.reserve(conn, snapshot)
+            except PublicDenied as error:
+                if error.code == "CANCELLED":
+                    # The DB may see cancellation before the heartbeat does.
+                    context.cancel_signal.request()
+                    context.checkpoint()
+                raise
+        def before_attempt():
+            context.ownership.check()
+        return DurableUsageSink(execution_ref=context.execution_id, case_id=context.case_id,
+            logger=startup.logger, late_observe=usage_late_observe,
+            before_begin=before_begin, after_finish=public.settle,
+            transaction=lambda callback: run_worker_transaction(engine, callback,
+                sleep=sleep, logger=startup.logger),
+            begin_transaction=lambda callback: run_worker_transaction(engine, callback,
+                sleep=sleep, logger=startup.logger, before_attempt=before_attempt,
+                commit_guard=context.ownership.commit_guard))
 
     def record(context: ExecutionContext, result: HandlerResult | CancelledExecution) -> bool | TerminalCommit:
         if isinstance(result, HandlerResult):
@@ -168,15 +198,19 @@ def compose_worker(
                          interval=settings.heartbeat_interval_sec, logger=startup.logger,
                          observe=heartbeat_observe)
 
+    guarded_reflector = PublicResultReflector(reflector, public) if reflector is not None else None
+    guarded_exhaustion = PublicExhaustionReceiver(exhaustion_receiver, public) if exhaustion_receiver is not None else None
+
     def reflect(context: ExecutionContext, terminal: HandlerResult):
         # This callback is installed below only with a reflector.
         assert reflector is not None
+        assert guarded_reflector is not None
         incoming = ReflectionInput(context.execution_id, context.job_id, context.case_id,
                                    context.kind, context.attempt, terminal)
         with bind_context(**safe_correlation(trace_id=context.trace_id, case_id=context.case_id,
                                             job_id=context.job_id, execution_id=context.execution_id)):
             result = run_worker_transaction(
-                engine, lambda conn: reflect_terminal(conn, incoming, reflector, context.trace_id),
+                engine, lambda conn: reflect_terminal(conn, incoming, guarded_reflector, context.trace_id),
                 sleep=sleep, logger=startup.logger,
             )
             # A recovered/completed receipt is ALREADY_APPLIED, so no double count.
@@ -184,28 +218,60 @@ def compose_worker(
             return result
 
     cleanup = configured_cleanup(startup.config, startup.logger)
-    media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'))
+    media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'),
+                      public_root=startup.config.media_root / "public-temp")
+
+    @contextmanager
+    def public_leases():
+        # Same cross-process leases as HTTP and retention, including terminal
+        # produced-object persistence. A RUNNING job also blocks physical purge.
+        with ExitStack() as stack:
+            stack.enter_context(_lease(startup.config.media_root, "orphan", exclusive=False, blocking=True))
+            stack.enter_context(_lease(startup.config.temp_root, "temp", exclusive=False, blocking=True))
+            yield
+
+    def dispatch_public(context):
+        def binding(conn):
+            public.locked(conn)
+            row = public.dispatch_case(conn, context)
+            return None if row is None else row["temp_token"]
+        token = run_worker_transaction(engine, binding, sleep=sleep, logger=startup.logger)
+        if token is None:
+            return registry.dispatch(context, logger=startup.logger)
+        with public_leases():
+            token = run_worker_transaction(engine, binding, sleep=sleep, logger=startup.logger)
+            with case_temp_scope(public_temp_root(startup.config.media_root), token):
+                return registry.dispatch(context, logger=startup.logger)
+
+    def record_public(context, result):
+        # Do not check accepting here: actual outcomes must survive emergency
+        # stop, cancellation and expiry. The existing execution fence still owns T1.
+        def tagged(conn):
+            return conn.execute(select(public_schema.cases.c.case_id).where(
+                public_schema.cases.c.case_id == context.case_id)).first() is not None
+        if run_worker_transaction(engine, tagged, sleep=sleep, logger=startup.logger):
+            with public_leases():
+                return record(context, result)
+        return record(context, result)
+
     return WorkerLoop(
         claim=partial(claim_one, engine, owner,
                       lease_duration_sec=settings.lease_duration_sec, logger=startup.logger),
-        dispatch=partial(registry.dispatch, logger=startup.logger), record=record, settings=settings, stop=stop,
+        dispatch=dispatch_public, record=record_public, settings=settings, stop=stop,
         logger=startup.logger, sleep=sleep, idle_wait=idle_wait or stop.wait, clock=clock,
         reflect=reflect if reflector is not None else None,
         heartbeat=heartbeat,
         cleanup=cleanup, media=media,
-        usage_sink_factory=lambda context: DurableUsageSink(
-            execution_ref=context.execution_id, case_id=context.case_id,
-            logger=startup.logger, late_observe=usage_late_observe,
-            transaction=lambda callback: run_worker_transaction(
-                engine, callback, sleep=sleep, logger=startup.logger)),
+        usage_sink_factory=usage_sink,
         sweeper=SweepService(
             sweep=partial(sweep_once, engine, settings, sleep=sleep, logger=startup.logger),
             settings=settings, stop=stop, logger=startup.logger,
             hooks=(partial(reconcile_once, engine, sleep=sleep, logger=startup.logger, observe=usage_observe),
                    *sweep_hooks),
-            redeliver=partial(redeliver_once, engine, reflector, sleep=sleep, logger=startup.logger)
-                if reflector is not None else None,
-            redeliver_exhaustion=partial(redeliver_exhaustion_once, engine, exhaustion_receiver,
-                sleep=sleep, logger=startup.logger) if exhaustion_receiver is not None else None,
+            redeliver=partial(redeliver_once, engine, guarded_reflector, sleep=sleep, logger=startup.logger,
+                              transaction_guard=public.locked)
+                if guarded_reflector is not None else None,
+            redeliver_exhaustion=partial(redeliver_exhaustion_once, engine, guarded_exhaustion,
+                sleep=sleep, logger=startup.logger, transaction_guard=public.locked) if guarded_exhaustion is not None else None,
         ),
     )

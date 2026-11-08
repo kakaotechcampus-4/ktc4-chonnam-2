@@ -25,6 +25,13 @@ class StoredCaseReflector:
         self.reader = worker_produced_reader()
 
     def reflect(self, conn, incoming):
+        return self._reflect(conn, incoming)
+
+    def reflect_with_admission(self, conn, incoming, *, admit_auto_exports, on_auto_exports_deferred):
+        return self._reflect(conn, incoming, admit_auto_exports=admit_auto_exports,
+                             on_auto_exports_deferred=on_auto_exports_deferred)
+
+    def _reflect(self, conn, incoming, **admission):
         root = self.storage_root if self.storage_root is not None else self.startup.config.media_root
         # The caller owns T2/receipt/enqueue and the Connection. No STALE policy
         # or exhaustion policy is introduced by this T2 adapter.
@@ -32,7 +39,7 @@ class StoredCaseReflector:
             reflector = CaseReflector(reader=self.reader,
                 timelines=RecordingSequentialTimelineSource(recording),
                 store_factory=lambda connection: stored_case_store(connection, storage_root=root, reader=self.reader))
-            return reflector.reflect(conn, incoming)
+            return reflector.reflect(conn, incoming, **admission)
 
 
 class StoredCaseExhaustionReceiver:

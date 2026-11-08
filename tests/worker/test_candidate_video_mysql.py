@@ -11,6 +11,8 @@ from io import StringIO
 from threading import Event
 
 import pytest
+
+from tests.preview_writer_fixture import final_preview_writer  # noqa: F401
 import sqlalchemy as sa
 
 from daesingo.common.jobs.produced import produced_objects

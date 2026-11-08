@@ -17,6 +17,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    *(("public_a1", scenario) for scenario in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery", "local_work", "stop_modes", "export_deferral")),
     ('exhaustion', 'cancellation'),
     ('exhaustion', 'port'),
     ('exhaustion', 'scan_policy'),
@@ -35,7 +36,7 @@ REQUIRED_CHECKS = frozenset({
     *(('observability', s) for s in ('distribution','boundaries','transaction','catalog','privacy')),
     *(("api_asset", s) for s in ("read", "isolation", "exact_identity", "corruption", "transaction", "failure", "interruption", "send")),
     # #554 candidate video preview: tests/worker/test_candidate_video_mysql.py
-    *(("candidate_video", s) for s in ("counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1", "tcp_process", "commit_unknown", "parallel_fine", "storage_damage", "source_lost", "stale_generation", "process_kill", "range_concurrency")),
+    *(("candidate_video", s) for s in ("counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1", "tcp_process", "commit_unknown", "parallel_fine", "storage_damage", "source_lost", "stale_generation", "process_kill", "range_concurrency", "compatible_bridge")),
     *(("api_frame", s) for s in ("read", "isolation", "concurrency", "connection", "failure", "transaction", "send_lifetime", "corrupt_scope", "exact_identity")),
     *(("produced_store", s) for s in ("terminal", "atomicity", "replay", "concurrent", "ownership",
         "commit_unknown", "reader", "process", "redelivery", "migration", "transaction", "receipt", "json")),
@@ -143,6 +144,9 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("public_a1", "local_work", mode) for mode in ("repeat", "concurrent", "ip_limit")),
+    *(("public_a1", "stop_modes", kind) for kind in ("REPORT_VIDEO_EXPORT", "FINE_VERIFY", "exhaustion_pause", "exhaustion_stop")),
+    *(("public_a1", "export_deferral", mode) for mode in ("capacity", "repeat", "stop")),
     *(("recording", "compatible_release", parameter) for parameter in (
         "new_analysis_source_content", "new_analysis_source_metadata",
         "new_incident_clip_content", "new_incident_clip_metadata",

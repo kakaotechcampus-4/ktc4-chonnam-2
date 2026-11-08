@@ -554,11 +554,12 @@ HTTP 경계의 방향은 확정이다(RD-05, [#247](https://github.com/kakaotech
   GET  /cases/{case_id}/view
   GET  /cases/{case_id}/frames/{frame_ref}
   GET  /cases/{case_id}/assets/{asset_ref}
+  GET  /cases/{case_id}/candidate-videos/{clip_ref}
   GET  /health/live
   GET  /health/ready
   ```
 
-  frames · assets는 「또는 동등한 경로」로 결정됐고 Contract가 위 경로로 고정했다. frames는 CaseView의 FrameRef(`thumb_ref` · `preview_ref` · `plate_preview_ref`)를, assets는 최종 신고용 artifact 다운로드를 지원한다.
+  frames · assets는 「또는 동등한 경로」로 결정됐고 Contract가 위 경로로 고정했다. frames는 CaseView의 FrameRef(`thumb_ref` · `preview_ref` · `plate_preview_ref`)를, assets는 최종 신고용 artifact 다운로드를 지원한다. 후보 영상 조회는 현재 Case의 READY preview를 제공하며, 신규 미리보기 발주 가능 여부는 release에 따른다. [후보 영상 결정](../modules/case/decisions/candidate-video-preview.md)
 - **domain action은 command `kind`다.** 분석 시작 · 중단 · 선택 등은 route를 늘리지 않고 `POST /cases/{case_id}/commands`의 kind로 둔다. job 상태 endpoint는 두지 않는다 — Web은 JobExecution을 직접 읽지 않는다.
 - **202 / 200.** command가 JobRecord를 1건 이상 발주하면 `202`, 없으면 `200`이다. 판단은 composition root가 §12.1의 「append된 JobRecord 목록」으로 하고 transport가 domain 의미를 추론하지 않는다. body는 case-command 응답 그대로이며 `error.code`를 재해석하지 않는다. transport 자체 오류는 `http.*` 계열로 분리한다.
 - **polling.** `GET /cases/{case_id}/view` 반복. baseline 정지 조건은 `running_jobs`가 빈 것이다(§9).

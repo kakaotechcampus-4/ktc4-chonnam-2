@@ -20,7 +20,7 @@ from daesingo.recording import RecordingService
 
 def main():
     config = RuntimeConfig.from_mapping('api', {
-        'DAESINGO_RUNTIME_DB_URL': os.environ['ASSET_TEST_DB'],
+        'DAESINGO_RUNTIME_PUBLIC_MODE': 'internal', 'DAESINGO_RUNTIME_DB_URL': os.environ['ASSET_TEST_DB'],
         'DAESINGO_RUNTIME_MEDIA_ROOT': os.environ['ASSET_TEST_ROOT'],
         'DAESINGO_RUNTIME_API_TEMP_ROOT': os.environ['ASSET_TEST_ROOT']})
     startup = Startup(config, MappingProxyType({}), configure_logging('api', stream=StringIO()))

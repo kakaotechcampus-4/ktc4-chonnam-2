@@ -3,6 +3,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.preview_writer_fixture import final_preview_writer  # noqa: F401
+
 from daesingo.api.composition import ApiComposition, compose_api
 from daesingo.recording import OpenedAnalysisSource, RecordingCapabilityError
 from tests.case.test_candidate_video import request

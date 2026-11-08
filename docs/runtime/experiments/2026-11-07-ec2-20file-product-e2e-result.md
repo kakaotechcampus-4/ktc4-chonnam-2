@@ -92,7 +92,7 @@ tracker 5행은 모두 FINALIZED/SUCCEEDED, failure_kind null이다. Usage 행 �
 
 ## 남은 제한과 후속 작업
 
-- **후보 썸네일:** 3개 모두 `thumbnail_reference_present=false`. 이번 성공이 [#583](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/583)의 수정·배포 완료를 뜻하지 않는다.
+- **후보 썸네일 관측 범위 정정:** 3개 모두 `thumbnail_reference_present=false`라는 값은 DB Case state의 `candidates[]`에서 `thumb_ref` 키를 조회한 결과다. 키 부재와 명시적 `null`은 구분되지 않았다. 공개 `/view` 조회는 Package 필드에 한정됐으므로 CaseView의 썸네일 표시 여부는 확인되지 않았다. #583의 배포 검증은 대상 revision에서 별도로 수행한다. [#452 후속 정정](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452#issuecomment-6703034138) · [#583](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/583)
 - **화면 내 신고영상 미리보기:** 브라우저에 미리보기 불가가 표시됐다. 다운로드 파일의 재생 성공과 구분하며 원인은 미확정이다.
 - **사용자 확인 필드:** `safety_report_type`, `location`, `violation_expression`이 미확인 상태다. Package READY는 실제 신고 제출 또는 법적 판단 완료가 아니다.
 - **Search 관측:** 후속 조회에서 token·latency를 확보했다. provider 호출·재시도 횟수, 응답 종료 사유, 실제 비용은 미확인이다. Job attempt 1을 provider 호출 1회로 환산하지 않는다.
