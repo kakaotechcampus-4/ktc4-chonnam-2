@@ -1,6 +1,6 @@
 # 신고용 영상 — 첫 발주 시점 · `case.report_video_not_generated` · 재시도 버튼
 
-> **상태: 결정 · notice 구현 · 자동 발주 배선 보류**(2026-11-08 현재: 배선됨 — 아래 §4 「2026-11-08 상태」) · 결정일 2026-10-13 · 담당 유소연(`case`) · 근거 [#351](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/351) [결정 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/351#issuecomment-6143734339), #47 Q3, #280, `core-user-flow.md` 「신고자료 묶음 전」 · 「신고용 영상 생성」
+> **상태: 결정 · notice 구현 · 자동 발주 배선 보류**(2026-11-08 현재: 배선됨 — 아래 §4 「2026-11-08 상태」. 발주 시점은 #597로 「상황 응답 뒤」에서 「EvidenceRecord 조립 뒤」로 바뀜 — `observed-skips-situation-response.md`) · 결정일 2026-10-13 · 담당 유소연(`case`) · 근거 [#351](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/351) [결정 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/351#issuecomment-6143734339), #47 Q3, #280, `core-user-flow.md` 「신고자료 묶음 전」 · 「신고용 영상 생성」
 > 발주와 notice는 case 소관이다(#351). 신고용 영상 생성 자체(C-07)는 recording, 요건 판정은 evidence 몫이다. 규칙 원문은 CaseView 계약 A§7(발주 시점 · `GENERATE_REPORT_VIDEO` 매핑) · B§7(`notices[].code`)로 옮겼다.
 
 ## 1. 문제

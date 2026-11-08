@@ -404,7 +404,7 @@ def execute_command(
     except _Rejected as rejected:
         return CommandResult(_response(rejected.reason, view))
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
-    # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
+    # 부르면 통로에 판단이 들어간다(#106). UNCERTAIN의 상황 응답이나 정정 뒤 Package가 풀리는 경우가 대표적이다(§5).
     if case.stage == "EVIDENCE_REVIEW" and request["kind"] not in _SKIP_EXPORT_GATE:
         from daesingo.case.exports import issue_missing_exports
         adapter = store.adapter_for(case)

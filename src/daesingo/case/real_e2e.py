@@ -15,8 +15,8 @@ Worker 배선은 이번 범위 밖).
   호출이다.
 - **`situation_response`**: 2026-09-28부터 `CaseAggregate.record_situation_response()`로
   기록된 사용자 응답을 `assemble_evidence_bundle()`에 그대로 전달한다(#171 B-2 · 통합 항목
-  I1). 응답 전에는 `None`(= `NOT_ASKED`)이고, ADR-EVIDENCE-005 D2-c에 따라 Package가 나가지
-  않는다.
+  I1). 응답 전에는 `None`(= `NOT_ASKED`)이다. Fine이 OBSERVED면 응답 없이도 Package가 나갈 수 있고
+  (#597), UNCERTAIN이면 「잘 모르겠어요」 응답 전까지 조립하지 않는다.
 - **`observation_facts`**: 이 파일의 fixture·로컬 영상 경로는 `None`으로 둔다(저장된 관찰을
   읽는 `stored_observation.py`는 export 결과로 이 값을 채운다). 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
   못 미쳐 `build_report_package()`가 `PackageNotReady`를 던질 수 있다 — 이건 실패가

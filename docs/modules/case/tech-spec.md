@@ -157,7 +157,7 @@ Required-3, `scenario_correction_rerun_001` v4 노트 참고). 같은 `target_fi
 
 ## 5. `CaseView` projection
 
-`build_case_view()`가 web의 유일한 read dependency(작성 당시 `case-view/v1.3`, 지금은 `view.py::CONTRACT_VERSION` = `case-view/v1.12`)를 만든다. 원칙(§4-모듈5 ⑥):
+`build_case_view()`가 web의 유일한 read dependency(작성 당시 `case-view/v1.3`, 지금은 `view.py::CONTRACT_VERSION` = `case-view/v1.13`)를 만든다. 원칙(§4-모듈5 ⑥):
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다. 신고 요건 판정
 (readiness/checks)이나 번호판 OCR 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로
 옮겨 담기만 한다.
