@@ -37,6 +37,8 @@ def test_correction_survives_local_export_admission_decision(monkeypatch, accept
     saved = store.get_case(cid)
     # Contract §5: one correction revision, plus one only for a real READY
     # transition. Admission rejection must not undo either accepted effect.
+    # #597/#616: happy_001 already has Package assets, so that branch stays
+    # READY with +2 (correction +1, READY +1), even without a situation response.
     expected_stage = "READY" if package_ready else "EVIDENCE_REVIEW"
     assert saved.stage == result.response["case_view"]["stage"] == expected_stage
     assert saved.case_rev == result.response["case_view"]["case_rev"] == rev + 1 + int(package_ready)
