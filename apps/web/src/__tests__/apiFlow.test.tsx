@@ -150,6 +150,22 @@ it('case 대기 timeout(#358)은 중단 화면에 timeout 문구로 보이고, [
   }
 })
 
+it('진행 화면 대표 영상 자리는 원본이 없으면 고른 후보 썸네일, 그것도 없으면 근거 장면을 보인다(#634 리뷰)', async () => {
+  const selected = { ...BASE.candidates[0], selected: true }
+  const evidence = { ...BASE.evidence!, preview_ref: 'fr_evidence' }
+  const shown = async (thumb: string | null) => {
+    const { api } = setup({ get: view({ case_rev: 5, stage: 'EVIDENCE_REVIEW', running_jobs: JOBS, candidates: [{ ...selected, thumb_ref: thumb }], evidence }) })
+    ;(api as { frameUrl: (c: string, r: string) => string }).frameUrl = (_c, r) => `/frames/${r}`
+    const r = render(<ApiFlow api={api} caseId="c1" />)
+    await waitFor(() => expect(r.container.querySelector('.flow-thumb img')).not.toBeNull())
+    const src = r.container.querySelector('.flow-thumb img')!.getAttribute('src')
+    cleanup()
+    return src
+  }
+  expect(await shown('fr_thumb')).toBe('/frames/fr_thumb')
+  expect(await shown(null)).toBe('/frames/fr_evidence')
+})
+
 it('찾는 중이 아닐 때(SEARCHING이 아닐 때)는 중단 버튼을 두지 않는다', async () => {
   const { api } = setup({ get: view({ case_rev: 5, stage: 'CANDIDATE_REVIEW', running_jobs: JOBS, candidates: BASE.candidates }) })
   const { findByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)

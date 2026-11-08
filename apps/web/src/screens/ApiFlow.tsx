@@ -261,9 +261,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             startedAt={startedAt}
             pushIn={!!leaving}
             onStop={view.stage === 'SEARCHING' ? () => run({ kind: 'STOP_ANALYSIS', payload: {} }) : undefined}
-            // 결과 화면에서 다시 준비하거나 창을 닫았다 오면 브라우저에 원본이 없다 — 고른 후보의 장면 이미지로 대신한다
+            // 결과 화면에서 다시 준비하거나 창을 닫았다 오면 브라우저에 원본이 없다 — 고른 후보의 장면 이미지로 대신한다.
+            // 후보 썸네일이 없으면 근거 장면(evidence.preview_ref)을 쓴다 — 결과 화면 포스터·후보 카드와 같은 순서(#634 리뷰)
             fallbackSrc={(() => {
-              const thumb = view.candidates.find((c) => c.selected)?.thumb_ref
+              const thumb = view.candidates.find((c) => c.selected)?.thumb_ref ?? view.evidence?.preview_ref
               return thumb && frameSrc ? frameSrc(thumb) : null
             })()}
           />
