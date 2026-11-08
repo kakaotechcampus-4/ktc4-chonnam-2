@@ -1,7 +1,7 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.11` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.13` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
@@ -29,9 +29,9 @@ from daesingo.case.labels import (
     occurred_at_info_state,
     report_type_label,
 )
-from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
+from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED, render_report_draft
 
-CONTRACT_VERSION = "case-view/v1.12"
+CONTRACT_VERSION = "case-view/v1.13"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -784,6 +784,10 @@ def build_case_view(
         ),
         "requirements_evidence": _build_requirements_view(requirement_report_evidence),
         "requirements_package": _build_requirements_view(requirement_report_package),
+        # 신고서 초안(v1.13, #597 B안) — 현재 선택의 조립된 EvidenceRecord를 evidence 렌더러에 그대로 넘긴 결과다.
+        # 문장은 case가 만들지 않는다. 조립 전(부분 투영 · 비조립) · 렌더 불가(유형 · 응답 조합, 발생시각 없음 등)면
+        # `null`이다. 최종 신고문은 `package.report`다 — 초안이 있다고 READY가 되지 않는다.
+        "report_draft": render_report_draft(evidence_record) if evidence_record is not None else None,
         "package": _build_package_view(report_package, evidence_record),
         "running_jobs": derive_running_jobs(case, job_executions),
         "notices": notices or [],

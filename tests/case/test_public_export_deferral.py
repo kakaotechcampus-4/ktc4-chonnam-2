@@ -24,7 +24,10 @@ def test_correction_survives_local_export_admission_decision(monkeypatch, accept
         "kind": "MANUAL_PLATE_INPUT", "payload": {"value": "34나5678"}}, store=store, admit_auto_exports=admit)
     assert result.response["ok"] is True
     assert result.response["case_view"]["evidence"]["plate_display"]["value"] == "34나5678"
-    assert store.get_case(cid).case_rev == rev + 1
+    # #597 B안: happy_001은 Fine OBSERVED라 상황 응답 없이 evidence가 조립되고, mock adapter에
+    # 묶음 자산이 이미 있어 같은 command 안에서 READY로 넘어간다(정정 +1, READY 전이 +1).
+    assert store.get_case(cid).stage == "READY"
+    assert store.get_case(cid).case_rev == rev + 2
     assert len(store.get_case(cid).correction_records) == 1
     assert [record["kind"] for record in seen] == ["REPORT_VIDEO_EXPORT"]
     if accepted:
