@@ -13,8 +13,9 @@ major `TIMELINE_REBASE`, candidate 변경 등에 의해 뒤 단계에서 앞 단
 구체화한다. 그 표 기준으로 실제 구현 가능한 것과 막힌 것을 나눴다:
   - `TIME_HINT_EDIT` — 표 1행 그대로 `SEARCHING`으로 역행(`regress_to_searching()`). case가
     소유한 순수 workflow state라 case 혼자 구현 가능.
-  - `OTHER_CANDIDATE`("candidate 변경") — 표 2행을 보면 실제로는 역행이 **아니다**: 뒤 단계
-    (`EVIDENCE_REVIEW`)에 "제자리"로 머문다(`reselect_candidate()`). §4-모듈5 ②의 "candidate
+  - `OTHER_CANDIDATE`("candidate 변경") — 표 2행을 보면 `EVIDENCE_REVIEW`에서는 역행이 **아니다**:
+    "제자리"로 머문다(`reselect_candidate()`). 단 `READY`에서는 새 초안을 준비해야 하므로
+    `EVIDENCE_REVIEW`로 내려간다(#173 E-4). §4-모듈5 ②의 "candidate
     변경"이라는 표현이 역행을 뜻하는 것처럼 읽히지만, 더 구체적인 이 연구 메모가 실제로는
     아니라고 정정한다 — 문서 간 불일치이며 원문(module-architecture.md)을 고치는 건 이 세션
     범위 밖이라 그대로 뒀다(2026-09-14 체크리스트 §11 노트 참고).
@@ -42,7 +43,8 @@ STAGES = (
     "READY",
 )
 
-# 전진 전이만 1차로 구현한다. 역행 전이는 §11 제외 범위.
+# `_advance()`가 검사하는 전진 전이. 역행 전이는 이 표가 아니라 전용 메서드가 맡는다
+# (`regress_to_searching()` · `reselect_candidate()` · `leave_ready()`).
 _FORWARD_EDGES: dict[str, str] = {
     "INTAKE": "SEARCHING",
     "SEARCHING": "CANDIDATE_REVIEW",
@@ -446,6 +448,7 @@ class CaseAggregate:
         ready-only라 존재 자체가 FINAL `PASS`/`WARN`의 증거다 — 없으면 전이를 거부한다(#167).
         downstream 스냅샷에서 판단하는 호출자는 `service.mark_ready_if_package_ready()`를 쓴다."""
         if report_package is None:
+            # #167: READY는 준비된 Package가 있을 때만 성립한다(`PACKAGE_READY` gate).
             raise InvalidTransition("READY는 준비된 ReportPackage 없이 들어갈 수 없다(#167)")
         self._advance("EVIDENCE_REVIEW", "READY")
 
@@ -472,8 +475,9 @@ class CaseAggregate:
         self.bump_revision()
 
     def check_regress_to_searching(self) -> None:
-        """`TIME_HINT_EDIT` 역행을 받아도 되는지 **아무것도 바꾸지 않고** 검사한다(`check_reselect()`와
-        같은 원칙, #166). `correction.edit_time_hint()`가 CorrectionRecord를 남기기 전에 먼저 부른다 —
+        """`SEARCHING` 역행(`TIME_HINT_EDIT` 등)을 받아도 되는지 **아무것도 바꾸지 않고** 검사한다
+        (`check_reselect()`와 같은 원칙, #166). `correction.edit_time_hint()`가 CorrectionRecord를 남기기
+        전에 먼저 부른다 —
         예전엔 기록·`hints`·`case_rev`를 먼저 바꾼 뒤 역행이 거부돼 그것들만 남았다(탐색 실패로
         `SEARCHING`에 머문 case, orchestration 지표 4차 측정)."""
         if self.stage not in ("CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"):
@@ -487,8 +491,10 @@ class CaseAggregate:
         아예 갖고 있지 않다 — 애초에 지울 게 없다). `selection_rev`는 건드리지 않는다(과거
         correction_records가 스냅샷해 둔 값과의 정합성을 깨지 않기 위해 — 단조 증가만 유지).
 
-        `case_rev`는 여기서 올리지 않는다 — 이 메서드를 부르는 `correction.edit_time_hint()`가
-        `apply_correction()`으로 이미 한 번 올린다(한 사용자 요청 = 한 case_rev 증가, §3-E).
+        `case_rev`는 여기서 올리지 않는다 — 호출 경로가 따로 올린다(한 사용자 요청 = 한 case_rev
+        증가, §3-E). 호출자: `correction.edit_time_hint()`(`apply_correction()`으로 올림),
+        `analysis_start.edit_hint()`(`EDIT_HINT`), `command._run_notice_action()`(결과 없음에서
+        다시 찾기, #426).
         """
         self.check_regress_to_searching()
         self.stage = "SEARCHING"

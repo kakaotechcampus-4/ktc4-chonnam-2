@@ -1,4 +1,5 @@
-"""web → case 공용 command 진입점 — `docs/modules/case/contracts/contract-case-command.md`(Draft v0).
+"""web → case 공용 command 진입점 — `docs/modules/case/contracts/contract-case-command.md`(Draft v0 · 입력형 command
+`MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME`은 §12 v1 초안).
 
 `get_view()`가 읽기 방향이라면 이 파일은 쓰기 방향이다. transport(HTTP 경로·인증·직렬화)는
 여기 없다 — transport는 요청을 그대로 넘기고 응답을 그대로 돌려주기만 한다(#106). 상태 확인·

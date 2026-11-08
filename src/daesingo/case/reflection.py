@@ -1,4 +1,5 @@
-"""Worker T2 → case 반영 진입점 — 고도화 8-8, `docs/modules/case/decisions/result-reflection.md`.
+"""Worker가 끝낸 job 결과를 case에 반영하는 진입점(Worker의 T2 단계 · 고도화 8-8,
+`docs/modules/case/decisions/result-reflection.md`).
 
 Runtime Worker가 terminal execution 하나를 넘기면(Tech Spec §12.2) 호출자 transaction 안에서 case 행을 먼저 잠그고,
 처리한 `execution_id`로 중복을 거르고, case가 아직 기다리는 job의 결과만 kind별로 반영한다. 후속 JobRecord는

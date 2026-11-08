@@ -1,17 +1,14 @@
 """`CaseView` projection — web의 유일한 read dependency.
 
 case가 이미 갖고 있는 상태(`CaseAggregate`)와 다른 모듈이 만든 Canonical Contract
-산출물(어댑터를 통해 읽는다)을 조합해서 `case-view/v1.11` 모양으로 안전하게 내보낸다.
+산출물(어댑터를 통해 읽는다)을 조합해서 `CONTRACT_VERSION` 모양으로 안전하게 내보낸다.
 evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — 매번 다시 조립한다
 (module-architecture.md §4-모듈5 ⑥). 신고 요건 판정(readiness/checks)이나 번호판 OCR
 같은 evidence/readout의 판단 자체는 여기서 재계산하지 않고 그대로 옮겨 담기만 한다.
 
-⚠️ 1차 구현 범위: `scenario_happy_001`(happy path)과 `scenario_unknown_abstain_partial_001`
-(WARN Package + 위치 미확보 — 2026-09-14, 이슈 #47/#48 후속으로 §11 제외 범위에서 전체
-파리티로 승격) 재현에 필요한 필드를 다룬다. 나머지 5개 시나리오(후보 0개/GPS 없음이 아닌
-low confidence/Timestamp conflict 단독/Plate abstain 단독/Timeout·partial result)의 표시
-규칙은 `docs/modules/case/checklists/phase1-completion-checklist.md` §11에 따라 아직
-다루지 않는다.
+happy path 외에 후보 탐색 실패, 대기 timeout·분석 중단, 실행 실패(FAILED/STALE),
+선택 clip 실패, 번호판·위치·시간 미확보(키 없음) 같은 분기도 표시 규칙으로 다룬다.
+각 분기의 근거는 아래 함수 주석에 있다.
 """
 from __future__ import annotations
 
@@ -295,19 +292,9 @@ def _build_progress(
         else:
             progress["requirement_check"] = "PENDING"
         progress["package_assembly"] = "DONE" if package_done else "PENDING"
-        # ⚠️ PM 리뷰(2026-09-23, PR #147) — 여기 있던 "stage_rank==4(READY)면 8단계
-        # 전부 DONE으로 덮어쓴다"는 블랙킷 override를 제거한다. 바로 위에서 이미
-        # evidence_done/package_done/requirement_done을 보고 단계별로 정확히
-        # 계산해두는데, 이 override가 그 결과를 무시하고 package_assembly까지
-        # 무조건 DONE으로 덮어써서 `report_package is None`(예: PackageNotReady로
-        # BLOCKED)인 READY 상태에서도 package_assembly=DONE이라는 허위 표시가
-        # 나왔다(`youtube_clip_01` 실행에서 실제로 재현됨). READY에서
-        # evidence_record가 있는데 report_package가 없는 조합은 이제 바로 위
-        # 코드가 이미 정확히 PENDING을 내므로, 이 override 없이도
-        # file_intake/coarse_search/candidate_review는 항상 DONE(stage_rank
-        # 비교로 자동 보장), plate_read~requirement_check는 evidence_done/
-        # requirement_done 여부로 정확히 DONE이 된다 — 8단계 전부 DONE인 경우도
-        # (예: happy path) 이 계산 결과로 이미 자연스럽게 나온다.
+        # 단계별 상태는 위 계산 결과를 그대로 쓴다. 예전의 "READY면 8단계 전부 DONE"
+        # override는 report_package가 없는데도 package_assembly=DONE을 보여서
+        # 제거했다(PR #147).
     return [{"step": s, "state": progress[s]} for s in _PROGRESS_STEPS]
 
 
@@ -384,7 +371,7 @@ def _field_states(evidence_record: dict[str, Any]) -> dict[str, dict[str, str | 
     event = evidence_record.get("event")
     # ⚠️ occurred_at도 vehicle_number/location과 같은 이유로 키 자체가 없을 수 있다
     # (TimeResolution.status=UNKNOWN이면 assemble_evidence()가 occurred_at을 아예 안 만든다
-    # — evidence/assembly.py:230-231). 실제 real 영상(시간 출처가 전혀 없는 화면녹화본)에서
+    # — evidence/assembly.py `_independent_facts()`). 실제 real 영상(시간 출처가 전혀 없는 화면녹화본)에서
     # 처음 발생 확인, 2026-09-23. `occurred_at_info_state(None)`은 이미 "INFO_UNKNOWN"을
     # 반환하도록 되어 있었다 — 여기서 `.get()`으로 안 바꾼 게 유일한 gap이었다.
     occurred_at = evidence_record.get("occurred_at")
@@ -490,7 +477,7 @@ def _build_evidence_view(
 
     vehicle_number = evidence_record.get("vehicle_number")
     # ⚠️ occurred_at도 vehicle_number/location과 같은 이유로 키 자체가 없을 수 있다
-    # (TimeResolution.status=UNKNOWN — evidence/assembly.py:230-231). 실제 real 영상(시간
+    # (TimeResolution.status=UNKNOWN — evidence/assembly.py `_independent_facts()`). 실제 real 영상(시간
     # 출처가 전혀 없는 화면녹화본)에서 처음 발생 확인, 2026-09-23.
     occurred_at = evidence_record.get("occurred_at")
 

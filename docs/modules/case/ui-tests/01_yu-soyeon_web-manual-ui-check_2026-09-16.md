@@ -2,7 +2,7 @@
 
 > **작성일 2026-09-16 · 작성 담당 유소연(`case`) · 문서 성격: `apps/web` 수동 UI 점검 결과 기록(비정기, 필요 시 회차 누적).**
 > 이 문서는 1차 Mock Merge 통합(`develop`, PR #62) 반영 직후 `apps/web`을 로컬에서 직접 띄워 시나리오별 화면 전환·표시값을 눈으로 확인한 결과를 기록한다. `pytest`/`vitest`/`tsc` 등 자동화 검증(→ `docs/mock/04_mock_validation_report.md`)과는 별도 축이며, "코드가 안 깨진다"가 아니라 "화면이 의도대로 보인다"를 확인하는 것이 목적이다.
-> 근거: `apps/web/src/state/selectScreen.ts`(stage→화면 매핑 로직) · `apps/web/src/contracts/fixtures.ts`(스냅샷 로더/파싱 검증) · `docs/product/core-user-flow.md` §4 · `docs/architecture/contracts/adr/adr-location-absent-package.md`(ADR-EVIDENCE-003) · `docs/modules/case/checklists/phase1-completion-checklist.md`.
+> 근거: `apps/web/src/state/selectScreen.ts`(stage→화면 매핑 로직) · `apps/web/src/contracts/fixtures.ts`(스냅샷 로더/파싱 검증) · `docs/product/core-user-flow.md` §4 · `docs/modules/evidence/adr/adr-location-absent-package.md`(ADR-EVIDENCE-003) · `docs/modules/case/checklists/phase1-completion-checklist.md`.
 
 ---
 

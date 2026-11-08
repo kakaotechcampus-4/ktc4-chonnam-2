@@ -1,5 +1,9 @@
-"""Mock Fixture 기반 upstream adapter — recording/search/readout/evidence가 아직 코드가
-없는 상태에서 case를 독립적으로 실행·테스트하기 위한 stand-in이다.
+"""case가 다른 모듈(recording/search/readout/evidence) 산출물을 읽는 어댑터 모음.
+
+`ModuleAdapter`(Protocol)가 인터페이스이고, 구현은 fixture를 그대로 읽는 `MockFixtureAdapter`,
+fixture 시나리오를 실제 함수로 돌리는 `RealAdapter`, 로컬 영상을 실제 함수로 돌리는
+`RealVideoAdapter`가 이 파일에 있다(저장된 관찰을 읽는 구현은 `stored_observation.py`).
+아래 `MockFixtureAdapter` 설명과 날짜별 갱신 기록은 만들 때의 맥락이다.
 
 `data/mock/<module>/scenario_<id>.json`을 Canonical Contract 모양 그대로 읽어서 돌려준다.
 여기서 하는 일은 오직 "파일을 읽어서 그대로 넘기는 것"뿐 — evidence의 판정 로직이나
@@ -16,11 +20,11 @@ readout의 OCR 판단을 이 어댑터가 재구현하지 않는다(그건 각 �
 구체 클래스가 아니라 `ModuleAdapter`에만 의존하므로, 실행 시점에 어느 어댑터 인스턴스를
 주입하느냐만 바꾸면 orchestration 코드는 손대지 않는다.
 
-`RealAdapter`는 모듈별로 하나씩 채워진다 — 나머지는 계속 `NotImplementedError`로 남겨서
-"이 모듈은 이미 Real, 저 모듈은 아직 Mock"인 혼재 상태를 그대로 표현한다(W5 원칙
-"Mock retained for not-yet-ready modules").
+`RealAdapter`는 처음에 모듈별로 하나씩 채웠다. 지금 `NotImplementedError`로 남은 메서드는
+`get_analysis_scopes()`(real 대응이 없다 — case가 Producer)와 `get_job_executions()`(실행 상태는
+`CaseStore` read port로 읽는다) 둘뿐이다.
 
-## 2026-09-18 갱신 — search만 real로 교체됨
+## 2026-09-18 갱신 — search만 real로 교체됨(당시 기록)
 
 `search.search_candidates()`/`evidence.*`/common의 실제 코드 존재 여부를 다시 확인한
 결과:
@@ -31,8 +35,10 @@ readout의 OCR 판단을 이 어댑터가 재구현하지 않는다(그건 각 �
   요구하는 `plate_readout`(readout)·`incident_clip`(recording)을 case가 아직 못 구한다
   — `ModuleAdapter`에 readout/recording 메서드 자체가 없다. evidence Owner를 더 기다리는
   게 아니라 **case가 readout/recording까지 엮는 별도 설계**가 먼저 필요하다(오늘 범위 밖).
+  (현재: 바로 아래 갱신에서 교체됐고, `get_plate_readouts()` 등 readout 메서드도 생겼다.)
 - **common/runtime**: `InMemoryJobExecutionStore`는 호출 가능한 서비스가 아니라 Worker
   프로세스가 채우는 저장소다. `worker/`가 아직 비어 있어 실제로 채워질 대상 자체가 없다.
+  (현재: `worker/`는 구현돼 있다. case는 실행 상태를 `CaseStore` read port로 읽는다.)
 
 ## 2026-09-18(W6) 갱신 — evidence도 `scenario_happy_001` 대표 시나리오로 real 교체
 
@@ -50,8 +56,8 @@ W5/W6 마감(월요일 20:00 회의 — 대표 시나리오 1개가 E2E를 실�
 
 시나리오는 `RealAdapter(scenario_id=…)`로 고른다(기본 `scenario_happy_001`, 2026-10-12 4순위 —
 `decisions/real-e2e-scenarios.md`). `real_e2e.py` 모듈 docstring의
-"알려진 단순화"(시각 원시 데이터 raw read, `situation_response`/`observation_facts`
-None) 두 가지도 그대로 적용된다.
+「알려진 단순화」(raw `time_source_candidates` 읽기, `observation_facts`·`gps_observation`
+None)도 그대로 적용된다. `situation_response`는 case에 기록된 값을 넘긴다.
 
 ## 2026-09-19 갱신 — evidence가 case의 실제 선택값을 쓰도록 수정
 
@@ -97,7 +103,7 @@ from daesingo.case.domain import CaseAggregate
 class ModuleAdapter(Protocol):
     """`case`가 upstream 모듈 산출물을 읽을 때 의존하는 유일한 인터페이스.
 
-    `MockFixtureAdapter`(현재)와 `RealAdapter`(골격, 앞으로 모듈별로 채워짐) 둘 다
+    `MockFixtureAdapter` · `RealAdapter` · `RealVideoAdapter` · `StoredObservationAdapter`가
     이 프로토콜을 만족한다. `case/service.py`의 함수들은 이 타입에만 의존한다 —
     Mock↔Real 교체는 여기 정의된 메서드 시그니처를 벗어나지 않는 한 `service.py`나
     `domain.py`/`jobs.py`/`view.py`를 고치지 않고도 가능하다.
@@ -266,18 +272,17 @@ class MockFixtureAdapter:
 class RealAdapter:
     """`ModuleAdapter`의 실제 구현 — 모듈별로 준비되는 대로 하나씩 채운다.
 
-    search는 이미 채워졌다(`get_candidate_events()`). 나머지는 여전히
-    `NotImplementedError`다 — 이 상태에서도 `case/service.py`는 그대로 동작해야 한다:
-    실패는 "아직 Real로 안 바뀐 자리를 호출했다"는 명확한 신호여야 하고, 조용히 빈 값을
-    돌려주면 안 된다(Mock의 정직한 실패 원칙과 동일).
+    search·evidence·readout 메서드는 채워졌다. `get_analysis_scopes()` ·
+    `get_job_executions()`만 `NotImplementedError`다 — 실패는 "real 대응이 없는 자리를
+    호출했다"는 명확한 신호여야 하고, 조용히 빈 값을 돌려주면 안 된다(Mock의 정직한 실패
+    원칙과 동일).
 
     생성자 인자는 모듈별로 다르다 — search는 순수 함수 호출이라 `search_scope`(dict 또는
     `search.AnalysisScope`) 하나면 충분하고, evidence 체인은 추가로 `mock_root`가
     필요하다(`real_e2e.py`의 "알려진 단순화 1" — recording의 raw time_source_candidates
     읽기용, 나머지는 전부 real 함수 호출). evidence 체인은 이제 `case`(`CaseAggregate`)도
     필요하다 — case가 실제로 선택한 candidate/selection_rev를 읽어야 하기 때문이다
-    (2026-09-19 수정, 아래 `_build_evidence_bundle()` 참고). 나머지가 채워질 때 필요한
-    인자가 더 늘어난다.
+    (2026-09-19 수정, 아래 `_build_evidence_bundle()` 참고).
     """
 
     def __init__(
@@ -478,8 +483,8 @@ class RealAdapter:
         return self._build_evidence_bundle().evidence_record
 
     def get_evidence_records(self) -> list[dict[str, Any]]:
-        """`scenario_happy_001` 대표 시나리오는 supersede 체인이 없어(1건뿐) 리스트도
-        1건이다 — plate_reread류 다건 체인은 W7 확장 대상(모듈 docstring 참고).
+        """이 어댑터는 supersede 체인을 쌓지 않는다 — 재판독이 있어도 다시 조립한 최신
+        1건만 돌려준다.
 
         Fine이 후보를 기각해(`NOT_OBSERVED`) 조립 자체가 없으면 빈 리스트다 — 그건
         조용한 실패가 아니라 `EvidenceBundle.disposition`에 사유가 남는 정상 결과다
@@ -531,6 +536,8 @@ class RealAdapter:
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
+        # 아래 reason 문자열은 당시 기록이다. 지금은 `worker/`가 있지만, case는 실행 상태를
+        # `CaseStore` read port로 읽으므로 이 메서드를 쓰지 않는다.
         self._not_ready(
             "get_job_executions",
             "common/runtime",
@@ -736,6 +743,8 @@ class RealVideoAdapter:
 
     # ── common/runtime ──────────────────────────────────────────────────
     def get_job_executions(self) -> list[dict[str, Any]]:
+        # 아래 reason 문자열은 당시 기록이다. 지금은 `worker/`가 있지만, case는 실행 상태를
+        # `CaseStore` read port로 읽으므로 이 메서드를 쓰지 않는다.
         self._not_ready(
             "get_job_executions",
             "common/runtime",

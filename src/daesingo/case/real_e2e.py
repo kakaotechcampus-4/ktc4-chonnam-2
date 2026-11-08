@@ -1,6 +1,7 @@
-"""Mock 시나리오 fixture용 real E2E 파이프라인(기본 `scenario_happy_001`) — recording → search →
-readout → evidence까지 전부 실제 공개 함수를 호출한다(W5/W6, 2026-09-22 월 20:00
-회의 데드라인 대응).
+"""선택한 후보 하나에 대해 recording → search(Fine) → readout → evidence를 실제 공개 함수로
+이어 부르는 파이프라인이다. Mock 시나리오 fixture 경로(기본 `scenario_happy_001`)와 로컬 영상
+경로(`build_real_video_evidence_bundle()` 등) 두 가지가 있다. 처음 만든 때는 2026-09-22
+대표 시나리오 E2E 확인이다.
 
 기준은 "대표 시나리오 1개가 전체 흐름을 실제로 통과하는가"이지 모든 단계가 PASS
 등급을 받는가가 아니다(요청 문서 "이번엔 안 해도 되는 것" — 모든 edge case·완성된
@@ -15,9 +16,9 @@ Worker 배선은 이번 범위 밖).
 - **`situation_response`**: 2026-09-28부터 `CaseAggregate.record_situation_response()`로
   기록된 사용자 응답을 `assemble_evidence_bundle()`에 그대로 전달한다(#171 B-2 · 통합 항목
   I1). 응답 전에는 `None`(= `NOT_ASKED`)이고, ADR-EVIDENCE-005 D2-c에 따라 Package가 나가지
-  않는다. web에서 응답을 보내는 경로(#106 command)는 아직 없다.
-- **`observation_facts`**: case에 이 값을 만드는 로직이 아직
-  없어 `None`으로 둔다. 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
+  않는다.
+- **`observation_facts`**: 이 파일의 fixture·로컬 영상 경로는 `None`으로 둔다(저장된 관찰을
+  읽는 `stored_observation.py`는 export 결과로 이 값을 채운다). 그 결과 `FINAL_PACKAGE` 판정이 PASS/WARN에
   못 미쳐 `build_report_package()`가 `PackageNotReady`를 던질 수 있다 — 이건 실패가
   아니라 "정보가 부족해 아직 패키지를 못 만든다"는 실제 도메인 상태이고, `CaseView`의
   partial 표현이 원래 이런 상태를 위해 있다(`module-architecture.md` §5-12).
@@ -94,9 +95,8 @@ develop에 있다. 3개 gap 전부 종결(`doc/real-e2e-protocol.md`/`doc/real e
 - **candidate 선택은 `candidates[0]`으로 고정한다.** GT 없는 배관 확인이 목적이라
   "어느 candidate가 맞는지"는 이번 범위 밖이다 — `happy_001`이 후보 1개라 우연히
   안전했던 것과 같은 자리다. 후보가 여럿이면 이 단순화가 그대로 드러난다.
-- **readout provider는 여전히 `FixtureOcrProvider`다.** 실제 영상엔 맞지 않는
-  provider이지만, 이건 readout Owner가 확인해야 할 별도 gap이라 이 파일이 대신
-  풀지 않는다.
+- **readout provider는 `PaddleOcrProvider`다**(`_build_ocr_provider()`). `FixtureOcrProvider`는
+  fixture 경로(`observe_fixture_candidate()`)에서만 쓴다.
 - **`RecordingService.close()`는 이 함수가 부르지 않는다.** search가
   `open_analysis_source()`로 바이트를 다 읽기 전에 닫으면 실행 중인 AnalysisSource가
   해제된다(정철원 확인, 2026-09-21) — 반환값에 `rec_service`를 포함해 호출자가 언제
@@ -488,7 +488,7 @@ def assemble_evidence_bundle(
         evaluated_at=now,
         time_resolution=time_resolution,
         asset_facts=obs.asset_facts,
-        # 알려진 단순화 2와 같은 이유로 None (모듈 docstring 참고).
+        # 이 파일의 경로에서는 None이다(모듈 docstring 「알려진 단순화」의 `observation_facts` 항목).
         observation_facts=obs.observation_facts,
     )
 
@@ -533,8 +533,9 @@ def build_fixture_evidence_bundle(
     location_hint: str | None = None,
 ) -> EvidenceBundle:
     """recording → `search.verify_visual_with_stream_context` → readout → evidence까지
-    실제 함수로 이어서 실행한다. 모듈 docstring의 "알려진 단순화" 두 곳만 raw
-    fixture/`None`이고 나머지는 전부 각 모듈의 공개 함수 호출 결과다.
+    실제 함수로 이어서 실행한다. 모듈 docstring 「알려진 단순화」의 항목(raw
+    `time_source_candidates`, `observation_facts`·`gps_observation`은 `None`)을 빼면 각 모듈의
+    공개 함수 호출 결과다. OCR provider는 `FixtureOcrProvider`다.
 
     `observe_fixture_candidate()` + `assemble_evidence_bundle()`을 이어 부른다. 정정 후
     다시 계산할 때는 관찰 결과를 재사용하고 조립만 다시 부른다(이슈 #73, `RealAdapter`).
@@ -714,9 +715,8 @@ def prepare_real_video_context(
     탐색 이전 단계. 이 단계는 candidate와 무관하게 한 번만 한다(전체 영상 범위
     AnalysisSource 하나 재사용 — 모듈 docstring 참고).
 
-    `target_event_types`는 `scope.py`가 이미 명시한 대로("1차 구현 범위" —
-    case에는 아직 intake UI가 이 값을 스스로 결정하는 로직이 없어 호출자가 그대로
-    공급해야 한다) 호출자 책임이다. 생략하면 월요일 대표 영상용 값
+    `target_event_types`는 호출자 책임이다(이 실험 경로는 `analysis_start.TARGET_EVENT_TYPES`를
+    쓰지 않는다). 생략하면 월요일 대표 영상용 값
     (`_MONDAY_TARGET_EVENT_TYPES`)으로 fallback한다 — 이건 계약 기본값이 아니라
     그 영상 하나를 위한 opaque 재사용값일 뿐이다(모듈 docstring 참고, 2026-09-23
     real_e2e_yt0002 실행에서 다른 영상엔 안 맞는다는 게 드러나 매개변수화함).
@@ -729,7 +729,7 @@ def prepare_real_video_context(
         {profile_ref: AnalysisProfile(height=480, preset="veryfast", crf=23)}
     )
     # `build_incident_clip()`은 local source에 대해 analysis_materializer와 별도로
-    # incident_materializer가 필요하다(recording/service.py:606) — 처음엔 이걸 몰라서
+    # incident_materializer가 필요하다(recording/service.py `build_incident_clip()`) — 처음엔 이걸 몰라서
     # `LocalIncidentMaterializer` 없이 실행했다가 "실행 중인 단일 VIDEO 생성 설정이
     # 필요합니다"로 실패했다. 같은 인코딩 값을 재사용한다(모듈 docstring 참고 —
     # canonical 값이 아니라 이번 실행 전용).

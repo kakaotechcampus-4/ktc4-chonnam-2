@@ -30,8 +30,8 @@
 | 같은 후보로 되돌아옴(A→B→A) | 같은 후보 목록 세대(`candidate_generation`) 안이면 이전 관찰(Fine · 판독)을 재사용 | 추가 없음 | `VERIFIED` | `decisions/reselect-observation-reuse.md` · `test_correction_partial_rerun.py` |
 | 재탐색(`RETRY_SEARCH`)을 계속 누름 | 이전 `COARSE_SEARCH`와 같은 입력으로 새 job 발주(notice에 버튼이 떠 있을 때만). 같은 kind · scope의 이전 job은 대체 처리 | 매번 Coarse 전체 비용 | `VERIFIED`(발주) · 상한 없음 `DECIDED` | `test_command.py` notice action · 대체는 `test_job_settlement.py` · 상한 §7-1 · #311 |
 | 번호판 다시 판독(`RETRY_PLATE_READ`)을 계속 누름 | 판독 실행 실패 notice가 떠 있고 이전 `PLATE_READ`가 있을 때만 새 job 발주 | 매번 판독 비용 | `VERIFIED`(발주) · 상한 없음 `DECIDED` | `test_command.py` · `test_plate_read_failure_projection.py` · 상한 §7-1 · #311 |
-| 같은 필드를 계속 정정(시각 등) | 정정마다 새 CorrectionRecord, `supersedes_ref`로 체인. 다른 후보를 고르면 후보에 묶인 체인은 새로 시작 | 재조립만(관찰 재사용) | `VERIFIED`(domain) · command 경로는 `DECIDED` | `test_correction.py` supersede 계열 · 입력형 command는 case-command 「다음 판본」 |
-| 상황 응답을 계속 바꿈(맞아요 ↔ 잘 모르겠어요) | 응답마다 덮어쓰고 `case_rev` 상승. `READY`에서 받으면 `EVIDENCE_REVIEW`로 내렸다 다시 확인. `[다른 상황]`(`CORRECTED`)은 이 판본에서 거부 | 재조립만 | `VERIFIED` | `test_situation_response.py` · `test_command.py`(READY에서 응답 · `CORRECTED` 거부) · case-command 계약 §5 |
+| 같은 필드를 계속 정정(시각 등) | 정정마다 새 CorrectionRecord, `supersedes_ref`로 체인. 다른 후보를 고르면 후보에 묶인 체인은 새로 시작 | 재조립만(관찰 재사용) | `VERIFIED` | `test_correction.py` supersede 계열 · command 경로는 `test_input_commands.py`(입력형 command, case-command §12, 2026-10-28 구현) |
+| 상황 응답을 계속 바꿈(맞아요 ↔ 잘 모르겠어요) | 응답마다 덮어쓰고 `case_rev` 상승. `READY`에서 받으면 `EVIDENCE_REVIEW`로 내렸다 다시 확인. `[다른 상황]`(`CORRECTED`)은 고른 유형과 함께 받아 `SITUATION_CHANGE` 정정을 남긴다(2026-10-28~). 정정 뒤 「잘 모르겠어요」는 거부 | 재조립만 | `VERIFIED` | `test_situation_response.py` · `test_command.py`(READY에서 응답) · `test_input_commands.py`(`CORRECTED` 계열) · case-command 계약 §5 · §12-3 |
 | 같은 버튼을 두 번 빠르게 누름 | 두 번째 요청은 `expected_case_rev`가 이미 올라 `stale_revision` | 없음 | `VERIFIED` | `test_command.py` stale 계열 |
 | 최종 확인(`MARK_REVIEWED`)을 반복 · READY 전에 누름 | `READY`에서만 받고 그 밖은 `not_allowed` | 없음 | `VERIFIED` | `test_command.py` |
 
@@ -56,7 +56,7 @@
 | 후보 0개(탐색 성공) | `CANDIDATE_REVIEW` + `search.no_candidates`(INFO, `EDIT_HINT` · `RETRY_SEARCH`) | `VERIFIED` | `test_scenario_empty_smoke.py` |
 | 번호판 판독 실행 실패 | `readout.plate_read_failed`(ERROR · blocking). 「다시 판독」은 이전 발주가 있을 때만 | `VERIFIED` | `test_plate_read_failure_projection.py` · #172 [D] 4a |
 | 번호판을 읽었지만 값이 없음 · 일부만 읽음 | `evidence.plate_abstained`(WARN, 막지 않음) — 실행 실패와 구분 | `VERIFIED` | `test_derived_notices.py` · #172 D-3 |
-| 실패 뒤 사용자가 번호판을 직접 입력 | 그 값으로 Package까지 가고 실패 notice를 거둔다 | `DECIDED` | #235 E-1 결정 · case 후속 코드는 계약 반영 PR 뒤 |
+| 실패 뒤 사용자가 번호판을 직접 입력 | `MANUAL_PLATE_INPUT`으로 받아 정정을 남기고 그 값이 evidence에 들어간다. 직접 입력한 값이면 판독 실패 notice를 붙이지 않는다 | `VERIFIED` | #235 E-1 결정 · `test_input_commands.py` · `test_plate_read_failure_projection.py` · `decisions/input-commands.md` |
 | 화면 시각 판독: overlay 없음 · 판단 불가 · OCR 실패 | `readout.overlay_*` 3종(INFO) — 「시각이 없다」와 「확인 못 함」을 섞지 않는다 | `VERIFIED` | `test_overlay_notices.py` |
 | Fine 실행 실패(재시도 소진) | evidence가 없을 때 `search.visual_verify_failed`(ERROR · blocking), 출구는 「다른 후보 보기」 | `VERIFIED` | `test_visual_verify_failed_notice.py` · 8-14 |
 | Fine 음성(위반 관찰 안 됨) | `evidence.visual_event_not_observed`(INFO, `actions:[EDIT_HINT]` — 설명 고쳐 새 탐색, #410). 다음 후보를 자동으로 확인하지 않는다 | `VERIFIED` | `test_not_observed_notice.py` · #168 [A] |
@@ -64,7 +64,7 @@
 | 응답 대기 중 독립 관찰값(번호판 등)을 먼저 보여 줌 | `evidence.record_id: null` 부분 투영 | `DECIDED` | #239 case 결정 · web 확인(2026-10-07) · evidence 함수 대기 |
 | case가 Fine을 기다리다 멈췄는데 attempt 2가 아직 실행 중 | 화면 표시 미정 | `PENDING` | #276 후속 |
 | Job 실행 상한과 Case 대기 마감 | 탐색(`COARSE_SEARCH`)은 [Case 대기 마감](decisions/case-wait-timeout.md) (§3-2·§3-8·§3-10: 발주 시각 + 실행 예산 + 큐 여유 30초 + 준비 여유, 공개 RC 기본 발주 기준 최대 60분) 뒤 기다리기를 멈추고 `case.analysis_timed_out` · 늦은 결과 미반영. 단서 구조화 · 판독 · Fine은 대기 timeout 없음 | `VERIFIED`(탐색) · 나머지 `DECIDED` | `test_case_wait_timeout.py` · `decisions/case-wait-timeout.md` · `decisions/timeout-fallback.md` |
-| 신고용 영상 · 번호판 이미지 export 실패 | notice 매핑은 계약에 있음, export 자체가 미구현 | `DECIDED` | 계약 v1.6 · recording C-07 · #47 · #280 |
+| 신고용 영상 · 번호판 이미지 export 실패 | case가 export를 자동 발주하고(`case/exports.py` `issue_missing_exports()`, command · T2 반영 뒤), 실행은 Worker `worker/export_handlers.py`. 실패하면 `recording.report_video_export_failed` · `recording.plate_image_export_failed` notice(`export_notices()`) | `VERIFIED` | `test_export_ordering.py` · `tests/worker/test_export_handlers.py` · `decisions/report-video-export.md` · #47 · #280 |
 
 ## 5. 빈 상태 · 경계 입력
 
@@ -76,7 +76,7 @@
 | 선택 전 화면 조회 | downstream 값을 조회하지 않고 evidence · package `null` | `VERIFIED` | `test_view_before_selection.py` |
 | 위치를 못 구함 | `location` 키가 없어도 깨지지 않음, `evidence.location_search_keyword_missing` notice | `VERIFIED` | `test_view_location_missing.py` · `test_derived_notices.py` · #48 |
 | 후보의 시간축이 갱신돼 예전 기준이 됨 | `stale_revision` 표시 · 마커 숨김 | `VERIFIED` | `test_candidate_marker.py` · `decisions/candidate-stale-revision-display.md` |
-| 2줄 번호판을 일부만 읽음 → 번호판 이미지 | `best_frame`이 없어 번호판 이미지를 발주하지 않음(선택 첨부라 막지 않음) | `DECIDED` | #280 case 동의(2026-10-07) · 첫 발주 경로 미구현 |
+| 2줄 번호판을 일부만 읽음 → 번호판 이미지 | `best_frame`이 없어 번호판 이미지를 발주하지 않음(선택 첨부라 막지 않음) | `DECIDED`(코드 반영) | #280 case 동의(2026-10-07) · 코드는 `case/exports.py` `build_export_requests()`(`best_frame`이 없으면 번호판 이미지 요청을 만들지 않음) · 이 경우만 따로 본 테스트는 미확인 |
 | Package가 나오기 전 신고문 | 미완성 신고문을 만들지 않음 — `package: null` | `VERIFIED` | `test_await_situation_response.py` · `test_empty_case.py` · #286 |
 
 ## 6. LLM — 자연어 단서 구조화
@@ -90,7 +90,7 @@ case에서 LLM을 부르는 곳은 분석 시작 때 단서 구조화(`HINT_EXTR
 | 무관한 잡담 · 인젝션 · 모순 · 여러 사건 혼합 · 상대 시간 등 17개 카테고리 | 3.8 Flash 기본값 기준 카테고리별 83~100% | `MEASURED` | `experiments/intent-llm-model-comparison/results/consistency-robustness-v3.md` · `luna-reasoning-effort-v3.md` |
 | 모순된 정보(앞 값 · 뒤 값) | 마지막 값 + `confidence: low` 정책. 측정상 가장 약한 카테고리(83%) | `MEASURED` | `decisions/intent-hint-robustness-policy.md` |
 | 출력 한도 초과(내부 추론이 길어짐) | Search 함수가 `FAILED`(`RESPONSE_INVALID`)로 돌려줌 → 빈 단서. 측정상 500회 중 1회 | `MEASURED` | #278 · #277 |
-| `confidence: low`일 때 재입력 유도 | 분석은 계속하고 결과 화면에 `search.hint_unclear`(INFO · 비차단, `actions:[]`). 「다시 적기」(`EDIT_HINT`)는 입력형 command 판본 뒤 | `VERIFIED`(1단계) | `test_hint_unclear_notice.py` · `decisions/hint-unclear-notice.md` · #266 |
+| `confidence: low`일 때 재입력 유도 | 분석은 계속하고 결과 화면에 `search.hint_unclear`(INFO · 비차단, `actions:["EDIT_HINT"]` — 「다시 적기」, #410) | `VERIFIED` | `test_hint_unclear_notice.py` · `test_edit_hint_command.py` · `decisions/hint-unclear-notice.md` · `decisions/edit-hint.md` · #266 |
 | 실사용 문장에서의 정확도 | 합성 데이터로만 측정 | `PENDING` | model-selection §13 한계 |
 
 ## 7. 결정이 필요한 것
@@ -107,6 +107,6 @@ case에서 LLM을 부르는 곳은 분석 시작 때 단서 구조화(`HINT_EXTR
 | 항목 | 추적 |
 | --- | --- |
 | 응답 대기 중 Fine attempt 2 실행 중 표시 | #276 후속 |
-| `confidence: low` 재입력 유도 — 「다시 적기」 action(2단계) | #266 · PR #356 |
+| ~~`confidence: low` 재입력 유도 — 「다시 적기」 action(2단계)~~ → 구현(#410, `decisions/edit-hint.md`) | #266 · PR #356 |
 | ~~분석 시작 command(분석 범위 출처 · 첫 발주 fingerprint · 단서 구조화 대기 시간)~~ → 종결(#315) | `decisions/start-analysis.md` · 대기 시간 동작은 8-9 |
 | ~~중단 command~~ → 구현(2026-10-11, `decisions/stop-analysis.md`) · ~~case timeout 구현~~ → 탐색만 구현(2026-10-13, `decisions/case-wait-timeout.md`) · 「초안 준비 중」 중단 | 8-9 · #292 · product |

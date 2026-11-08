@@ -109,7 +109,8 @@ def start_analysis(
     case.description = description
     case.start_search()
     if not description.strip():
-        # 타임라인 실패는 그대로 올라간다 — aggregate는 바뀐 채지만 호출자가 save하지 않는다(Task 4).
+        # 타임라인 실패는 그대로 올라간다 — aggregate는 바뀐 채지만 호출자가 save하지 않는다
+        # (실패한 요청은 저장하지 않는다 — `start-analysis-plan.md` Task 4).
         issue_initial_search(case, timelines=timelines, budget=budget)
         return
     jobs.issue_job(

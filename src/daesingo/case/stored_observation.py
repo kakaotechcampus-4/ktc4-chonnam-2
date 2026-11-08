@@ -1,4 +1,5 @@
-"""저장된 관찰 결과로 CaseView 입력을 만든다 — 8-6 2단계, `docs/modules/case/decisions/observation-storage.md`.
+"""Worker가 저장한 관찰 결과로 CaseView 입력을 만든다(고도화 8-6 2단계,
+`docs/modules/case/decisions/observation-storage.md`).
 
 `StoredObservationAdapter`는 요청마다 만드는 무상태 `ModuleAdapter`다(§4-3). 관찰 job은 발주 때 고정한 입력
 (`observation_inputs` — 후보 · 세대 · clip ref)으로 고르고(`incident-clip-observation-input.md` §4-7), 결과 내용은

@@ -1,4 +1,4 @@
-"""W5/W6 데모 스크립트 — `scenario_happy_001`이 Recording→Search→Readout→Evidence→
+"""데모 스크립트 — `scenario_happy_001`이 Recording→Search→Readout→Evidence→
 `CaseView`까지 실제 함수 호출로 통과하는 걸 사람이 읽을 수 있게 보여준다.
 
     python -m daesingo.case.demo_happy_001
@@ -94,8 +94,8 @@ def run() -> dict[str, Any]:
     package = view["package"]
     if package is None:
         print(
-            "  최종 패키지:   아직 없음 — situation_response/observation_facts 미확보"
-            "(알려진 단순화, real_e2e.py 참고. 실패 아님)"
+            "  최종 패키지:   아직 없음 — 신고 상황 응답 전이라 Package가 나가지 않는다"
+            "(이 데모는 응답을 기록하지 않는다. 실패 아님)"
         )
     else:
         print(f"  최종 패키지:   {package['package_ref']}")

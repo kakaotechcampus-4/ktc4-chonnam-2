@@ -2,7 +2,7 @@
 
 **Status:** `Draft` — 팀 합의 전 초안. 합의되면 `docs/architecture/contracts/`로 옮기고(`contract-case-command.md` + `adr/adr-case-command.md`) 이 사본은 지운다(`docs/architecture/contracts/README.md`).
 
-**Contract Version:** `case-command/v0` (초안) · 입력형 판본 초안 `case-command/v1`(2026-10-13, §12 — 열림 조건 충족 전에는 받지 않는다)
+**Contract Version:** `case-command/v0` (초안) · 입력형 판본 초안 `case-command/v1`(2026-10-13, §12 — 2026-10-28 구현: `MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME` · `[다른 상황]`(`CORRECTED`)을 받는다. `src/daesingo/case/command.py`)
 
 **Owner:** 유소연(`case`) · **Consumer 확인 대상:** 신유민(`web`)
 

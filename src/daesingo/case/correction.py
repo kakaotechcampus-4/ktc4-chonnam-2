@@ -76,7 +76,7 @@ def apply_correction(
         "correction_id": f"corr_{case.case_id}_{uuid.uuid4().hex[:8]}",
         "case_id": case.case_id,
         "selection_rev": case.selection_rev,  # 스냅샷 — 이 호출로 증가시키지 않는다
-        # correction-record/v1.1 §3 — `supersedes_ref: ContractRef{kind: correction_record} | null`.
+        # correction-record/v1.2 §3(v1.1에서 신설) — `supersedes_ref: ContractRef{kind: correction_record} | null`.
         "supersedes_ref": (
             {"kind": "correction_record", "ref": previous["correction_id"]} if previous else None
         ),

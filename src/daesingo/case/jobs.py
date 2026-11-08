@@ -31,9 +31,9 @@ JOB_KINDS = frozenset(
         "OVERLAY_TIME_READ",
         "FINE_VERIFY",
         "REPORT_VIDEO_EXPORT",
-        # 신고용 번호판 이미지 생성 발주(#47). 실행 capability는 recording 구현 대기.
+        # 신고용 번호판 이미지 생성 발주(#47). 실행은 recording `exports.py`와 worker export handler가 맡는다.
         "PLATE_IMAGE_EXPORT",
-        # 자연어 단서 구조화 발주(v1.7, #259). 발주 경로(`START_ANALYSIS`)는 case-command Draft §11 미결 뒤.
+        # 자연어 단서 구조화 발주(v1.7, #259). `analysis_start.start_analysis()` · `edit_hint()`가 발주한다.
         "HINT_EXTRACT",
         # Fine 결과로 IncidentClip을 준비하는 발주 — Fine과 다른 실패 · 재실행 단위
         # (`decisions/incident-clip-observation-input.md` §4-2).
@@ -61,7 +61,8 @@ def issue_job(
     observation_input: dict[str, Any] | None = None,
     export_input: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """`observation_input`은 관찰 kind만 받고 같은 case 저장에 append-only로 남는다(`incident-clip-observation-input.md` §4-1)."""
+    """`observation_input`은 입력 고정 kind(`INPUT_PINNED_KINDS` = 관찰 kind + 후보 영상 미리보기)만 받고
+    같은 case 저장에 append-only로 남는다(`incident-clip-observation-input.md` §4-1)."""
     if kind not in JOB_KINDS:
         raise ValueError(f"알 수 없는 JobRecord.kind: {kind!r} (등록된 kind: {sorted(JOB_KINDS)})")
     if observation_input is not None and kind not in INPUT_PINNED_KINDS:

@@ -1,10 +1,10 @@
-"""orchestration 진입점 — `ModuleAdapter`(Mock 또는 Real)로부터 데이터를 가져와 `case`의
-도메인 상태(`CaseAggregate`)에 반영하거나 `CaseView`를 조립하는, 재사용 가능한 실행 코드.
+"""case 쪽 진입점 모음 — `ModuleAdapter`(Mock 또는 Real)에서 데이터를 읽어 `CaseAggregate`에
+반영하거나 `CaseView`를 조립한다. Worker 결과 반영·단서 구조화 반영 진입점도 여기 있다.
 
 ## 왜 필요한가
 
 지금까지 "adapter로 데이터 가져오기 → 도메인 메서드 호출 → 결과 반영"은 시나리오별 스모크
-테스트(`tests/test_scenario_*_smoke.py`) 안에서 손으로 짜여 있었다 — 테스트가 곧
+테스트(`tests/case/test_scenario_*_smoke.py`) 안에서 손으로 짜여 있었다 — 테스트가 곧
 orchestration 흐름의 유일한 실행 경로였다. 이 모듈은 그 흐름 중 "adapter 값을 그대로
 옮기는" 부분만 재사용 가능한 함수로 뽑아낸다. `RealAdapter`가 모듈별로 채워지면, 이
 파일이나 `domain.py`/`jobs.py`/`view.py`는 건드리지 않고 호출하는 쪽에서 어댑터
@@ -12,10 +12,9 @@ orchestration 흐름의 유일한 실행 경로였다. 이 모듈은 그 흐름 
 
 ## 여기 없는 것
 
-- **자동 전체 진행(auto-run)은 없다.** 어떤 job을 언제 발주할지, 언제 재시도·정정을
-  받아들일지는 여전히 호출자(테스트, 또는 앞으로 만들어질 실제 worker loop)의 책임이다
-  — 시나리오마다 분기가 다르기 때문에(happy/unknown-abstain/infra-failure 등) 이 파일이
-  임의로 "다음 단계"를 추측하지 않는다.
+- **자동 진행 규칙은 여기 없다.** Worker 결과를 받아 다음 job을 발주하는 규칙(1순위 후보
+  자동 선택, Fine·clip·판독·export 발주 등)은 `reflection.py`에 있다. 이 파일은 adapter
+  값을 옮기고 그 결과로 판단만 한다.
 - evidence 판정 로직, OCR 판단, 업로드 규정 등 다른 모듈의 정책은 여기서 재구현하지
   않는다 — `adapters.py`와 마찬가지로 "옮기기만" 한다.
 """
@@ -108,8 +107,8 @@ def receive_hint_extraction(case: CaseAggregate, result: dict[str, Any]) -> None
     4개 모두 `None` — 값을 지어내지 않고 빈 단서로 탐색을 이어 간다. 그 밖의 상태는 결과 모양이 바뀐
     것이라 `ValueError`로 멈춘다. 결과 모양은 #210 Search 의견을 가정했고 Search PR에서 맞춘다. 매핑은 `analysis_start.hints_from_result()`.
 
-    `AnalysisScope` · `COARSE_SEARCH` 발주는 여기서 하지 않는다 — scope 기본값과 첫 발주 fingerprint가
-    정해지지 않았다(Draft §11 미결).
+    `AnalysisScope` · `COARSE_SEARCH` 발주는 여기서 하지 않는다 — hints만 반영한다. 반영 뒤 첫 탐색까지
+    발주하는 경로는 `analysis_start.reflect_hint_extraction()`이다(`InitialSearchBudget` · `fingerprint()`).
     """
     case.record_extracted_hints(hints_from_result(result), unclear=hint_unclear(result))
 
@@ -141,7 +140,7 @@ class AdapterSnapshot:
 
 
 def fetch_case_view_inputs(adapter: ModuleAdapter) -> AdapterSnapshot:
-    """`build_case_view()`가 요구하는 4개 입력을 adapter에서 한 번에 가져온다."""
+    """`build_case_view()`가 요구하는 `AdapterSnapshot` 필드를 adapter에서 한 번에 가져온다."""
     return AdapterSnapshot(
         evidence_record=adapter.get_evidence_record(),
         requirement_report_evidence=adapter.get_requirement_report("EVIDENCE"),
