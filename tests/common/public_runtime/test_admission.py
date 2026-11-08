@@ -17,7 +17,8 @@ def public(tmp_path):
     with engine.begin() as conn:
         conn.execute(tables.control.insert().values(id=1, accepting=False, policy_hash=None))
         conn.exec_driver_sql("CREATE TABLE job_execution (execution_id TEXT PRIMARY KEY, case_id TEXT, status TEXT, "
-                            "case_applied_at DATETIME, lease_owner TEXT, lease_expires_at DATETIME, cancel_requested_at DATETIME)")
+                            "case_applied_at DATETIME, lease_owner TEXT, lease_expires_at DATETIME, cancel_requested_at DATETIME, "
+                            "job_id TEXT, kind TEXT)")
         conn.exec_driver_sql("CREATE TABLE usage_inflight (usage_id TEXT PRIMARY KEY, case_id TEXT, observed_at DATETIME, state TEXT)")
     policy = PublicPolicy.model_validate(policy_values(tmp_path))
     store = PublicStore(policy, require_public=True, worker_id="test-worker")
@@ -36,8 +37,8 @@ def setup_case(public, name="case_1", token="session", ip="ip"):
             "byte_size": 12, "duration_ms": 1000}])
         from datetime import timedelta
         from daesingo.common.public_runtime.repository import now
-        conn.exec_driver_sql("INSERT INTO job_execution VALUES (?, ?, 'RUNNING', NULL, 'test-worker', ?, NULL)",
-                            ("exec_" + name, name, now(conn) + timedelta(hours=1)))
+        conn.exec_driver_sql("INSERT INTO job_execution VALUES (?, ?, 'RUNNING', NULL, 'test-worker', ?, NULL, ?, 'COARSE_SEARCH')",
+                            ("exec_" + name, name, now(conn) + timedelta(hours=1), "job_" + name))
     return owner
 
 

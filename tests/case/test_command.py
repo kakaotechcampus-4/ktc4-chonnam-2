@@ -252,6 +252,46 @@ def test_run_notice_action_issues_job_for_action_on_screen():
     assert issued["job_id"] != records[-2]["job_id"]
 
 
+def test_failed_plate_retry_has_fresh_intent_revision_and_preserves_clip_input():
+    store, case = _store_with_selected_case()
+    current = store.load_for_update(case.case_id)
+    prior = current.job_records[-1]
+    pinned = {"candidate_id": "cand_a", "generation_job_id": current.job_records[0]["job_id"],
+              "incident_clip_ref": "same-successful-clip"}
+    current.observation_inputs[prior["job_id"]] = copy.deepcopy(pinned)
+    current.observation_outcomes[prior["job_id"]] = {"status": "FAILED"}
+    current.settle_job(prior["job_id"], "REFLECTED")
+    store.save(current)
+    old_records = copy.deepcopy(current.job_records)
+    request = _request(current, "RUN_NOTICE_ACTION",
+        {"notice_code": "readout.plate_read_failed", "action": "RETRY_PLATE_READ"})
+
+    first = command.execute_command(request, store=store, notices=[PLATE_READ_FAILED])
+    assert first.response["ok"] is True
+    latest = store.get_case(case.case_id)
+    assert latest.case_rev == current.case_rev + 1
+    record, = first.appended_job_records
+    assert record["case_rev"] == latest.case_rev and record["force_rerun"] is False
+    assert latest.observation_inputs[record["job_id"]] == pinned
+    assert latest.job_records[:-1] == old_records
+    assert latest.observation_outcomes[prior["job_id"]] == {"status": "FAILED"}
+
+    duplicate = command.execute_command(request, store=store, notices=[PLATE_READ_FAILED])
+    _assert_rejected(duplicate.response, "case.command.stale_revision")
+    assert duplicate.appended_job_records == []
+    assert store.get_case(case.case_id).job_records == latest.job_records
+
+    latest.settle_job(record["job_id"], "REFLECTED")
+    latest.observation_outcomes[record["job_id"]] = {"status": "FAILED"}
+    store.save(latest)
+    second = command.execute_command(_request(latest, "RUN_NOTICE_ACTION", request["payload"]),
+        store=store, notices=[PLATE_READ_FAILED])
+    assert second.response["ok"] is True
+    retry, = second.appended_job_records
+    assert retry["job_id"] != record["job_id"] and retry["case_rev"] > record["case_rev"]
+    assert store.get_case(case.case_id).observation_inputs[retry["job_id"]] == pinned
+
+
 def test_run_notice_action_not_on_screen_is_unknown_target():
     """허용 조건은 「화면에 그 버튼이 떠 있었는가」다(§5)."""
     store, case = _store_with_selected_case()
