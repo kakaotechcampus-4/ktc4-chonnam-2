@@ -754,6 +754,9 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   font: inherit; font-size: 15px; font-weight: 600; color: var(--rs-ink); cursor: pointer;
 }
 .res-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* 신고서 초안 제목 옆 「어떻게 작성했는지」 — 문구가 길어 이것만 키우고, 좁으면 제목 아래로 내린다 */
+.res-form > .res-sec-head { flex-wrap: wrap; row-gap: 4px; }
+.res-details-link { font-size: 17px; text-align: left; }
 .res-item { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 24px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--rs-line-soft); }
 .res-item.is-review { margin: 0 -16px; padding: 22px 16px; border-radius: 12px; border-bottom-color: transparent; background: var(--orange-soft); }
 .res-item-k { margin: 0; padding-top: 3px; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
@@ -986,6 +989,7 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 }
 
 @media (max-width: 720px) {
+  .res-details-link { font-size: 15px; }
   .res-item { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .res-report { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
   .res-report .rs-btn { position: static; align-self: flex-end; order: 1; }
