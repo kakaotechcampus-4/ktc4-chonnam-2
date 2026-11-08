@@ -90,6 +90,8 @@ export function PlateCheck(props: {
   onEdit?: (plate: string) => void
   /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
   frameSrc?: (frameRef: string) => string
+  /** 신고자료의 번호판 이미지 주소(결과 화면 다운로드와 같은 plate_image_ref). 없으면 자리 표시만 둔다 */
+  plateImageSrc?: string
 }): JSX.Element {
   const [editing, setEditing] = useState<string | null>(() =>
     props.startEditing ? (props.view.evidence?.plate_display.value ?? '') : null,
@@ -135,10 +137,10 @@ export function PlateCheck(props: {
         </figure>
         <div className="plate-side">
           <figure className="plate-fig">
-            <div className="plate-frame plate-crop">
+            <FrameSlot className="plate-frame plate-crop" src={props.plateImageSrc ?? null} alt="번호판 확대">
               <Film size={24} strokeWidth={1.5} aria-hidden />
               <span>{pending ? '번호판 이미지 준비 중' : '번호판 이미지가 없어요'}</span>
-            </div>
+            </FrameSlot>
             <figcaption>번호판 확대</figcaption>
           </figure>
           <section className="plate-value" aria-labelledby="plate-k">
