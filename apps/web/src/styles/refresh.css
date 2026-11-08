@@ -811,7 +811,6 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-disclaimer { margin: 0; font-size: 15px; line-height: 1.65; color: var(--rs-ink); }
 .res-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
 .res-block-note { grid-column: 1 / -1; margin: 0; font-size: 14px; line-height: 1.55; color: var(--rs-sub); }
-/* 안전신문고 첫 화면에서 신고 양식까지 가는 순서 */
 /* 복사 결과 — 버튼 아래 여백에 잠깐 뜬다(자리를 차지하지 않음) */
 .res-toast { position: absolute; right: 32px; bottom: 6px; margin: 0; font-size: 14px; }
 .res-toast span { font-weight: 600; color: var(--rs-ink); animation: rs-fade-in .2s var(--rs-ease) both; }
