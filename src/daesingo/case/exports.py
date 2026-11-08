@@ -29,10 +29,12 @@ def issue_missing_exports(case, adapter, view):
         return
     # Same #351 predicate as the visible missing-video notice
     # (= `case.report_video_not_generated` notice가 쓰는 `service.report_video_missing()` 조건). Plate is optional
-    # and shares the response gate, even when report video already exists.
+    # and shares the same gate, even when report video already exists.
+    # #597: no situation-response gate. An assembled EvidenceRecord (record_id) is
+    # the gate — Fine OBSERVED assembles before any response; UNCERTAIN only after
+    # USER_UNSURE (evidence disposition), so it still waits for the response.
     selected = [c for c in view.get("candidates", []) if c["selected"]]
     if (not (view.get("evidence") or {}).get("record_id") or len(selected) != 1
-            or selected[0]["situation_confirmation"] not in {"CONFIRMED", "CORRECTED", "USER_UNSURE"}
             or not any(c["code"] == "package.asset.report_video.exists"
                        for c in (view.get("requirements_package") or {}).get("checks", []))):
         return

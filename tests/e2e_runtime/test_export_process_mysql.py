@@ -86,7 +86,13 @@ def test_both_exports_after_response_restart_and_duplicate_t2(async_db, tmp_path
             assert kind in {"PLATE_READ", "OVERLAY_TIME_READ"}
             run(kind)
         if timing == "command":
-            assert not view()["running_jobs"]
+            # #597 B안 — Fine OBSERVED는 응답 없이 EvidenceRecord가 조립돼 두 export가 자동 발주된다. 나중에 온 응답은
+            # 같은 입력이라 다시 발주하지 않는다(아래 export JobRecord 2개).
+            auto = view()
+            assert {j["kind"] for j in auto["running_jobs"]} == {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}
+            assert next(c for c in auto["candidates"] if c["selected"])["situation_confirmation"] == "NOT_ASKED"
+            assert not any(n["code"] == "case.situation_response_pending" for n in auto["notices"])
+            assert "report_draft" in auto
             command("RECORD_SITUATION_RESPONSE", {"value": "CONFIRMED"})
         exporting = view()
         assert {j["kind"] for j in exporting["running_jobs"]} == {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}

@@ -1,4 +1,5 @@
-"""Compose p3 instructions with observation-only diagnostic output instructions."""
+"""Compose production prompts (coarse-p3 / fine-p3) with observation-only
+diagnostic output instructions."""
 
 import json
 from hashlib import sha256

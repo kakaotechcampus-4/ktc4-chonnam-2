@@ -18,6 +18,9 @@ from daesingo.evidence import (
     ContractInputError,
     VisualEventNotAssembled,
     assemble_evidence,
+    build_report_package,
+    evaluate_requirements,
+    render_report_draft,
     classify_visual_evidence,
 )
 from daesingo.evidence.disposition import NOT_OBSERVED_REASON
@@ -44,6 +47,7 @@ class VisualEvidenceDispositionTests(unittest.TestCase):
         )
         cls.observed = next(item for item in search["visual_evidences"] if item["candidate_id"] == "candidate_h001")
         cls.plate_readout = readout["plate_readouts"][0]
+        cls.assets = recording["asset_facts"]
         cls.incident_clip = recording["incident_clips"][0]
 
     def _visual(self, verification, visual_event_type):
@@ -52,7 +56,7 @@ class VisualEvidenceDispositionTests(unittest.TestCase):
         visual["visual_event_type"] = visual_event_type
         return visual
 
-    def _assemble(self, visual, situation_response=None):
+    def _assemble(self, visual, situation_response=None, corrections=()):
         return assemble_evidence(
             case_id="case_h001",
             selection_rev=1,
@@ -63,6 +67,7 @@ class VisualEvidenceDispositionTests(unittest.TestCase):
             incident_clip=self.incident_clip,
             record_id="ev_disposition_unit",
             situation_response=situation_response,
+            correction_records=corrections,
         )
 
     # ── 1. OBSERVED + non-null type ────────────────────────────────────
@@ -72,6 +77,8 @@ class VisualEvidenceDispositionTests(unittest.TestCase):
         self.assertEqual(ASSEMBLE, classify_visual_evidence(visual).decision)
         record = self._assemble(visual)
         self.assertEqual("SOLID_LINE_LANE_CHANGE", record["event"]["visual_event_type"]["value"])
+        self.assertNotIn("situation_response", record)
+        self.assertIsNotNone(render_report_draft(record))
 
     # ── 2. UNCERTAIN + null, 사용자 응답 전 ─────────────────────────────
     def test_uncertain_without_response_still_waits(self):
@@ -83,6 +90,51 @@ class VisualEvidenceDispositionTests(unittest.TestCase):
         with self.assertRaises(ContractInputError):
             self._assemble(visual)
 
+    def test_uncertain_does_not_assemble_on_confirmed_or_corrected(self):
+        visual = self._visual("UNCERTAIN", None)
+        for value in ("CONFIRMED", "CORRECTED"):
+            with self.subTest(response=value):
+                response = {**USER_UNSURE, "value": value,
+                            "candidate_ref": {"kind": "candidate_event", "ref": self.candidate["candidate_id"]}}
+                self.assertEqual(AWAIT_SITUATION_RESPONSE, classify_visual_evidence(visual, response).decision)
+                with self.assertRaises(ContractInputError):
+                    self._assemble(visual, response)
+
+    def test_situation_change_updates_draft_package_type_and_expression(self):
+        visual = self._visual("OBSERVED", "MOTORCYCLE_HELMET_NON_USE")
+        before = self._assemble(visual)
+        correction = {
+            "contract_version": "correction-record/v1.2", "correction_id": "corr_597",
+            "case_id": "case_h001", "selection_rev": 1, "kind": "SITUATION_CHANGE",
+            "target_field": "event.visual_event_type", "previous_value": "MOTORCYCLE_HELMET_NON_USE",
+            "new_value": "CENTER_LINE_CROSSING", "supersedes_ref": None,
+            "corrected_at": "2026-08-24T18:24:00+09:00",
+        }
+        response = {"value": "CORRECTED", "responded_at": correction["corrected_at"],
+                    "candidate_ref": before["basis"]["candidate_ref"]}
+        corrected = self._assemble(visual, response, [correction])
+        event = corrected["event"]
+        self.assertEqual("CENTER_LINE_CROSSING", event["visual_event_type"]["value"])
+        self.assertEqual("TRAFFIC_VIOLATION", event["safety_report_type"]["value"])
+        self.assertNotEqual(before["event"]["safety_report_type"]["value"], event["safety_report_type"]["value"])
+        self.assertIn("중앙선", event["violation_expression"]["value"])
+        self.assertEqual(before["basis"], corrected["basis"])
+        draft = render_report_draft(corrected)
+        self.assertNotEqual(render_report_draft(before), draft)
+        final = evaluate_requirements(
+            corrected, scope="FINAL_PACKAGE", report_id="req_corrected",
+            evaluated_at="2026-08-24T18:25:00+09:00", time_resolution=self.time, asset_facts=self.assets,
+        )
+        check = next(check for check in final["checks"] if check["code"] == "package.evidence.situation_response")
+        self.assertEqual(("PASS", "evidence.situation_corrected"), (check["outcome"], check["reason_code"]))
+        package = build_report_package(
+            corrected, final, package_id="pkg_corrected",
+            created_at="2026-08-24T18:26:00+09:00", asset_facts=self.assets,
+        )
+        self.assertEqual("교통위반(고속도로 포함)", package["report_inputs"]["safety_report_type"])
+        self.assertEqual(event["violation_expression"]["value"], package["report_inputs"]["violation_expression"])
+        self.assertEqual(draft, {key: package["report"][key] for key in ("title", "description")})
+
     # ── 3. UNCERTAIN + null + USER_UNSURE ──────────────────────────────
     def test_uncertain_with_user_unsure_keeps_generic_path(self):
         visual = self._visual("UNCERTAIN", None)
@@ -92,6 +144,7 @@ class VisualEvidenceDispositionTests(unittest.TestCase):
         self.assertIsNone(record["event"]["visual_event_type"]["value"])
         self.assertEqual("INFERRED", record["event"]["visual_event_type"]["source"]["observability"])
         self.assertTrue(record["event"]["safety_report_type"]["needs_review"])
+        self.assertEqual("교통법규 위반 상황 확인 요청", render_report_draft(record)["title"])
 
     # ── 4. NOT_OBSERVED + null ─────────────────────────────────────────
     def test_not_observed_is_a_stable_non_assembly_result(self):
@@ -106,14 +159,15 @@ class VisualEvidenceDispositionTests(unittest.TestCase):
         # 분류 자체는 예외를 던지지 않는다 — 정상적인 negative Fine 결과이기 때문이다.
         self.assertEqual({"kind": "visual_evidence", "ref": "ve_h001"}, disposition.visual_evidence_ref)
 
-    def test_not_observed_is_not_merged_into_the_uncertain_fallback(self):
-        """`USER_UNSURE`를 붙여도 generic 경로로 넘어가지 않는다 — 관찰되지 않은 사건과
-        판단이 불충분한 사건을 같은 결과로 만들면 의미가 뒤집힌다."""
+    def test_not_observed_never_assembles_even_with_a_response(self):
         visual = self._visual("NOT_OBSERVED", None)
-
-        self.assertEqual(NOT_ASSEMBLED, classify_visual_evidence(visual, USER_UNSURE).decision)
-        with self.assertRaises(VisualEventNotAssembled):
-            self._assemble(visual, situation_response=USER_UNSURE)
+        for value in ("CONFIRMED", "CORRECTED", "USER_UNSURE"):
+            with self.subTest(response=value):
+                response = {**USER_UNSURE, "value": value,
+                            "candidate_ref": {"kind": "candidate_event", "ref": self.candidate["candidate_id"]}}
+                self.assertEqual(NOT_ASSEMBLED, classify_visual_evidence(visual, response).decision)
+                with self.assertRaises(VisualEventNotAssembled):
+                    self._assemble(visual, response)
 
     def test_direct_assemble_call_does_not_promote_not_observed(self):
         visual = self._visual("NOT_OBSERVED", None)

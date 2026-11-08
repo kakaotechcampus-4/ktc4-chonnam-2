@@ -76,6 +76,7 @@
       "evidence": null,
       "requirements_evidence": null,
       "requirements_package": null,
+      "report_draft": null,
       "package": null,
       "running_jobs": [],
       "notices": []
@@ -140,6 +141,7 @@
       "evidence": null,
       "requirements_evidence": null,
       "requirements_package": null,
+      "report_draft": null,
       "package": null,
       "running_jobs": [],
       "notices": []

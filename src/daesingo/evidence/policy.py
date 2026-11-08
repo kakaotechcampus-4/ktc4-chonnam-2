@@ -7,7 +7,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from ._contract import parse_rfc3339
-from .errors import ContractInputError
+from .errors import ContractInputError, ReportContentLengthError
 from .policy_catalog import load_report_policy
 
 _POLICY = load_report_policy()
@@ -52,6 +52,49 @@ def report_type_label(safety_report_type: str) -> str:
         raise ContractInputError(f"unsupported SafetyReportType: {safety_report_type!r}") from exc
 
 
+def report_situation_condition(
+    visual_event_type: str | None, situation_response: str | None, *, observed: bool
+) -> str:
+    if visual_event_type is not None and (
+        not isinstance(visual_event_type, str) or visual_event_type not in EVENT_POLICY
+    ):
+        raise ContractInputError(f"unsupported VisualEventType: {visual_event_type!r}")
+    if situation_response is None:
+        if visual_event_type is not None and observed:
+            return "OBSERVED_without_response"
+        return "NOT_ASKED_or_absent"
+    if situation_response == "USER_UNSURE" and visual_event_type is not None:
+        return "USER_UNSURE_with_specific_type"
+    if situation_response in ("CONFIRMED", "CORRECTED", "USER_UNSURE"):
+        return situation_response
+    raise ContractInputError("invalid situation response")
+
+
+def report_situation_blocker(
+    visual_event_type: str | None, situation_response: str | None, *, observed: bool
+) -> str | None:
+    condition = report_situation_condition(visual_event_type, situation_response, observed=observed)
+    if visual_event_type is None:
+        return None if condition == "USER_UNSURE" else "user_unsure_required"
+    if condition not in {"CONFIRMED", "CORRECTED", "OBSERVED_without_response"}:
+        return "situation_unconfirmed"
+    return None
+
+
+def report_template_ref(*, specific: bool, has_location: bool, has_plate: bool) -> str:
+    templates = {
+        (True, True, True): SPECIFIC_TEMPLATE_REF,
+        (True, False, True): SPECIFIC_NO_LOCATION_TEMPLATE_REF,
+        (True, True, False): SPECIFIC_NO_PLATE_TEMPLATE_REF,
+        (True, False, False): SPECIFIC_NO_LOCATION_NO_PLATE_TEMPLATE_REF,
+        (False, True, True): GENERIC_TEMPLATE_REF,
+        (False, False, True): GENERIC_NO_LOCATION_TEMPLATE_REF,
+        (False, True, False): GENERIC_NO_PLATE_TEMPLATE_REF,
+        (False, False, False): GENERIC_NO_LOCATION_NO_PLATE_TEMPLATE_REF,
+    }
+    return templates[specific, has_location, has_plate]
+
+
 def render_report(
     *,
     visual_event_type: str | None,
@@ -60,18 +103,19 @@ def render_report(
     location_display: str | None,
     vehicle_number: str | None,
     violation_expression: str,
+    observed: bool = False,
 ) -> dict[str, Any]:
     """Render only from policy-owned slots; no free-form generation occurs.
+
+    `observed` marks a concrete type supported by Fine when the user has not responded.
 
     `vehicle_number=None` selects a no-plate template: the plate phrase is dropped and the
     policy-owned `no_plate_notice` states that the plate was not identified. Whether a
     plate-less report may exist at all is the caller's gate (ADR-EVIDENCE-008 §6).
     """
-    if visual_event_type is None:
-        if situation_response != "USER_UNSURE":
-            raise ContractInputError("report.input.user_unsure_required")
-    elif situation_response not in {"CONFIRMED", "CORRECTED"}:
-        raise ContractInputError("report.input.situation_unconfirmed")
+    blocker = report_situation_blocker(visual_event_type, situation_response, observed=observed)
+    if blocker is not None:
+        raise ContractInputError(f"report.input.{blocker}")
     parsed: datetime = parse_rfc3339(occurred_at)
     display_time = parsed.astimezone(_SEOUL).strftime("%Y-%m-%d %H:%M:%S")
     if not isinstance(violation_expression, str) or not violation_expression.strip():
@@ -93,12 +137,6 @@ def render_report(
                 f"{display_time}경 {location_display}에서 촬영된 {vehicle}의 "
                 f"{_POLICY['generic_description_tail']}{plate_line}"
             )
-        template_ref = {
-            (True, True): GENERIC_TEMPLATE_REF,
-            (False, True): GENERIC_NO_LOCATION_TEMPLATE_REF,
-            (True, False): GENERIC_NO_PLATE_TEMPLATE_REF,
-            (False, False): GENERIC_NO_LOCATION_NO_PLATE_TEMPLATE_REF,
-        }[(has_location, has_plate)]
     else:
         title = event_policy(visual_event_type)["title"]
         location_line = f"{display_time}경 {location_display}에서\n" if location_display is not None else f"{display_time}경 촬영된\n"
@@ -106,15 +144,12 @@ def render_report(
             f"{location_line}{vehicle}이\n"
             f"{violation_expression}{_POLICY['specific_description_tail']}{plate_line}"
         )
-        template_ref = {
-            (True, True): SPECIFIC_TEMPLATE_REF,
-            (False, True): SPECIFIC_NO_LOCATION_TEMPLATE_REF,
-            (True, False): SPECIFIC_NO_PLATE_TEMPLATE_REF,
-            (False, False): SPECIFIC_NO_LOCATION_NO_PLATE_TEMPLATE_REF,
-        }[(has_location, has_plate)]
 
+    template_ref = report_template_ref(
+        specific=visual_event_type is not None, has_location=has_location, has_plate=has_plate
+    )
     if not REPORT_TEXT_MIN_LENGTH <= len(description) <= REPORT_TEXT_MAX_LENGTH:
-        raise ContractInputError("rendered report description is outside the 5..900 character policy")
+        raise ReportContentLengthError(len(description), template_ref)
     return {
         "title": title,
         "description": description,

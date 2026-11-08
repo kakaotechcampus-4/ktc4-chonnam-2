@@ -27,9 +27,9 @@ from daesingo.case.labels import (
     occurred_at_info_state,
     report_type_label,
 )
-from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED
+from daesingo.evidence import AWAIT_SITUATION_RESPONSE, NOT_ASSEMBLED, render_report_draft
 
-CONTRACT_VERSION = "case-view/v1.12"
+CONTRACT_VERSION = "case-view/v1.13"
 
 _PROGRESS_STEPS = (
     "file_intake",
@@ -772,6 +772,10 @@ def build_case_view(
         ),
         "requirements_evidence": _build_requirements_view(requirement_report_evidence),
         "requirements_package": _build_requirements_view(requirement_report_package),
+        # 신고서 초안(v1.13, #597 B안) — 현재 선택의 조립된 EvidenceRecord를 evidence 렌더러에 그대로 넘긴 결과다.
+        # 문장은 case가 만들지 않는다. 조립 전(부분 투영 · 비조립) · 렌더 불가(유형 · 응답 조합, 발생시각 없음 등)면
+        # `null`이다. 최종 신고문은 `package.report`다 — 초안이 있다고 READY가 되지 않는다.
+        "report_draft": render_report_draft(evidence_record) if evidence_record is not None else None,
         "package": _build_package_view(report_package, evidence_record),
         "running_jobs": derive_running_jobs(case, job_executions),
         "notices": notices or [],

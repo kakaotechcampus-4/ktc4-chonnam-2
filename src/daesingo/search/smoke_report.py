@@ -23,7 +23,7 @@ _SIX_PLACES = Decimal("0.000001")
 
 
 def _strip_trailing_zero(d: Decimal) -> Decimal:
-    """Remove a single trailing zero if doing so is lossless and exponent < -6."""
+    """Round to 6 decimal places when the value has more and rounding loses nothing."""
     exp = d.as_tuple().exponent
     if isinstance(exp, int) and exp < -6:
         quantized = d.quantize(_SIX_PLACES)

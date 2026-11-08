@@ -16,6 +16,17 @@ def policy_values(root: Path, **changes):
                     "reserve_micros": 10, "evidence_ref": "TEST_FIXED_CALL_CEILING"}], **changes}
 
 
+def supported_policy_values(root, **changes):
+    """Explicit test-only Elice support; never a production approval or price."""
+    values = policy_values(root)
+    for name in ("case_budget_micros", "daily_budget_micros", "total_budget_micros", "bounds"):
+        del values[name]
+    values.update(funding_mode="elice_supported", support_ref="TEST_ONLY_NOT_UNLIMITED",
+                  supported_calls=[{"operation": "SEARCH_COARSE", "provider_label": "elice:test-model"}])
+    values.update(changes)
+    return values
+
+
 def sqlite_engine(path):
     # SQLite tests serialize callbacks explicitly. This is not proof of InnoDB locking.
     engine = sa.create_engine("sqlite+pysqlite:///" + str(path),

@@ -99,7 +99,7 @@ def search_coarse(
         )
     source = sources[0]
     # dependencies.deadline은 SearchService가 호출 시점에 scope.budget.max_latency_sec로
-    # 만든 실행 상한이다(contract-analysis-scope.md §104, #149 A안) — 다른 상한과 겹치지 않는다.
+    # 만든 실행 상한이다(contract-analysis-scope.md §6 `budget.max_latency_sec`, #149 A안) — 다른 상한과 겹치지 않는다.
     # budget.max_cost_krw는 KRW↔USD 환산이 미결이라 여기서 집행하지 않는다.
     deadline = dependencies.deadline
     usage = (
@@ -162,6 +162,7 @@ def search_coarse(
                     (source, candidate) for candidate in result.response.candidates
                 )
     # 영상 준비 단계 실패도 예외로 흘려보내지 않고 FAILED Run으로 남긴다(#181).
+    # 단, ffmpeg 미설치(MissingFfmpegError)와 source 열기 실패는 아래 except에 없어 예외로 올라간다.
     # provider 호출 전이라 쓸 결과가 없으므로 PARTIAL이 아니다.
     except DeadlineExceededError as error:
         failure = _issue(FailureKind.COST, "RUN_DEADLINE_EXCEEDED", scope, error)
@@ -185,7 +186,8 @@ def search_coarse(
 
     ranked = sorted(gathered, key=lambda item: (-item[1].score, item[1].at_sec))
     # 영상 밖 span 같은 잘못된 후보 하나 때문에 정상 후보까지 버리지 않는다(#181).
-    # 잘못된 후보만 빼고 PARTIAL + issue로 남긴다 — 계약 §5 PARTIAL.
+    # 잘못된 후보만 빼고 PARTIAL + issue로 남긴다 — AnalysisRun 계약
+    # (docs/architecture/contracts/contract-analysis-run-candidate-event.md) §5 PARTIAL.
     kept: list[CandidateEvent] = []
     dropped = 0
     for candidate_source, candidate in ranked:
@@ -248,7 +250,7 @@ def _issue(
 ) -> Issue:
     """실패 하나를 taxonomy 이름으로 기록한다.
 
-    `detail`에는 예외 타입 이름만 남긴다 — 계약 §3-3이 stack trace와 raw provider
+    `detail`에는 예외 타입 이름만 남긴다 — AnalysisRun 계약 §3-3이 stack trace와 raw provider
     payload를 금지하고, provider 메시지 자체가 마스킹되지 않은 입력을 담을 수 있다.
     stage(COARSE/FINE)는 `Issue`에 별도 필드를 두지 않는다. `operation`이 이미 구분한다.
     """
@@ -269,7 +271,7 @@ def _failed_result(
     dependencies: CoarseExecutionDependencies,
     usage_refs: tuple[str, ...],
 ) -> LinkedCoarseResult:
-    """FAILED AnalysisRun을 만든다 — 계약 §7 Producer는 결과 구분을 요구한다.
+    """FAILED AnalysisRun을 만든다 — AnalysisRun 계약 §7 Producer는 결과 구분을 요구한다.
 
     usage_summary는 비운다. 호출이 결과를 내지 못했으므로 Eval이 재평가할 snapshot이 없다.
     usage_refs는 sink가 발급한 시도별 usage_id를 그대로 담는다(#294).

@@ -392,21 +392,21 @@ HINT_UNCLEAR_NOTICE: dict[str, Any] = {
     "actions": ["EDIT_HINT"],
 }
 
-_SITUATION_RESPONDED = frozenset({"CONFIRMED", "CORRECTED", "USER_UNSURE"})
 
 
 def report_video_missing(view: dict[str, Any]) -> bool:
-    """신고 상황 응답이 끝났는데 신고용 영상이 없는가(#351). notice와 자동 발주(R-1)가 같은 조건을 쓴다.
+    """EvidenceRecord가 조립됐는데 신고용 영상이 없는가(#351). notice와 자동 발주(R-1)가 같은 조건을 쓴다.
 
-    evidence가 조립됐고(`record_id` non-null — 응답 전 부분 투영이 아니다), 선택 후보의 응답이 끝났고, FINAL 요건의
+    신고 상황 응답은 보지 않는다(#597 B안) — Fine `OBSERVED`는 응답 전에도 조립되므로 바로 영상을 만들고,
+    `UNCERTAIN`은 「잘 모르겠어요」 응답 전에는 조립되지 않아(`record_id` null) 여기서 걸린다.
+
+    evidence가 조립됐고(`record_id` non-null — 응답 전 부분 투영이 아니다), 선택 후보가 하나이고, FINAL 요건의
     `package.asset.report_video.exists`가 `PASS`가 아닐 때다. 요건 전체 판정(`readiness`)은 보지 않는다 — 영상이
     없으면 첨부 규칙 · 사후 각인 check도 함께 `UNKNOWN`이 되어 「영상만 남았는가」를 가를 수 없다(#351 정정).
     FINAL 요건을 아직 계산하지 않았으면 영상이 없는지 모르므로 `False`다."""
     evidence = view.get("evidence")
     selected = [c for c in view.get("candidates", []) if c["selected"]]
     if evidence is None or evidence.get("record_id") is None or len(selected) != 1:
-        return False
-    if selected[0]["situation_confirmation"] not in _SITUATION_RESPONDED:
         return False
     checks = (view.get("requirements_package") or {}).get("checks", [])
     video = next((c for c in checks if c["code"] == "package.asset.report_video.exists"), None)
@@ -530,9 +530,9 @@ def derive_notices(
     - `evidence.location_search_keyword_missing` — 계약 발동 조건이
       `evidence.location_display.search_keyword == null`이다(`location` 존재 여부가 아니다,
       이슈 #48).
-    - `case.situation_response_pending` — evidence가 있고, 선택된 후보의
-      `situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때(#171 C-2). 상황 응답
-      전이라 ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태를 결과 화면의 「준비 전」 이유로 알린다.
+    - `case.situation_response_pending` — evidence가 조립 전 부분 투영(`record_id` null)이고, 선택된 후보의
+      `situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때(#171 C-2). 조립된 evidence(Fine
+      `OBSERVED`)에는 붙이지 않는다 — 응답 없이 초안 · 영상 · 묶음으로 간다(#597 B안).
       evidence가 없어도 adapter가 보고한 Fine 판정이 `AWAIT_SITUATION_RESPONSE`(Fine `UNCERTAIN` +
       응답 전, #165)면 붙인다 — 그렇지 않으면 응답 대기가 조립 중과 같아 보인다(PR #224 리뷰).
     - `evidence.visual_event_not_observed` — evidence가 없고, adapter가 보고한 선택 후보의 Fine
@@ -614,7 +614,9 @@ def derive_notices(
         # 응답 전 부분 투영(`record_id` null)은 시각을 아직 정하지 않은 상태라 「없음」으로 보지 않는다.
         if evidence.get("record_id") is not None and evidence["event_time_display"]["value"] is None:
             derived.append(EVENT_TIME_MISSING_NOTICE)
-        if awaiting_response:
+        # 조립된 evidence(Fine `OBSERVED`)는 응답을 기다리지 않는다(#597 B안) — 응답 대기는 조립 전 부분 투영
+        # (`record_id` null, Fine `UNCERTAIN`)일 때만이다.
+        if awaiting_response and evidence.get("record_id") is None:
             derived.append(SITUATION_RESPONSE_PENDING_NOTICE)
     if report_video_missing(view):
         exporting = any(j["kind"] == "REPORT_VIDEO_EXPORT" for j in view.get("running_jobs", []))

@@ -7,8 +7,9 @@ B절 `notices[].code`, 2026-09-14 등재). 정답지는 이 notice가 들어간 
 경우는 fixture 값에 검색어를 채운 사본으로 확인한다.
 
 `case.situation_response_pending` — #171 C-2(Case 결정): Package 전 결과 화면의 「준비 전」
-이유를 notice로 내린다. 발동 조건은 evidence가 있고, 선택된 후보의 `situation_confirmation`이
-`NOT_ASKED`이며, `package`가 없을 때다(ADR-EVIDENCE-005 D2-c로 Package가 막힌 상태).
+이유를 notice로 내린다. 발동 조건은 evidence가 조립 전 부분 투영(`record_id` null)이고, 선택된 후보의
+`situation_confirmation`이 `NOT_ASKED`이며, `package`가 없을 때다. 조립된 evidence(Fine `OBSERVED`)는
+응답을 기다리지 않는다(#597 B안).
 """
 import copy
 import json
@@ -115,11 +116,21 @@ def test_pending_notice_shape_matches_contract():
 
 
 @pytest.mark.parametrize("scenario_id", ["correction_rerun_001", "plate_reread_001"])
-def test_pending_notice_on_evidence_without_response(scenario_id):
-    """P·R은 evidence가 있지만 상황 응답 전이라 Package가 없다 — 모든 스냅샷이 대상이다."""
+def test_no_pending_notice_on_assembled_evidence_without_response(scenario_id):
+    """P·R은 조립된 evidence가 있고 상황 응답 전이라 Package가 없다 — #597 B안에서는 응답을 기다리지 않는다."""
     for expected in _case_views(scenario_id):
-        assert expected["evidence"] is not None and expected["package"] is None
+        assert expected["evidence"]["record_id"] is not None and expected["package"] is None
         codes = [n["code"] for n in service.derive_notices(_without_notice(expected))["notices"]]
+        assert PENDING_CODE not in codes
+
+
+@pytest.mark.parametrize("scenario_id", ["correction_rerun_001", "plate_reread_001"])
+def test_pending_notice_on_partial_projection_without_response(scenario_id):
+    """조립 전 부분 투영(`record_id` null, Fine `UNCERTAIN` 응답 전)은 응답을 기다린다."""
+    for expected in _case_views(scenario_id):
+        view = _without_notice(expected)
+        view["evidence"]["record_id"] = None
+        codes = [n["code"] for n in service.derive_notices(view)["notices"]]
         assert PENDING_CODE in codes
 
 

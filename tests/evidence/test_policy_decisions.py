@@ -11,8 +11,10 @@ from daesingo.evidence import (
     PolicyConfigurationError,
     build_report_package,
     evaluate_requirements,
+    render_report_draft,
     validate_contract,
 )
+from daesingo.evidence import policy_catalog as catalog_module
 from daesingo.evidence import requirements as requirement_module
 from daesingo.evidence.mock_integration import run_scenario
 from daesingo.evidence.policy_catalog import (
@@ -337,14 +339,144 @@ class PolicyDecisionTests(unittest.TestCase):
         self.assertEqual(baseline["overall"], with_legacy_inputs["overall"])
         self.assertEqual(baseline["checks"], with_legacy_inputs["checks"])
 
-    def test_k3_not_asked_and_incomplete_render_are_unknown(self):
-        record = deepcopy(self.happy_record)
-        record.pop("situation_response")
+    def _observed_without_response(self):
+        return deepcopy(self.happy["policy_guard_check"]["without_confirmation"]["evidence_record"])
+
+    def _build(self, record, report, *, assets=None):
+        return build_report_package(
+            record, report, package_id="pkg_597",
+            created_at="2026-08-24T18:26:00+09:00",
+            asset_facts=self.happy_assets if assets is None else assets,
+        )
+
+    def test_observed_without_response_renders_and_packages_the_same_text(self):
+        record = self._observed_without_response()
+        self.assertNotIn("situation_response", record)
+        draft = render_report_draft(record)
         report = self._evaluate(record=record)
-        self.assertEqual("UNKNOWN", self._check(
-            report, "package.evidence.situation_response")["outcome"])
-        self.assertEqual("UNKNOWN", self._check(
-            report, "package.report.content_length")["outcome"])
+        situation = self._check(report, "package.evidence.situation_response")
+        self.assertEqual(("PASS", "evidence.situation_observed_without_response"),
+                         (situation["outcome"], situation["reason_code"]))
+        length = self._check(report, "package.report.content_length")
+        self.assertEqual("PASS", length["outcome"])
+        self.assertEqual(len(draft["description"]), length["measurement"]["actual"])
+        self.assertEqual("PASS", report["overall"])
+        package = self._build(record, report)
+        self.assertEqual([], validate_contract(package))
+        template = "tmpl/safety-report-specific-v1"
+        self.assertEqual(template, report["basis"]["template_ref"])
+        self.assertEqual({**draft, "template_ref": template}, package["report"])
+        self.assertNotIn("situation_response", record)
+
+    def test_observed_draft_survives_missing_video_but_package_does_not(self):
+        record = self._observed_without_response()
+        assets = [asset for asset in self.happy_assets if asset.get("derived_role") != "REPORT_VIDEO"]
+        report = self._evaluate(record=record, assets=assets)
+        self.assertIsNotNone(render_report_draft(record))
+        self.assertEqual("PASS", self._check(report, "package.report.content_length")["outcome"])
+        self.assertEqual("UNKNOWN", self._check(report, "package.asset.report_video.exists")["outcome"])
+        with self.assertRaisesRegex(PackageNotReady, "package.requirement_not_ready"):
+            self._build(record, report, assets=assets)
+
+    def test_observed_without_response_no_plate_requires_a_completed_readout(self):
+        record = self._observed_without_response()
+        record.pop("vehicle_number")
+        report = self._evaluate(record=record)
+        draft = render_report_draft(record)
+        self.assertIn("차량번호는 영상에서 식별하지 못했습니다.", draft["description"])
+        package = self._build(record, report)
+        self.assertIsNone(package["report_inputs"]["vehicle_number"])
+        self.assertEqual({**draft, "template_ref": "tmpl/safety-report-specific-no-plate-v1"}, package["report"])
+
+        record["provenance"]["input_refs"] = [
+            ref for ref in record["provenance"]["input_refs"] if ref["kind"] != "plate_readout"
+        ]
+        failed_report = self._evaluate(record=record)
+        self.assertIsNone(render_report_draft(record))
+        self.assertEqual("UNKNOWN", self._check(failed_report, "package.report.content_length")["outcome"])
+        with self.assertRaisesRegex(PackageNotReady, "package.requirement_not_ready"):
+            self._build(record, failed_report)
+
+    def test_observed_without_response_still_measures_overlong_content(self):
+        record = self._observed_without_response()
+        record["location"]["user_hint"]["value"] = "가" * 900
+        report = self._evaluate(record=record)
+        length = self._check(report, "package.report.content_length")
+        self.assertEqual("BLOCK", length["outcome"])
+        self.assertGreater(length["measurement"]["actual"], 900)
+        self.assertIsNone(render_report_draft(record))
+        with self.assertRaisesRegex(PackageNotReady, "package.requirement_not_ready"):
+            self._build(record, report)
+
+    def test_observed_without_response_but_without_time_cannot_render(self):
+        record = self._observed_without_response()
+        record.pop("occurred_at")
+        time = deepcopy(self.happy_time)
+        time["status"] = "UNKNOWN"
+        time["post_stamp"] = {"needed": False, "reason_code": "time.no_resolvable_source",
+                              "requires_user_notice": False}
+        report = self._evaluate(record=record, time=time)
+        self.assertIsNone(render_report_draft(record))
+        self.assertEqual("PASS", self._check(report, "package.evidence.situation_response")["outcome"])
+        self.assertEqual("UNKNOWN", self._check(report, "package.report.content_length")["outcome"])
+        with self.assertRaisesRegex(PackageNotReady, "package.requirement_not_ready"):
+            self._build(record, report)
+
+    def test_unresolved_not_asked_and_incomplete_render_are_still_unknown(self):
+        for unresolved in ("no_type", "no_fine_provenance"):
+            with self.subTest(unresolved=unresolved):
+                record = self._observed_without_response()
+                visual = record["event"]["visual_event_type"]
+                if unresolved == "no_type":
+                    visual["value"] = None
+                else:
+                    visual["source"]["kind"] = "case.user_correction"
+                report = self._evaluate(record=record)
+                self.assertIsNone(render_report_draft(record))
+                self.assertEqual("UNKNOWN", self._check(
+                    report, "package.evidence.situation_response")["outcome"])
+                self.assertEqual("UNKNOWN", self._check(report, "package.report.content_length")["outcome"])
+
+    def test_observed_user_unsure_stays_blocked_from_specific_report(self):
+        record = self._observed_without_response()
+        record["situation_response"] = {"value": "USER_UNSURE", "responded_at": "2026-08-24T18:24:00+09:00"}
+        report = self._evaluate(record=record)
+        self.assertIsNone(render_report_draft(record))
+        self.assertEqual("WARN", self._check(report, "package.evidence.situation_response")["outcome"])
+        self.assertEqual("UNKNOWN", self._check(report, "package.report.content_length")["outcome"])
+        self.assertNotIn("template_ref", report["basis"])
+        with self.assertRaisesRegex(PackageNotReady, "package.requirement_not_ready"):
+            self._build(record, report)
+
+    def test_draft_propagates_renderer_policy_errors(self):
+        record = self._observed_without_response()
+        with (
+            patch.object(requirement_module, "render_report", side_effect=PolicyConfigurationError("test policy error")),
+            self.assertRaisesRegex(PolicyConfigurationError, "test policy error"),
+        ):
+            render_report_draft(record)
+
+    def test_active_catalog_cannot_claim_the_previous_revision(self):
+        historical = json.loads(
+            (ROOT / "src/daesingo/evidence/requirement_rules_v6.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual("policy/requirement-rules-v6", validate_requirement_catalog(historical)["policy_ref"])
+        with (
+            patch.object(catalog_module, "_read_json", return_value=historical),
+            self.assertRaisesRegex(PolicyConfigurationError, "policy_ref does not match"),
+        ):
+            load_requirement_catalog()
+
+    def test_v7_rejects_missing_observed_condition_or_wrong_template_inputs(self):
+        for code, field in (("package.evidence.situation_response", "outcomes"),
+                            ("package.evidence.situation_response", "template_selection"),
+                            ("package.report.content_length", "render_required_inputs_by_template")):
+            with self.subTest(field=field):
+                catalog = load_requirement_catalog()
+                rule = next(rule for rule in catalog["scopes"]["FINAL_PACKAGE"]["always"] if rule["code"] == code)
+                rule[field].pop("with_location" if code == "package.report.content_length" else "OBSERVED_without_response")
+                with self.assertRaises(PolicyConfigurationError):
+                    validate_requirement_catalog(catalog)
 
     def test_invalid_vehicle_value_is_never_pass_and_splits_on_plate_readout_d3(self):
         # v4까지는 값이 없으면 전부 UNKNOWN이었다. #172 D-3(ADR-EVIDENCE-008 §5.1)부터는
