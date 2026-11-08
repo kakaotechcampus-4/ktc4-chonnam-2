@@ -38,7 +38,9 @@ class GeminiSearchConfig:
 
     # 2026-10-27 Owner 결정: Coarse · Fine 모두 argon(decisions/search-argon-model-2026-10-27.md).
     model: str = "gemini-4-argon"
-    media_resolution: str = "low"  # Coarse. 넓게 싸게 훑는다
+    # provider에 보내지 않는다(프록시가 받지 않음, provider.py 참고). env 호환과
+    # fingerprint에만 남는다. 실제 Coarse 화질은 media.py의 270p · crf28 · coarse_fps가 정한다.
+    media_resolution: str = "low"
     # 원본 1초당 모델에 넣을 프레임 수. 프록시는 영상을 재생 1초당 1장(66토큰)으로만
     # 보므로 준비 영상을 이 배수만큼 늘려 재생 1초 = 원본 프레임 1장으로 만든다
     # (decisions/search-final-structure-2026-10-01.md).
@@ -54,7 +56,8 @@ class GeminiSearchConfig:
     fine_padding_sec: float = 4.0
     # 추론 강도 (none/low/medium/high). 시연 단가 우선이라 low 기본. 필요 시 상향.
     reasoning_effort: str = "low"
-    # 단가: 프록시가 고지한 USD/백만 토큰. 테스트에서 명시 주입; 운영은 Task 11/13 담당.
+    # 단가: 프록시가 고지한 USD/백만 토큰. 기본 0.0이면 비용을 계산하지 않는다.
+    # 값은 env DAESINGO_GEMINI_INPUT/OUTPUT_USD_PER_MILLION 또는 테스트에서 주입한다.
     input_usd_per_million: float = 0.0
     output_usd_per_million: float = 0.0
     # 예산 한도

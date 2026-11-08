@@ -83,9 +83,10 @@ class SearchService:
         `max_latency_sec`를 넘기면 그 값을 쓴다 — Coarse와 다른 Worker/process에서도
         Fine을 실행할 수 있다(#226). 넘기지 않으면 이 객체가 실행한 Coarse scope의
         상한을 이어받는다. FINE_VERIFY는 COARSE_SEARCH와 다른 Job이라
-        (contract-job-record-case-view.md §110) Coarse에서 쓴 시간이 깎이지 않는다.
+        (contract-job-record-case-view.md A절 §6 `kind`) Coarse에서 쓴 시간이 깎이지 않는다.
         """
-        # 메모리 fallback은 Case/Runtime이 FINE_VERIFY Job에서 값을 넘기기 시작하면 제거.
+        # Worker 경로는 항상 max_latency_sec를 넘긴다. 아래 fallback은 CLI · smoke처럼
+        # 같은 객체로 Coarse와 Fine을 이어 부르는 경로용이다.
         if max_latency_sec is not None:
             budget_ms = max_latency_sec * 1000
         else:
