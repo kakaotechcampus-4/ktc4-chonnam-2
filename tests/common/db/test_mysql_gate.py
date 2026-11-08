@@ -54,6 +54,7 @@ CANDIDATE_VIDEO_CHECKS = tuple(("candidate_video", scenario) for scenario in (
     "process_kill", "range_concurrency", "compatible_bridge"))
 
 REQUIRED_CHECKS = (
+    ("public_a1", "local_ocr"),
     ("public_a1", "supported_funding"),
     *(("public_a1", scenario) for scenario in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery", "local_work", "stop_modes", "export_deferral")),
     *CANDIDATE_VIDEO_CHECKS,
@@ -147,6 +148,8 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *(("public_a1", "local_ocr", mode) for mode in ("plate_supported", "overlay_supported", "plate_krw",
+        "overlay_krw", "restart", "concurrent", "stop", "cancel", "lease", "identity", "retry")),
     *(("public_a1", "supported_funding", mode) for mode in ("usage", "cancel_db", "cancel_signal", "restart")),
     *(("public_a1", "local_work", mode) for mode in ("repeat", "concurrent", "ip_limit")),
     *(("public_a1", "stop_modes", kind) for kind in ("REPORT_VIDEO_EXPORT", "FINE_VERIFY", "exhaustion_pause", "exhaustion_stop")),
