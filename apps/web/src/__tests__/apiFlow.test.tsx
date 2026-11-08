@@ -556,6 +556,16 @@ it('candidate video request and polling keep the failure comparison visible with
   expect(screen.getByText('이 장면의 영상을 준비하지 못했어요.')).toBeTruthy()
 })
 
+it('결과 화면에서 연 「어떻게 정했는지」는 기준 후보 영상을 보인다 — ApiFlow가 playback을 넘긴다', async () => {
+  const initial: CaseView = { ...RESULT, case_id: 'c1', running_jobs: [],
+    candidates: RESULT.candidates.map((c) => c.selected ? { ...c, video_preview: { status: 'READY', clip_ref: 'basis-clip' } } : c),
+  }
+  const { api } = setup({ get: initial })
+  const screen = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await screen.findByRole('button', { name: '어떻게 정했는지' }))
+  await waitFor(() => expect(screen.container.querySelector('.details-scene video')?.getAttribute('src')).toBe('/candidate-video/basis-clip'))
+})
+
 it.each(['result', 'not-observed', 'failed', 'awaiting'] as const)('a single candidate has a playback entry on the %s screen', async (surface) => {
   const original = surface === 'result' ? RESULT : surface === 'awaiting' ? AWAITING : notObserved(RESULT.candidates)
   const selected = original.candidates.find((c) => c.selected) ?? RESULT.candidates[0]

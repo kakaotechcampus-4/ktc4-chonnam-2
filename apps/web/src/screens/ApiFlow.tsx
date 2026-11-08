@@ -321,7 +321,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             />
           )
         if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
-        if (sub === 'details') return <DetailsCheck view={view} onBack={back} />
+        if (sub === 'details') return <DetailsCheck {...playback} view={view} onBack={back} />
         return (
           <ResultScreen
             {...playback}
