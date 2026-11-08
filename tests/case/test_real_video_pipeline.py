@@ -148,6 +148,9 @@ def _install_stubbed_search(monkeypatch: pytest.MonkeyPatch) -> None:
             selected_video_stream=selected,
         )
 
+    # Setup for both stubbed Search calls can run without provider credentials or a client.
+    monkeypatch.setattr(real_e2e, "load_env_file", lambda: {"GEMINI_API_KEY": "stub-search-key"})
+    monkeypatch.setattr(search_module, "build_gemini_search_service", lambda **kwargs: object())
     monkeypatch.setattr(search_module, "search_candidates", fake_search_candidates)
     monkeypatch.setattr(
         search_module, "verify_visual_with_stream_context", fake_verify_visual_with_stream_context
