@@ -43,9 +43,10 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
   held: '영상은 준비됐어요 · 신고자료가 완성되면 받을 수 있어요',
 }
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
-const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요'
-const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요'
-const PLATE_FRAME_FAILED = '번호판 장면을 받지 못했어요'
+// 받기 실패는 일시적인 연결 문제일 수 있다 — 버튼은 열어 두고 다시 누르게 한다(#563 리뷰). 다시 받기는 새 작업을 만들지 않는다
+const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요. 다시 눌러 받아 주세요.'
+const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요. 다시 눌러 받아 주세요.'
+const PLATE_FRAME_FAILED = '번호판 장면을 받지 못했어요. 다시 눌러 받아 주세요.'
 const VIDEO_CAPTION = '신고용 영상 · 원본에서 사건 구간만 잘라 만든 영상이에요'
 const COPY_ALL_NOTE = '칸 이름과 함께 제목·차량 번호·신고 내용을 복사해요. 영상 첨부와 위치 선택은 안전신문고에서 직접 해 주세요.'
 // 번호판 확인 화면에서 번호를 고칠 수 있다는 것을 결과 화면에서 미리 알린다(10/23 승인 문구)
@@ -190,21 +191,22 @@ export function ResultScreen(props: {
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
   const failedDownload = props.videoHref !== undefined && downloadFailed.includes(props.videoHref)
-  const canDownload = video === 'ready' && !!props.videoHref && !failedDownload && !downloading
+  const canDownload = video === 'ready' && !!props.videoHref && !downloading
   const videoHint =
     video !== 'ready' ? VIDEO_STATUS[video] : !props.videoHref ? NO_DOWNLOAD_LINK : failedDownload ? DOWNLOAD_FAILED : null
   const plateFailed = props.plateImageHref !== undefined && downloadFailed.includes(props.plateImageHref)
-  const canDownloadPlate = !!props.plateImageHref && !plateFailed && !downloading
+  const canDownloadPlate = !!props.plateImageHref && !downloading
   // 번호판을 읽은 장면 전체(#600) — 잘라낸 번호판 이미지로는 어느 차량인지 대조하기 어렵다.
   // 번호판 확인 화면의 장면과 같은 주소라, 그 화면이 장면을 그리지 않을 때(plate_preview_ref null · 시연)는 버튼도 두지 않는다
   const plateFrameHref = frame(ev?.plate_preview_ref) ?? undefined
   const plateFrameFailed = plateFrameHref !== undefined && downloadFailed.includes(plateFrameHref)
-  const canDownloadPlateFrame = !!plateFrameHref && !plateFrameFailed && !downloading
+  const canDownloadPlateFrame = !!plateFrameHref && !downloading
   // 링크로 열지 않고 받아서 저장한다 — 서버가 UNAVAILABLE을 돌려주면 화면이 알아야 한다. 파일 전체가 메모리에 올라간다.
-  // 받는 동안은 버튼을 막아 두 번 받지 않게 한다.
+  // 받는 동안은 버튼을 막아 두 번 받지 않게 한다. 실패한 주소도 다시 누르면 실패 안내를 지우고 다시 받는다.
   const download = async (href: string | undefined, prefix: string, ext: string) => {
     if (!href) return
     setDownloading(true)
+    setDownloadFailed((list) => list.filter((h) => h !== href))
     try {
       const res = await fetch(href)
       if (!res.ok) throw new Error(String(res.status))
