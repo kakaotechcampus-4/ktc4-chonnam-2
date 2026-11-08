@@ -28,7 +28,7 @@ function start(caseKey: string) {
     for (let i = 0; i < 20; i++) act(() => vi.advanceTimersByTime(5_000))
   }
   // 결과 화면에서 신고 상황에 답하고 나머지 준비가 끝날 때까지 흘린다.
-  const answer = (label = '맞아요') => {
+  const answer = (label = '잘 모르겠어요') => {
     fireEvent.click(r.getByText(label))
     wait()
   }
@@ -55,7 +55,7 @@ it('정상: 업로드 완료 → 진행 → 신고 상황 응답 → 결과, 하
   expect(text()).not.toContain('안전신문고로 이동')
   // 응답에 따라 정해지는 값 셋은 응답 뒤로 미룬다
   expect(text()).toContain('상황 응답 뒤에 정해져요')
-  fireEvent.click(getByText('맞아요'))
+  fireEvent.click(getByText('잘 모르겠어요'))
   expect(text()).toContain('신고자료를 준비하고 있어요')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
@@ -648,7 +648,7 @@ it('화면이 바뀌면 새 화면 제목에 초점이 가고, 하위 화면에�
   expect(document.activeElement?.tagName).toBe('H1')
   expect(document.activeElement?.textContent).toBe('신고 상황을 확인해 주세요.')
   // 맞아요 → (진행) → 결과
-  fireEvent.click(getByText('맞아요'))
+  fireEvent.click(getByText('잘 모르겠어요'))
   wait()
   expect(document.activeElement?.textContent).toBe('신고자료가 준비됐어요.')
   // 하위 화면은 자기 제목, 뒤로 오면 연 버튼

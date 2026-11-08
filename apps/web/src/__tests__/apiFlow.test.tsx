@@ -162,13 +162,14 @@ it('찾는 중이 아닐 때(SEARCHING이 아닐 때)는 중단 버튼을 두지
   expect(queryByText('분석 중단')).toBeNull()
 })
 
-it('신고 상황 응답은 RECORD_SITUATION_RESPONSE로 보낸다', async () => {
+it('신고 상황 응답은 RECORD_SITUATION_RESPONSE로 보내고, 응답 대기(UNCERTAIN)에는 「맞아요」가 없다', async () => {
   const { m, api } = setup({ get: AWAITING })
   m.sendCommand.mockResolvedValue(ok({ ...AWAITING, case_rev: AWAITING.case_rev + 1 }))
-  const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
-  fireEvent.click(await findByText('맞아요'))
+  const { findByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('잘 모르겠어요'))
+  expect(queryByText('맞아요')).toBeNull()
   await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
-  expect(m.sendCommand).toHaveBeenCalledWith('c1', AWAITING.case_rev, { kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CONFIRMED' } })
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', AWAITING.case_rev, { kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'USER_UNSURE' } })
 })
 
 it('요청이 실패하면 화면은 그대로 두고 알림만 띄운다', async () => {

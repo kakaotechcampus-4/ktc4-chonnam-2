@@ -380,10 +380,8 @@ export function ResultScreen(props: {
           </ul>
           {/* 「잘 모르겠어요」도 진행을 막지 않는다. 값은 AI 추정으로 남는다(core-user-flow 「신고 상황」) */}
           <div className="res-actions">
-            <button type="button" className="rs-btn pri" onClick={() => props.onRespond!('CONFIRMED')}>
-              맞아요
-            </button>
-            <button type="button" className="rs-btn sec" onClick={() => props.onRespond!('USER_UNSURE')}>
+            {/* B안(#597)에서 응답 대기는 UNCERTAIN에만 생기고, UNCERTAIN은 「맞아요」를 지원하지 않는다 */}
+            <button type="button" className="rs-btn pri" onClick={() => props.onRespond!('USER_UNSURE')}>
               잘 모르겠어요
             </button>
           </div>
