@@ -305,12 +305,13 @@ class PublicStore:
         conn.execute(t.admissions.insert().values(case_id=case_id, request_hash=key,
             session_hash=row["session_hash"], ip_hash=row["ip_hash"], initial=initial, active=True, created_at=stamp))
 
-    def reserve(self, conn, snapshot):
+    def reserve(self, conn, snapshot) -> bool:
+        """Guard an attempt; return whether it belongs to a public Case."""
         # Always detect tagged Cases, even if a new Worker was misconfigured internal.
         self.locked(conn)
         row = self._bound_case(conn, snapshot["case_id"])
         if row is None:
-            return
+            return False
         execution = conn.execute(sa.select(job_execution.c.case_id, job_execution.c.status,
             job_execution.c.lease_owner, job_execution.c.lease_expires_at, job_execution.c.cancel_requested_at)
             .where(job_execution.c.execution_id == snapshot["execution_ref"]).with_for_update()).mappings().one_or_none()
@@ -323,27 +324,36 @@ class PublicStore:
         if not conn.execute(sa.select(sa.func.count()).select_from(t.admissions).where(
                 t.admissions.c.case_id == snapshot["case_id"], t.admissions.c.active.is_(True))).scalar_one():
             raise PublicDenied("INPUT")
-        amount = self.policy.bound(snapshot["operation"], snapshot["provider_label"])
         values = {k: snapshot[k] for k in ("usage_id", "execution_ref", "case_id", "operation", "provider_label")}
         existing = conn.execute(sa.select(t.reservations).where(t.reservations.c.usage_id == snapshot["usage_id"])
                                 .with_for_update()).mappings().one_or_none()
+        if self.policy.funding_mode == "elice_supported":
+            self.policy.require_supported(snapshot["operation"], snapshot["provider_label"])
+            if existing is not None and any(existing[k] != v for k, v in values.items()):
+                raise PublicDenied("CONFLICT")
+            # Usage STARTED/OBSERVED still belongs to the caller transaction.
+            # Never fabricate a zero-KRW reservation, refund or rewrite old rows.
+            return True
+        amount = self.policy.bound(snapshot["operation"], snapshot["provider_label"])
         if existing is not None:
             if any(existing[k] != v for k, v in values.items()) or existing["amount_micros"] != amount:
                 raise PublicDenied("CONFLICT")
-            return
+            return True
         stamp = now(conn)
+        case_limit, daily_limit, total_limit = self.policy.krw_limits()
         def spent(*conditions):
             return int(conn.execute(sa.select(sa.func.coalesce(sa.func.sum(t.reservations.c.amount_micros), 0))
                 .where(*conditions)).scalar_one())
-        if (spent() + amount > self.policy.total_budget_micros
+        if (spent() + amount > total_limit
                 or spent(sa.or_(t.reservations.c.created_at >= day_start(stamp),
                                 t.reservations.c.settled_at >= day_start(stamp),
-                                t.reservations.c.settled_at.is_(None))) + amount > self.policy.daily_budget_micros
-                or spent(t.reservations.c.case_id == snapshot["case_id"]) + amount > self.policy.case_budget_micros):
+                                t.reservations.c.settled_at.is_(None))) + amount > daily_limit
+                or spent(t.reservations.c.case_id == snapshot["case_id"]) + amount > case_limit):
             raise PublicDenied("BUDGET")
         conn.execute(t.reservations.insert().values(**values, amount_micros=amount, created_at=stamp))
         # Keep the complete worst-case reservation, even on failure/unknown spend.
         # No finish/restart/day rollover refunds uncertain liabilities.
+        return True
 
     def settle(self, conn, identity, cost):
         from decimal import Decimal, localcontext, ROUND_CEILING
