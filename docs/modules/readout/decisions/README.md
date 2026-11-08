@@ -5,6 +5,6 @@
 ## 현재 결정
 
 - `failure-taxonomy.md` — readout 실패 분류. **Owner 확정** (2026-09-09, ①② 종결). 남은 잠정은 overlay 「없음 vs 확인 못함」 판정 기준뿐
-- `overlay-presence-detection.md` — intake overlay 존재 탐지. **방향 확정 · 세부 미결** (프레임 수·ROI·오판율·「없음 vs 탐지 실패」 구분)
+- `overlay-presence-detection.md` — intake overlay 존재 탐지(미구현). **방향 확정 · 세부 미결** (프레임 수·ROI·오판율·「없음 vs 탐지 실패」 구분)
 - `production-ocr-combo.md` — MVP 운영 OCR 조합(사전학습 PaddleOCR · 미세조정 제외). **Owner 결정** (2026-10-31, 김대원 확인 11-01)
 - `best-frame.md` — 번호판 근거 장면을 대표 프레임 한 장으로 고정. **Owner 결정** (2026-11-02 회의 종결)

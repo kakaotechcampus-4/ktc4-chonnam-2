@@ -9,12 +9,14 @@
 - 단계형 작업공간 화면 — `CaseView` 표현. 자연어 입력은 기억 단서 1곳(`core-user-flow.md` §2)
 - Candidate Cards·타임라인·영상 UI
 - Evidence Review·번호판 확대·실패 상태 표현
+- 실제 화면 — 업로드(`UploadScreen`), 진행(`FlowScreen`), 결과·신고자료(`ResultScreen`), 공식 샘플(`OfficialSampleEntry`), 대기 중 주행 게임(`components/driving/`)
 
 ## 다루지 않는 범위
 
 - 파일 경계 계산
 - AI/Rule의 제품 책임을 화면 코드에 복제
 - 시각·번호판·신고요건의 최종 판정
+
 제품 수준 데모 흐름은 `product/core-user-flow.md`가 소유하며, 이 폴더는 실제 UI 상세를 소유한다.
 
 ## 문서 운영

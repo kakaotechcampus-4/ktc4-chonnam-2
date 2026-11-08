@@ -28,7 +28,7 @@ const DROP_TEXT: Record<Exclude<UploadState, 'done'>, string> = {
 let introPlayed = false
 const INTRO_MS = 700
 
-// 고른 `File` — `?api`는 화면에 업로드 결과 이름만 넘기므로 영상 시각은 고를 때 받아 둔 원본에서 읽는다.
+// 고른 `File` — 실제 흐름(ApiFlow)은 화면에 업로드 결과 이름만 넘기므로 영상 시각은 고를 때 받아 둔 원본에서 읽는다.
 // 출발 장면의 겉모습 복사본은 따로 고른 적이 없어 마지막으로 읽은 결과를 그대로 쓴다.
 let picked: File[] = []
 let lastTime: VideoTime | null = null
@@ -133,7 +133,7 @@ function sceneTransform(view: View, width: number): string {
 // 휠이 구르며 앞(왼쪽)으로 출발한다. 칸이 다시 펼쳐지지 않으므로 입력칸을 밀지 않는다.
 export function UploadScreen(props: {
   state: UploadState
-  /** 이름만 쓴다 — 시연은 고른 `File`을, `?api`는 업로드 결과 목록을 그대로 넘긴다 */
+  /** 이름만 쓴다 — 시연은 고른 `File`을, 실제 흐름(ApiFlow)은 업로드 결과 목록을 그대로 넘긴다 */
   files: { name: string }[]
   /** 열 수 없어 건너뛴 파일. 일부 실패를 전체 실패로 만들지 않는다(core-user-flow §23) */
   skipped: string[]

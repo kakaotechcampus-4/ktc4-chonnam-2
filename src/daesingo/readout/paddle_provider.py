@@ -17,7 +17,7 @@ readout은 보존만 한다(`contract-plate-overlay-readout.md` §「`frame_ref`
 ## 측정 근거
 
 필터 기준은 `experiments/ocr-baseline-2026-09-15` 실행에서 가져왔다. **목표치가 아니라
-그때 돌던 값**이고, 실측이 쌓이면 Technical Spec에서 확정한다.
+그때 돌던 값**이고, 실측이 쌓이면 Technical Spec에서 확정한다(readout Technical Spec은 아직 없다).
 """
 from __future__ import annotations
 
@@ -155,7 +155,9 @@ def _to_frame_boxes(boxes, origin, scale):
 
 
 class LocalVideoFrameSource:
-    """로컬 영상 파일을 직접 연다 — `recording` 연결 전까지 쓰는 경로.
+    """로컬 영상 파일을 직접 연다 — 독립 실험용 경로(예: `scripts/run_readout_real.py`).
+
+    운영 경로는 `RecordingFrameSource`를 쓴다.
 
     **`frame_ref`가 임시값이고 `read_frame()`으로 조회되지 않는다.**
     """

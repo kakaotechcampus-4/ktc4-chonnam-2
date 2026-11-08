@@ -17,9 +17,8 @@ import { useSubStack } from './subStack'
 // 시연용 흐름 — Figma 하단 작업 영역의 Main · Details · Failed 열(After 제외).
 // 화면은 사용자 행동(파일 선택·버튼)과 작업 상태 변화로만 넘어간다.
 // 진행 화면은 무엇이 실패하든 끝까지 흐르고, 결과는 마지막 화면에서 알린다.
-// API(case.get_view)가 아직 없어 업로드는 타이머로, 진행은 단계를
-// 하나씩 넘기는 CaseView를 만들어 재생해 흉내 낸다. API가 생기면 이 두 타이머
-// 자리를 업로드 응답과 get_view() 폴링으로 바꾼다.
+// 의도한 mock 시연이다(`?demo` · `?cases`). 업로드는 타이머로, 진행은 단계를 하나씩 넘기는
+// CaseView를 만들어 재생해 흉내 낸다. 업로드 응답과 CaseView 폴링을 쓰는 실제 흐름은 ApiFlow다.
 const UPLOAD_MS = 1500
 const STEP_MS = 1200
 const noop = () => {}
@@ -123,7 +122,8 @@ const VIDEO_NOT_GENERATED_RESULT: CaseView = {
   ],
 }
 // 발생 시각 확인 필요 — fixture의 시각 notice 그대로(actions: EDIT_EVENT_TIME · REVIEW_TIME).
-// 두 동작은 입력 화면과 command가 아직 없어 사용 불가로 보인다. 제출을 막지 않는 경고다.
+// 시연에서는 두 notice 동작을 연결하지 않아 사용 불가로 보인다. 제출을 막지 않는 경고다.
+// (실제 흐름(ApiFlow)은 EDIT_EVENT_TIME을 command로 보낸다. REVIEW_TIME은 command가 없다.)
 const TIME_REVIEW_RESULT: CaseView = {
   ...RESULT,
   notices: [fixtureNotice('evidence.time_needs_user_confirmation'), fixtureNotice('evidence.time_conflict_needs_notice')],
@@ -294,15 +294,16 @@ type Main =
   | { kind: 'flow'; run: Run; frame: number; startedAt: number }
   | { kind: 'done'; run: Run }
 type Sub = 'candidates' | 'plate' | 'plateEdit' | 'time' | 'details'
-// 시연에서 연결한 notice 동작. 나머지(시각 직접 입력·시각 확인하기·설명 고치기)는 입력 화면과 command가
-// 아직 없어(contract-case-command §32 「입력형 action은 다음 판본」) 사용 불가로 보인다.
+// 시연에서 연결한 notice 동작. 나머지(시각 직접 입력·시각 확인하기·설명 고치기)는 시연에서 연결하지 않아
+// 사용 불가로 보인다. 실제 흐름(ApiFlow)은 시각 직접 입력 · 설명 고치기를 command로 보낸다
+// (case-command 계약 §12 · §13). 시각 확인하기(REVIEW_TIME)는 command가 없다(§12-5).
 // 연결한 것도 실제 command(RUN_NOTICE_ACTION)를 보내지 않는다 — 시연용 재진행·화면 안 반영이다.
 const DEMO_ACTIONS = new Set<Action>(['RETRY_PLATE_READ', 'GENERATE_REPORT_VIDEO', 'RETRY_SEARCH', 'MANUAL_PLATE_INPUT'])
 const canRun = (a: Action) => DEMO_ACTIONS.has(a)
 
 // 사용자가 직접 입력한 번호판을 결과 CaseView에 얹는다.
-// 직접 입력을 case로 보내는 경로가 아직 계약에 없다(MANUAL_PLATE_INPUT, #212·#217).
-// 시연에서는 화면 안에서만 반영한다 — command가 생기면 PlateCheck onEdit 자리에서 보낸다.
+// 시연에서는 화면 안에서만 반영한다. 실제 흐름(ApiFlow)은 PlateCheck onEdit 자리에서
+// MANUAL_PLATE_INPUT command로 보낸다(#449).
 function withPlate(view: CaseView, plate: string | null): CaseView {
   if (!plate || !view.evidence) return view
   if (!view.package)
@@ -330,7 +331,7 @@ function withPlate(view: CaseView, plate: string | null): CaseView {
   }
 }
 
-// 직접 고친 발생 시각도 같은 방식으로 화면 안에서만 얹는다(?api에서는 EDIT_EVENT_TIME으로 보낸다).
+// 직접 고친 발생 시각도 같은 방식으로 화면 안에서만 얹는다(실제 흐름(ApiFlow)은 EDIT_EVENT_TIME으로 보낸다).
 function withTime(view: CaseView, time: string | null): CaseView {
   if (!time || !view.evidence) return view
   const evidence = {
@@ -443,7 +444,7 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
     start({ ...rerunFrom(PLATE, '새 후보 기준으로 신고자료를 다시 준비하고 있어요', AWAIT_RUN), view }, { caseRev: view.case_rev, candidateId })
   }
   // 신고 상황 응답 → 조립부터 이어서 한다. 결과는 그 후보 것만 쓴다(resultFor).
-  // API가 생기면 여기서 RECORD_SITUATION_RESPONSE { value } + expected_case_rev를 보낸다.
+  // 시연은 command를 보내지 않는다. 실제 흐름(ApiFlow)은 RECORD_SITUATION_RESPONSE { value }를 보낸다.
   const respond = (value: 'CONFIRMED' | 'USER_UNSURE') => {
     if (!done) return
     const candidateId = done.view.candidates.find((c) => c.selected)!.candidate_id

@@ -8,6 +8,8 @@
 
 **1. `apps/web`을 새 npm workspace로 만든다.** 루트 `package.json`의 `workspaces: ["apps/*"]`·`engines.node >=20`을 그대로 쓴다. 스택은 프로토타입과 동일하게 **React 19 · TypeScript 5.8 · Vite 6**이고, 라우터·상태관리 라이브러리를 추가하지 않는다. 1차 범위에 화면 간 URL 이동도 서버도 없다.
 
+> **2026-11-09 메모.** 지금은 실제 HTTP API와 연결한다(실제 흐름 `ApiFlow`, `apps/web/src/api/client.ts`). 라우터는 여전히 없고, `App.tsx`가 URL 진입(`?case` · `?sample` · `?demo` · `?cases` · `?dev`)만 고른다. 위 결정 본문은 당시 기록이다.
+
 **2. 프로토타입에서 가져오는 것 — 표현 레이어.**
 - `src/styles/tokens.css` · `global.css` (토큰 정본)
 - 표현 컴포넌트 `StatusBadge` · `KVRow` · `Panel` · `Button` · `SecLabel` · `Toast` · `AppBar` · `EvidenceFrame` · `SearchAxis` · `WorkList`
@@ -56,6 +58,8 @@
 | `at_provenance` 문구 매핑 | 값 공간 미등재 — PR #46 Q-3 답변에서 `at_provenance_label_key` 신설(`case-view/v1.4`)이 제안됐다. 확정 전까지 raw 값을 문구로 번역하지 않는다 |
 | 테스트 러너(Vitest 도입 여부) | 현재는 `tsc -b` 타입 검사와 로더의 등재값 검사(화면 상단 「스냅샷 N건 파싱 OK」)로 갈음한다. 스냅샷 테스트를 붙일 시점에 정한다 |
 | 모바일 반응형 | MVP 제외(§1-7 A1) |
+
+> **2026-11-09 메모.** 테스트는 지금 Vitest(`npm run test:web`)와 Playwright e2e(`npm run test:e2e`)를 쓴다(`apps/web/package.json`, `.github/workflows/web-tests.yml`).
 
 ## 첫 커밋 구조
 

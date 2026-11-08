@@ -1,11 +1,13 @@
 // `notices[].actions[]` → 발주 매핑.
 //
 // 계약 A절 §7의 「값→발주 매핑」 표를 그대로 옮긴다. web은 action 값을 해석하지
-// 않고 이 표만 따른다. 아직 발주를 보낼 경로(case worker)가 없지만, **무엇을
-// 보낼지는 계약이 이미 정해 뒀으므로** 여기까지는 지금 확정할 수 있다.
+// 않고 이 표만 따른다. 실제 전송은 실제 흐름(ApiFlow)이 HTTP command로 한다(`api/client.ts`).
+// 이 표는 「무엇을 발주하는가」만 적고, `?dev` 스냅샷 화면(CaseScreen)이 이 설명을 보여 준다.
 //
-// 7종 중 3종만 web이 새 JobRecord를 발주하고, 3종은 발주 없이 web이 사용자 입력을
-// 받는 동작이다. `EDIT_HINT`는 입력을 받아 command로 보내고, 발주는 case가 한다(#410).
+// 7종 중 3종만 새 JobRecord를 발주한다(`RUN_NOTICE_ACTION`). 3종은 새 job 발주 없이 web이 사용자
+// 입력을 받는 동작이다. 그중 `EDIT_EVENT_TIME` · `MANUAL_PLATE_INPUT`은 받은 값을 같은 이름의
+// case command로 보내고(#449, case-command 계약 §12-3), `REVIEW_TIME`은 command가 없다(같은 계약 §12-5).
+// `EDIT_HINT`는 입력을 받아 command로 보내고, 발주는 case가 한다(#410).
 // 이 구분을 코드에 박아 두지 않으면 나중에 「버튼 = 발주」로 뭉뚱그리게 된다.
 
 import type { Action } from './caseView'

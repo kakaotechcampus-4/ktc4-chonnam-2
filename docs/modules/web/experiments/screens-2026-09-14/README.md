@@ -1,7 +1,7 @@
 # web 화면 캡처 3장 — 2026-09-14
 
 > 대상: `apps/web` @ 화면 정리분 · 입력 `data/mock/case/*.json`(Mock Pack v5)
-> 재현: `npm run dev:web` → 상단 스냅샷 바에서 해당 항목 클릭
+> 재현: `npm run dev:web` → 상단 스냅샷 바(현재는 `/?dev`로 연다)에서 해당 항목 클릭
 > 「1차 완료 체크리스트」 Merge 전 셀프 체크 증빙 — web 몫.
 
 | 파일 | 스냅샷 | 보여주는 것 |

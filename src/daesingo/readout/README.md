@@ -25,12 +25,15 @@ read_overlay_time(request, provider=None, *, run_id=None)             -> (Readou
 - 두 번째 반환값이 `None`인 경우는 **완전 실패 하나뿐**이다. 그때도 `ReadoutRun`은 남는다.
 - `list_impls()`는 아직 없다.
 
-## 실제 OCR이 없는 부분
+## OCR provider
 
-판정(association 반영·consensus·abstain·overlay 4갈래·validation·run 조립)은 전부 실제 코드다. **프레임을 떠서 글자로 바꾸는 부분만 Stub이고, 교체 지점은 `providers.py` 하나다** — `OcrProvider`를 상속해 두 메서드를 채우고 `provider=`로 넘기면 `api.py`는 손대지 않는다. 현재 기본값 `FixtureOcrProvider`는 Mock Pack v5 fixture를 provider 출력으로 되읽는다.
+판정(association 반영·consensus·abstain·overlay 4갈래·validation·run 조립)은 `api.py`가 한다. 프레임을 떠서 글자로 바꾸는 부분은 provider가 맡고, `provider=`로 넘긴다.
+
+- 운영 OCR은 `paddle_provider.py`의 `PaddleOcrProvider`(PaddleOCR)다. `worker/readout_composition.py`와 `case/real_e2e.py`가 이것을 넘긴다.
+- `provider=`를 넘기지 않으면 `providers.py`의 `FixtureOcrProvider`가 기본값이다. 테스트용이고, Mock Pack v5 fixture(`data/mock/readout/`)를 provider 출력으로 되읽는다.
 
 ## 상태
 
-계약 타입(`contracts.py`) · 등재값(`registry.py`) · fixture 로더(`fixtures.py`) · 불변조건 18개(`invariants.py`) · 공개 함수 2개(`api.py`) · provider 경계(`providers.py`).
+계약 타입(`contracts.py`) · 등재값(`registry.py`) · fixture 로더(`fixtures.py`) · 불변조건 19개(R1~R19, `invariants.py`) · 공개 함수 2개(`api.py`) · provider 경계(`providers.py`) · PaddleOCR provider(`paddle_provider.py`).
 
 검증은 `python -m pytest tests/readout`. 폴더의 범위는 위 문서들이 정한다 — 여기에 규칙을 복제하지 않는다.

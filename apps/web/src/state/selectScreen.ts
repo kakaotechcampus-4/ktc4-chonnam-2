@@ -70,7 +70,7 @@ export function selectScreen(view: CaseView): Screen {
   }
 
   // 상황 응답 대기도 evidence=null이다. 진행 화면에 두면 끝나지 않으므로 notice로 가른다
-  // (#232). 응답 입력(맞아요/잘 모르겠어요)은 아직 없어 notice만 보인다.
+  // (#232). 실제 흐름(ApiFlow)은 이 화면에서 응답(맞아요/잘 모르겠어요)을 RECORD_SITUATION_RESPONSE로 보낸다.
   if (view.evidence === null && view.notices.some((n) => n.code === 'case.situation_response_pending')) {
     return { ...base, kind: 'AWAIT_RESPONSE', reason: 'evidence=null · case.situation_response_pending' }
   }
