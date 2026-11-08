@@ -17,6 +17,7 @@ REQUIRED_SCENARIOS = frozenset({
 
 # Stable acceptance identifiers, independent of Python test function names.
 REQUIRED_CHECKS = frozenset({
+    ("public_a1", "supported_funding"),
     *(("public_a1", scenario) for scenario in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery", "local_work", "stop_modes", "export_deferral")),
     ('exhaustion', 'cancellation'),
     ('exhaustion', 'port'),
@@ -144,6 +145,7 @@ REQUIRED_CHECKS = frozenset({
 # Each parameter is an independent acceptance obligation. Names come from
 # explicit pytest marks, never from function names or parsed node ID suffixes.
 REQUIRED_PARAMETERS = frozenset({
+    *(("public_a1", "supported_funding", mode) for mode in ("usage", "cancel_db", "cancel_signal", "restart")),
     *(("public_a1", "local_work", mode) for mode in ("repeat", "concurrent", "ip_limit")),
     *(("public_a1", "stop_modes", kind) for kind in ("REPORT_VIDEO_EXPORT", "FINE_VERIFY", "exhaustion_pause", "exhaustion_stop")),
     *(("public_a1", "export_deferral", mode) for mode in ("capacity", "repeat", "stop")),

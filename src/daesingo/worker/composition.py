@@ -35,6 +35,7 @@ from daesingo.common.public_runtime.repository import PublicStore
 from daesingo.common.public_runtime import schema as public_schema
 from daesingo.common.public_runtime.temporary import case_temp_scope, public_temp_root
 from daesingo.worker.public_reflection import PublicResultReflector, PublicExhaustionReceiver
+from daesingo.worker.bootstrap import require_supported_elice
 
 _CANCEL_TERMINAL_LATENCY = text("""SELECT
 TIMESTAMPDIFF(MICROSECOND, cancel_requested_at, NOW(6)) / 1000.0
@@ -70,7 +71,9 @@ def compose_worker(
             context.ownership.check()
             context.checkpoint()
             try:
-                public.reserve(conn, snapshot)
+                scoped = public.reserve(conn, snapshot)
+                if scoped and public.policy is not None and public.policy.funding_mode == "elice_supported":
+                    require_supported_elice(startup.modules, snapshot)
             except PublicDenied as error:
                 if error.code == "CANCELLED":
                     # The DB may see cancellation before the heartbeat does.

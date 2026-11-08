@@ -5,10 +5,10 @@ import os
 from pathlib import Path
 import stat
 import sys
-from typing import Annotated
+from typing import Annotated, Literal, Self
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
 from daesingo.common.storage._filesystem import ordinary, version
 from daesingo.common.usage.port import UsageError
@@ -45,6 +45,12 @@ class LocalWorkLimits(BaseModel):
     global_concurrent: Positive
 
 
+class SupportedCall(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", strict=True)
+    operation: Literal["HINT_EXTRACT", "SEARCH_COARSE", "SEARCH_FINE"]
+    provider_label: Annotated[str, Field(pattern=r"^elice:[^\s:]+$", max_length=191)]
+
+
 class PublicPolicy(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", strict=True, hide_input_in_errors=True)
     approval_ref: Annotated[str, Field(min_length=1, max_length=256)]
@@ -63,26 +69,40 @@ class PublicPolicy(BaseModel):
     case_repeats: Positive
     session_concurrent: Positive
     global_concurrent: Positive
-    case_budget_micros: Positive
-    daily_budget_micros: Positive
-    total_budget_micros: Positive
-    bounds: Annotated[tuple[Bound, ...], Field(min_length=1, max_length=64)]
+    funding_mode: Literal["krw", "elice_supported"] = "krw"
+    case_budget_micros: Positive | None = None
+    daily_budget_micros: Positive | None = None
+    total_budget_micros: Positive | None = None
+    bounds: Annotated[tuple[Bound, ...], Field(max_length=64)] = ()
+    support_ref: Annotated[str, Field(min_length=1, max_length=256)] | None = None
+    supported_calls: Annotated[tuple[SupportedCall, ...], Field(max_length=64)] = ()
     local_work: LocalWorkLimits | None = None
 
-    @field_validator("bounds", mode="before")
+    @field_validator("bounds", "supported_calls", mode="before")
     @classmethod
     def immutable_bounds(cls, value):
         if not isinstance(value, (list, tuple)):
             raise ValueError("bound list required")
         return tuple(value)
 
-    @field_validator("bounds")
+    @field_validator("bounds", "supported_calls")
     @classmethod
     def unique_bounds(cls, value):
         identities = {(b.operation, b.provider_label) for b in value}
         if len(identities) != len(value):
             raise ValueError("duplicate invocation bound")
         return value
+
+    @model_validator(mode="after")
+    def funding_contract(self) -> Self:
+        budgets = (self.case_budget_micros, self.daily_budget_micros, self.total_budget_micros)
+        if self.funding_mode == "krw":
+            if any(value is None for value in budgets) or not self.bounds or self.support_ref is not None or self.supported_calls:
+                raise ValueError("KRW ceilings and invocation bounds required")
+        elif (any(value is not None for value in budgets) or self.bounds or not self.supported_calls
+              or self.support_ref is None or not self.support_ref.strip()):
+            raise ValueError("supported scope required; monetary ceilings do not apply")
+        return self
 
     @field_validator("session_key", mode="before")
     @classmethod
@@ -116,6 +136,10 @@ class PublicPolicy(BaseModel):
 
     def fingerprint(self):
         data = self.model_dump(mode="json")
+        if self.funding_mode == "krw":
+            # Preserve the already-installed KRW policy identity across upgrade.
+            for key in ("funding_mode", "support_ref", "supported_calls"):
+                del data[key]
         data["session_key"] = self.session_key.get_secret_value()
         return hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).digest()
 
@@ -124,6 +148,16 @@ class PublicPolicy(BaseModel):
         if len(matches) != 1:
             raise PublicDenied("UNPRICED")
         return matches[0].reserve_micros
+
+    def require_supported(self, operation, provider):
+        if not any((b.operation, b.provider_label) == (operation, provider) for b in self.supported_calls):
+            raise PublicDenied("UNSUPPORTED")
+
+    def krw_limits(self) -> tuple[int, int, int]:
+        case, daily, total = self.case_budget_micros, self.daily_budget_micros, self.total_budget_micros
+        if self.funding_mode != "krw" or case is None or daily is None or total is None:
+            raise PublicDenied()
+        return case, daily, total
 
 
 def load_policy(path, *, revision):

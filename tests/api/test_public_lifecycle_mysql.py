@@ -48,7 +48,7 @@ def test_owner_can_retry_completed_delete_but_cannot_read_tombstone(public_api):
         assert conn.execute(sa.select(t.cases.c.state).where(t.cases.c.case_id == cid)).scalar_one() == "DELETED"
 
 
-def worker(engine, tmp_path, values, handler, *, identity):
+def worker(engine, tmp_path, values, handler, *, identity, modules=None):
     path = tmp_path / (identity + ".policy.json")
     path.write_text(json.dumps(values), encoding="utf-8")
     path.chmod(0o600)
@@ -60,7 +60,7 @@ def worker(engine, tmp_path, values, handler, *, identity):
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(media), "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(temp),
         "DAESINGO_RUNTIME_PUBLIC_POLICY_FILE": str(path)})
     stop = Event()
-    loop = compose_worker(engine=engine, startup=Startup(config, MappingProxyType({}),
+    loop = compose_worker(engine=engine, startup=Startup(config, MappingProxyType(modules or {}),
         configure_logging("worker", stream=StringIO()), "1" * 40), stop=stop,
         worker_id=identity, registry=KindRegistry({"TEST": handler}))
     actual_claim = loop.claim
@@ -80,9 +80,21 @@ def queue(engine, store, case_id):
 
 
 @pytest.mark.mysql_check("public_a1", "lifecycle")
-@pytest.mark.parametrize("signal_known", [False, True], ids=["db-before-heartbeat", "signal-already-known"])
-def test_cancel_at_paid_boundary_is_cancelled_without_reservation_or_http(public_db, tmp_path, signal_known):
+@pytest.mark.parametrize("funding_mode,signal_known", [
+    pytest.param("krw", False, id="krw-db-before-heartbeat"),
+    pytest.param("krw", True, id="krw-signal-already-known"),
+    pytest.param("elice_supported", False, id="elice_supported-db-before-heartbeat",
+        marks=pytest.mark.mysql_check("public_a1", "supported_funding", parameter="cancel_db")),
+    pytest.param("elice_supported", True, id="elice_supported-signal-already-known",
+        marks=pytest.mark.mysql_check("public_a1", "supported_funding", parameter="cancel_signal")),
+])
+def test_cancel_at_paid_boundary_is_cancelled_without_reservation_or_http(public_db, tmp_path, signal_known, funding_mode):
     engine, store = public_db
+    values = policy_values(tmp_path)
+    if funding_mode == "elice_supported":
+        from a1_support import supported_policy_values
+        values = supported_policy_values(tmp_path)
+        store = PublicStore(PublicPolicy.model_validate(values), require_public=True)
     bind(engine, store)
     execution = queue(engine, store, "case_1")
     calls = []
@@ -95,12 +107,59 @@ def test_cancel_at_paid_boundary_is_cancelled_without_reservation_or_http(public
                                  run_ref=None, run_ref_reason="DIRECT_NO_RUN")
         calls.append("HTTP")
         return HandlerResult()
-    worker(engine, tmp_path, policy_values(tmp_path), handler, identity="cancel-worker").run()
+    worker(engine, tmp_path, values, handler, identity="cancel-worker").run()
     with engine.connect() as conn:
         row = conn.execute(sa.select(job_execution).where(job_execution.c.execution_id == execution)).mappings().one()
         assert row["status"] == "CANCELLED", row["failure_kind"]
         assert conn.execute(sa.select(sa.func.count()).select_from(t.reservations)).scalar_one() == 0
     assert calls == []
+
+
+@pytest.mark.mysql_check("public_a1", "supported_funding", parameter="restart")
+def test_supported_failed_observation_and_usage_survive_cancellation_and_restart(public_db, tmp_path):
+    from a1_support import supported_policy_values
+    from pydantic import SecretStr
+    from daesingo.search.config import GeminiSearchConfig
+    from daesingo.worker.bootstrap import SearchSettings
+    engine, _ = public_db
+    values = supported_policy_values(tmp_path)
+    store = PublicStore(PublicPolicy.model_validate(values), require_public=True)
+    modules = {"search": SearchSettings(SecretStr("TEST_ONLY"), GeminiSearchConfig(model="test-model"))}
+    bind(engine, store)
+    first = queue(engine, store, "case_1")
+    calls = []
+    def called(context):
+        identity = context.usage_sink.begin("SEARCH_COARSE", "elice:test-model", PRICING,
+            run_ref=None, run_ref_reason="DIRECT_NO_RUN")
+        calls.append(identity)
+        with engine.begin() as conn:
+            request_cancel(conn, [context.job_id])
+        context.cancel_signal.request()
+        context.usage_sink.finish(identity, token_usage={"input_tokens": 12, "output_tokens": 3, "total_tokens": 15},
+            processed_duration_sec=None, latency_ms=1, pricing_context=PRICING,
+            cost={"currency": "KRW", "amount": None}, outcome="FAILED", failure_kind="TEST_ONLY_RESPONSE")
+        context.checkpoint()
+        return HandlerResult()
+    worker(engine, tmp_path, values, called, identity="supported-before", modules=modules).run()
+    second = queue(engine, store, "case_2")
+    def after_restart(context):
+        identity = context.usage_sink.begin("SEARCH_COARSE", "elice:test-model", PRICING,
+            run_ref=None, run_ref_reason="DIRECT_NO_RUN")
+        calls.append(identity)
+        context.usage_sink.finish(identity, token_usage=None, processed_duration_sec=None, latency_ms=1,
+            pricing_context=PRICING, cost={"currency": "KRW", "amount": None}, outcome="SUCCEEDED")
+        return HandlerResult()
+    worker(engine, tmp_path, values, after_restart, identity="supported-after", modules=modules).run()
+    with engine.connect() as conn:
+        rows = {r.execution_id: r for r in conn.execute(sa.select(job_execution))}
+        assert rows[first].status == "CANCELLED" and rows[second].status == "SUCCEEDED"
+        assert conn.execute(sa.select(sa.func.count()).select_from(t.reservations)).scalar_one() == 0
+        usage = conn.execute(sa.select(usage_record)).mappings().all()
+        assert len(usage) == 2 and all(r["amount"] is None for r in usage)
+        assert {r["input_tokens"] for r in usage} == {12, None}
+        from daesingo.common.usage.schema import usage_inflight
+        assert set(conn.execute(sa.select(usage_inflight.c.outcome)).scalars()) == {"FAILED", "SUCCEEDED"}
+    assert len(set(calls)) == 2
 
 
 @pytest.mark.mysql_check("public_a1", "lifecycle")

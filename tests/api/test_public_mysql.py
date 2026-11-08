@@ -144,9 +144,16 @@ def test_terminal_recovery_does_not_recycle_an_unobserved_http_slot(public_db, t
 
 
 @pytest.mark.mysql_check("public_a1", "budget_worker")
-def test_real_worker_default_gate_reserves_before_each_fake_http_and_keeps_observation(public_db, tmp_path):
+@pytest.mark.parametrize("funding_mode", ["krw", pytest.param("elice_supported",
+    marks=pytest.mark.mysql_check("public_a1", "supported_funding", parameter="usage"))])
+def test_real_worker_default_gate_reserves_before_each_fake_http_and_keeps_observation(public_db, tmp_path, funding_mode):
     engine, prior = public_db
     values = policy_values(tmp_path, global_concurrent=2, session_concurrent=2, total_budget_micros=10)
+    supported = funding_mode == "elice_supported"
+    if supported:
+        from a1_support import supported_policy_values
+        values = supported_policy_values(tmp_path, global_concurrent=2, session_concurrent=2)
+    provider = "elice:test-model" if supported else "fake:test"
     store = PublicStore(PublicPolicy.model_validate(values), require_public=True, worker_id="worker")
     bind(engine, store)
     with engine.begin() as conn:
@@ -167,21 +174,27 @@ def test_real_worker_default_gate_reserves_before_each_fake_http_and_keeps_obser
         assert temporary_root.get().parent == media / "public-temp"
         barrier.wait(timeout=5)
         pricing = {"pricing_id": "TEST_ONLY", "unit": "fixed"}
-        usage = context.usage_sink.begin("SEARCH_COARSE", "fake:test", pricing)
+        usage = context.usage_sink.begin("SEARCH_COARSE", provider, pricing)
         calls.append(usage)  # Represents HTTP only after the acknowledged STARTED+reserve.
         context.usage_sink.finish(usage, token_usage=None, processed_duration_sec=None, latency_ms=1,
-            pricing_context=pricing, cost={"currency": "KRW", "amount": "0.00001"}, outcome="SUCCEEDED")
+            pricing_context=pricing, cost={"currency": "KRW", "amount": None if supported else "0.00001"}, outcome="SUCCEEDED")
         return HandlerResult()
     output = StringIO()
     workers = []
     logger = configure_logging("worker", stream=output)
+    modules = {}
+    if supported:
+        from pydantic import SecretStr
+        from daesingo.search.config import GeminiSearchConfig
+        from daesingo.worker.bootstrap import SearchSettings
+        modules = {"search": SearchSettings(SecretStr("TEST_ONLY"), GeminiSearchConfig(model="test-model"))}
     for i in range(2):
         slot = temp / str(i)
         slot.mkdir()
         # Two actual Worker instances share DB/public media. Their private tool
         # roots differ: Windows CRT read locks serialize the same temp root.
         workers.append(compose_worker(engine=engine, startup=Startup(replace(config, temp_root=slot),
-            MappingProxyType({}), logger, "1" * 40), registry=KindRegistry({"TEST": handler}),
+            MappingProxyType(modules), logger, "1" * 40), registry=KindRegistry({"TEST": handler}),
             stop=Event(), worker_id=f"worker-{i}"))
     def run(item):
         i, claim = item
@@ -201,19 +214,24 @@ def test_real_worker_default_gate_reserves_before_each_fake_http_and_keeps_obser
             print("SANITIZED_WORKER_ERRORS", [(json.loads(line).get("event"), json.loads(line).get("error_type"))
                                               for line in output.getvalue().splitlines()])
             raise
-    assert sorted(results) == ["ACCEPTED", "BUDGET"] and len(calls) == 1
+    assert sorted(results) == (["ACCEPTED", "ACCEPTED"] if supported else ["ACCEPTED", "BUDGET"])
+    assert len(calls) == (2 if supported else 1)
     with engine.begin() as conn:
-        assert conn.execute(sa.select(sa.func.sum(t.reservations.c.amount_micros))).scalar_one() == 10
+        if supported:
+            assert conn.execute(sa.select(sa.func.count()).select_from(t.reservations)).scalar_one() == 0
+            assert conn.exec_driver_sql("SELECT COUNT(*) FROM usage_inflight WHERE amount IS NULL").scalar_one() == 2
+        else:
+            assert conn.execute(sa.select(sa.func.sum(t.reservations.c.amount_micros))).scalar_one() == 10
         store.set_open(conn, False)
     # Emergency stop blocks further paid attempts even for an existing claim.
     context = claimed[0]
     snapshot = dict(usage_id="late", execution_ref=context.execution_id, case_id=context.case_id,
-                    operation="SEARCH_COARSE", provider_label="fake:test")
+                    operation="SEARCH_COARSE", provider_label=provider)
     with engine.begin() as conn, pytest.raises(PublicDenied) as stopped:
         store.reserve(conn, snapshot)
     assert stopped.value.code == "JOBS_STOPPED"
     with engine.connect() as conn:
-        assert conn.exec_driver_sql("SELECT COUNT(*) FROM usage_inflight WHERE state='OBSERVED'").scalar_one() == 1
+        assert conn.exec_driver_sql("SELECT COUNT(*) FROM usage_inflight WHERE state='OBSERVED'").scalar_one() == (2 if supported else 1)
 
 
 @pytest.fixture
