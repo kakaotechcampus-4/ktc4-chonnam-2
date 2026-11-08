@@ -92,8 +92,8 @@ Caddy의 개방 전 백업과 전환 영수증은 `/opt/daesingo/a1-public-go-20
 실제 승인·적용값은 위 표이며 이번 공개에서 Web bundle을 바꾸지 않았다.
 candidate video preview는 비활성 상태다. 실제 전체 DB/media 복원, overlay OCR 실제 재시도,
 26분/대형 실패 재현·전체 capacity·메모리 peak 검증은 이번 공개 확인에서 **NOT_RUN**이다.
-세션 격리·임의 업로드 거부·긴급 중단·실제 다운로드/재생·삭제 검수와 #452 실패 안내는 직전 동일 SHA의 증거를 재사용했고,
-이를 새 분석 호출로 반복하지 않았다.
+세션 격리·임의 업로드 거부·긴급 중단·실제 다운로드/재생·삭제 검수는 직전 동일 SHA의 증거를 재사용했다.
+#452의 범위 초과·미지원 입력 실패 안내는 코드와 CI에서 확인했다. 배포본의 실제 API 응답·화면 안내·재시도 버튼 검수는 `NOT_RUN`이다. [#452 종료 기록](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)
 
 로컬 상세 증거: `.codex-scratch/a1-public-go-20261109/PUBLIC_GO_RESULT.json`,
 `browser-entry-proof.json`, `open2-result.private.json`, `post-open-result.private.json`.
