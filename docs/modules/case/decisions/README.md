@@ -4,6 +4,8 @@
 
 ## 현재 결정
 
+괄호 안 번호는 그 결정이 나온 출처다. `A-1` · `C-4`는 운영 결정 항목(`docs/management/cross-cutting-decisions.md`), `P3-1` · `P1-10`은 Mock 리뷰 항목(`docs/mock/05_mock_deep_review_report.md`), `W7 8순위 8-x` · `6.6순위`는 7주차 설계 고도화 목록의 순위 · 하위 항목(`../design-refinement-w7-baseline.md`, `8-6 2단계`는 8-6 CaseStore MySQL 작업의 2단계), `RT-xx`는 Runtime 구현 Task(`docs/runtime/runtime-implementation-plan.md` §6), `#숫자`는 GitHub 이슈 · PR이다.
+
 - `timeout-fallback.md — timeout 담당·결정 시점 (A-1)`
 - `correction-log-reuse.md — correction 로그 재사용 전제·익명화 3줄 (C-4)`
 - `budget-krw-normalization.md — 예산(KRW) vs 비용(USD) 통화 정규화, Mock 기본값 (P3-1, 이슈 #19)`

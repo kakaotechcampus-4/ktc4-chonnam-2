@@ -1,5 +1,7 @@
 # running_jobs case 계산 (8-11) Implementation Plan
 
+> **상태(2026-11-08): 완료된 구현 계획 — 기록용.** PR #284(2026-10-08)로 구현됐다. 아래 본문은 당시 계획 그대로다. 그 뒤 정산 사유가 5종(`EXHAUSTED` 추가)이 됐고, `job_executions` 인자는 JobExecution 읽기 포트로 바뀌었으며(`decisions/jobexecution-read-port.md`), label_key 표에 `HINT_EXTRACT` · `INCIDENT_CLIP_BUILD` · `CANDIDATE_VIDEO_PREVIEW`가 더해졌다. 지금 동작은 `decisions/running-jobs-derivation.md`와 `src/daesingo/case/view.py` `derive_running_jobs()`를 본다. `8-11`은 `design-refinement-w7-baseline.md` §1 「8순위」 표의 행 번호다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `CaseView.running_jobs[]`를 호출자가 넘기지 않고 case가 JobRecord + 정산 기록으로 직접 계산한다. command 응답(HTTP 202)의 `case_view`에는 이번 command가 append한 job이 `PENDING`으로 들어간다.

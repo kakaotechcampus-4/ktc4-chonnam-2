@@ -1,4 +1,4 @@
-"""Worker가 끝낸 job 결과를 case에 반영하는 진입점(Worker의 T2 단계 · 고도화 8-8,
+"""Worker가 끝낸 job 결과를 case에 반영하는 진입점(Worker의 T2 단계 · `design-refinement-w7-baseline.md` 8-8,
 `docs/modules/case/decisions/result-reflection.md`).
 
 Runtime Worker가 terminal execution 하나를 넘기면(Tech Spec §12.2) 호출자 transaction 안에서 case 행을 먼저 잠그고,
@@ -9,7 +9,7 @@ Runtime Worker가 terminal execution 하나를 넘기면(Tech Spec §12.2) 호�
 
 - Runtime 타입(`ResultReflector` · `ReflectionInput`). case는 자기 모양(`ExecutionOutcome` · `ReflectionOutcome`)만 두고
   composition root가 옮긴다 — read port(`store.ExecutionReader`)와 같은 경계다.
-- 결과 내용의 저장 위치. `produced`는 참조뿐이라 내용은 주입한 `ProducedReader`가 준다 — 어디서 읽는지는 8-6 2단계.
+- 결과 내용의 저장 위치. `produced`는 참조뿐이라 내용은 주입한 `ProducedReader`가 준다 — 저장 위치는 `decisions/observation-storage.md`이고 reader는 composition root가 꽂는다.
 """
 from __future__ import annotations
 
@@ -144,7 +144,7 @@ def _apply_coarse_search(case: CaseAggregate, outcome: ExecutionOutcome, *, stor
     frame_refs = coarse_frame_refs(content)
     case.receive_candidates(candidates_from_events(content["candidate_events"], frame_refs=frame_refs),
                             job_id=outcome.job_id)
-    # 가장 유력한 후보를 자동으로 고르고 첫 Fine을 발주한다(W12:C2, #168 결정 1). rank=1이 없거나 stale이면 고르지
+    # 가장 유력한 후보를 자동으로 고르고 첫 Fine을 발주한다(#168 결정 1 — 최근 탐색 Run의 rank=1 자동 선택). rank=1이 없거나 stale이면 고르지
     # 않고 CANDIDATE_REVIEW에 머문다(`select_top_ranked`).
     if case.select_top_ranked() is not None:
         observation.issue_fine_for_selected(case)
@@ -186,7 +186,8 @@ def _apply_fine_verify(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
 
 
 def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> CaseAggregate:
-    # clip 실패는 정산만 한다 — 다시 준비는 case가 새 job_id로 발주한다(§6, notice · action은 후속).
+    # clip 실패는 정산만 한다 — 다시 준비는 case가 새 job_id로 발주한다(`incident-clip-observation-input.md` §6).
+    # 실패 notice(`recording.incident_clip_build_failed`)는 view가 붙이고 action은 없다.
     case = _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget, admit_auto_exports=admit_auto_exports)
     if outcome.status == "SUCCEEDED":
         content = reader(store.conn, outcome.kind, outcome.produced)
@@ -203,7 +204,7 @@ def _apply_incident_clip_build(case: CaseAggregate, outcome: ExecutionOutcome, *
 def _apply_export(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> CaseAggregate:
     # export가 만든 파생 asset은 recording이 clip lineage로 등록해 CaseView 조립 때 case asset 목록에서 고른다
     # (`real_e2e.select_case_assets`) — 관찰처럼 정산하고 READY gate만 다시 본다. 실패 notice는 view가 실행 상태로
-    # 계산하고(`exports.export_notices`), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(같은 문서 [R-2]).
+    # 계산하고(`exports.export_notices`), 재시도 버튼은 kind가 `running_jobs`에서 빠지면 열린다(#351 [R-2]).
     return _apply_observation(case, outcome, store=store, reader=reader, timelines=timelines, budget=budget, admit_auto_exports=admit_auto_exports)
 
 

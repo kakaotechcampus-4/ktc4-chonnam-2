@@ -1,6 +1,7 @@
 # JobExecution read port 연결 — `CaseStore`에 주입하고 case가 조회한다
 
 > **상태: 결정 · 구현** · 결정일 2026-10-11 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-10(`../design-refinement-w7-baseline.md`), #245 D-6 · #248 Q-1, Runtime RT-03 read port(`src/daesingo/common/jobs/read_port.py`), RT-08(#295) · RT-09(#296)
+> **용어.** `8-10` 등 = 7주차 설계 고도화 목록(`../design-refinement-w7-baseline.md`) 항목 번호. `RT-03` · `RT-08` · `RT-09` = Runtime 구현 Task(`docs/runtime/runtime-implementation-plan.md` §6). `A§10-6` = CaseView 계약(`docs/architecture/contracts/contract-job-record-case-view.md`) A절 §10-6.
 > case 진입 함수의 인자 모양과 CaseView 투영 방식이라 case 단독 결정 범위다. read port의 모양 · transaction 참여 방식은 Runtime 소유(Tech Spec §12)이고, 대표 execution 선택 규칙은 CaseView 계약 A§10-6 · §10-7이 소유한다. 이 문서는 case가 그 port를 어떻게 받아 쓰는지만 둔다.
 
 ## 배경
@@ -22,6 +23,7 @@ Runtime read port `read_executions(conn, job_ids)`는 RT-03으로 머지됐다. 
 ## 알려진 한계
 
 - **「가장 나중 `FINE_VERIFY` job」은 후보에 묶여 있지 않다.** A→B→A처럼 관찰을 재사용해 새 Fine을 발주하지 않으면(`reselect-observation-reuse.md`) 대표가 B의 Fine이다. 지금은 real 경로가 `FINE_VERIFY`를 발주하지 않고(데모만), notice가 `evidence=null`일 때만 붙어 드러나지 않는다. Fine을 Worker로 발주하는 배선(6.6순위 조건 2 · 8-9)에서 후보 context로 거른다.
+  - (2026-11-08 현재: real 경로도 선택 후보에 `FINE_VERIFY`를 발주한다 — `observation.issue_fine_for_selected()`. `visual_verify_status`는 여전히 후보와 상관없이 가장 나중 `FINE_VERIFY` job으로 고른다 — `service.build_view_from_adapter`.)
 - in-memory 경로의 `MockFixtureAdapter.get_job_executions()`는 fixture 대조 테스트용으로 남는다. 진입 함수는 이것을 읽지 않는다.
 
 ## 고르지 않은 안
@@ -41,5 +43,5 @@ Runtime read port `read_executions(conn, job_ids)`는 RT-03으로 머지됐다. 
 
 ## 남은 것
 
-- RT-08(b)가 `CaseStore(executions=read_executions)`로 꽂는다(#295).
+- RT-08(b)가 `CaseStore(executions=read_executions)`로 꽂는다(#295). (2026-11-08 현재: 꽂혀 있다 — `src/daesingo/api/composition.py` · `src/daesingo/worker/case_composition.py`.)
 - `usage_refs`는 RT-07 전까지 `[]`이다 — case는 쓰지 않는다.

@@ -38,5 +38,5 @@
 
 ## 5. 다음 단계
 
-- `docs/design-refinement`의 설계 고도화 문서에서는 이 문서를 참조만 하고 내용을 복제하지 않는다.
+- `docs/design-refinement` 브랜치의 설계 고도화 문서(`docs/modules/case/design-refinement-w7-baseline.md`)에서는 이 문서를 참조만 하고 내용을 복제하지 않는다.
 - 트리거가 실제로 발생하면 이 문서를 갱신하거나(재검토 후 유지 결정이면) 새 결정 문서로 대체한다(도입 결정이면).

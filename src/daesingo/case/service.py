@@ -61,7 +61,7 @@ def receive_search_candidates(case: CaseAggregate, adapter: ModuleAdapter) -> li
     """
     raw_candidates = adapter.get_candidate_events()
     if str(adapter.get_candidate_search_outcome()) == "FAILED":
-        # 실패 Run(후보 0개)은 투영 대상을 바꾸지 않는다 — 계약 §7 `RESUME_SEARCH` 행.
+        # 실패 Run(후보 0개)은 투영 대상을 바꾸지 않는다 — CaseView 계약 B절 §7 `RESUME_SEARCH` 행.
         case.record_candidate_search_failure()
         return []
     candidates = candidates_from_events(raw_candidates)
@@ -105,7 +105,7 @@ def receive_hint_extraction(case: CaseAggregate, result: dict[str, Any]) -> None
     `OK`면 `*_hint` 4개를 `hints` 4개 키로 옮긴다(일부만 있어도 된다). 빈 문자열은 단서가 아니라 `None`
     으로 둔다. `ABSTAINED`(모델이 전부 보류) · `FAILED`(호출 · 파싱 실패)면 결과에 값이 있어도 쓰지 않고
     4개 모두 `None` — 값을 지어내지 않고 빈 단서로 탐색을 이어 간다. 그 밖의 상태는 결과 모양이 바뀐
-    것이라 `ValueError`로 멈춘다. 결과 모양은 #210 Search 의견을 가정했고 Search PR에서 맞춘다. 매핑은 `analysis_start.hints_from_result()`.
+    것이라 `ValueError`로 멈춘다. 결과 모양은 search `IntentHintResult`(`search/intent.py`)다. 매핑은 `analysis_start.hints_from_result()`.
 
     `AnalysisScope` · `COARSE_SEARCH` 발주는 여기서 하지 않는다 — hints만 반영한다. 반영 뒤 첫 탐색까지
     발주하는 경로는 `analysis_start.reflect_hint_extraction()`이다(`InitialSearchBudget` · `fingerprint()`).
@@ -133,7 +133,7 @@ class AdapterSnapshot:
     # 선택된 후보 Fine 결과의 소비 판정 — 음성 결과 notice(#168 [A])의 원천.
     visual_evidence_decision: str | None = None
     # `evidence.plate_abstained`(#172 D-3)의 발동 근거 — CaseView 값만으로는 번호판 보류(1·2)와
-    # 읽지 못함(1·3)이 같게 보인다. notice 판단에만 쓰고 CaseView에 싣지 않는다.
+    # 읽지 못함(1·3)이 같게 보인다(숫자는 #172의 번호판 상황 번호 — `derive_notices()` 참고). notice 판단에만 쓰고 CaseView에 싣지 않는다.
     evidence_needs: list[dict[str, Any]] = field(default_factory=list)
     # 상황 응답 대기 중 evidence가 계산한 상황 독립 값 — `evidence` 부분 투영(`record_id=null`, #239)의 원천.
     independent_facts: dict[str, Any] | None = None
@@ -191,7 +191,7 @@ def mark_ready_if_package_ready(case: CaseAggregate, adapter: ModuleAdapter | No
     if snapshot.report_package is None or final.get("overall") not in _PACKAGE_READY_READINESS:
         return False
     # 현재 선택 context의 결과일 때만 — CaseView가 evidence를 거르는 기준(#191)과 같다. 다르면 stage는
-    # READY인데 CaseView의 evidence·package가 null이 된다. 결과가 늦게 도착하는 경로(W7 6.6순위)에서
+    # READY인데 CaseView의 evidence·package가 null이 된다. 결과가 늦게 도착하는 경로(재선택 뒤 이전 후보 결과, `design-refinement-w7-baseline.md` 6.6순위)에서
     # 이전 선택의 Package가 올 수 있다.
     selected = next((c for c in case.candidates if c.selected), None)
     if snapshot.evidence_record is None or not _belongs_to_current_selection(case, selected, snapshot.evidence_record):
@@ -214,7 +214,7 @@ def build_view_from_adapter(
 
     `executions`는 이 case job들의 JobExecution(`CaseStore.read_executions()` 결과)이다. `running_jobs`는 case가
     정산 기록과 이것으로 계산하고(`view.derive_running_jobs`), Fine 실행 상태(`visual_verify_status`)는 가장 나중
-    `FINE_VERIFY` job의 대표 execution으로 고른다(`view.representative_execution_status`, 8-10). `notices`는
+    `FINE_VERIFY` job의 대표 execution으로 고른다(`view.representative_execution_status`, `decisions/jobexecution-read-port.md`). `notices`는
     adapter가 아니라 호출자가 직접 안다(모듈 docstring 「여기 없는 것」과 동일한 이유).
 
     예외는 `derive_notices()` 하나 — 조립된 `CaseView` 값(과 adapter의 Fine 판정)만으로 발동
@@ -326,7 +326,7 @@ NO_CANDIDATES_NOTICE: dict[str, Any] = {
 }
 
 
-# 음성 결과(#168 [A] 후속, @uminshin 요청). 계약 B절 `notices[].code` 등재(2026-09-29). 접두어는
+# 음성 결과(#168 [A] 후속 요청). 계약 B절 `notices[].code` 등재(2026-09-29). 접두어는
 # 판정(`NOT_ASSEMBLED`)을 만든 evidence(`disposition.py`)를 따른다. 「다른 후보 보기」는 결과 화면 1차 명령이라
 # 싣지 않는다. 「설명 고쳐 다시 찾기」는 `EDIT_HINT{description}` command다(#410, PM 승인 2026-10-27).
 VISUAL_EVENT_NOT_OBSERVED_NOTICE: dict[str, Any] = {
@@ -469,7 +469,7 @@ OVERLAY_REASON_NOTICES: dict[str, dict[str, Any]] = {
 
 
 def _overlay_notice(view: dict[str, Any], overlay_time_readouts: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """현재 선택 후보의 가장 나중 overlay 판독(A§10-7 — 재판독 뒤에는 이전 판독의 notice를 남기지 않는다)의
+    """현재 선택 후보의 가장 나중 overlay 판독(JobRecord 계약 A절 §10-7 — 재판독 뒤에는 이전 판독의 notice를 남기지 않는다)의
     `reason.code`에 대응하는 notice. 매핑에 없는 reason은 지어내지 않는다."""
     selected = next((c["candidate_id"] for c in view.get("candidates", []) if c["selected"]), None)
     latest = next((r for r in reversed(overlay_time_readouts) if r.get("candidate_id") == selected), None)
@@ -512,7 +512,7 @@ def derive_notices(
       같으므로 action이 없다.
     - `recording.analysis_range_too_long` — 같은 조건에서 그 실패가 분석 범위 상한 초과일 때(`analysis_range_too_long`, #452).
       `search.candidate_search_failed` 대신 붙는다. 다시 찾아도 같으므로 action이 없다.
-    - `case.analysis_stopped` — `stage=SEARCHING`이고 진행 상태 `coarse_search`가 `PARTIAL`일 때(사용자 중단, 8-9).
+    - `case.analysis_stopped` — `stage=SEARCHING`이고 진행 상태 `coarse_search`가 `PARTIAL`일 때(사용자 중단, `decisions/stop-analysis.md`).
       「이어서 찾기」(`RETRY_SEARCH`)는 다시 낼 `COARSE_SEARCH` 발주 근거(`search_retry_basis`)가 있을 때만 싣는다.
     - 모든 notice 공통: `running_jobs`에 탐색 job(`HINT_EXTRACT` · `COARSE_SEARCH`)이 있으면 `RETRY_SEARCH`를 빼고 싣는다(#426).
     - `case.analysis_timed_out` — 같은 조건에서 가장 나중 탐색 job이 case 대기 timeout으로 끝났을 때(`analysis_timed_out`,
@@ -539,14 +539,15 @@ def derive_notices(
       판정(`visual_evidence_decision`)이 `NOT_ASSEMBLED`일 때(#168 [A]). 음성 결과는 evidence가
       없어 CaseView 값만으로는 조립 전과 구분되지 않으므로 이 판정만 따로 받는다.
     - `search.visual_verify_failed` — evidence가 없고, Fine의 대표 실행 상태(`visual_verify_status`, read port
-      조회 결과에서 `build_view_from_adapter()`가 고름)가 terminal 실패(`FAILED` · 재시도가 끝난 `STALE`)일 때(8-14). 진행 상태에
+      조회 결과에서 `build_view_from_adapter()`가 고름)가 terminal 실패(`FAILED` · 재시도가 끝난 `STALE`)일 때(`design-refinement-w7-baseline.md` 8-14). 진행 상태에
       Fine step이 없어 CaseView 값만으로는 조립 전과 구분되지 않는다.
     - `recording.incident_clip_build_failed` — 현재 선택 후보의 가장 나중 IncidentClip 준비가 `FAILED`로 끝났을 때
       (`clip_build_failed`, aggregate 판정 `observation.selected_clip_failed`, #297 후속). action은 없다.
     - `evidence.plate_abstained` — 번호판 값이 없고, `evidence_needs` 중 현재 EvidenceRecord를
       basis로 한 Needs에 `PLATE_REREAD`가 있을 때(#172 D-3: 일부 판독 / `NEEDS_REVIEW`, 1·2).
       CaseView 값만으로는 읽지 못함(1·3)·실행 실패(4a)와 같아 보여서 이것만 CaseView 밖의 입력을
-      본다. `evidence_needs`를 넘기지 않으면 붙이지 않는다.
+      본다. `evidence_needs`를 넘기지 않으면 붙이지 않는다. 괄호 숫자는 #172의 번호판 상황
+      번호다(1 문자 판독 실패 · 2 일부 판독 · 3 번호판 안 보임 · 4 판독 실행 실패).
     - `evidence.event_time_missing` — evidence가 조립됐고(`record_id` non-null) `event_time_display.value`가
       null일 때(#449). 발생시각이 없으면 Package가 나가지 않으므로 blocking이고, 출구는 `EDIT_EVENT_TIME`이다.
       사용자가 시각을 입력하면 값이 생겨 사라진다.
@@ -687,10 +688,9 @@ def get_view(
 
     `store`를 명시적으로 받는다 — 프로세스 전체가 공유하는 숨은 전역 상태를 두지
     않는다. 여러 요청에 걸쳐 같은 store를 재사용하는 것(예: FastAPI app state)은
-    호출자의 책임이다 — 그 배선 자체는 W5/W6 요청 문서가 이번 범위 밖으로 뺀
-    "완성된 FastAPI/Worker 배선"에 해당한다.
+    호출자의 책임이다 — 그 배선은 composition root(`daesingo.api.composition`) 몫이다.
 
-    실행 상태는 `store`에 꽂힌 JobExecution read port로 이 case의 job만 조회한다(8-10) — 호출자가 넘기지 않는다.
+    실행 상태는 `store`에 꽂힌 JobExecution read port로 이 case의 job만 조회한다(`decisions/jobexecution-read-port.md`) — 호출자가 넘기지 않는다.
 
     마감(`now`, 기본 현재 시각)이 지난 job은 기다리지 않는 것으로 보인다 — 읽기라 저장하지 않고, 정산 기록은 다음 command ·
     T2 반영이 남긴다(`decisions/case-wait-timeout.md`).
@@ -721,7 +721,7 @@ def receive_hint_extraction_result(
 ) -> ReflectionResult:
     """Worker가 단서 구조화 결과를 반영하는 진입점(`decisions/start-analysis.md` §3-6). `load_for_update` → 반영 →
     성공했을 때만 `save`. `job_id`는 그 결과를 낸 `HINT_EXTRACT` job이다 — case가 더 기다리지 않는 job(사용자 중단 ·
-    중복 결과)이면 저장하지 않는다(8-9). 예외는 그대로 올라가고 저장되지 않는다 — transaction rollback은 호출자
+    중복 결과)이면 저장하지 않는다(`decisions/stop-analysis.md`). 예외는 그대로 올라가고 저장되지 않는다 — transaction rollback은 호출자
     몫이다(#245 D-2)."""
     case = store.load_for_update(case_id)
     jobs_before = len(case.job_records)

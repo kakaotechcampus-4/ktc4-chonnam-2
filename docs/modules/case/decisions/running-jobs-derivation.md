@@ -1,6 +1,7 @@
 # running_jobs를 case가 계산하는 방식 — JobRecord 정산 기록
 
 > **상태: 결정 · 구현** · 결정일 2026-10-06 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-11(`../design-refinement-w7-baseline.md`), #247 H-4, HTTP API Contract Draft §5.3 · §7-2(#265)
+> 용어: `W7`은 프로젝트 7주차, `8-11` 같은 번호는 `../design-refinement-w7-baseline.md` §1 「8순위」(Runtime 결정 후속 작업) 표의 행 번호다. `A§` · `B§`는 `contract-job-record-case-view.md`의 A절(JobRecord) · B절(CaseView)이다.
 > case 내부 상태와 CaseView 투영 방식이라 case 단독 결정 범위다. `running_jobs[]`의 정의 원문은 `../../../architecture/contracts/contract-job-record-case-view.md` B절 §10 불변조건 5이고, 이 문서는 그 정의를 어떻게 계산하는지와 고르지 않은 안만 둔다.
 
 ## 배경
@@ -15,15 +16,15 @@ case가 직접 계산하려면 「이 job을 아직 기다리는가」를 알아
 
    | 사유 | 언제 | 누가 기록 |
    | --- | --- | --- |
-   | `REFLECTED` | case가 그 job의 결과(성공 · 실패)를 반영했다 | 결과 반영 경로(8-8). 지금은 후보 수신(`receive_candidates` · `record_candidate_search_failure`)이 COARSE_SEARCH에 대해 기록한다 |
-   | `STOPPED_WAITING` | case timeout으로 기다리기를 멈췄다 | timeout 경로(8-9 이후) |
+   | `REFLECTED` | case가 그 job의 결과(성공 · 실패)를 반영했다 | 결과 반영 경로(8-8). 지금은 후보 수신(`receive_candidates` · `record_candidate_search_failure`)이 COARSE_SEARCH에 대해 기록한다. (2026-11-08 현재: Worker 반영 진입점 `reflection.reflect_execution()`이 모든 `JOB_KINDS`에 대해 기록한다 — `src/daesingo/case/reflection.py`) |
+   | `STOPPED_WAITING` | case timeout으로 기다리기를 멈췄다 | timeout 경로(8-9 이후). (2026-11-08 현재: `CaseAggregate.stop_waiting_expired()`, `case-wait-timeout.md`) |
    | `CANCELLED` | 사용자가 중단했다 | 중단 command(8-9) |
    | `SUPERSEDED` | 같은 kind · `scope_ref`로 새 job을 발주했다. 2026-10-27부터 설명을 고쳐 역행해 그 job이 딸린 후보 목록을 버린 경우도(`edit-hint.md` §4) | `jobs.issue_job()` · `analysis_start.edit_hint()` |
    | `EXHAUSTED` | Runtime이 재시도까지 끝나 결과가 오지 않는다고 확정했다(2026-10-27 추가, `HINT_EXTRACT`만) | 소진 알림 진입점(`hint-exhaustion.md`) |
 
    처음 사유가 이긴다. 이미 정산된 job을 다시 정산하면 아무것도 바뀌지 않는다(#245 D-5의 idempotent 반영과 같은 원칙). 정산은 `case_rev`를 올리지 않는다.
 2. **`running_jobs[]` = 정산되지 않은 JobRecord**이고 `job_records` 순서를 따른다.
-3. **status는 그 job의 대표 JobExecution으로 정한다**(`attempt` 최댓값, A§10-6). 실행 기록이 없거나 `QUEUED`이면 `PENDING`, 그 밖은 모두 `RUNNING`이다. terminal인데 반영 전이거나 retry backoff 중이어도 case는 기다리는 중이기 때문이다. JobExecution 읽기 포트(D-6)가 아직 없어서, 실행 기록은 선택 인자 `job_executions`로 받는다. 응답을 만드는 시점에는 enqueue 전이므로 방금 append한 job은 늘 `PENDING`이다(8-11 요구).
+3. **status는 그 job의 대표 JobExecution으로 정한다**(`attempt` 최댓값, A§10-6). 실행 기록이 없거나 `QUEUED`이면 `PENDING`, 그 밖은 모두 `RUNNING`이다. terminal인데 반영 전이거나 retry backoff 중이어도 case는 기다리는 중이기 때문이다. JobExecution 읽기 포트(D-6)가 아직 없어서, 실행 기록은 선택 인자 `job_executions`로 받는다. (2026-11-08 현재: 포트가 생겨 `get_view()`는 `CaseStore`에 꽂힌 read port로 조회한다 — `jobexecution-read-port.md`. `view.derive_running_jobs()`의 `job_executions` 인자는 내부 전달용으로 남아 있다.) 응답을 만드는 시점에는 enqueue 전이므로 방금 append한 job은 늘 `PENDING`이다(8-11 요구).
 4. **`label_key`는 kind별 등재 키를 쓴다.** 미등록 kind와 `COARSE_SEARCH`는 `job.generic_processing`으로 대신한다(A§12 · B§12).
 5. **저장은 `state` JSON 안에 한다**(`store_state._STATE_FIELDS`). 새 테이블과 migration은 없다. `case-store-mysql.md` D5가 8-9에서 만들기로 한 「중단된 `job_id` 테이블」은 이 기록의 `CANCELLED` · `STOPPED_WAITING`으로 대신한다. 처리한 `execution_id` 테이블(8-8)은 execution 단위 idempotency라 따로 남는다.
 6. 공개 함수의 `running_jobs=` 인자는 없앤다. 호출자가 덮어쓸 길을 남기면 계산과 다른 값이 화면에 갈 수 있다.
@@ -40,6 +41,6 @@ case가 직접 계산하려면 「이 job을 아직 기다리는가」를 알아
 
 ## 남은 것
 
-- 결과 반영 경로마다 `REFLECTED` 기록(8-8 — 단서 구조화 · 탐색은 2026-10-11 `result-reflection.md`, 판독 · Fine은 2026-10-13 `observation-storage.md` §4-5, export는 8-6 2단계 뒤), ~~timeout 기록(`STOPPED_WAITING`)~~ → 2026-10-13 `case-wait-timeout.md`(탐색만). ~~중단 기록과 늦은 결과 guard(8-9)~~ → 2026-10-11 `stop-analysis.md`.
+- 결과 반영 경로마다 `REFLECTED` 기록(8-8 — 단서 구조화 · 탐색은 2026-10-11 `result-reflection.md`, 판독 · Fine은 2026-10-13 `observation-storage.md` §4-5, export는 8-6 2단계 뒤 — 2026-10-24 `result-reflection.md`에서 반영), ~~timeout 기록(`STOPPED_WAITING`)~~ → 2026-10-13 `case-wait-timeout.md`(탐색만). ~~중단 기록과 늦은 결과 guard(8-9)~~ → 2026-10-11 `stop-analysis.md`.
 - ~~JobExecution 읽기 포트(D-6)가 생기면 `job_executions` 인자를 포트 조회로 바꾼다.~~ → 2026-10-11 `jobexecution-read-port.md`(8-10).
 - #276 후속: case가 Fine 결과를 기다리지 않게 됐는데 실행이 아직 남은 경우의 화면 표시.

@@ -1,6 +1,6 @@
 # 설명을 잘 이해하지 못했을 때 — `search.hint_unclear` notice
 
-> **상태: 결정 · 1단계 구현** · 결정일 2026-10-20 · 담당 유소연(`case`) · 근거 [#266](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/266)(PM (a) 방향 · web 위치 · 신호 의견, case 답변), Q3 confidence 실험(`../experiments/intent-llm-model-comparison/results/q3-confidence-experiment.md`), #259(구조화 실패는 notice 없음), #224(결과 화면에서 알린다)
+> **상태: 결정 · 1단계 구현**(2026-11-08 현재: 2단계 `actions: [EDIT_HINT]`까지 구현 — §1) · 결정일 2026-10-20 · 담당 유소연(`case`) · 근거 [#266](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/266)(PM (a) 방향 · web 위치 · 신호 의견, case 답변), Q3 confidence 실험(`../experiments/intent-llm-model-comparison/results/q3-confidence-experiment.md`), #259(구조화 실패는 notice 없음), #224(결과 화면에서 알린다)
 > 규칙 원문은 CaseView 계약 B절 `notices[].code` 행(`docs/architecture/contracts/contract-job-record-case-view.md`)에 있다. 이 문서는 이유와 고르지 않은 안만 둔다.
 
 ## 1. 목표 · 범위
@@ -16,7 +16,7 @@
 2. **실행 실패(`FAILED`)는 대상이 아니다.** #259 결정 그대로다 — 호출 · 파싱 실패는 사용자가 할 일이 없고 Runtime 원장(`failure_kind`)으로 알아챈다. 빈 설명은 구조화를 건너뛰어(case-command §11) 이해할 문장이 없었으므로 대상이 아니다. `confidence`가 없는 `OK` 결과는 low로 읽지 않는다.
 3. **판정은 반영 때 aggregate에 저장한다**(`CaseAggregate.hint_unclear`, state JSON). 구조화 결과 자체는 case에 남지 않아 나중에 계산할 수 없다. 다음 구조화 결과가 오면 그 결과로 바꾼다 — 다시 적어서 high가 나오면 사라진다.
 4. **결과 화면(`stage`가 `INTAKE` · `SEARCHING` 뒤)에서만 붙인다.** 진행 화면은 끝까지 흐르고 결과 화면에서 알린다(#224). 문구도 과거형(「넓게 찾았어요」)이라 탐색이 끝난 뒤가 맞다.
-5. **접두어는 `search`다.** 판단 근거(구조화 결과의 `confidence` · `ABSTAINED`)를 만드는 것이 search(`search/intent.py`)다(B절 「근거를 실제로 만든 모듈」 규칙). case는 읽기만 하고 search 쪽 변경은 없다.
+5. **접두어는 `search`다.** 판단 근거(구조화 결과의 `confidence` · `ABSTAINED`)를 만드는 것이 search(`src/daesingo/search/intent.py`)다(B절 「근거를 실제로 만든 모듈」 규칙). case는 읽기만 하고 search 쪽 변경은 없다.
 6. **web에는 notice 유무만 내린다.** `confidence` 값 · threshold · low인지 보류인지는 내리지 않는다 — 모델 점수 해석을 web이 소유하지 않는다(PM 의견).
 7. **후보 0건이면 `search.no_candidates`와 함께 붙는다.** 「왜 넓게 찾았는지」와 「결과 없음」은 뜻이 다르다.
 
@@ -36,7 +36,7 @@
 | 진행 화면에도 띄운다 | #224 결정(결과 화면에서 알린다)과 어긋난다 |
 | `confidence`를 CaseView 필드로 내린다 | web이 모델 점수를 해석하게 된다(PM). notice 하나로 새 필드 없이 그린다(web) |
 | 판정을 저장하지 않고 job 결과에서 계산 | 구조화 결과가 case에 남지 않는다. 결과 저장소(#346)가 생겨도 매 조회마다 읽을 이유가 없다 |
-| `EDIT_HINT`를 지금 싣는다 | 입력형 command가 아직 없어 버튼이 늘 실패한다(B절 「실행 경로가 없는 action은 싣지 않는다」) |
+| `EDIT_HINT`를 지금 싣는다 | 입력형 command가 아직 없어 버튼이 늘 실패한다(B절 「실행 경로가 없는 action은 싣지 않는다」). (2026-11-08 현재: 2026-10-27 `EDIT_HINT` command가 생겨 싣는다 — §1) |
 
 ## 5. 테스트
 

@@ -13,6 +13,8 @@
 - research/ADR이 전제한 `list_impls()`(search/readout가 "지금 활성 구현 이름표"를 내놓는 함수)가 실제로 구현된 적이 없다(`readout/README.md`에 이름만 있음). `case`가 지금 이 값을 조합하려 해도 받아올 producer가 없다.
 - 즉 지금 만들면 "무엇으로부터 라벨을 받을지"·"캐시가 그 값을 어떻게 쓸지" 둘 다 추측으로 채워야 한다 — `orchestration-service-layer.md` D2가 이미 짚은 것과 같은 이유("추측으로 만든 코드는 실제 계약이 나오면 다시 갈아엎어야 한다")로 지금 만들지 않는다.
 
+> (2026-11-08 현재: `issue_job()`은 여전히 항상 새 `JobRecord`를 만들고, `list_impls()`도 코드에 없다. 다만 신고용 export 자동 발주(`src/daesingo/case/exports.py` `issue_missing_exports()`)는 같은 kind · 같은 `input_fingerprint`의 `JobRecord`가 이미 있으면 다시 내지 않는다. 그 fingerprint는 recording `export_fingerprint()`가 export 입력으로 만들고 implementation label은 넣지 않는다. 아래 트리거 2에 해당하는지는 판단하지 않았다.)
+
 ## 이미 다른 문서가 정한 것 (여기서 다시 정하지 않는다)
 
 - fingerprint 조합 공식(`hash(정규화된 AnalysisScope + list_impls() 활성 구현 이름표)`) 자체는 `architecture-input-memo.md`/`adr-job-record-case-view.md`가 이미 적어뒀다 — 이 결정은 그 공식을 바꾸지 않는다. 실제로 캐시 로직을 만들 때 그대로 가져다 쓴다.

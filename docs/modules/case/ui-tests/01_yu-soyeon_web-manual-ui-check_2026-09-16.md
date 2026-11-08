@@ -60,9 +60,9 @@
 ## 4. 관찰 사항 (버그 아님, 검토 후보)
 
 1. `infra_failure`의 "부분 완료" progress 상태에 연결된 notice 문구가 "~가 중단됐습니다"로, severity=INFO와 달리 사용자에게 실패처럼 읽힐 수 있음. web 담당(신유민)과 문구 조정 검토 필요.
-2. (별건) `apps/web/README.md`가 아직 "코드도 package.json도 없다"는 병합 이전 문구를 유지하고 있음 — web merge(Step 6) 반영 후 갱신 필요.
+2. (별건) `apps/web/README.md`가 아직 "코드도 package.json도 없다"는 병합 이전 문구를 유지하고 있음 — web merge(Step 6) 반영 후 갱신 필요. (2026-11-08 현재: 그 문구는 지금 README에 없다.)
 
 ## 5. 다음 회차 예정
 
 - 본 문서는 case 주관 반복 점검용으로, 이후 회차는 같은 폴더(`docs/modules/case/ui-tests/`)에 `NN_yu-soyeon_<주제>_<날짜>.md` 형식으로 누적한다.
-- 다음 회차 후보: Mock→Real 전환(W5) 1차 모듈 교체 직후 회귀 확인.
+- 다음 회차 후보: Mock→Real 전환(W5 = 프로젝트 5주차) 1차 모듈 교체 직후 회귀 확인.

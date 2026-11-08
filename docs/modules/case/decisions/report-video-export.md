@@ -23,6 +23,7 @@
    - 실행 중에도 붙인다 — 거두면 web이 없는 영상을 있는 것처럼 그린다.
    - `GENERATE_REPORT_VIDEO`는 이전 `REPORT_VIDEO_EXPORT` JobRecord가 있고 그 kind가 `running_jobs`에 없을 때만 싣는다.
 3. **[R-3] `RUN_NOTICE_ACTION`은 이전 `JobRecord`를 계속 요구한다.** 첫 발주는 [R-1]이 하므로 버튼은 실패 뒤 재시도다. 계약 표의 「기존 `job_id` 없으면 새로 만든다」를 「직전 발주 입력으로 새 `job_id`」로 고쳤다.
+   - (2026-11-08 현재: #629(공개 준비 작업 A-1)에서 예외가 하나 생겼다. 자동 발주가 호출자 `admit_auto_exports`에 거절된 현재 입력은 이전 JobRecord가 없어도 버튼(`GENERATE_REPORT_VIDEO`)이 뜨고, 누르면 그 입력의 첫 JobRecord를 만든다 — `command._run_notice_action`, `service.derive_notices`의 `report_video_export_basis`. 이유는 `command-appended-job-records.md` 「A-1 후속 명확화」.)
 
 ## 3. 고르지 않은 것
 

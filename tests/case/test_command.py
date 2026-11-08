@@ -245,7 +245,7 @@ def test_run_notice_action_issues_job_for_action_on_screen():
     records = _reload(store, case).job_records
     assert len(records) == jobs_before + 1
     issued = records[-1]
-    # 계약 B절 §7 매핑: RETRY_PLATE_READ → 새 job_id의 PLATE_READ, force_rerun 불필요.
+    # CaseView 계약(`contract-job-record-case-view.md`) B절 §7 매핑: RETRY_PLATE_READ → 새 job_id의 PLATE_READ, force_rerun 불필요.
     assert issued["kind"] == "PLATE_READ"
     assert issued["force_rerun"] is False
     assert issued["input_fingerprint"] == "sha1:cmd-plate"
@@ -483,7 +483,7 @@ def test_rejected_command_does_not_move_to_ready():
 # --- READY에서 다시 조립되는 변경(값 정정·상황 응답) ----------------------------------------
 # READY는 PACKAGE_READY 파생 gate다(CaseView 계약 §10-9: READY면 requirements_package가 PASS/WARN).
 # 다시 조립되는 변경이 오면 domain이 EVIDENCE_REVIEW로 내리고, 성공 뒤 재확인이 gate가 여전히
-# 성립할 때만 다시 올린다. user_reviewed는 필드 수정과 별개다(계약 L264 · #173 값별 경계표).
+# 성립할 때만 다시 올린다. user_reviewed는 필드 수정과 별개다(CaseView 계약 B절 §7 `user_reviewed` 행 · #173 값별 경계표).
 
 
 class _PackageOnlyWhenConfirmed(MockFixtureAdapter):

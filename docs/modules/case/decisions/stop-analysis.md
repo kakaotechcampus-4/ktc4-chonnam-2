@@ -1,6 +1,7 @@
 # 분석 중단(`STOP_ANALYSIS`) — 탐색 job 중단 · 화면 · 늦은 결과 guard
 
 > **상태: 결정 · 구현** · 결정일 2026-10-11 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-9(`../design-refinement-w7-baseline.md`), #245 C-1 · C-1a(B) · C-3 · C-4, Runtime Tech Spec §12.5, #292(cancel port), `core-user-flow.md` §7 「사용자가 분석을 중단한 경우」
+> 용어: `8-9` · `8-8` 같은 번호는 `../design-refinement-w7-baseline.md` §1 「8순위」 표의 행 번호다. `RT-08(d)` · `RT-05(b)`는 Runtime 구현 Task 번호다(`docs/runtime/runtime-implementation-plan.md` §6). `B§7`은 CaseView 계약(`docs/architecture/contracts/contract-job-record-case-view.md`) B절 §7이다.
 > 중단 command의 이름 · payload · 허용 상태와 중단 뒤 case 상태 · CaseView 투영은 case 결정 범위다(#245 C-1). Runtime 쪽 전이(`QUEUED` 즉시 · `RUNNING` 협력적 중단)와 port 모양은 Runtime 소유(Tech Spec §12.5, #292)이고, 이 문서는 case 쪽만 둔다. 규칙 원문은 case-command 계약 §5 · CaseView 계약 B§7로 옮겼다.
 
 ## 1. 목표 · 범위
@@ -61,6 +62,6 @@
 
 ## 8. 남은 것
 
-- RT-08(d)가 `cancelled_job_ids`로 `request_cancel`을 부른다(#295) · RT-05(b)가 port를 구현한다(#292).
-- 탐색 결과 Worker 반영 진입점은 `job_id`를 넘긴다(8-8).
+- RT-08(d)가 `cancelled_job_ids`로 `request_cancel`을 부른다(#295) · RT-05(b)가 port를 구현한다(#292). (2026-11-08 현재: 배선됨 — `src/daesingo/api/composition.py`가 `daesingo.common.jobs.cancel.request_cancel`을 부른다.)
+- 탐색 결과 Worker 반영 진입점은 `job_id`를 넘긴다(8-8). (2026-11-08 현재: `reflection.reflect_execution()`이 `ExecutionOutcome.job_id`로 넘긴다.)
 - ~~case 대기 timeout(`STOPPED_WAITING`)은 같은 guard 위에 올린다 — 언제 · 누가 timeout을 판정하는지는 따로 정한다.~~ → 2026-10-13 `case-wait-timeout.md`(타이머 없이 읽는 쪽이 계산, 탐색만).

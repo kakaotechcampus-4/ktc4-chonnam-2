@@ -8,7 +8,8 @@ evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — �
 
 happy path 외에 후보 탐색 실패, 대기 timeout·분석 중단, 실행 실패(FAILED/STALE),
 선택 clip 실패, 번호판·위치·시간 미확보(키 없음) 같은 분기도 표시 규칙으로 다룬다.
-각 분기의 근거는 아래 함수 주석에 있다.
+각 분기의 근거는 아래 함수 주석에 있다. 절 번호 `A§` · `B§`는 `contract-job-record-case-view.md`의
+A절(JobRecord) · B절(CaseView)이다.
 """
 from __future__ import annotations
 
@@ -169,11 +170,11 @@ def _build_progress(
     # evidence가 없는 이유를 Fine 판정이 알려 주면 그것을 먼저 본다(PR #224 리뷰). 판정이 없으면
     # 아래 「조립 전」 분기 그대로다.
     # - 음성 결과(`NOT_ASSEMBLED`)는 IncidentClip~package를 시작하지 않는다(#168 [A]) — 뒤 단계는
-    #   이 case 생애주기에서 일어날 계획이 없어 step 집합 규칙 3(`candidates=[]`와 같은 취급)으로 뺀다.
-    #   빼지 않으면 판독 실행 상태가 보고되지 않아 RUNNING으로 보인다. Fine **실행 실패**(8-14)도
+    #   이 case 생애주기에서 일어날 계획이 없어 B절 §7 step 집합 규칙 3(`candidates=[]`와 같은 취급)으로 뺀다.
+    #   빼지 않으면 판독 실행 상태가 보고되지 않아 RUNNING으로 보인다. Fine **실행 실패**(`search.visual_verify_failed`)도
     #   판정 없이 같은 이유로 뒤 단계를 시작하지 않아 같은 3단계다.
     # - 상황 응답 대기(`AWAIT_SITUATION_RESPONSE`)는 관찰(OCR·시간 source)을 마쳤고 조립만 응답을
-    #   기다린다(#165). 응답 뒤 package까지 이어지므로 규칙 1대로 8단계를 싣고, 조립 이후는 PENDING이다.
+    #   기다린다(#165). 응답 뒤 package까지 이어지므로 같은 규칙 1대로 8단계를 싣고, 조립 이후는 PENDING이다.
     if (
         case.stage == "EVIDENCE_REVIEW"
         and evidence_record is None
@@ -200,7 +201,7 @@ def _build_progress(
             {"step": "package_assembly", "state": "PENDING"},
         ]
 
-    # clip 준비가 실패하면 판독은 발주되지 않는다(§4-4) — 보고가 없다고 RUNNING으로 보이지 않게 PENDING이다(#297 후속).
+    # clip 준비가 실패하면 판독은 발주되지 않는다(`incident-clip-observation-input.md` §4-4) — 보고가 없다고 RUNNING으로 보이지 않게 PENDING이다(#297 후속).
     if case.stage == "EVIDENCE_REVIEW" and evidence_record is None and selected_clip_failed(case):
         return [
             {"step": "file_intake", "state": "DONE"},
@@ -277,7 +278,7 @@ def _build_progress(
                 progress[step] = "PENDING"
         # 번호판 판독이 실행 실패여도 evidence는 번호판 없이 조립된다 — evidence가 있다는 이유로
         # plate_read를 DONE으로 덮으면 실행 실패(4a)가 「읽지 못함」(1·3)과 구분되지 않는다
-        # (#172 [D]). 실행 상태가 보고됐으면 그 값을 쓴다.
+        # (#172 [D] — 숫자는 #172의 번호판 상황 번호, `service.derive_notices()` 참고). 실행 상태가 보고됐으면 그 값을 쓴다.
         if plate_read_status is not None:
             progress["plate_read"] = _job_execution_status_to_progress_state(plate_read_status)
         # ⚠️ requirement_check은 package_assembly와 별개 게이트다(`scenario_plate_reread_001`로
@@ -557,7 +558,7 @@ def _build_evidence_view(
         },
         "event_time_display": {
             # ⚠️ occurred_at 미확보(키 없음, TimeResolution.status=UNKNOWN)는 location_display와
-            # 같은 원칙(§19 "제품 안에서 완결되지 않는 게 정상") — 실패로 표시하지 않고 값 자체가
+            # 같은 원칙(`product-spec.md` §7 — 불확실하면 값을 만들지 않고 UNKNOWN으로 보인다) — 실패로 표시하지 않고 값 자체가
             # 없다는 것을 그대로 나타낸다.
             "value": occurred_at["value"] if occurred_at is not None else None,
             # ⚠️ 과거엔 False로 고정돼 있었다 — B절 §7-(2): "event_time_display.needs_review는
@@ -580,8 +581,8 @@ def _build_evidence_view(
                 "search_keyword": (location.get("search_keyword") or {}).get("value") if location else None,
             }
             if location_value is not None
-            # ⚠️ 위치 미확보(location 키 없음, 또는 address/place_name/user_hint 전부 없음) — §19
-            # 원칙("제품 안에서 완결되지 않는 게 정상")에 따라 실패로 표시하지 않고, "값 자체가
+            # ⚠️ 위치 미확보(location 키 없음, 또는 address/place_name/user_hint 전부 없음) — `product-spec.md`
+            # §7 원칙(불확실하면 값을 만들지 않는다)에 따라 실패로 표시하지 않고, "값 자체가
             # 없다"를 그대로 나타낸다. 고칠 수 있는 in-app 액션이 없으므로 needs_review=False.
             else {
                 "value": None,
@@ -710,7 +711,7 @@ def build_case_view(
     # 발급 전에는 그 값(fixture에만 있음)을 그대로 쓴다.
     preview_ref = (current_preview_frame_ref(case) or selected.thumb_ref) if selected else None
 
-    # 현재 선택 context의 evidence만 투영한다(#173 E-4 조건 1의 전제, W7 6.6순위). 재선택 직후
+    # 현재 선택 context의 evidence만 투영한다(#173 E-4 조건 1의 전제, `design-refinement-w7-baseline.md` 6.6순위). 재선택 직후
     # adapter가 아직 이전 선택의 evidence를 들고 있어도 그대로 내리지 않는다 — web은
     # `EVIDENCE_REVIEW`+`evidence=null`일 때만 진행 화면을 띄우므로, 이전 evidence가 내려가면 준비
     # 중인데도 결과 화면(「다른 후보 보기」 포함)이 뜬다. 그 evidence에서 나온 RequirementReport·

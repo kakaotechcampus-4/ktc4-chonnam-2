@@ -1,6 +1,6 @@
 # case Edge Case 목록
 
-> **작성 기준:** 2026-10-07 `develop@b8c5e337` · 2026-10-08 #284 · #315 머지 반영(`develop@fa1eb87e`) · 2026-10-26 #311 결정(B) 반영
+> **작성 기준:** 2026-10-07 `develop@b8c5e337` · 2026-10-08 #284 · #315 머지 반영(`develop@fa1eb87e`) · 2026-10-26 #311 결정(B) 반영 · 2026-11-08 코드와 다시 대조
 >
 > **목적:** case(진행 상태 · 사용자 선택 · 작업 발주)가 만나는 경계 상황을 한곳에서 분류하고, 지금 동작 · 근거 · 다음 할 일을 추적한다. recording의 [`real-video-edge-cases.md`](../recording/real-video-edge-cases.md)와 같은 방식이다.
 >
@@ -14,6 +14,8 @@
 | `DECIDED` | 결정 · 계약은 있지만 구현이 없거나 아직 develop에 없다(열린 PR이면 PR 번호를 적는다) |
 | `MEASURED` | 제품 경로가 아니라 실험 하네스에서 측정했다(LLM) |
 | `PENDING` | 정책 · Owner 결정이 없어 의도적으로 비워 둔 것 |
+
+**약어.** `8-n` = [`design-refinement-w7-baseline.md`](design-refinement-w7-baseline.md) §1 「8순위」 표의 항목 번호. `T2` = Worker가 끝난 job 결과를 case에 반영하는 경로(`decisions/result-reflection.md`). `RT-xx` = Runtime 구현 Task 번호(`docs/runtime/runtime-implementation-plan.md` §6).
 
 **공통 동작(모든 항목의 바탕)**
 - 사용자 요청(command)은 `expected_case_rev`가 현재 값과 다르면 `stale_revision`으로 거부하고 아무것도 바꾸지 않는다(case-command 계약 §6).
@@ -43,8 +45,8 @@
 | 같은 case에 두 요청이 동시에 씀 | 저장 시 `cases` 행 `FOR UPDATE` — 뒤 요청이 기다린다 | `DECIDED`(#282) | `decisions/case-store-mysql.md` · MySQL opt-in 테스트 |
 | 저장된 기록 앞부분이 바뀐 채 저장 시도 | `AppendOnlyViolation`, 아무것도 쓰지 않음(호출자가 예외를 삼키고 commit해도) | `DECIDED`(#282) | #282 Runtime 리뷰 반영 테스트 |
 | 같은 실행 결과가 두 번 도착 | `execution_id` 기준으로 한 번만 반영 | `VERIFIED`(단서 구조화 · 탐색 — `ALREADY_APPLIED`) | `test_result_reflection.py` · `test_result_reflection_mysql.py` · `decisions/result-reflection.md` · #245 D-5 |
-| 재시도로 대체된 job의 결과가 늦게 도착 | 대표 job은 가장 나중 job — 이전 job은 대체(`SUPERSEDED`)로 정산, 늦은 결과는 반영하지 않음 | `VERIFIED`(대체 정산) · 늦은 결과 guard `DECIDED` | `test_job_settlement.py` · `decisions/running-jobs-derivation.md` · 늦은 결과 guard는 8-9 |
-| 사용자가 중단 · 다른 후보로 바꾼 뒤 이전 결과 도착 | 중단된 `job_id` 집합 + 현재 선택 context 대조로 거른다 | `VERIFIED`(중단 · 대체 job의 단서 · 후보 · 탐색 실패 결과 무시) · 선택 context 대조 `DECIDED`(8-8) | `test_stop_analysis.py` · `decisions/stop-analysis.md` · #245 C-1a · C-4 |
+| 재시도로 대체된 job의 결과가 늦게 도착 | 대표 job은 가장 나중 job — 이전 job은 대체(`SUPERSEDED`)로 정산, 늦은 결과는 반영하지 않음 | `VERIFIED`(대체 정산 · 늦은 결과는 `NOT_APPLIED(SUPERSEDED)`) | `test_job_settlement.py` · `test_result_reflection.py` · `reflection.py` `reflect_execution()` · `decisions/running-jobs-derivation.md` |
+| 사용자가 중단 · 다른 후보로 바꾼 뒤 이전 결과 도착 | 중단된 `job_id` 집합 + 현재 선택 context 대조로 거른다 | `VERIFIED`(중단 · 대체 job의 단서 · 후보 · 탐색 실패 결과 무시 · 다른 후보로 바꾼 뒤 대체된 관찰 job 결과 무시) | `test_stop_analysis.py` · `test_observation_reflection.py`(`test_superseded_observation_job_is_not_applied`) · `decisions/stop-analysis.md` · #245 C-1a · C-4 |
 | 실행은 끝났는데 case 반영 전 · 재시도 대기 중 | `running_jobs`에 남아 polling이 멈추지 않는다 | `VERIFIED` | `test_running_jobs_view.py` · 계약 B§10 불변조건 5 |
 | 사용자가 중단했는데 실행이 아직 RUNNING | case는 더 기다리지 않는다 — `running_jobs`에서 뺀다 | `VERIFIED`(정산된 job 제외 · `STOP_ANALYSIS` 「분석 진행」만, 「초안 준비 중」 중단은 product 미결) | `test_running_jobs_view.py` · `test_stop_analysis.py` · 불변조건 5 · `decisions/stop-analysis.md` |
 
@@ -61,7 +63,7 @@
 | Fine 실행 실패(재시도 소진) | evidence가 없을 때 `search.visual_verify_failed`(ERROR · blocking), 출구는 「다른 후보 보기」 | `VERIFIED` | `test_visual_verify_failed_notice.py` · 8-14 |
 | Fine 음성(위반 관찰 안 됨) | `evidence.visual_event_not_observed`(INFO, `actions:[EDIT_HINT]` — 설명 고쳐 새 탐색, #410). 다음 후보를 자동으로 확인하지 않는다 | `VERIFIED` | `test_not_observed_notice.py` · #168 [A] |
 | Fine `UNCERTAIN` → 사용자 응답 대기 | `case.situation_response_pending`(INFO). 응답 전 Package 없음 | `VERIFIED` | `test_await_situation_response.py` · #165 · #171 |
-| 응답 대기 중 독립 관찰값(번호판 등)을 먼저 보여 줌 | `evidence.record_id: null` 부분 투영 | `DECIDED` | #239 case 결정 · web 확인(2026-10-07) · evidence 함수 대기 |
+| 응답 대기 중 독립 관찰값(번호판 등)을 먼저 보여 줌 | `evidence.record_id: null` 부분 투영 | `VERIFIED` | `test_await_situation_response.py` · #239 · CaseView 계약 B§10 불변조건 15(`case-view/v1.8`) |
 | case가 Fine을 기다리다 멈췄는데 attempt 2가 아직 실행 중 | 화면 표시 미정 | `PENDING` | #276 후속 |
 | Job 실행 상한과 Case 대기 마감 | 탐색(`COARSE_SEARCH`)은 [Case 대기 마감](decisions/case-wait-timeout.md) (§3-2·§3-8·§3-10: 발주 시각 + 실행 예산 + 큐 여유 30초 + 준비 여유, 공개 RC 기본 발주 기준 최대 60분) 뒤 기다리기를 멈추고 `case.analysis_timed_out` · 늦은 결과 미반영. 단서 구조화 · 판독 · Fine은 대기 timeout 없음 | `VERIFIED`(탐색) · 나머지 `DECIDED` | `test_case_wait_timeout.py` · `decisions/case-wait-timeout.md` · `decisions/timeout-fallback.md` |
 | 신고용 영상 · 번호판 이미지 export 실패 | case가 export를 자동 발주하고(`case/exports.py` `issue_missing_exports()`, command · T2 반영 뒤), 실행은 Worker `worker/export_handlers.py`. 실패하면 `recording.report_video_export_failed` · `recording.plate_image_export_failed` notice(`export_notices()`) | `VERIFIED` | `test_export_ordering.py` · `tests/worker/test_export_handlers.py` · `decisions/report-video-export.md` · #47 · #280 |
@@ -81,7 +83,7 @@
 
 ## 6. LLM — 자연어 단서 구조화
 
-case에서 LLM을 부르는 곳은 분석 시작 때 단서 구조화(`HINT_EXTRACT`) 한 번이다. 발주(`START_ANALYSIS`)와 결과 반영(`service.receive_hint_extraction_result()` — 반영 뒤 첫 탐색까지 발주)이 구현 · 테스트돼 있다(#315). Worker 배선은 Runtime #297.
+case에서 LLM을 부르는 곳은 분석 시작 때 단서 구조화(`HINT_EXTRACT`) 한 번이다. 발주(`START_ANALYSIS`)와 결과 반영(`service.receive_hint_extraction_result()` — 반영 뒤 첫 탐색까지 발주)이 구현 · 테스트돼 있다(#315). Worker 배선은 Runtime #297(2026-11-08 현재: 있음 — `src/daesingo/worker/search_handlers.py`).
 
 | Edge case | 지금 동작 | 상태 | 근거 · 다음 증거 |
 | --- | --- | --- | --- |

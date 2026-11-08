@@ -1,4 +1,4 @@
-"""Worker가 저장한 관찰 결과로 CaseView 입력을 만든다(고도화 8-6 2단계,
+"""Worker가 저장한 관찰 결과로 CaseView 입력을 만든다(`design-refinement-w7-baseline.md` 8-6 2단계,
 `docs/modules/case/decisions/observation-storage.md`).
 
 `StoredObservationAdapter`는 요청마다 만드는 무상태 `ModuleAdapter`다(§4-3). 관찰 job은 발주 때 고정한 입력
@@ -45,7 +45,7 @@ def select_current_observations(case: CaseAggregate, observations: list[StoredOb
       재탐색 뒤 같은 `candidate_id`가 다시 나와도 이전 세대 관찰은 쓰지 않는다. 실패로 정산된 탐색도 `REFLECTED`지만
       그때는 후보 목록이 비어 있어(`SEARCHING`) 고를 것이 없다.
     - 그 안에서 객체의 `candidate_id`가 선택 후보와 같은 것만, kind마다 가장 나중 job의 것을 쓴다. 같은 세대 안
-      A→B→A면 A의 관찰을 다시 쓰고, 이전 후보의 늦은 결과는 투영되지 않는다(6.6순위 조건 2).
+      A→B→A면 A의 관찰을 다시 쓰고, 이전 후보의 늦은 결과는 투영되지 않는다(`design-refinement-w7-baseline.md` 6.6순위 조건 2).
 
     이 case가 발주하지 않은 job의 객체는 배선 오류(`ValueError`)다."""
     order = {r["job_id"]: i for i, r in enumerate(case.job_records)}
@@ -70,7 +70,9 @@ def select_current_observations(case: CaseAggregate, observations: list[StoredOb
 
 class RecordingFacts(Protocol):
     """recording 공개 조회 중 CaseView 조립에 쓰는 것 — composition root가 `RecordingService`로 꽂는다. 모양은 각
-    recording 계약 객체의 JSON(`IncidentClip` · `TimeSourceCandidate` · `AssetFacts`)이다."""
+    recording 계약 객체의 JSON(`IncidentClip` · `TimeSourceCandidate` · `AssetFacts`)이다. export 결과를 확인하는
+    경로(`export_max_byte_size`가 있을 때)는 `get_derived_asset` · `get_export_transform`도 부르지만 이 Protocol에는
+    아직 적혀 있지 않다."""
 
     def get_incident_clip(self, incident_clip_ref: str) -> dict[str, Any]: ...
 
@@ -241,7 +243,7 @@ class StoredObservationAdapter:
         if self._succeeded(executions, overlay_job["job_id"]):
             overlay_readout = self._read(executions, overlay_job)["overlay_time_readout"]
         clip = self._recording.get_incident_clip(clip_ref)
-        # 8-13: clip이 걸친 원본 중 case가 등록받은 source asset만, 그 ref로 recording에 묻는다.
+        # 고도화 8-13: clip이 걸친 원본 중 case가 등록받은 source asset만, 그 ref로 recording에 묻는다.
         known = {s["source_asset_ref"] for s in self._case.sources}
         spans = clip["source_provenance"]["asset_spans"]
         source_refs = list(dict.fromkeys(s["source_asset_ref"] for s in spans if s["source_asset_ref"] in known))
@@ -357,5 +359,5 @@ class StoredObservationAdapter:
         return bundle.independent_facts if bundle else None
 
     def get_job_executions(self) -> list[dict[str, Any]]:
-        # 실행 상태는 view가 `CaseStore.read_executions`(read port)로 읽는다(8-10).
+        # 실행 상태는 view가 `CaseStore.read_executions`(read port)로 읽는다(`decisions/jobexecution-read-port.md`).
         return []

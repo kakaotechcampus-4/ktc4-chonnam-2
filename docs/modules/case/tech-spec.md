@@ -164,13 +164,13 @@ evidence/readout 값을 **복사해서 그대로 소유하지 않는다** — �
 
 내부 흐름: `CaseAggregate` 상태 + (아직 코드 없는 recording/search/readout/evidence의 산출물을 대신
 읽는) `MockFixtureAdapter` 결과를 조합 → `progress[]` / `candidates[]` / `evidence` /
-`requirements_evidence` / `requirements_package` / `package` 조립.
+`requirements_evidence` / `requirements_package` / `package` 조립. (2026-11-08 현재: 실제 모듈을 부르는 `adapters.py`의 `RealAdapter` · 저장 관찰을 읽는 `stored_observation.py`가 있고, `service.build_view_from_adapter()`가 조립한다.)
 
 `info_state` 파생 규칙(`labels.py` — 예: `observability_to_info_state()`는 observability 값을 `info_state`로 바꾸고 모르는 값은
 `INFO_UNKNOWN`으로 둔다. 이전에 적혀 있던 `resolution_status_to_info_state()`는 코드에 없다)은 **happy-path fixture 하나에서 관찰된 패턴을 재현한 것**이지 B절 §7 원문 전체를
 옮긴 것이 아니다 — 특히 `location_display`를 항상 `INFO_NEEDS_REVIEW`로 고정하는 규칙은 다른
 시나리오(GPS로 확정된 위치 등)로 확장하기 전에 원문과 재대조가 필요하다고 `labels.py`/`view.py`
-docstring에 명시해뒀다.
+docstring에 명시해뒀다. (2026-11-08 현재: 2026-09-14에 CaseView 계약 B절 §7(「Enum / State」 절의 `info_state` 파생 규칙) 원문대로 다시 구현했다 — `labels.py` docstring. 위치는 대표값이 `user_hint`일 때만 `INFO_NEEDS_REVIEW`다.)
 
 ---
 
@@ -219,7 +219,7 @@ docstring에 명시해뒀다.
 | `domain.py` | `.select_candidate` | `(candidate_id: str) -> None` | CANDIDATE_REVIEW → EVIDENCE_REVIEW, `selection_rev` +1 |
 | `domain.py` | `.mark_ready` | `(*, report_package: dict \| None) -> None` | EVIDENCE_REVIEW → READY. ReportPackage가 없으면 거부 |
 | `domain.py` | `.next_job_id` | `(kind: str) -> str` | 항상 새 job_id |
-| `jobs.py` | `issue_coarse_search` | `(case, *, scope_ref, input_fingerprint) -> JobRecord` | |
+| `jobs.py` | `issue_coarse_search` | `(case, *, scope_ref, input_fingerprint, scope=None) -> JobRecord` | `scope`를 주면 case에 남긴다 — 1차 구현 뒤 추가 |
 | `jobs.py` | `issue_plate_read` | `(case, *, input_fingerprint, force_rerun=False) -> JobRecord` | |
 | `jobs.py` | `issue_overlay_time_read` | `(case, *, input_fingerprint) -> JobRecord` | |
 | `jobs.py` | `issue_fine_verify` | `(case, *, input_fingerprint) -> JobRecord` | |
@@ -229,7 +229,7 @@ docstring에 명시해뒀다.
 | `jobs.py` | `issue_overlay_time_reread` | `(case, *, input_fingerprint) -> JobRecord` | `EvidenceNeeds`가 `OVERLAY_TIME_OCR`를 요청할 때 자동 발주(`force_rerun=True`) — 1차 구현 뒤 추가 |
 | `correction.py` | `apply_correction` | `(case, *, kind, target_field, previous_value, new_value) -> CorrectionRecord` | `selection_rev` 스냅샷 + supersede |
 | `view.py` | `build_case_view` | `(case, *, evidence_record=None, requirement_report_evidence=None, requirement_report_package=None, report_package=None, job_executions=None, notices=None, plate_read_status=None, overlay_time_read_status=None, current_timeline_revision=None, plate_readouts=None, visual_evidence_decision=None, visual_verify_status=None, independent_facts=None) -> dict` | `CaseView`(작성 당시 `case-view/v1.3`, 지금 `CONTRACT_VERSION` = `case-view/v1.12`) |
-| `adapters.py` | `MockFixtureAdapter` | `(mock_root: Path, scenario_id: str)` + `get_candidate_events/get_evidence_record/get_requirement_report/get_report_package` | **공개 API 아님** — 실제 모듈 구현 시 같은 시그니처의 실제 호출 어댑터로 교체 |
+| `adapters.py` | `MockFixtureAdapter` | `(mock_root: Path, scenario_id: str)` + `get_candidate_events/get_evidence_record/get_requirement_report/get_report_package` | **공개 API 아님** — 실제 모듈 구현 시 같은 시그니처의 실제 호출 어댑터로 교체(→ 지금 `adapters.py::RealAdapter`) |
 
 ---
 

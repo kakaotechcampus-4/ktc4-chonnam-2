@@ -1,5 +1,8 @@
 # `case` 1차 완료 체크리스트 — Workflow / Orchestration (Owner: 유소연)
 
+> **상태 (2026-11-08): 끝난 계획이다. 본문은 2026-09-13~09-28 기록이라 지금 코드와 다르다.** 테스트는 `src/daesingo/case/tests/`가 아니라 `tests/case/`에 있고, 남은 「막힘」 항목 중 hints 구조화(`HINT_EXTRACT` job)와 탐색 대기 timeout(`decisions/case-wait-timeout.md`, `COARSE_SEARCH`만)은 그 뒤 구현됐다. 지금 동작은 `docs/modules/case/tech-spec.md`와 `docs/modules/case/case-edge-cases.md`, 결정 목록은 `docs/modules/case/decisions/README.md`를 본다.
+> 이 문서의 `A-1` · `C-3` · `C-4`는 `docs/management/ownership.md` §1-2의 운영 역할 번호다.
+
 > **작성일 2026-09-13 · 작성 담당 유소연(`case`) · 문서 성격: 구현 설계 문서 아님.**
 > 이 문서는 `case` 내부를 어떻게 짤지 정하지 않는다. **공용 Mock Pack(`data/mock/`, `docs/mock/01~05`)과 확정된 Final Data Contract(`docs/architecture/contracts/*.md`)를 기준으로, 1차 Mock E2E 통합(로드맵 ④단계) 전에 `case`가 "Merge해도 되는 상태"인지 스스로 확인하는 체크리스트다.**
 > 근거: `docs/management/ownership.md`(R&R) §3 유소연 절 · `docs/architecture/module-architecture.md` v4 §4-모듈5 · `docs/mock/01_mock_dataset_overview.md` §3·§8 · `docs/mock/02_mock_scenario_catalog.md` · `docs/mock/04_mock_validation_report.md`.
@@ -253,7 +256,7 @@ python data/mock/validate_mock_pack.py
 
 # case 전체 테스트 — 상태 기계 전이, JobRecord/Jobs 발주, CaseView projection,
 # CorrectionRecord, AnalysisScope, export_learning_log(), 7개 Scenario smoke test 포함
-PYTHONPATH=src pytest src/daesingo/case/tests/ -q
+PYTHONPATH=src pytest src/daesingo/case/tests/ -q   # 2026-11-08 현재 경로: pytest tests/case -q
 # → 54 passed (2026-09-14)
 
 # case가 다른 모듈 내부 구현을 침범하지 않는지(경계 위반 0건이어야 함)

@@ -8,6 +8,8 @@
 
 **근거 이슈:** #106 (공용 command 표면) · #171 B-2(상황 응답 전송 경로) · #173 E-4(결과 화면 다른 후보 선택)
 
+**용어:** 「고도화 8-n」 = case 설계 고도화 문서(`docs/modules/case/design-refinement-w7-baseline.md`) §1 「8순위」 표의 항목 번호. `W7` · `W12` = 프로젝트 7 · 12주차.
+
 ---
 
 ## 1. 목적
@@ -25,11 +27,12 @@
 | `SELECT_OTHER_CANDIDATE` | 결과 화면에서 「다른 후보 보기 → 다른 후보 선택」 | `contract-correction-record.md`(`OTHER_CANDIDATE`) · #173 E-4 |
 | `RECORD_SITUATION_RESPONSE` | 결과 화면 「신고 상황」에서 `[맞아요]`·`[잘 모르겠어요]`(`[다른 상황]`은 §5 — 입력형 판본) | #171 B-2 · ADR-EVIDENCE-005 |
 | `MARK_REVIEWED` | 신고자료 최종 확인(`USER_REVIEWED`) | `module-architecture.md` §3-6 · CaseView 계약 B절 `user_reviewed` |
-| `RUN_NOTICE_ACTION` | notice에 붙은 발주형 버튼(`GENERATE_REPORT_VIDEO` · `RETRY_PLATE_READ` · `RETRY_SEARCH` · `GENERATE_PLATE_IMAGE`) | CaseView 계약 B절 §7 「`notices[].actions[]` → 발주 매핑」 |
+| `RUN_NOTICE_ACTION` | notice에 붙은 발주형 버튼(`GENERATE_REPORT_VIDEO` · `RETRY_PLATE_READ` · `RETRY_SEARCH` · `GENERATE_PLATE_IMAGE`) | CaseView 계약(`docs/architecture/contracts/contract-job-record-case-view.md`) B절 §7 「`notices[].actions[]` → 발주 매핑」 — B절은 CaseView 부분, §7은 값 목록 절 |
 | `START_ANALYSIS` | 첫 화면에서 영상을 올리고(설명은 선택) 「영상에서 찾아보기」 | §11 · #247 H-2 · `decisions/start-analysis.md` |
 | `STOP_ANALYSIS` | 분석 진행 화면에서 `[분석 중단]`(2026-10-11, 고도화 8-9) | #245 C-1 · C-1a · `decisions/stop-analysis.md` · `core-user-flow.md` §7 |
 | `MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME` · `RECORD_SITUATION_RESPONSE`(`CORRECTED`) | 번호판 · 발생시각 직접 입력, 신고 상황 `[다른 상황]` — **입력형 판본 초안(§12)** | `contract-correction-record.md` · #235 · `core-user-flow.md` §12 · §13 · §15 |
 | `EDIT_HINT` | 결과 없음 · 설명을 잘 이해하지 못함 · 단서 구조화 중 중단 화면에서 「설명 고쳐 다시 찾기」(2026-10-27, **§13**) | #410 · `decisions/edit-hint.md` |
+| `REQUEST_CANDIDATE_VIDEO_PREVIEW` | 후보 영상 미리보기 요청(2026-11-02, 문서 끝 「후보 영상 미리보기 command」 절) | #554 · `decisions/candidate-video-preview.md` |
 
 **이 판본에 넣지 않는 것**
 
@@ -58,6 +61,8 @@
   "payload": "object — kind별(§5)"
 }
 ```
+
+> (2026-11-08 현재: 위 `kind` 목록은 처음 판본이다. 지금 코드(`src/daesingo/case/command.py` `_HANDLERS`)는 여기에 `EDIT_HINT`(§13)와 `REQUEST_CANDIDATE_VIDEO_PREVIEW`(문서 끝 절)를 더해 10종을 받는다.)
 
 **응답**
 
@@ -137,13 +142,13 @@
 
 ## 10. 구현할 때 맞출 것 (case 내부)
 
-규칙이 아니라 현재 코드와의 차이다. 진입 함수는 `case.handle_command(request, *, store)`(`src/daesingo/case/command.py`)다.
+규칙이 아니라 현재 코드와의 차이다. 진입 함수는 `case.handle_command(request, *, store)`(`src/daesingo/case/command.py`)다. (2026-11-08 현재: composition root는 `execute_command()`를 부른다 — append된 JobRecord · 중단한 job 목록도 받기 위해서다. `handle_command()`는 응답만 돌려주는 얇은 wrapper다.)
 
 - `CaseAggregate.mark_reviewed()`에는 여전히 stage 가드가 없다 — command 층이 `READY`만 받는다.
 - domain이 「알 수 없는 후보」와 「지금 상태에서 불가」를 같은 `InvalidTransition`으로 던진다 — command 층이 대상을 먼저 확인해 §6의 두 코드로 나눈다.
-- `RUN_NOTICE_ACTION`은 같은 kind의 가장 최근 `JobRecord`에서 `input_fingerprint`·`scope_ref`를 그대로 쓴다(`jobs.issue_needed_jobs()`와 같은 원칙). case는 fingerprint를 계산하지 않으므로 이전 발주가 없으면 `not_allowed`다 — `GENERATE_PLATE_IMAGE`처럼 처음 발주되는 kind는 fingerprint 출처가 정해질 때까지 이 경로로 열리지 않는다.
+- `RUN_NOTICE_ACTION`은 같은 kind의 가장 최근 `JobRecord`에서 `input_fingerprint`·`scope_ref`를 그대로 쓴다(`jobs.issue_needed_jobs()`와 같은 원칙). case는 fingerprint를 계산하지 않으므로 이전 발주가 없으면 `not_allowed`다 — `GENERATE_PLATE_IMAGE`처럼 처음 발주되는 kind는 fingerprint 출처가 정해질 때까지 이 경로로 열리지 않는다. (2026-11-08 현재: export 두 kind는 adapter가 현재 export 요청을 주면, 이전 발주가 없어도 그 요청과 Recording fingerprint로 첫 명시 발주를 한다 — 아래 「A-1」 절.)
 - 성공 뒤 `READY` 재확인은 `service.mark_ready_if_package_ready()`를 그대로 부른다. real(fixture) 경로는 최종 신고영상 관찰(I4, `observation_facts`)이 없어 상황 응답 뒤에도 FINAL이 `UNKNOWN`이라 `READY`에 가지 않는다(ADR-EVIDENCE-008 §6.2) — 이 재확인과 별개로 evidence 쪽 입력이 있어야 한다.
-- `RECORD_SITUATION_RESPONSE`는 PR #177이 머지돼야 develop에서 동작한다.
+- `RECORD_SITUATION_RESPONSE`는 PR #177이 머지돼야 develop에서 동작한다. (2026-10-02 #177 머지 — 지금 동작한다. `tests/case/test_await_situation_response.py`)
 
 ## 11. 분석 시작 `START_ANALYSIS` (2026-10-04 초안 · 2026-10-07 구현)
 
@@ -221,7 +226,7 @@ web이 입력형 command를 여는 조건(#235 신유민 2026-10-12)과 같다. 
 - **허용 상태:** 선택된 후보가 있고 `stage`가 `EVIDENCE_REVIEW` · `READY`일 때(`correction.apply_correction()`의 가드 그대로). 상황 응답 대기 중(evidence 부분 투영, `record_id=null`)에도 받는다 — #235 E-2가 이 경로를 위해 `null` 이전 값을 연다.
 - **값이 지금 값과 같으면 `not_allowed`.** 기록하지 않는다(`contract-correction-record.md` §8-7 — 「이미 선택된 후보 재선택」과 같은 무변경 거부).
 - **성공하면** CorrectionRecord 1건 · `case_rev` +1. `READY`였으면 `EVIDENCE_REVIEW`로 내리고 §5 「성공 뒤 `READY` 재확인」을 그대로 한다(§5 「`READY`에서 다시 조립되는 변경」).
-- **Job을 발주하지 않는다.** 값 정정은 evidence 재조립만 부른다(부분 재실행 정책 표). 시각 정정으로 사후 각인 값이 바뀌면 신고용 영상 입력도 바뀌는데, 그 재발주는 #351 [R-1] 자동 발주가 맡는다(`decisions/report-video-export.md`, 배선 보류).
+- **Job을 발주하지 않는다.** 값 정정은 evidence 재조립만 부른다(부분 재실행 정책 표). 시각 정정으로 사후 각인 값이 바뀌면 신고용 영상 입력도 바뀌는데, 그 재발주는 #351 [R-1] 자동 발주가 맡는다(`decisions/report-video-export.md`, 배선 보류). (2026-11-08 현재: 배선됨 — command가 성공한 뒤 `exports.issue_missing_exports()`가 바뀐 입력으로 다시 발주한다.)
 - **이전 값의 출처(구현, 2026-10-28).** 같은 선택 context에 chain head가 있으면 그 `new_value`, 없으면 CaseView 값이다 — 정상 경로에서 둘은 같다(`decisions/input-commands.md` §2-5).
 - **값 칸이 없는 화면(`evidence=null`)에서는 `not_allowed`**(2026-10-28) — 사용자가 본 이전 값이 없다. 상황 응답 대기의 부분 투영은 `evidence`가 있으므로 받는다.
 - **값을 판정하지 않는다**(§7-3). 번호판이 맞는지 · 시각이 그럴듯한지는 보지 않는다. 형식은 evidence 검사(E-3)에 맡기고 case가 target별 형식 규칙을 복제하지 않는다(#235 E-3).
@@ -312,6 +317,8 @@ evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른
 
 
 ## A-1 자동 export admission 분리 (2026-11-08 로컬 구현, #629)
+
+> A-1 = 공개 체험 서버 준비 작업(#629, `docs/runtime/a1-public-readiness.md`). admission = 공개 모드에서 Runtime이 반복 · 동시 실행 · 예산 한도를 보고 새 job을 받을지 정하는 검사다. `admit_auto_exports`는 그 검사를 case에 넘기는 선택 인자이고, `public.local_work_not_queued` notice는 api 층(`src/daesingo/api/public_access.py`)이 붙인다.
 
 §5·§6의 command 검증 순서와 실패 시 변경 금지는 유지한다. 선택적 `admit_auto_exports` port가 없으면 기존 동작이다.
 handler가 승인한 검토·정정 뒤 자동 export만 거부되면 정정·case_rev·명시 job을 저장하고, 자동 발주의 새 JobRecord·

@@ -69,7 +69,7 @@ def issue_job(
         raise ValueError(f"관찰 kind가 아니라 observation_input을 받지 않는다: {kind!r}")
     if force_rerun:
         # 사용자가 명시적으로 재요청한 Job(재판독/재검색 등)은 그 자체가 새 "요청 시점 케이스
-        # 리비전"이다(§3-E) — `scenario_plate_reread_001` fixture로 확인(2026-09-14): 재판독을
+        # 리비전"이다(`phase1-completion-checklist.md` §3-E) — `scenario_plate_reread_001` fixture로 확인(2026-09-14): 재판독을
         # 발주하는 시점에 case_rev가 오르고, 그 job_record.case_rev도 오른 값을 그대로 담는다.
         case.bump_revision()
     job_record: dict[str, Any] = {
@@ -84,7 +84,7 @@ def issue_job(
         "force_rerun": force_rerun,
         "requested_at": _now(),
     }
-    # 같은 kind · scope_ref의 기다리던 job은 이 job으로 대체된다 — 대표 job은 가장 나중 job이다(A§10-7).
+    # 같은 kind · scope_ref의 기다리던 job은 이 job으로 대체된다 — 대표 job은 가장 나중 job이다(JobRecord 계약 A절 §10-7).
     # `SUPERSEDE_INPUT_KEY`에 있는 kind는 입력의 그 키까지 같아야 대체한다.
     input_key = SUPERSEDE_INPUT_KEY.get(kind)
     for prior in case.waiting_job_records():
@@ -108,7 +108,7 @@ def issue_job(
 
 def issue_same_input(case: CaseAggregate, prior: dict[str, Any], *, force_rerun: bool = False) -> dict[str, Any]:
     """`prior`와 같은 입력(`scope_ref` · `input_fingerprint` · 관찰 입력)으로 같은 kind를 새 `job_id`로 발주한다 —
-    재시도 · 재판독은 「같은 입력을 다시 본다」는 뜻이라 같은 clip을 다시 읽는다(같은 문서 §4-1)."""
+    재시도 · 재판독은 「같은 입력을 다시 본다」는 뜻이라 같은 clip을 다시 읽는다(`incident-clip-observation-input.md` §4-1)."""
     observation_input = case.observation_inputs.get(prior["job_id"])
     return issue_job(
         case,
@@ -124,7 +124,7 @@ def issue_same_input(case: CaseAggregate, prior: dict[str, Any], *, force_rerun:
 def issue_coarse_search(
     case: CaseAggregate, *, scope_ref: str, input_fingerprint: str, scope: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    """`scope`를 주면 aggregate에 남긴다(#246 S-4) — 주지 않는 기존 호출(fixture · 스크립트)은 그대로 둔다."""
+    """`scope`를 주면 aggregate에 남긴다(#246 S-4 — process가 바뀌어도 scope를 다시 읽게) — 주지 않는 기존 호출(fixture · 스크립트)은 그대로 둔다."""
     if scope is not None:
         if scope["scope_id"] != scope_ref:
             raise ValueError(f"scope_ref와 scope_id가 다르다: {scope_ref!r} != {scope['scope_id']!r}")

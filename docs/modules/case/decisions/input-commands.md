@@ -1,6 +1,6 @@
 # 입력형 command 구현 — 번호판 직접 입력 · 발생시각 수정 · `[다른 상황]`
 
-> 2026-10-28 · W12 C3 · case-command 계약 §12(입력형 판본) · 근거 [#235](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/235) E-1 · E-2 · E-3 · PR #356(판본 합의) · PR #384(evidence 기록 전 검사)
+> 2026-10-28 · W12 C3(12주차 case 작업 항목) · case-command 계약 §12(입력형 판본, `../contracts/contract-case-command.md`) · 근거 [#235](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/235) E-1 · E-2 · E-3 · PR #356(판본 합의) · PR #384(evidence 기록 전 검사)
 
 ## 1. 문제
 
@@ -16,7 +16,7 @@
 5. **이전 값.** 같은 선택 context에 chain head가 있으면 그 `new_value`, 없으면 사용자가 본 CaseView 값(없으면 `null`). §12-2의 「사용자가 본 값」과 정상 경로에서 같다. head를 우선하는 이유: CaseView 값은 adapter가 조립한 결과라 정규화나 fixture 고정값 때문에 chain 값과 어긋날 수 있고, 어긋나면 evidence chain 연속성 검사가 거부해 내부 오류가 된다.
 6. **CorrectionRecord `contract_version`을 `correction-record/v1.2`로 올린다.** v1.2로 기록해야 `vehicle_number` · `occurred_at`의 이전 값 `null`이 유효하다(v1.1 소급 없음).
 7. **`[다른 상황]`의 `case_rev`는 한 번만 오른다.** 정정이 올리고 응답은 `record_situation_response(..., bump=False)`로 기록한다. 정정이 거부되면 응답도 남지 않는다. Package가 풀려 `READY`로 오르면 §5대로 +1이 더해진다.
-8. **`evidence.plate_abstained`에 `MANUAL_PLATE_INPUT`을 싣는다**(§12-3 「이 판본이 열릴 때 함께 싣는다」). `EDIT_EVENT_TIME`을 싣는 notice는 지금 없다 — 화면 입구는 결과 화면 발생시각 수정(Flow §20)이다.
+8. **`evidence.plate_abstained`에 `MANUAL_PLATE_INPUT`을 싣는다**(§12-3 「이 판본이 열릴 때 함께 싣는다」). `EDIT_EVENT_TIME`을 싣는 notice는 지금 없다 — 화면 입구는 결과 화면 발생시각 수정(Flow §20)이다. (2026-11-08 현재: 다음 날 `evidence.event_time_missing`이 `EDIT_EVENT_TIME`을 싣게 됐다 — `event-time-missing-notice.md`.)
 
 ## 3. 계약에 없던 거부 두 가지
 
@@ -28,7 +28,7 @@
 ## 4. 알려진 한계
 
 - **상황 응답 대기에서 `[다른 상황]`으로 AI가 본 유형과 같은 유형을 고르면 막지 못한다.** 부분 투영에는 유형 값이 없어(`case_type_display.code=null`) case가 비교할 값이 없다. 기록되면 evidence는 그 유형으로 조립한다 — 결과는 `[맞아요]`와 같다. web도 CaseView만 받으므로 지금 유형을 모른다 — 부분 투영에서는 4종을 모두 보여 주고, 지금 값이 있을 때만 뺀다(§12-3, 2026-10-28 PR #433 web 확인). Fine 잠정 유형을 CaseView에 싣는 안은 계약 변경이라 이번에 택하지 않았다(§5).
-- **시각 정정 뒤 신고용 영상 재발주는 하지 않는다.** #351 [R-1] 자동 발주(`report-video-export.md`)가 맡고, 그 배선은 recording export handler 뒤로 보류돼 있다.
+- **시각 정정 뒤 신고용 영상 재발주는 하지 않는다.** #351 [R-1] 자동 발주(`report-video-export.md`)가 맡고, 그 배선은 recording export handler 뒤로 보류돼 있다. (2026-11-08 현재: 자동 발주는 배선됐다 — `src/daesingo/case/exports.py` `issue_missing_exports()`. 다만 영상이 이미 있으면 다시 발주하지 않는다. 시각 정정 뒤 영상이 다시 만들어지는지는 여기서 확인하지 않았다.)
 - web 정정 입력 UI(W4)는 web 소유다 — 이 PR 뒤 연결한다.
 
 ## 5. 고르지 않은 안
