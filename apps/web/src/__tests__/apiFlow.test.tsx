@@ -42,7 +42,16 @@ const STOPPED = view({
   stage: 'SEARCHING',
   notices: [notice('case.analysis_stopped', ['RETRY_SEARCH'])],
 })
-const AWAITING = SNAPSHOTS.map((s) => s.view).find((v) => v.notices.some((n) => n.code === 'case.situation_response_pending'))!
+// 응답 대기(UNCERTAIN) — B안 fixture에는 이 스냅샷이 없어 결과 스냅샷에서 만든다: 조립 전(record_id null) + 응답 대기 notice
+const AWAITING_BASE = SNAPSHOTS.map((s) => s.view).find((v) => v.package && v.evidence)!
+const AWAITING: CaseView = {
+  ...AWAITING_BASE,
+  stage: 'EVIDENCE_REVIEW',
+  package: null,
+  evidence: { ...AWAITING_BASE.evidence!, record_id: null },
+  candidates: AWAITING_BASE.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: 'NOT_ASKED' } : c)),
+  notices: [notice('case.situation_response_pending', [])],
+}
 
 function setup(views: { get?: CaseView } = {}) {
   const m = {
@@ -157,13 +166,14 @@ it('찾는 중이 아닐 때(SEARCHING이 아닐 때)는 중단 버튼을 두지
   expect(queryByText('분석 중단')).toBeNull()
 })
 
-it('신고 상황 응답은 RECORD_SITUATION_RESPONSE로 보낸다', async () => {
+it('신고 상황 응답은 RECORD_SITUATION_RESPONSE로 보내고, 응답 대기(UNCERTAIN)에는 「맞아요」가 없다', async () => {
   const { m, api } = setup({ get: AWAITING })
   m.sendCommand.mockResolvedValue(ok({ ...AWAITING, case_rev: AWAITING.case_rev + 1 }))
-  const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
-  fireEvent.click(await findByText('맞아요'))
+  const { findByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('잘 모르겠어요'))
+  expect(queryByText('맞아요')).toBeNull()
   await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
-  expect(m.sendCommand).toHaveBeenCalledWith('c1', AWAITING.case_rev, { kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CONFIRMED' } })
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', AWAITING.case_rev, { kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'USER_UNSURE' } })
 })
 
 it('요청이 실패하면 화면은 그대로 두고 알림만 띄운다', async () => {

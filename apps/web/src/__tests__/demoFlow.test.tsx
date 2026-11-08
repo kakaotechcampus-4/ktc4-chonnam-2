@@ -28,7 +28,7 @@ function start(caseKey: string) {
     for (let i = 0; i < 20; i++) act(() => vi.advanceTimersByTime(5_000))
   }
   // 결과 화면에서 신고 상황에 답하고 나머지 준비가 끝날 때까지 흘린다.
-  const answer = (label = '맞아요') => {
+  const answer = (label = '잘 모르겠어요') => {
     fireEvent.click(r.getByText(label))
     wait()
   }
@@ -55,7 +55,7 @@ it('정상: 업로드 완료 → 진행 → 신고 상황 응답 → 결과, 하
   expect(text()).not.toContain('안전신문고로 이동')
   // 응답에 따라 정해지는 값 셋은 응답 뒤로 미룬다
   expect(text()).toContain('상황 응답 뒤에 정해져요')
-  fireEvent.click(getByText('맞아요'))
+  fireEvent.click(getByText('잘 모르겠어요'))
   expect(text()).toContain('신고자료를 준비하고 있어요')
   wait()
   expect(text()).toContain('신고자료가 준비됐어요')
@@ -437,13 +437,15 @@ it('번호판 수정: 취소·Esc·뒤로는 고치던 글자만 버리고, 저�
 
 it('안전신문고로 이동은 준비됐을 때만 새 창으로 열고, 대신고 화면은 그대로 둔다', () => {
   const opened = vi.spyOn(window, 'open').mockReturnValue(null)
-  const { wait, getByText, container, answer } = start('main')
+  const { text, wait, getByText, container, answer } = start('main')
   wait()
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   answer()
   fireEvent.click(getByText('안전신문고로 이동'))
-  expect(opened).toHaveBeenCalledWith('https://www.safetyreport.go.kr/', '_blank', 'noopener')
+  expect(opened).toHaveBeenCalledWith('https://www.safetyreport.go.kr/#safereport/safereport3', '_blank', 'noopener')
+  // 신고 양식으로 바로 열리므로 메뉴를 찾아 들어가는 안내는 두지 않는다
+  expect(text()).not.toContain('안전신문고에서는 이렇게 들어가세요')
   expect(container.querySelector('.rs.result')).not.toBeNull()
 })
 
@@ -618,7 +620,8 @@ it('응답 대기 중 evidence가 부분 투영돼도 신고용 영상 칸은 �
 
 it('package에 report가 없는 옛 판본이 와도 결과 화면이 깨지지 않는다', () => {
   const ready = SNAPSHOTS.map((x) => x.view).find((v) => v.stage === 'READY' && v.package)!
-  const old = { ...ready, package: { ...ready.package!, report: undefined } } as unknown as CaseView
+  // 옛 판본에는 report_draft 키도 없다
+  const old = { ...ready, report_draft: undefined, package: { ...ready.package!, report: undefined } } as unknown as CaseView
   const noop = () => {}
   const { container } = render(
     <ResultScreen view={old} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} />,
@@ -647,7 +650,7 @@ it('화면이 바뀌면 새 화면 제목에 초점이 가고, 하위 화면에�
   expect(document.activeElement?.tagName).toBe('H1')
   expect(document.activeElement?.textContent).toBe('신고 상황을 확인해 주세요.')
   // 맞아요 → (진행) → 결과
-  fireEvent.click(getByText('맞아요'))
+  fireEvent.click(getByText('잘 모르겠어요'))
   wait()
   expect(document.activeElement?.textContent).toBe('신고자료가 준비됐어요.')
   // 하위 화면은 자기 제목, 뒤로 오면 연 버튼
@@ -676,12 +679,6 @@ it('결과 화면에서 제목·신고 내용·위치·발생 시각을 고치�
   fireEvent.click(getByText('영상에서 찾아보기'))
   wait()
   answer()
-  // 안전신문고 첫 화면에서 신고 양식까지 가는 순서
-  expect(text()).toContain('안전신문고에서는 이렇게 들어가세요')
-  expect([...container.querySelectorAll('.res-steps li')].map((l) => l.textContent)).toEqual([
-    '위쪽 메뉴에서 「신고하기」를 누르세요',
-    '「자동차·교통위반」을 누르세요',
-  ])
   expect(text()).not.toContain('이 화면에서만 바꿨어요')
 
   fireEvent.click(getByText('제목 수정하기'))

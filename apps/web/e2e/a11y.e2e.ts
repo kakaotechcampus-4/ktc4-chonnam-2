@@ -62,7 +62,7 @@ test('키보드로 업로드 → 진행 → 결과 → 안전신문고 이동까
   await expect(page.getByText('경과 시간')).toBeVisible()
 
   // 결과(또는 상황 확인) 화면까지 기다린다
-  const answer = page.getByRole('button', { name: '맞아요' })
+  const answer = page.getByRole('button', { name: '잘 모르겠어요' })
   const ready = page.getByRole('button', { name: /안전신문고/ })
   await expect(answer.or(ready)).toBeVisible({ timeout: 30_000 })
   if (await answer.isVisible()) {
