@@ -89,7 +89,7 @@ def test_old_source_serves_head7_data_without_session_and_is_not_public_safe(pub
 def test_existing_controller_can_restart_current_guarded_tuple_without_schema_or_ledger_rollback(public_api, tmp_path):
     from tests.deploy.test_ec2_deploy import Host, module, seed_current
     client, composition, engine, _ = public_api
-    cid, _ = register(client)
+    cid, revision = register(client)
     cookie = client.cookies.get(COOKIE)
     with engine.begin() as conn:
         composition.public.store.set_open(conn, False)
@@ -119,7 +119,13 @@ def test_existing_controller_can_restart_current_guarded_tuple_without_schema_or
         assert restarted.get(f"/cases/{cid}/view").status_code == 404
         headers = {"Origin": "https://testserver", "Cookie": COOKIE + "=" + cookie}
         assert restarted.get(f"/cases/{cid}/view", headers=headers).status_code == 200
-        assert restarted.post(f"/cases/{cid}/commands", headers=headers, json={"kind": "START_ANALYSIS"}).status_code == 503
+        # Reach stopped admission with a valid command, rather than failing
+        # Case's payload validation before any new job can be proposed.
+        stopped = restarted.post(f"/cases/{cid}/commands", headers=headers,
+            json={"case_id": cid, "expected_case_rev": revision, "kind": "START_ANALYSIS",
+                  "payload": {"description": "Test"}})
+        assert stopped.status_code == 503
+        assert stopped.json()["error"]["code"] == "public.jobs_stopped"
     with engine.connect() as conn:
         assert dict(conn.execute(sa.select(t.reservations)).mappings().one()) == before
         assert conn.exec_driver_sql("SELECT version_num FROM runtime_alembic_version").scalar_one() == "runtime_0008"

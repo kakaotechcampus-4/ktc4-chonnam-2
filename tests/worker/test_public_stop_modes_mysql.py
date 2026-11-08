@@ -10,7 +10,7 @@ from daesingo.common.jobs.schema import job_execution
 from daesingo.common.jobs.reflection import RuntimeJobRecord
 from daesingo.common.jobs.execution import ExecutionContext
 from test_reflection_mysql import fake_case, FakeReflector, worker, case_state  # noqa: F401
-from test_worker_mysql import seed, row
+from test_worker_mysql import queue, seed, row  # noqa: F401 — fake_case depends on queue.
 
 pytestmark = pytest.mark.mysql
 

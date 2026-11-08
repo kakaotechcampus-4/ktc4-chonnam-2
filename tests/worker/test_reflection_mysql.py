@@ -358,15 +358,17 @@ def test_t2_exhaustion_continuation_and_concurrent_delivery(fake_case, mode):
             conn.execute(job_execution.update().values(case_applied_at=None))
         reflector.jobs = (RuntimeJobRecord("follow", "case", "FOLLOW"),)
         arrived = Barrier(3, timeout=10)
-        def before_case_lock(conn, cursor, sql, *args):
-            if "FROM RT04B_CASE" in sql.upper() and "FOR UPDATE" in sql.upper():
+        def before_admission_lock(conn, cursor, sql, *args):
+            if "FROM PUBLIC_CONTROL" in sql.upper() and "FOR UPDATE" in sql.upper():
                 arrived.wait()
-        # Force both deliveries to wait on an external Case lock, rather than
-        # relying on the scheduler to overlap two fast transactions.
+        # Both deliveries must reach the first lock before either owns it.
+        # A-1 holds public_control before Case, so a barrier at the later Case
+        # lock deadlocks the test itself. Keep the external Case blocker and
+        # prove the actual chain: one Case waiter and one admission waiter.
         with fake_case.connect() as blocker:
             transaction = blocker.begin()
             blocker.execute(sa.select(case).with_for_update()).one()
-            sa.event.listen(fake_case, "before_cursor_execute", before_case_lock)
+            sa.event.listen(fake_case, "before_cursor_execute", before_admission_lock)
             with ThreadPoolExecutor(max_workers=2) as threads:
                 futures = [threads.submit(current.reflect, context, incoming.terminal) for _ in range(2)]
                 try:
@@ -374,19 +376,24 @@ def test_t2_exhaustion_continuation_and_concurrent_delivery(fake_case, mode):
                     deadline = time.monotonic() + 10
                     with fake_case.connect() as observer:
                         while True:
-                            waiting = observer.exec_driver_sql("""
-                                SELECT COUNT(DISTINCT w.REQUESTING_THREAD_ID) FROM performance_schema.data_lock_waits w
+                            waiters = dict(observer.exec_driver_sql("""
+                                SELECT l.OBJECT_NAME, COUNT(DISTINCT w.REQUESTING_THREAD_ID)
+                                FROM performance_schema.data_lock_waits w
                                 JOIN performance_schema.data_locks l
-                                  ON l.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID
-                                WHERE l.OBJECT_SCHEMA = DATABASE() AND l.OBJECT_NAME = 'rt04b_case'
-                            """).scalar_one()
+                                  ON l.ENGINE = w.ENGINE AND l.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID
+                                WHERE l.OBJECT_SCHEMA = DATABASE()
+                                  AND l.OBJECT_NAME IN ('rt04b_case', 'public_control')
+                                GROUP BY l.OBJECT_NAME
+                            """).all())
+                            waiting = sum(waiters.values())
                             if waiting == 2:
+                                assert waiters == {"rt04b_case": 1, "public_control": 1}
                                 break
-                            assert time.monotonic() < deadline, f"Case lock waiting thread count: {waiting}"
+                            assert time.monotonic() < deadline, f"Delivery lock waiting threads: {waiters}"
                             time.sleep(0.01)
                 finally:
                     transaction.rollback()
-                    sa.event.remove(fake_case, "before_cursor_execute", before_case_lock)
+                    sa.event.remove(fake_case, "before_cursor_execute", before_admission_lock)
                 assert sorted(future.result(timeout=20).status for future in futures) == ["ALREADY_APPLIED", "APPLIED"]
         assert case_state(fake_case) == (1, 1) and row(fake_case, ids[0])["case_applied_at"] is not None
         with fake_case.connect() as conn:
