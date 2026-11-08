@@ -443,7 +443,7 @@ it('안전신문고로 이동은 준비됐을 때만 새 창으로 열고, 대�
   wait()
   answer()
   fireEvent.click(getByText('안전신문고로 이동'))
-  expect(opened).toHaveBeenCalledWith('https://www.safetyreport.go.kr/', '_blank', 'noopener')
+  expect(opened).toHaveBeenCalledWith('https://www.safetyreport.go.kr/#safereport/safereport3', '_blank', 'noopener')
   expect(container.querySelector('.rs.result')).not.toBeNull()
 })
 

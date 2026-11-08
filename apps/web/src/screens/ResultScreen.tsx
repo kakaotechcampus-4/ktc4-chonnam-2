@@ -25,7 +25,8 @@ import { reportVideoState, splitDateTime } from '../state/resultModel'
 // 제출 단계로의 연결은 READY(= PACKAGE_READY)이고 blocking notice가 없을 때만 연다(#171 C, #172).
 // 안전신문고는 새 창으로 연다 — 이 화면을 옆에 두고 보며 직접 제출한다(§21). 자료를 보내거나 자동으로
 // 채우지 않는다. 대신고에는 접수 버튼이 없다.
-const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/'
+// 첫 화면이 아니라 「자동차·교통 위반 신고」 양식으로 바로 연다 — 사용자가 메뉴를 다시 찾지 않게 한다.
+const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/#safereport/safereport3'
 const COPIED = '복사했습니다'
 const COPY_FAILED = '복사하지 못했어요. 값을 직접 선택해 복사해 주세요.'
 const TOAST_MS = 3000
