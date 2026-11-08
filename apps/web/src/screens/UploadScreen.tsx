@@ -12,6 +12,9 @@ import { Puffs, SpeedLines, burst, seeded, type Puff, type Speed } from '../comp
 import { videoTime, videoTimeText, type VideoTime } from '../state/videoTime'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
+// 원본 보관 안내 — 공유된 보관 정책(원본 최대 24시간)만 적는다. 공개 한도는 확정 전이라 숫자를 적지 않고,
+// 너무 긴 영상은 서버 안내(notice.analysis_range_too_long)가 알린다. 실제 삭제 확인은 공개 게이트(#606 철원 님 답)
+const LIMIT_TEXT = '올린 영상은 최대 24시간 보관해요.'
 
 export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
 
@@ -140,8 +143,31 @@ export function UploadScreen(props: {
   onSearch: () => void
   /** 분석 시작 직후 화면이 빠지는 동안 — 자동차가 출발한다(누를 수 없는 복사본에서만 쓴다) */
   departing?: boolean
+  /** 서버가 거절한 이유(실패 때). 없으면 원인을 단정하지 않는 문구를 쓴다 */
+  failReason?: string
+  /** 올리기 전에 개인정보·외부 처리 안내 동의를 받는다. ApiFlow가 신고(case)마다 첫 업로드에만 켠다 */
+  consent?: boolean
 }): JSX.Element {
   const situationId = useId()
+  // 동의를 기다리는 파일 — 동의하기 전에는 onFiles(서버 업로드)를 부르지 않는다
+  const [pending, setPending] = useState<File[] | null>(null)
+  const consentBox = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    const d = consentBox.current
+    if (!pending || !d || d.open) return
+    // jsdom에는 showModal이 없어 open 속성만 붙인다 — 브라우저에서는 모달(배경 차단·Esc 닫기)
+    if (typeof d.showModal === 'function') d.showModal()
+    else d.setAttribute('open', '')
+  }, [pending])
+  const closeConsent = (agree: boolean) => {
+    const files = pending
+    consentBox.current?.close?.()
+    consentBox.current?.removeAttribute('open')
+    setPending(null)
+    // 닫힌 모달 안에 포커스가 남지 않게 「파일 선택」으로 돌려준다(#606 리뷰). 동의 뒤에도 같은 버튼이 남는다
+    pickButton.current?.focus()
+    if (agree && files) send(files)
+  }
   const [over, setOver] = useState(false)
   const [pointerIn, setPointerIn] = useState(false)
   const [intro, setIntro] = useState(!introPlayed)
@@ -151,10 +177,17 @@ export function UploadScreen(props: {
     return () => clearTimeout(t)
   }, [])
   const input = useRef<HTMLInputElement>(null)
+  const pickButton = useRef<HTMLButtonElement>(null)
   const choose = () => input.current?.click()
   const pick = (files: FileList | null) => {
     if (!files?.length) return
-    picked = [...files]
+    // 올리는 중에 고른 파일은 받지 않으므로 동의도 묻지 않는다(#606 리뷰)
+    if (props.consent) {
+      if (props.state !== 'uploading') setPending([...files])
+    } else send([...files])
+  }
+  const send = (files: File[]) => {
+    picked = files
     props.onFiles(picked)
   }
   const { state } = props
@@ -360,7 +393,9 @@ export function UploadScreen(props: {
                   {title}
                 </b>
                 {state === 'idle' && (
-                  <span className="rs-drop-note">여러 파일도 한 번에 올릴 수 있어요. 촬영 시각 정보도 확인해요.</span>
+                  <span className="rs-drop-note">
+                    여러 파일도 한 번에 올릴 수 있어요. {LIMIT_TEXT}
+                  </span>
                 )}
                 {state === 'uploading' && (
                   // 칸 높이를 지키려고 업로드 중 파일 이름은 한 줄. 전체 이름은 완료 요약에 남는다.
@@ -368,11 +403,14 @@ export function UploadScreen(props: {
                     {names}
                   </span>
                 )}
-                {/* 원인(형식·손상·네트워크)을 단정하지 않는다 — 화면은 알 수 없다(#224 recording 리뷰) */}
-                {state === 'fail' && <span className="rs-drop-note">파일을 올리지 못했어요. 다시 골라 주세요.</span>}
+                {/* 원인은 서버가 알려 준 것만 쓴다 — 화면이 형식·손상·네트워크를 짐작하지 않는다(#224 recording 리뷰) */}
+                {state === 'fail' && (
+                  <span className="rs-drop-note">{props.failReason ?? '파일을 올리지 못했어요. 다시 골라 주세요.'}</span>
+                )}
               </div>
             )}
             <button
+              ref={pickButton}
               type="button"
               // 고르기 전·실패 때는 주 동작, 고른 뒤에는 「영상에서 찾아보기」가 주 동작이라 보조로 낮춘다.
               className={`rs-btn ${canClickArea ? 'pri' : 'sec'}`}
@@ -431,7 +469,13 @@ export function UploadScreen(props: {
 
       <div className="rs-group" style={{ '--i': 2 } as CSSProperties}>
         <label className="rs-field">
-          <span className="rs-label">어떤 상황이었나요?</span>
+          {/* 선택 입력이라는 것을 적기 전에 알린다 — 질문 바로 옆 */}
+          <span className="rs-label">
+            어떤 상황이었나요?{' '}
+            <span className="rs-label-opt" id={`${situationId}-hint`}>
+              비워 두셔도 괜찮아요.
+            </span>
+          </span>
           {/* 상황을 적을 때 「어제 오후 1시」 대신 실제 시각을 보도록 — 적는 칸 바로 위에 둔다 */}
           {vtime && (vtime.spans.length > 0 || vtime.unread > 0) && (
             <span className="rs-hint rs-vtime">
@@ -450,11 +494,40 @@ export function UploadScreen(props: {
             id={situationId}
             describedBy={`${situationId}-hint`}
           />
-          <span className="rs-hint" id={`${situationId}-hint`}>
-            비워 두셔도 영상에서 찾아볼게요.
-          </span>
         </label>
+        {/* 버튼은 label 밖(#509) */}
         <ExampleButton example={EXAMPLE} value={props.situation} onChange={props.onSituation} inputId={situationId} />
+
+        {props.consent && (
+          // 공개 운영 정책 §4 — 파일을 고르는 순간 서버로 올라가므로 고른 직후·보내기 전에 동의를 받는다(#606 리뷰).
+          // Esc는 cancel 이벤트 → 취소와 같다(업로드하지 않음)
+          <dialog
+            ref={consentBox}
+            className="rs-consent"
+            aria-labelledby={`${situationId}-consent`}
+            onCancel={(e) => {
+              e.preventDefault()
+              closeConsent(false)
+            }}
+          >
+            <h2 id={`${situationId}-consent`}>영상을 올리기 전에 확인해 주세요</h2>
+            <ul>
+              <li>영상에는 번호판 · 얼굴 · 위치 같은 개인정보가 담길 수 있어요.</li>
+              <li>장면을 찾기 위해 영상 일부가 외부 AI 서비스로 전송돼요.</li>
+              <li>올린 영상은 최대 24시간, 분석 결과와 신고자료는 최대 7일 보관해요.</li>
+              <li>직접 찍었거나 올릴 권한이 있는 영상만 올려 주세요.</li>
+              <li>대신고는 신고를 대신 접수하거나 위반을 확정하지 않아요.</li>
+            </ul>
+            <div className="rs-consent-actions">
+              <button type="button" className="rs-btn sec" onClick={() => closeConsent(false)}>
+                취소
+              </button>
+              <button type="button" className="rs-btn pri" onClick={() => closeConsent(true)}>
+                동의하고 올리기
+              </button>
+            </div>
+          </dialog>
+        )}
 
         <div className="rs-actions">
           {/* disabled 대신 aria-disabled — Tab으로 닿아 못 누르는 이유가 읽힌다(#509 #5). 화면에는 업로드 칸이 상태를 보인다 */}

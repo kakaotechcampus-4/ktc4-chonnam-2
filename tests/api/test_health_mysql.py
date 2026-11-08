@@ -117,7 +117,7 @@ def test_actual_api_process_and_clean_shutdown(api_startup, mysql_schema_url, tm
     import urllib.error
     startup, stream = api_startup
     runtime_file = tmp_path / "api.env"
-    runtime_file.write_text("DAESINGO_RUNTIME_DB_URL=" + mysql_schema_url.render_as_string(hide_password=False)
+    runtime_file.write_text("DAESINGO_RUNTIME_PUBLIC_MODE=internal\nDAESINGO_RUNTIME_DB_URL=" + mysql_schema_url.render_as_string(hide_password=False)
         + "\nDAESINGO_RUNTIME_MEDIA_ROOT=" + str(tmp_path)
         + "\nDAESINGO_RUNTIME_API_TEMP_ROOT=" + str(tmp_path) + "\n")
     env = dict(os.environ, DAESINGO_ENV_FILE=str(runtime_file), WEB_CONCURRENCY="9")

@@ -111,6 +111,9 @@ WORKER_CHECKS = (
 )
 
 WORKER_PARAMETERS = (
+    *(("public_a1", "local_work", mode) for mode in ("repeat", "concurrent", "ip_limit")),
+    *(("public_a1", "stop_modes", kind) for kind in ("REPORT_VIDEO_EXPORT", "FINE_VERIFY", "exhaustion_pause", "exhaustion_stop")),
+    *(("public_a1", "export_deferral", mode) for mode in ("capacity", "repeat", "stop")),
     *EXHAUSTION_PARAMETERS,
     *REDELIVERY_PARAMETERS,
     *(("sweep", "detect_latency", f"{lease}_{reason}") for lease in (60, 7)
@@ -237,6 +240,7 @@ def test_actual_report_rejects_each_missing_migration_check(tmp_path):
                            ("jobs", "schema"), ("jobs", "enqueue_rollback"),
                            ("jobs", "enqueue_duplicate"), ("jobs", "read_contract"), ("jobs", "read_states"),
                            *LIFECYCLE_CHECKS, *WORKER_CHECKS, *USAGE_CHECKS, *TIMESTAMP_CHECKS, *COMMAND_CHECKS, *CANCEL_API_CHECKS, *ASYNC_E2E_CHECKS, *START_ANALYSIS_CHECKS, *RECORDING_CHECKS, *UPLOAD_CHECKS, *PRODUCED_CHECKS, *FRAME_CHECKS, *ASSET_CHECKS, *OBSERVABILITY_CHECKS, *CANDIDATE_VIDEO_CHECKS,
+                           *(("public_a1", s) for s in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery", "local_work", "stop_modes", "export_deferral")),
                            *((role, scenario) for role, scenario, parameter in (*API_HEALTH_PARAMETERS, *API_CASES_VIEW_PARAMETERS))]:
         removed = {item["nodeid"] for item in report["collected"]
                    if any(c["role"] == role and c["scenario"] == scenario for c in item.get("checks", []))}

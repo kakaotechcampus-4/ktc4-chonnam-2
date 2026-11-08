@@ -51,6 +51,8 @@ export function FlowScreen(props: {
   /** 업로드 화면에서 자동차가 출발하며 넘어올 때 — 오른쪽에서 밀려 들어온다(처음 그릴 때만 본다) */
   pushIn?: boolean
   onStop?: () => void
+  /** 브라우저에 원본이 없을 때 대표 영상 자리에 대신 보일 서버 장면 이미지 주소(VideoThumb) */
+  fallbackSrc?: string | null
 }): JSX.Element {
   const screen = selectScreen(props.view)
   const [enter] = useState(() => (props.pushIn ? 'rs-push-in' : 'rs-enter'))
@@ -188,6 +190,7 @@ export function FlowScreen(props: {
           key={`${props.view.case_id}:${representative?.name ?? ''}`}
           file={representative instanceof File ? representative : null}
           name={representative?.name ?? props.files[0]?.name ?? ''}
+          fallbackSrc={props.fallbackSrc}
           // 분석을 기다리는 동안(PROGRESS)이면 단계와 상관없이 연다 — 단계 사이에 RUNNING이 잠깐 없어도 닫지 않는다.
           canDrive={driveable && screen.kind === 'PROGRESS' && screen.blocking.length === 0}
         />

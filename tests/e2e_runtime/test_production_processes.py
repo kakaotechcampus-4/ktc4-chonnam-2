@@ -24,13 +24,20 @@ def test_worker_peer_forwards_composition_logger_and_stops_after_dispatch(tmp_pa
 
     stream, replies, dispatches = StringIO(), [], []
     startup = Startup(RuntimeConfig.from_mapping("worker", {
-        "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://test@127.0.0.1:1/not_connected",
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://test@127.0.0.1:1/not_connected",
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(tmp_path / "media"),
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(tmp_path / "temp"),
     }), MappingProxyType({"search": SearchSettings(SecretStr("offline"), GeminiSearchConfig())}),
         configure_logging("worker", stream=stream))
     context = ExecutionContext("execution", "job", "case", "HINT_EXTRACT", 1, "trace")
-    engine = SimpleNamespace(pool=SimpleNamespace(checkedout=lambda: 0), dispose=lambda: None)
+    # The actual Worker now always looks up durable public tagging, even in
+    # internal mode. Keep that boundary real, without a network database.
+    from a1_support import sqlite_engine
+    from daesingo.common.public_runtime import schema
+    engine = sqlite_engine(tmp_path / "guard.sqlite")
+    schema.metadata.create_all(engine)
+    with engine.begin() as conn:
+        conn.execute(schema.control.insert().values(id=1, accepting=False, policy_hash=None))
 
     def handler(ctx):
         dispatches.append(ctx)

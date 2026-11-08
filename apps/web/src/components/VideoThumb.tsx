@@ -36,9 +36,15 @@ export function VideoThumb(props: {
   /** 분석 중 선택해서 여는 주행 게임. 미리보기 성공 여부와 무관하다. */
   canDrive?: boolean
   gameSessionKey?: string
+  /**
+   * 브라우저에 원본이 없거나(결과 화면에서 다시 준비 · 창을 닫았다 옴) 그리지 못할 때 대신 보일
+   * 서버의 장면 이미지(고른 후보의 thumb_ref). 이것도 못 불러오면 원래 안내를 둔다.
+   */
+  fallbackSrc?: string | null
 }): JSX.Element {
   const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
   const [failed, setFailed] = useState<File | null>(null)
+  const [fallbackFailed, setFallbackFailed] = useState<string | null>(null)
   const [driving, setDriving] = useState<'unopened' | 'preview' | 'game'>('unopened')
   const entry = useRef<HTMLButtonElement>(null)
   const wasDriving = useRef(false)
@@ -131,18 +137,21 @@ export function VideoThumb(props: {
   const src = shot && shot.file === props.file ? shot.src : null
   // 준비 중에는 필름 아이콘만, 끝내 못 그리면 「미리보기를 표시할 수 없어요」까지 보인다.
   const unavailable = !props.file || failed === props.file
+  const fallback = unavailable && props.fallbackSrc && fallbackFailed !== props.fallbackSrc ? props.fallbackSrc : null
+  const shown = src ?? fallback
   return (
     <figure className="flow-thumb">
       <div className="flow-thumb-box">
-        <div className={`flow-thumb-frame${src ? ' has-shot' : ''}`}>
+        <div className={`flow-thumb-frame${shown ? ' has-shot' : ''}`}>
           <div className="flow-thumb-content" hidden={gameVisible}>
-            {!src && (
+            {!shown && (
               <span className="flow-thumb-fallback">
                 <Film size={24} strokeWidth={1.8} aria-hidden />
                 {unavailable && <span>{PREVIEW_UNAVAILABLE}</span>}
               </span>
             )}
             {src && <img src={src} alt="" />}
+            {!src && fallback && <img src={fallback} alt="" onError={() => setFallbackFailed(fallback)} />}
             {props.canDrive && (
               <button type="button" ref={entry} className="flow-preview-switch is-game" onClick={() => setDriving('game')}>
                 <span className="flow-preview-invite-copy">

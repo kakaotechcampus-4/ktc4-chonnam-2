@@ -11,6 +11,9 @@ export default defineConfig(({ mode }) => ({
   build: { rollupOptions: { input: { app: 'index.html', driving: 'driving-game.html' } } },
   server: {
     fs: { allow: ['../..'] },
-    proxy: { '/cases': loadEnv(mode, '.', '').API_PROXY_TARGET ?? 'http://localhost:8000' },
+    proxy: {
+      '/cases': loadEnv(mode, '.', '').API_PROXY_TARGET ?? 'http://localhost:8000',
+      '/public': loadEnv(mode, '.', '').API_PROXY_TARGET ?? 'http://localhost:8000',
+    },
   },
 }))

@@ -48,9 +48,10 @@ def test_production_composition_defaults_write_chunked_envelopes(db, monkeypatch
     if entrypoint == 'api':
         from daesingo.api import composition
 
-        def command(payload, *, store, timelines):
+        def command(payload, *, store, timelines, admit_auto_exports=None):
             # execute_command itself constructs RecordingService and its
             # ConnectionRecordingRepository; no injected Recording override.
+            assert admit_auto_exports is None  # This composition is internal.
             publish(timelines._recording._repository)
             return SimpleNamespace(cancelled_job_ids=(), appended_job_records=())
 

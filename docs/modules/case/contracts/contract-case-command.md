@@ -311,6 +311,22 @@ evidence 기록 전 검사(E-3)는 기록 직전, `not_allowed` 다음에 부른
 ```
 
 
+## A-1 자동 export admission 분리 (2026-11-08 로컬 구현, #629)
+
+§5·§6의 command 검증 순서와 실패 시 변경 금지는 유지한다. 선택적 `admit_auto_exports` port가 없으면 기존 동작이다.
+handler가 승인한 검토·정정 뒤 자동 export만 거부되면 정정·case_rev·명시 job을 저장하고, 자동 발주의 새 JobRecord·
+export input·SUPERSEDED 효과만 폐기한다. 명시 job의 최종 Runtime admission 거부는 바깥 transaction 전체를 되돌린다.
+응답 ok=true는 정정 저장 성공이며 새 영상의 queued/READY를 뜻하지 않는다. HTTP 필드는 추가하지 않는다.
+현재 revision의 미발주는 CaseView의 `public.local_work_not_queued` notice로 표시한다.
+
+`RUN_NOTICE_ACTION/GENERATE_REPORT_VIDEO`의 화면 버튼은 진행 export가 없고 현재 export request를 만들 수 있으면
+최초 자동 발주 보류 후에도 표시할 수 있다. 현재 입력과 같은 prior가 있으면 기존 같은 입력 재시도를 유지한다.
+prior가 없으면 adapter의 현재 request와 Recording fingerprint로 첫 명시 job을 만들고 기존 admission을 거친다.
+새 명시 export intent(첫 발주·실패 후 재시도)는 case_rev를 한 번 올린다. 기존 force_rerun 값은 바꾸지 않는다.
+동일 expected_case_rev의 재전송은 stale이며, 실패 결과 반영 뒤 새 revision의 재시도는 별도 admission을 받는다.
+이전 입력을 그대로 재시도하거나 정책을 우회하지 않는다. 새로운 공개 HTTP command나 무제한 재시도는 없다.
+#616의 EvidenceRecord 조립 gate·report_draft와 독립인 수용 경계이며 합본 검증/Case Owner 통합 리뷰는 별도다.
+
 ## 후보 영상 미리보기 command (2026-11-02 로컬 구현)
 
 `REQUEST_CANDIDATE_VIDEO_PREVIEW`의 payload는 `{candidate_id: string}` 하나다. 기존 expected_case_rev 검사와 200/202 응답을 사용한다. 모르는 후보는 unknown_target, 현재 세대 rank 1~3이 아니거나 stale·구간 없음·새 탐색 중이면 not_allowed다. 같은 후보의 진행 중/성공 요청은 새 job 없이 성공한다. 선택과 신고자료는 변경하지 않는다. 상세 정본: `docs/modules/case/decisions/candidate-video-preview.md`.

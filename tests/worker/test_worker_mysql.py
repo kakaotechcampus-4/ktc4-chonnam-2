@@ -19,6 +19,7 @@ from daesingo.common.jobs.schema import job_execution
 from daesingo.common.logging import configure_logging
 from mysql_fault_proxy import CommitResponseProxy
 from logging_faults import install_logging_fault
+from terminal_observation import observe_terminal_transactions
 
 pytestmark = pytest.mark.mysql
 
@@ -51,6 +52,7 @@ def composed(queue, handlers, *, stop=None, stream=None, idle_wait=None, sleep=N
     stop = stop if stop is not None else Event()
     stream = stream if stream is not None else StringIO()
     config = RuntimeConfig.from_mapping("worker", {
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
         "DAESINGO_RUNTIME_DB_URL": queue.url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": "/private/media",
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": "/private/temp",
@@ -264,15 +266,15 @@ def test_logger_failure_preserves_real_terminal_and_retry_counts(queue, scenario
     from sqlalchemy.exc import OperationalError
     composition = import_module("daesingo.worker.composition")
     transaction = composition.run_worker_transaction
-    observed = []
+    observed, auxiliary = [], []
 
-    def broken_observer(attempt):
-        observed.append(attempt.outcome)
+    def broken_observer(attempt, terminal):
+        (observed if terminal else auxiliary).append(attempt.outcome)
         # A DB-shaped sink failure must not become an extra transaction attempt.
         raise OperationalError("private SQL", {}, Exception(1213, "secret observer"))
 
     def record_transaction(engine, operation, **kwargs):
-        return transaction(engine, operation, **kwargs, observe=broken_observer)
+        return observe_terminal_transactions(transaction, engine, operation, **kwargs, observe=broken_observer)
 
     monkeypatch.setattr(composition, "run_worker_transaction", record_transaction)
     execution_id, = seed(queue)
@@ -321,4 +323,5 @@ def test_logger_failure_preserves_real_terminal_and_retry_counts(queue, scenario
     assert sleeps == ([1, 1, 5] if scenario == "terminal_db" else [])
     assert idles == ([5, 2] if scenario == "claim_db" else [] if scenario == "terminal_db" else [2])
     assert observed == (["DISCONNECT"] * 3 + ["COMMITTED"] if scenario == "terminal_db" else ["COMMITTED"])
+    assert auxiliary == ["COMMITTED"] * (3 if scenario == "terminal_db" else 2)
     assert capsys.readouterr().err == ""

@@ -57,7 +57,7 @@ def main():
             media, temp = root / "media", root / "temp"
             media.mkdir(); temp.mkdir()
             source = generate(root, Path(sys.argv[1]))
-            values = dict(DAESINGO_RUNTIME_DB_URL=url.render_as_string(hide_password=False),
+            values = dict(DAESINGO_RUNTIME_PUBLIC_MODE="internal", DAESINGO_RUNTIME_DB_URL=url.render_as_string(hide_password=False),
                 DAESINGO_RUNTIME_MEDIA_ROOT=str(media), DAESINGO_RUNTIME_API_TEMP_ROOT=str(temp),
                 DAESINGO_RUNTIME_WORKER_TEMP_ROOT=str(temp), GEMINI_API_KEY="offline",
                 DAESINGO_RECORDING_ANALYSIS_PROFILE_REF="acceptance", DAESINGO_RECORDING_ANALYSIS_HEIGHT="720",

@@ -27,7 +27,8 @@ class CaseReflector:
                  budget: InitialSearchBudget | None = None):
         self.reader, self.timelines, self.store_factory, self.budget = reader, timelines, store_factory, budget
 
-    def reflect(self, conn: Connection, incoming: ReflectionInput) -> ReflectionResult:
+    def reflect(self, conn: Connection, incoming: ReflectionInput, *, admit_auto_exports=None,
+                on_auto_exports_deferred=None) -> ReflectionResult:
         store = self.store_factory(conn)
         if store.conn is not conn:
             raise ValueError("reflection store must share caller connection")
@@ -37,8 +38,21 @@ class CaseReflector:
             produced=tuple(ref.model_dump() for ref in incoming.terminal.produced),
             failure_kind=incoming.terminal.failure_kind,
         )
+        deferred = False
+        def admission(records):
+            nonlocal deferred
+            accepted = admit_auto_exports(records)
+            deferred = deferred or not accepted
+            return accepted
         result = reflect_execution(outcome, store=store, reader=self.reader,
-            timelines=self.timelines, budget=self.budget)
+            timelines=self.timelines, budget=self.budget,
+            admit_auto_exports=admission if admit_auto_exports is not None else None)
+        if deferred and on_auto_exports_deferred is not None:
+            on_auto_exports_deferred(store.get_case(incoming.case_id).case_rev)
         return ReflectionResult(result.status, result.reason, tuple(
             RuntimeJobRecord(job["job_id"], job["case_id"], job["kind"])
             for job in result.appended_job_records))
+
+    def reflect_with_admission(self, conn, incoming, *, admit_auto_exports, on_auto_exports_deferred):
+        return self.reflect(conn, incoming, admit_auto_exports=admit_auto_exports,
+                            on_auto_exports_deferred=on_auto_exports_deferred)

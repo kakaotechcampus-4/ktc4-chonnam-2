@@ -7,7 +7,7 @@
 
 # Operator supplies a bare public hostname in the host service environment.
 {$RT14_PUBLIC_HOSTNAME} {
-	@api path /cases* /health*
+	@api path /cases* /health* /public*
 	handle @api {
 		header Cache-Control "no-store"
 		reverse_proxy 127.0.0.1:8000

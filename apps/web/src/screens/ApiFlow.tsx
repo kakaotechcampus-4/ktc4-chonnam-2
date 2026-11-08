@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import { createApi, type Api, type Command } from '../api/client'
 import { AppHeader } from '../components/AppHeader'
 import { isAction, type Action, type CaseView } from '../contracts/caseView'
@@ -38,7 +38,7 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_PLATE_IMAGE',
 ])
 
-export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean }): JSX.Element {
+export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api)
   const { view } = state
@@ -152,6 +152,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     location.assign(location.pathname)
   }
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
+  const deferredWork = view?.notices.find(n => n.code === 'public.local_work_not_queued')
   // 지워진 기억 case는 새 신고로 넘어가는 중이다 — 그 사이 「찾을 수 없어요」가 깜빡이지 않게 머리줄만 둔다
   if (gone && props.remembered) return <AppHeader onNewReport={newReport} />
 
@@ -159,6 +160,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     <>
       <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page" ref={mainRef}>
+        {deferredWork && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
         {banner && !state.viewUnavailable && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
@@ -205,7 +207,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
               )}
             </section>
           </div>
-        ) : !view || view.stage === 'INTAKE' ? upload() : analysis(view)}
+        ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
       </main>
     </>
   )
@@ -222,11 +224,15 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     const uploadState: UploadState = uploading ? 'uploading' : anyDone ? 'done' : uploads.length > 0 ? 'fail' : 'idle'
     const files = already > 0 ? [{ name: `이미 올린 영상 ${already}개` }] : uploads
     const skipped = uploads.filter((u) => u.status === 'FAILED').map((u) => u.name)
+    const failCode = uploads.find((u) => u.error)?.error
     return (
       <UploadScreen
         state={uploadState}
         files={files}
         skipped={skipped}
+        failReason={failCode ? errorMessage(failCode) : undefined}
+        // 같은 신고에서는 한 번만 묻는다 — case가 생기면 동의를 받은 뒤다. 새 신고(caseId 없음)는 다시 묻는다
+        consent={!state.caseId}
         situation={situation}
         onFiles={(picked) => void addFiles(picked)} // 올리는 중에 고른 파일은 store가 받지 않는다
         onSituation={setSituation}
@@ -257,6 +263,12 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             startedAt={startedAt}
             pushIn={!!leaving}
             onStop={view.stage === 'SEARCHING' ? () => run({ kind: 'STOP_ANALYSIS', payload: {} }) : undefined}
+            // 결과 화면에서 다시 준비하거나 창을 닫았다 오면 브라우저에 원본이 없다 — 고른 후보의 장면 이미지로 대신한다.
+            // 후보 썸네일이 없으면 근거 장면(evidence.preview_ref)을 쓴다 — 결과 화면 포스터·후보 카드와 같은 순서(#634 리뷰)
+            fallbackSrc={(() => {
+              const thumb = view.candidates.find((c) => c.selected)?.thumb_ref ?? view.evidence?.preview_ref
+              return thumb && frameSrc ? frameSrc(thumb) : null
+            })()}
           />
         )
       case 'STOPPED':
@@ -301,9 +313,18 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
       default:
         if (sub === 'candidates') return <CandidateCompare {...playback} view={view} onBack={back} onSelect={reselect} />
         if (sub === 'plate' || sub === 'plateEdit')
-          return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} frameSrc={frameSrc} />
+          return (
+            <PlateCheck
+              view={view}
+              onBack={back}
+              onEdit={editPlate}
+              startEditing={sub === 'plateEdit'}
+              frameSrc={frameSrc}
+              plateImageSrc={cid && view.package?.plate_image_ref ? api.assetUrl(cid, view.package.plate_image_ref) : undefined}
+            />
+          )
         if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
-        if (sub === 'details') return <DetailsCheck view={view} onBack={back} />
+        if (sub === 'details') return <DetailsCheck {...playback} view={view} onBack={back} />
         return (
           <ResultScreen
             {...playback}
@@ -315,6 +336,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             edits={edits}
             onEdit={(key, value) => setEdited({ key: draftKey, edits: { ...edits, [key]: value } })}
             onRespond={respond}
+            onReviewed={() => run({ kind: 'MARK_REVIEWED', payload: {} })}
+            onCorrect={(type) => run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: type } })}
             onAction={onAction}
             canRun={canRun}
             arriving={arriving}

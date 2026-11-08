@@ -15,6 +15,7 @@ stale 검사·허용 조건·실패 코드는 전부 여기서 정한다.
 from __future__ import annotations
 
 import copy
+from collections.abc import Callable
 import functools
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -211,6 +212,15 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"} and export_requests is not None:
         prior = next((r for r in reversed(case.job_records) if r["kind"] == kind
             and r["job_id"] in case.export_inputs and case.export_inputs[r["job_id"]] == export_requests.get(kind)), None)
+        if prior is None and kind in export_requests:
+            # A refused automatic order has no persisted intent for this input.
+            # The visible action is an explicit first order, not a retry of an old input.
+            from daesingo.recording.exports import export_fingerprint
+            request = export_requests[kind]
+            case.bump_revision()
+            jobs.issue_job(case, kind, input_fingerprint=export_fingerprint({"kind": kind, "input": request}),
+                           export_input=request)
+            return
     if prior is None:
         raise _Rejected("not_allowed")
     # 결과 없음(`CANDIDATE_REVIEW` · 후보 0개)에서 다시 찾으면 `SEARCHING`으로 돌아간다(#426) — 탐색 결과 반영은
@@ -218,6 +228,10 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     if kind == "COARSE_SEARCH" and case.stage == "CANDIDATE_REVIEW":
         case.regress_to_searching()
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
+    if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}:
+        # A new explicit intent needs a new revision. Replaying its old payload
+        # must be stale, while a later failed-export retry has a different admission identity.
+        case.bump_revision()
     jobs.issue_same_input(case, prior)
 
 
@@ -331,6 +345,7 @@ def execute_command(
     timelines: CaseTimelineSource | None = None,
     budget: InitialSearchBudget | None = None,
     now: datetime | None = None,
+    admit_auto_exports: Callable[[list[dict[str, Any]]], bool] | None = None,
 ) -> CommandResult:
     """command 하나를 받아 `{ok, error, case_view}`(§4)와 이번 command로 append된 JobRecord를 돌려준다.
 
@@ -392,7 +407,15 @@ def execute_command(
     if case.stage == "EVIDENCE_REVIEW" and request["kind"] not in _SKIP_EXPORT_GATE:
         from daesingo.case.exports import issue_missing_exports
         adapter = store.adapter_for(case)
+        corrected = copy.deepcopy(case) if admit_auto_exports is not None else None
+        before_exports = len(case.job_records)
         issue_missing_exports(case, adapter, view_of(case))
+        if (admit_auto_exports is not None and len(case.job_records) > before_exports
+                and not admit_auto_exports(copy.deepcopy(case.job_records[jobs_before:]))):
+            # Keep the accepted review/correction. Only automatic export effects
+            # are deferred; explicit jobs and domain validation stay atomic.
+            assert corrected is not None
+            case = corrected
         mark_ready_if_package_ready(case, adapter)
     store.save(case)
     appended = copy.deepcopy(case.job_records[jobs_before:])

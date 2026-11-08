@@ -42,7 +42,16 @@ const STOPPED = view({
   stage: 'SEARCHING',
   notices: [notice('case.analysis_stopped', ['RETRY_SEARCH'])],
 })
-const AWAITING = SNAPSHOTS.map((s) => s.view).find((v) => v.notices.some((n) => n.code === 'case.situation_response_pending'))!
+// 응답 대기(UNCERTAIN) — B안 fixture에는 이 스냅샷이 없어 결과 스냅샷에서 만든다: 조립 전(record_id null) + 응답 대기 notice
+const AWAITING_BASE = SNAPSHOTS.map((s) => s.view).find((v) => v.package && v.evidence)!
+const AWAITING: CaseView = {
+  ...AWAITING_BASE,
+  stage: 'EVIDENCE_REVIEW',
+  package: null,
+  evidence: { ...AWAITING_BASE.evidence!, record_id: null },
+  candidates: AWAITING_BASE.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: 'NOT_ASKED' } : c)),
+  notices: [notice('case.situation_response_pending', [])],
+}
 
 function setup(views: { get?: CaseView } = {}) {
   const m = {
@@ -65,6 +74,8 @@ it('영상을 고르면 올라가고, [영상에서 찾아보기]에서 상황 �
   const { container, getByRole, getByText, findByText } = render(<ApiFlow api={api} />)
 
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  expect(m.uploadSource).not.toHaveBeenCalled() // 개인정보·외부 처리 안내에 동의하기 전에는 서버로 보내지 않는다
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText(/^업로드 완료/)
   expect(m.createCase).toHaveBeenCalledOnce()
   expect(m.uploadSource).toHaveBeenCalledWith('c1', expect.objectContaining({ name: 'a.mp4' }))
@@ -81,12 +92,14 @@ it('올리는 중에 고른 파일은 받지 않고 목록에도 올리지 않�
   const { m, api } = setup()
   let finish!: (r: unknown) => void
   m.uploadSource.mockImplementationOnce(() => new Promise((r) => (finish = r)))
-  const { container, findByText, queryByText } = render(<ApiFlow api={api} />)
+  const { container, findByText, getByText, queryByText } = render(<ApiFlow api={api} />)
   const input = container.querySelector('input[type=file]')!
 
   fireEvent.change(input, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText('업로드 중')
   fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
+  expect(queryByText('동의하고 올리기')).toBeNull() // 받지 않을 파일이라 동의도 묻지 않는다(#606 리뷰)
   finish(ok({ case_id: 'c1', source_asset_ref: 'sa', case_view: view({ manifest_summary: { ...BASE.manifest_summary, file_count: 1, ok_file_count: 1 } }) }, 201))
   await findByText(/^업로드 완료/)
 
@@ -146,6 +159,22 @@ it('case 대기 timeout(#358)은 중단 화면에 timeout 문구로 보이고, [
   }
 })
 
+it('진행 화면 대표 영상 자리는 원본이 없으면 고른 후보 썸네일, 그것도 없으면 근거 장면을 보인다(#634 리뷰)', async () => {
+  const selected = { ...BASE.candidates[0], selected: true }
+  const evidence = { ...BASE.evidence!, preview_ref: 'fr_evidence' }
+  const shown = async (thumb: string | null) => {
+    const { api } = setup({ get: view({ case_rev: 5, stage: 'CANDIDATE_REVIEW', running_jobs: JOBS, candidates: [{ ...selected, thumb_ref: thumb }], evidence }) })
+    ;(api as { frameUrl: (c: string, r: string) => string }).frameUrl = (_c, r) => `/frames/${r}`
+    const r = render(<ApiFlow api={api} caseId="c1" />)
+    await waitFor(() => expect(r.container.querySelector('.flow-thumb img')).not.toBeNull())
+    const src = r.container.querySelector('.flow-thumb img')!.getAttribute('src')
+    cleanup()
+    return src
+  }
+  expect(await shown('fr_thumb')).toBe('/frames/fr_thumb')
+  expect(await shown(null)).toBe('/frames/fr_evidence')
+})
+
 it('찾는 중이 아닐 때(SEARCHING이 아닐 때)는 중단 버튼을 두지 않는다', async () => {
   const { api } = setup({ get: view({ case_rev: 5, stage: 'CANDIDATE_REVIEW', running_jobs: JOBS, candidates: BASE.candidates }) })
   const { findByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
@@ -153,13 +182,14 @@ it('찾는 중이 아닐 때(SEARCHING이 아닐 때)는 중단 버튼을 두지
   expect(queryByText('분석 중단')).toBeNull()
 })
 
-it('신고 상황 응답은 RECORD_SITUATION_RESPONSE로 보낸다', async () => {
+it('신고 상황 응답은 RECORD_SITUATION_RESPONSE로 보내고, 응답 대기(UNCERTAIN)에는 「맞아요」가 없다', async () => {
   const { m, api } = setup({ get: AWAITING })
   m.sendCommand.mockResolvedValue(ok({ ...AWAITING, case_rev: AWAITING.case_rev + 1 }))
-  const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
-  fireEvent.click(await findByText('맞아요'))
+  const { findByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await findByText('잘 모르겠어요'))
+  expect(queryByText('맞아요')).toBeNull()
   await waitFor(() => expect(m.sendCommand).toHaveBeenCalled())
-  expect(m.sendCommand).toHaveBeenCalledWith('c1', AWAITING.case_rev, { kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CONFIRMED' } })
+  expect(m.sendCommand).toHaveBeenCalledWith('c1', AWAITING.case_rev, { kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'USER_UNSURE' } })
 })
 
 it('요청이 실패하면 화면은 그대로 두고 알림만 띄운다', async () => {
@@ -208,6 +238,7 @@ it('[영상에서 찾아보기] 뒤 진행 화면이 열리면 업로드 겉모�
   m.sendCommand.mockResolvedValue(ok(SEARCHING, 202))
   const { container, getByText, findByText } = render(<ApiFlow api={api} />)
   fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
   await findByText(/^업로드 완료/)
   fireEvent.click(getByText('영상에서 찾아보기'))
   await findByText('분석 중단')
@@ -551,6 +582,16 @@ it('candidate video request and polling keep the failure comparison visible with
   expect(screen.getByText('이 장면의 영상을 준비하지 못했어요.')).toBeTruthy()
 })
 
+it('결과 화면에서 연 「어떻게 정했는지」는 기준 후보 영상을 보인다 — ApiFlow가 playback을 넘긴다', async () => {
+  const initial: CaseView = { ...RESULT, case_id: 'c1', running_jobs: [],
+    candidates: RESULT.candidates.map((c) => c.selected ? { ...c, video_preview: { status: 'READY', clip_ref: 'basis-clip' } } : c),
+  }
+  const { api } = setup({ get: initial })
+  const screen = render(<ApiFlow api={api} caseId="c1" />)
+  fireEvent.click(await screen.findByRole('button', { name: '어떻게 정했는지' }))
+  await waitFor(() => expect(screen.container.querySelector('.details-scene video')?.getAttribute('src')).toBe('/candidate-video/basis-clip'))
+})
+
 it.each(['result', 'not-observed', 'failed', 'awaiting'] as const)('a single candidate has a playback entry on the %s screen', async (surface) => {
   const original = surface === 'result' ? RESULT : surface === 'awaiting' ? AWAITING : notObserved(RESULT.candidates)
   const selected = original.candidates.find((c) => c.selected) ?? RESULT.candidates[0]
@@ -636,4 +677,43 @@ it('하위 화면을 연 채 새로고침해 남은 기록 깊이는 처음 열 
   const { findByText } = render(<ApiFlow api={api} caseId="c1" />)
   await findByText(/다른 장면이었나요\?/)
   expect(history.state?.sub).toBe(0)
+})
+
+it('서버가 업로드를 거절하면 그 이유를 업로드 칸에 보인다', async () => {
+  const { m, api } = setup()
+  m.uploadSource.mockResolvedValue({ ok: false, status: 413, error: { code: 'http.payload_too_large', message_key: 'http.payload_too_large' }, caseView: null })
+  const { container, findByText, getByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'big.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
+  expect(await findByText(/서버가 받을 수 있는 크기보다 커요/)).toBeTruthy()
+})
+
+it('업로드 전 동의에서 취소하면 서버에 아무것도 보내지 않는다', () => {
+  const { m, api } = setup()
+  const { container, getByText, queryByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('취소'))
+  expect(m.createCase).not.toHaveBeenCalled()
+  expect(m.uploadSource).not.toHaveBeenCalled()
+  expect(queryByText(/^업로드 중/)).toBeNull()
+})
+
+it('같은 신고에서는 한 번 동의하면 파일을 더 골라도 다시 묻지 않는다(새 신고는 페이지를 새로 열어 다시 묻는다)', async () => {
+  const { m, api } = setup()
+  const { container, findByText, getByText, queryByText } = render(<ApiFlow api={api} />)
+  const input = container.querySelector('input[type=file]')!
+  fireEvent.change(input, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('동의하고 올리기'))
+  await findByText(/^업로드 완료/)
+  fireEvent.change(input, { target: { files: [new File(['x'], 'b.mp4')] } })
+  expect(queryByText('동의하고 올리기')).toBeNull()
+  await waitFor(() => expect(m.uploadSource).toHaveBeenCalledTimes(2))
+})
+
+it('동의 창을 닫으면 포커스가 「파일 선택」으로 돌아온다', () => {
+  const { api } = setup()
+  const { container, getByText } = render(<ApiFlow api={api} />)
+  fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(['x'], 'a.mp4')] } })
+  fireEvent.click(getByText('취소'))
+  expect(document.activeElement?.textContent).toBe('파일 선택')
 })

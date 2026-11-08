@@ -162,7 +162,7 @@ def test_publish_root_cannot_be_injected_as_temp_scan_target(tmp_path, service_n
     publish.mkdir()
     temp = publish/'nested' if nested else publish
     config = RuntimeConfig.from_mapping(service_name, {
-        'DAESINGO_RUNTIME_DB_URL': 'mysql+pymysql://test@127.0.0.1:1/test_cleanup',
+        'DAESINGO_RUNTIME_PUBLIC_MODE': 'internal', 'DAESINGO_RUNTIME_DB_URL': 'mysql+pymysql://test@127.0.0.1:1/test_cleanup',
         'DAESINGO_RUNTIME_MEDIA_ROOT': str(tmp_path),
         'DAESINGO_RUNTIME_'+service_name.upper()+'_TEMP_ROOT': str(temp)})
     with pytest.raises(ValueError, match='publish'):

@@ -4,10 +4,9 @@ import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { sourceLabel } from '../contracts/labels'
 import { splitDateTime } from '../state/resultModel'
-import { CandidateCard } from '../components/CandidateCard'
 import { FrameSlot } from '../components/FrameSlot'
 import { StatusBadge } from '../components/StatusBadge'
-import { CandidatesScreen } from './CandidatesScreen'
+import { CandidatesScreen, PlayableCandidateCard } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
 import { ExampleButton, SituationInput } from './UploadScreen'
 
@@ -51,7 +50,7 @@ export function CandidateCompare(props: {
 
 // 03_Sub_Details_Check — 왼쪽에 지금 신고자료의 기준 장면(후보 카드: AI가 본 내용·시각 출처),
 // 오른쪽에 그 장면에서 정한 값과 출처·상태를 나란히 둔다. 어느 장면에서 무엇을 정했는지 한 화면에서 본다.
-export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX.Element {
+export function DetailsCheck(props: { view: CaseView; onBack: () => void } & CandidatePlayback): JSX.Element {
   const i = props.view.candidates.findIndex((c) => c.selected)
   const basis = i >= 0 ? props.view.candidates[i] : null
   return (
@@ -59,7 +58,7 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
       <div className={basis ? 'details-grid' : undefined}>
         {basis && (
           <aside className="details-scene">
-            <CandidateCard candidate={basis} ordinal={i + 1} />
+            <PlayableCandidateCard {...props} candidate={basis} ordinal={i + 1} />
           </aside>
         )}
         {/* 다른 후보는 결과 화면의 「다른 후보 영상」에서만 연다 */}
@@ -90,6 +89,8 @@ export function PlateCheck(props: {
   onEdit?: (plate: string) => void
   /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
   frameSrc?: (frameRef: string) => string
+  /** 신고자료의 번호판 이미지 주소(결과 화면 다운로드와 같은 plate_image_ref). 없으면 자리 표시만 둔다 */
+  plateImageSrc?: string
 }): JSX.Element {
   const [editing, setEditing] = useState<string | null>(() =>
     props.startEditing ? (props.view.evidence?.plate_display.value ?? '') : null,
@@ -135,10 +136,10 @@ export function PlateCheck(props: {
         </figure>
         <div className="plate-side">
           <figure className="plate-fig">
-            <div className="plate-frame plate-crop">
+            <FrameSlot className="plate-frame plate-crop" src={props.plateImageSrc ?? null} alt="번호판 확대">
               <Film size={24} strokeWidth={1.5} aria-hidden />
               <span>{pending ? '번호판 이미지 준비 중' : '번호판 이미지가 없어요'}</span>
-            </div>
+            </FrameSlot>
             <figcaption>번호판 확대</figcaption>
           </figure>
           <section className="plate-value" aria-labelledby="plate-k">

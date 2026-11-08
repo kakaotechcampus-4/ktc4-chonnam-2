@@ -52,6 +52,7 @@ jobs:
             e50b2976ef4edc3a030cfc5b03a5206340dd917b \
             ce0750d5a3317ad1c810783d67f8a05ba88bce08 \
             70f1c47cbc7c08fa848d057687f7130047f1126c \
+            b915808898077509e6f499b7be197310e5045b7a \
             bb29d750d23765a73b7b6853b22086648684a392; do
             git cat-file -e "${revision}^{commit}"
             git cat-file -e "${revision}^{tree}"
@@ -176,6 +177,7 @@ jobs:
             e50b2976ef4edc3a030cfc5b03a5206340dd917b \
             ce0750d5a3317ad1c810783d67f8a05ba88bce08 \
             70f1c47cbc7c08fa848d057687f7130047f1126c \
+            b915808898077509e6f499b7be197310e5045b7a \
             bb29d750d23765a73b7b6853b22086648684a392; do
             git cat-file -e "${revision}^{commit}"
             git cat-file -e "${revision}^{tree}"

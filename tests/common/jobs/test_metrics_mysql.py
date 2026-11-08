@@ -201,6 +201,7 @@ def test_false_stale_requires_original_owner_zero_row_terminal_attempt(db, state
                 lease_owner='other' if state=='foreign' else 'owner'))
     output = StringIO()
     config = RuntimeConfig.from_mapping('worker', {
+        'DAESINGO_RUNTIME_PUBLIC_MODE': 'internal',
         'DAESINGO_RUNTIME_DB_URL':db.url.render_as_string(hide_password=False),
         'DAESINGO_RUNTIME_MEDIA_ROOT':'/private/media',
         'DAESINGO_RUNTIME_WORKER_TEMP_ROOT':'/private/temp'})

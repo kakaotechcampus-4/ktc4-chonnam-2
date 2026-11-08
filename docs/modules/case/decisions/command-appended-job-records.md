@@ -12,6 +12,17 @@ api composition root는 한 transaction 안에서 ① case command 처리 · 저
 
 지금 `handle_command()`는 응답 dict만 돌려줘서 composition root가 이 목록을 얻을 길이 없다.
 
+## A-1 후속 명확화 (2026-11-08 로컬 구현, #629)
+
+성공한 정정과 자동 export 발주를 구분한다. `admit_auto_exports`가 거부하면 handler 뒤 snapshot은 보존하고
+자동 export 후보만 폐기한다. 따라서 성공 응답에도 appended_job_records가 비어 있을 수 있다.
+기존 JobRecord/export input은 변경·삭제하지 않으며 명시 job의 최종 거부는 호출자 transaction 전체를 rollback한다.
+첫 자동 발주가 보류된 현재 입력은 화면의 기존 GENERATE_REPORT_VIDEO action으로 명시 발주할 수 있다.
+기존 같은 입력 재시도와 달리 prior가 없으면 현재 adapter request의 첫 JobRecord를 만든다.
+새 명시 export intent마다 case_rev를 한 번 올려 같은 payload 재전송과 실패 후 새 재시도를 구분한다.
+다른 kind의 notice 재시도와 기존 force_rerun 값은 유지한다.
+기존 command payload/HTTP 응답 필드와 append-only 조건을 바꾸지 않는다.
+
 ## 결정
 
 1. **새 함수 `execute_command()`가 `CommandResult(response, appended_job_records)`를 돌려준다.** `handle_command()`는 `execute_command(...).response`만 돌려주는 얇은 함수로 남긴다.

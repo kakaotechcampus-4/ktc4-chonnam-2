@@ -56,6 +56,9 @@ def preview_api(data):
     from daesingo.api.bootstrap import bootstrap
     os.environ['DAESINGO_ENV_FILE'] = data['env_file']
     with TestClient(create_app(startup=bootstrap(revision='compat-preview', stream=StringIO()))) as client:
+        if data.get('operation') == 'health':
+            return {'live': client.get('/health/live').status_code,
+                    'ready': client.get('/health/ready').status_code}
         cid = data['case_id']
         view = client.get(f'/cases/{cid}/view')
         assert view.status_code == 200

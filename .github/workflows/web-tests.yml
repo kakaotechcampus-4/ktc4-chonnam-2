@@ -43,3 +43,29 @@ jobs:
         working-directory: apps/web
       - name: 테스트
         run: npm run test:web
+
+  # 접근성 브라우저 E2E(A11Y-08). `?demo` 시연 흐름을 실제 Chromium에서 키보드로 지난다 — 서버 · 실분석 없음.
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: 브라우저 설치
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - name: 접근성 E2E
+        run: npm run test:e2e
+        working-directory: apps/web
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace
+          path: apps/web/test-results/
+          retention-days: 7

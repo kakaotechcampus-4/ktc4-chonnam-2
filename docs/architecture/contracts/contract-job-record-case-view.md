@@ -522,6 +522,18 @@ json
 - fixture 반영(`data/mock/case/` 7개 파일 14곳)은 이 v1.4 확정의 후속 작업으로 별도 진행한다.
 
 
+## A-1 Runtime admission notice 등재 (2026-11-08 로컬 구현, #629)
+
+B§7의 기존 notices 필드에 `public.local_work_not_queued`를 등재한다. 필드/CaseView 판본은 추가하지 않는다.
+생산 주체는 Runtime 공개 admission adapter이며 접두어 public은 이 수용 정책을 뜻한다.
+`severity:WARN`, `blocking:false`, `actions:[]`, `message_key:notice.public_local_<사유>`다.
+검토·정정 저장 또는 기존 terminal 완료 반영은 성공했지만 추가 자동 export가 거부됐을 때 표시한다.
+저장된 Case revision과 일치할 때 성공 응답/재조회에 투영하며, 새 local admission 성공 시 제거한다.
+source/body/owner token/SQL은 싣지 않는다. 이 notice는 새 job queued나 READY를 뜻하지 않는다.
+기존 terminal 재전달은 완료를 재정산하거나 새 export를 만들지 않는다. 현재 입력의 명시 action은 별도 admission을 받는다.
+브라우저의 자동 POST 재시도는 없으며 이후 Worker 후속 발주까지 영원히 없다고 보장하지 않는다.
+Case domain의 자동 발주 판단과 #616의 EvidenceRecord/report_draft 판본은 각 정본을 유지한다.
+
 ## v1.12 후보 영상 미리보기 (2026-11-02 로컬 구현 · 2026-11-05 판본 조정)
 
 > 처음에는 v1.11로 적었다. 같은 번호를 [#573](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/573)(`package.plate_image_ref`, 11/5 RC)도 쓰고 그쪽이 먼저 머지되므로, 이 변경은 v1.12로 옮긴다(2026-11-05 유소연).

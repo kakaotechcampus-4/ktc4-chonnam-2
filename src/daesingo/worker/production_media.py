@@ -72,7 +72,13 @@ class ProductionMediaFactory:
             resolver = RecordingAnalysisSourceResolver({scope.scope_id: (ref,)},
                 {ref.ref: SourceMeta(source.duration_sec, source.timeline_ref.timeline_id,
                     source.timeline_ref.revision, source.timeline_range.start_sec)}, recording)
+            from daesingo.common.public_runtime.temporary import temporary_root
+            options = {}
+            if temporary_root.get() is not None:
+                if self.media is None:
+                    raise ValueError("public media lease required")
+                options["temp_context"] = self.media.detached_temp
             service = search.build_gemini_search_service(self.search_settings.api_key.get_secret_value(),
-                                                       resolver, self.search_settings.config)
+                                                       resolver, self.search_settings.config, **options)
             data.checkpoint()
             yield service

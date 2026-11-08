@@ -98,6 +98,13 @@ export function reviewReason(code: string | null): string {
  * 훑으므로 이 항목은 검사에 안 걸린다 — 키 문자열은 계약에서 그대로 옮긴다
  * (`contract-job-record-case-view.md` §`notices[].code`, 2026-09-14 등재). */
 const NOTICE_MESSAGES: Record<string, string> = {
+  'notice.public_local_stopped': '수정 내용은 저장했어요. 체험 설정을 확인해야 해서 이번 요청에서는 영상 생성을 시작하지 않았어요. 생성 상태는 다시 확인해 주세요.',
+  'notice.public_local_jobs_stopped': '수정 내용은 저장했어요. 긴급 중단 중이라 이번 요청에서는 영상 생성을 시작하지 않았어요. 생성 상태는 다시 확인해 주세요.',
+  'notice.public_local_local_limit': '수정 내용은 저장했어요. 영상 만들기·미리보기 한도에 도달해 영상 생성은 요청하지 않았어요.',
+  'notice.public_local_local_concurrent': '수정 내용은 저장했어요. 다른 작업이 진행 중이라 영상 생성은 요청하지 않았어요.',
+  'notice.public_local_local_unconfigured': '수정 내용은 저장했어요. 영상 생성 이용 기준을 준비 중이라 영상 생성은 요청하지 않았어요.',
+  'notice.public_local_input': '수정 내용은 저장했어요. 영상 생성에 필요한 입력을 확인할 수 없어 생성은 요청하지 않았어요.',
+  'notice.public_local_unconfigured': '수정 내용은 저장했어요. 체험 설정을 확인할 수 없어 영상 생성은 요청하지 않았어요.',
   'notice.event_time_needs_review': '사건 시각을 확인해 주세요.',
   // #449 · #455 — 시각 출처가 하나도 없어 신고자료를 묶지 못한다. 버튼은 `시각 직접 입력`(EDIT_EVENT_TIME)
   'notice.event_time_missing': '발생 시각을 알 수 없어요. 시각을 직접 입력하면 신고자료를 완성할 수 있어요.',
@@ -156,10 +163,25 @@ export function noticeMessage(key: string): string {
 // 요청이 실패했을 때의 알림. `error.code`가 키다 — `http.*`는 HTTP 층, `case.command.*`는 case,
 // `web.*`는 client가 만든 값이다(contract-http-api §3.3 · §7-5). 원인을 단정하지 않는다.
 const ERROR_MESSAGES: Record<string, string> = {
+  'public.busy': '이미 처리 중인 요청이 있어요. 진행 상태를 확인해 주세요.',
+  'public.origin': '이 주소에서는 요청을 보낼 수 없어요. 안내받은 체험 주소에서 다시 열어 주세요.',
+  'public.stopped': '지금은 새 분석을 받지 않고 있어요. 잠시 뒤 다시 확인해 주세요.',
+  'public.jobs_stopped': '서비스 점검으로 새 작업을 잠시 멈췄어요. 기존 결과를 확인해 주세요.',
+  'public.unconfigured': '지금은 체험을 열지 않았어요. 운영 준비가 끝난 뒤 다시 확인해 주세요.',
+  'public.limit': '체험 이용 한도에 도달했어요. 요청을 자동으로 다시 보내지 않아요.',
+  'public.budget': '새 분석의 비용 한도에 도달했어요. 분석을 자동으로 다시 요청하지 않아요.',
+  'public.concurrent': '진행 중인 작업이 있어요. 끝난 뒤 다시 확인해 주세요.',
+  'public.input': '선택한 샘플을 준비할 수 없어요. 샘플을 다시 확인해 주세요.',
+  'public.local_limit': '영상 만들기·미리보기 이용 한도에 도달했어요. 새 생성 요청을 자동으로 보내지 않아요.',
+  'public.local_concurrent': '영상 만들기·미리보기 작업이 진행 중이에요. 끝난 뒤 다시 확인해 주세요.',
+  'public.local_unconfigured': '영상 만들기·미리보기 이용 기준을 준비 중이에요. 기존 결과를 확인해 주세요.',
   'web.network_error': '서버에 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.',
   'web.invalid_response': '서버 응답을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요.',
   'http.dependency_unavailable': '지금은 서버가 바빠요. 잠시 뒤 다시 시도해 주세요.',
   'http.not_found': '찾을 수 없는 신고예요. 「새 신고」로 다시 시작해 주세요.',
+  // 업로드 거절(http-api §3.4) — 한도 값은 서버 설정이라 숫자를 단정하지 않는다
+  'http.payload_too_large': '파일이 서버가 받을 수 있는 크기보다 커요. 더 짧은 영상을 골라 주세요.',
+  'http.source_rejected': '영상으로 열 수 없는 파일이에요. 다른 파일을 골라 주세요.',
   'case.command.stale_revision': '화면이 그 사이 바뀌었어요. 바뀐 화면에서 다시 눌러 주세요.',
   'case.command.not_allowed': '지금은 할 수 없는 동작이에요.',
   'case.command.invalid_value': '입력한 값을 받을 수 없어요. 다시 확인해 주세요.',
@@ -219,6 +241,15 @@ export function atProvenanceLabel(key: string | null | undefined): string {
   if (key === null || key === undefined) return AT_PROVENANCE_FALLBACK
   return AT_PROVENANCE_LABELS[key] ?? AT_PROVENANCE_FALLBACK
 }
+
+/** `[다른 상황]` 선택지 — 법적 유형 이름이 아니라 상황 설명이다(case-command §12-3, Flow §15) */
+export const VISUAL_EVENT_CHOICES = {
+  SIGNAL: '신호를 지키지 않고 지나갔어요',
+  CENTER_LINE_CROSSING: '중앙선을 넘었어요',
+  SOLID_LINE_LANE_CHANGE: '실선 구간에서 차로를 바꿨어요',
+  MOTORCYCLE_HELMET_NON_USE: '오토바이 운전자가 안전모를 쓰지 않았어요',
+} as const
+export type VisualEventType = keyof typeof VISUAL_EVENT_CHOICES
 
 /**
  * 상황 확인 — 닫힌 4종이고 label_key가 내려오지 않아 web이 문구를 갖는다
