@@ -244,6 +244,37 @@ describe('번호판 장면 다운로드 (#600)', () => {
   })
 })
 
+describe('동영상 칸 — 후보 미리보기를 둘 수 없을 때 (#636)', () => {
+  const noop = vi.fn()
+  const frameSrc = (ref: string) => `/frames/${ref}`
+  const withThumb = (thumb: string | null): CaseView => ({
+    ...HAPPY,
+    candidates: HAPPY.candidates.map((c) => (c.selected ? { ...c, thumb_ref: thumb } : c)),
+  })
+  // videoSrc가 없으면 후보 미리보기(CandidateVideo)를 두지 않는다
+  const show = (view: CaseView) =>
+    render(<ResultScreen view={view} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref="/cases/c1/assets/v1" frameSrc={frameSrc} />)
+  const preview = (r: ReturnType<typeof show>) => r.container.querySelector('.res-preview')!
+
+  it('고른 후보의 썸네일을, 없으면 근거 장면을 보이고, 이미지를 못 불러오면 지금의 안내로 돌아간다', () => {
+    const r = show(withThumb('fr_thumb'))
+    expect(preview(r).querySelector('img')?.getAttribute('src')).toBe('/frames/fr_thumb')
+    expect(preview(r).querySelector('img')?.getAttribute('alt')).toBe('고른 후보 장면')
+    cleanup()
+    const r2 = show(withThumb(null))
+    expect(preview(r2).querySelector('img')?.getAttribute('src')).toBe(`/frames/${HAPPY.evidence!.preview_ref}`)
+    fireEvent.error(preview(r2).querySelector('img')!)
+    expect(preview(r2).querySelector('img')).toBeNull()
+    expect(preview(r2).querySelector('svg')).not.toBeNull()
+  })
+
+  it('장면 이미지가 하나도 없으면 지금처럼 아이콘과 안내만 둔다', () => {
+    const r = show({ ...withThumb(null), evidence: { ...HAPPY.evidence!, preview_ref: null } })
+    expect(preview(r).querySelector('img')).toBeNull()
+    expect(preview(r).querySelector('svg')).not.toBeNull()
+  })
+})
+
 describe('프레임 이미지', () => {
   it('ref가 없으면 자리 표시를 두고, 있으면 이미지를 그리고, 받지 못하면 자리 표시로 돌아간다', () => {
     const r = render(<FrameSlot className="f" src={null} alt="장면">자리</FrameSlot>)
