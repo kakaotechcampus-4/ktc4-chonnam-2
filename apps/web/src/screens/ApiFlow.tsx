@@ -305,7 +305,16 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
       default:
         if (sub === 'candidates') return <CandidateCompare {...playback} view={view} onBack={back} onSelect={reselect} />
         if (sub === 'plate' || sub === 'plateEdit')
-          return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} frameSrc={frameSrc} />
+          return (
+            <PlateCheck
+              view={view}
+              onBack={back}
+              onEdit={editPlate}
+              startEditing={sub === 'plateEdit'}
+              frameSrc={frameSrc}
+              plateImageSrc={cid && view.package?.plate_image_ref ? api.assetUrl(cid, view.package.plate_image_ref) : undefined}
+            />
+          )
         if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
         if (sub === 'details') return <DetailsCheck view={view} onBack={back} />
         return (

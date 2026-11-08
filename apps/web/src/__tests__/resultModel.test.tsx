@@ -257,6 +257,18 @@ describe('프레임 이미지', () => {
     expect(demo.container.querySelector('img')).toBeNull()
   })
 
+  it('번호판 확대 칸은 신고자료의 번호판 이미지(다운로드와 같은 plate_image_ref)를 보인다. 주소가 없으면 자리 표시만 둔다 (#446)', () => {
+    const withImage = render(<PlateCheck view={HAPPY} onBack={vi.fn()} plateImageSrc="/assets/plate.png" />)
+    const crop = withImage.container.querySelector('.plate-crop')
+    expect(crop?.querySelector('img')?.getAttribute('src')).toBe('/assets/plate.png')
+    expect(crop?.querySelector('img')?.getAttribute('alt')).toBe('번호판 확대')
+    expect(withImage.container.textContent).not.toContain('번호판 이미지가 없어요')
+    withImage.unmount()
+    const without = render(<PlateCheck view={{ ...HAPPY, running_jobs: [] }} onBack={vi.fn()} />)
+    expect(without.container.querySelector('.plate-crop img')).toBeNull()
+    expect(without.container.textContent).toContain('번호판 이미지가 없어요')
+  })
+
   it('이미지가 없을 때 도는 job이 있으면 「준비 중」, 없으면 「없어요」 — 오지 않을 이미지를 기다리게 하지 않는다', () => {
     const noImage = { ...HAPPY, evidence: { ...HAPPY.evidence!, plate_preview_ref: null } }
     const done = render(<PlateCheck view={{ ...noImage, running_jobs: [] }} onBack={vi.fn()} />)
