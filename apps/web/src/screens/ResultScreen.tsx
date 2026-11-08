@@ -405,12 +405,14 @@ export function ResultScreen(props: {
                 {/* 후보 영상 재생과 신고용 영상 다운로드는 각각의 준비 상태를 따른다 */}
                 {/* 왼쪽은 후보 미리보기(Search 구간 그대로)다. 시각을 새긴 신고용 영상은 오른쪽 다운로드로 받는다(#554 리뷰) */}
                 <div className="res-preview">
-                  <div className="res-frame">
-                    {candidateVideo || <>
+                  {/* 후보 미리보기를 둘 수 없으면 고른 후보의 장면 이미지를 둔다(#636) — 포스터와 같은 순서(thumb_ref → 근거 장면).
+                      이미지도 없거나 못 불러오면 지금의 안내를 둔다 */}
+                  {candidateVideo ? <div className="res-frame">{candidateVideo}</div> : (
+                    <FrameSlot className="res-frame" src={frame(selected?.thumb_ref ?? ev?.preview_ref)} alt="고른 후보 장면">
                       <Film size={26} strokeWidth={1.5} aria-hidden />
                       <span>{video === 'ready' ? PREVIEW_UNAVAILABLE : VIDEO_STATUS[video]}</span>
-                    </>}
-                  </div>
+                    </FrameSlot>
+                  )}
                   {candidateVideo && <p className="res-preview-label">후보 미리보기</p>}
                 </div>
                 <div className="res-video-side">
