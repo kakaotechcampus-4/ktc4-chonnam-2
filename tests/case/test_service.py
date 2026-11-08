@@ -131,8 +131,9 @@ def test_real_adapter_get_candidate_events_without_scope_is_not_ready():
 
 
 def test_real_adapter_still_not_ready_for_common():
-    """`RealAdapter`의 common/runtime 자리는 아직 골격뿐이라는 것 자체를 회귀 테스트로
-    고정한다 — Worker 인프라가 생기면 이 테스트가 깨져야(= 알아채야) 한다.
+    """`RealAdapter`에서 real 대응이 없는 두 메서드는 `NotImplementedError`를 낸다는 것을
+    회귀 테스트로 고정한다. 실행 상태는 `CaseStore` read port로 읽으므로 `get_job_executions()`는
+    채우지 않는다(`adapters.py` 모듈 docstring).
     `get_candidate_events()`(2026-09-18)와 evidence 6개(2026-09-18, W6)는 이미 채워져서
     이 목록에서 빠졌다 — `test_real_e2e.py`가 그 경로를 검증한다. `get_analysis_scopes()`는
     실제 대응이 없어(case가 Producer) 계속 여기 남는다.

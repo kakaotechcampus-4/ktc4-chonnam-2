@@ -56,7 +56,7 @@ def broken_observer(_):
 def worker_config(url):
     from daesingo.common.config import RuntimeConfig
     return RuntimeConfig.from_mapping("worker", {
-        "DAESINGO_RUNTIME_DB_URL": url,
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": url,
         "DAESINGO_RUNTIME_MEDIA_ROOT": "/test/media",
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": "/test/temp",
         "DAESINGO_RUNTIME_DB_LOCK_WAIT_TIMEOUT_SEC": "1",

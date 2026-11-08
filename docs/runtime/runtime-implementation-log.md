@@ -4923,3 +4923,192 @@ source local HTTPS 403을 외부 공개 HTTP 200/public smoke PASS로 쓰지 않
 실제 영상 GPS 추출·EC2 배선·Case/Web 주소 표시는 이번 시험에서 NOT_RUN이다.
 기존 두 문서에 후속 기록만 추가하며 제품·설정 변경이나 API 재호출은 하지 않았다.
 키·좌표·주소 원문을 추가하지 않고 staging·commit·push·외부 게시는 수행하지 않는다.
+
+<a id="incident720-config-real-e2e-20261102"></a>
+
+### 2026-11-02 — Incident 720p 실제 적용·실영상 E2E 증거 문서화
+
+**IN_PROGRESS · Related #450, #452, #460.**
+`codex/docs-incident720-e2e`, 시작 HEAD `54f6ecbbda1db89bf2372c89e91009d9cbe93bd7`와
+clean worktree/index를 직접 확인했다. 저장소와 상위 경로에서 AGENTS.md는 발견되지 않았다.
+README·문서 규칙과 공개 구분 규칙을 읽고 문서·Incident 설정 예시만 수정했다.
+
+[Incident 720p 적용·실영상 E2E 기록](experiments/2026-11-02-incident720-config-real-e2e.md)에
+EC2 5초 단독 측정, current/previous config 적용, 변경 후 실영상 결과를 구분해 기록했다.
+EC2 실행·서비스 상태·E2E 시간과 사건 포함·화질 육안 평가는 **운영자 제공 증거**다.
+이번 에이전트가 EC2/provider/encode/E2E/배포/dispatch를 재실행한 결과가 아니다.
+로컬 결과 파일에는 접근할 수 있어 ffprobe metadata·SHA-256만 직접 재확인했다.
+1280×720 H.264, 7.5초·225 frames·30fps, 8,333,019 bytes와 인계 hash가 일치했다.
+전체 decode 통과는 기존 대화의 직접 검사 인계 증거이며 이번 작업에서는 재실행하지 않았다.
+
+설정 명세에 과거 baseline v1의 Incident 240 / veryfast / CRF23을 보존하고,
+현재 적용 기준 720 / veryfast / CRF20 및 근거 링크를 추가했다. `.env.example`은
+Incident HEIGHT·CRF 예시와 관련 설명만 정합화했다. Analysis profile `aws-e2e-v1`과
+6개 설정·4분·48 MiB 한도를 유지하며, Incident만 변경 시 Analysis 식별자를 바꾸지 않음을 명시했다.
+과거 실험 문서와 이 Log의 기존 본문은 보존한다.
+
+이전 E2E는 약 4분 38초로 정정하고 4분 33초는 정정 전 수치로 구분했다.
+변경 후 약 4분 44초와의 약 6초 차이는 출력 5초/7.5초의 비통제 비교이며 인과적 비용이 아니다.
+5초 단독 측정의 6.904초·172,863,488 bytes peak RSS를 전체 E2E나 자원 상한으로 일반화하지 않는다.
+기존 backup artifact hash·과거 격리 복원 재확인은 이번 배포 직전 새 DB 백업이 아니며,
+rollback 대상 준비와 실제 rollback 실행을 구분한다.
+
+제품 코드·테스트·workflow·Analysis 설정·실제 runtime.env·DB·AWS는 변경하지 않는다.
+실제 영상·개인 경로·계정·image URI·credential·Case 접근 식별정보는 추가 공개하지 않는다.
+약 1시간 입력 지원·최적 화질·OCR 정확도·전체 입력 성능·실제 신고 수용·실제 rollback rehearsal·
+최종 Package READY·장기 공개 gate 및 RT-14 전체 완료는 미확정/후속으로 유지한다.
+
+직접 정적 검증: 7개 허용 파일만 변경, `.env.example`의 실제 값 차이는 Incident HEIGHT·CRF뿐이며
+나머지 키·값 불변, Runtime Log의 HEAD byte prefix와 과거 실험 파일 전체 bytes 보존,
+추가/변경 상대 링크·anchor 10개 및 추가 diff의 비공개정보 패턴·육안 검사,
+신규 문서 공백 검사와 `git diff --check`를 통과했다. 이는 전역 secret audit나 운영 재검증이 아니다.
+
+독립 읽기 전용 reviewer는 최신 변경 7개 파일과 위 검증 문단을 확인하고 수정이 필요한 지적 없음으로
+판정했다. reviewer의 검증도 문서·설정 정적 검사이며 운영 결과나 영상 decode의 독립 재현이 아니다.
+동일 branch/HEAD, index 비어 있음, 전체 변경 미스테이징·미커밋 상태로 종료한다.
+
+## 2026-11-02 — #452 DB 내부 prepared-media 청크 저장·분할 조회
+
+시작 branch `codex/issue452-chunked-media-storage`, HEAD
+`f1e8d82f44e2bcf630a3f2fde009035f1436d7ec`, working tree/staging 비어 있음.
+#538의 merged 상태와 해당 merge SHA가 현재 HEAD인 것을 GitHub/로컬에서 확인했다.
+#530 최신 head `fdcccfa9` 계획·댓글의 P2-0b/0c·Decision Gate, #537와 기존 capacity 기록,
+Recording/service/Search stream 소비, transaction·migration·소유권, 논리 backup과 schema rollback
+계약을 읽고 작업했다. 비공개 제출 자료 저장소·원본 15개·기존 실패 DB volume·운영 DB는 접근하지 않았다.
+
+변경 구조·불변 조건·전체 파일별 이유·byte 측정/실패 이력은
+[Recording 구현 메모](../modules/recording/chunked-prepared-media.md),
+실행 순서는 [계획](../superpowers/plans/2026-11-02-chunked-prepared-media.md)에 남겼다.
+주요 변경은 metadata projection, versioned manifest/최대256KiB 청크별 단일 INSERT,
+caller-owned outer transaction 안 SAVEPOINT 원자성, integrity를 검증한 detached temporary stream이다.
+새 retry·시간 분할 탐색·Search cap·Case timeout·운영 Recording 한도·retention은 추가/변경하지 않았다.
+
+| 작성자 직접 검증 | 결과 |
+| --- | --- |
+| metadata/manifest/stream RED→GREEN | 최초10 FAIL→10 PASS, 후속 SAVEPOINT 진단2 FAIL→GREEN, transaction 실패 stream2 FAIL→GREEN, metadata 목록1 FAIL→GREEN, temp context 종료1 FAIL→GREEN |
+| 새 실제 MySQL tests | 구현 전17 FAIL; 후속20개로 확장. 실제 command 예산·청크/manifest/link 실패 caller catch+commit·외부 작업 보존·동시 conflict·새 연결·checkout0·손상 거부·legacy·COMMIT ACK loss·Search close |
+| 기존 한도 회귀 | 리뷰 지적을 실제 MySQL에서2 FAIL/1 PASS로 재현, 청크/metadata INSERT와 rollback 행 상태를 검사하도록 보완 |
+| 첫 실제 DB 관련 회귀 | 140 PASS + strict evidence 환경변수 미지정1 FAIL. 전체 mandatory/strict 산출물을 요구하는 검사였고 해당 전체 실행은 범위 밖 |
+| 최종 focused 실제 MySQL | 청크20 + durable6 + 한도3 + export23 = **52 PASS**,113.66초. 실제 MySQL8.4.13, provider 없음 |
+| 최종 focused 로컬 회귀 | **144 PASS**,16.21초. durable/ownership/새 청크·factory/media 경계/Search resolver/backup/capacity controls/필수 inventory smoke |
+| 앞선 별도 로컬 회귀 |168 PASS. 위 최종 수치와 중복되므로 합산하지 않음 |
+| 품질·경계 | Runtime Ruff + mypy Linux/Windows 각87 source PASS, boundary 위반0, Contract62/26/104 PASS |
+| 변경 코드 lint | 변경 Python19개 파일의 변경 line diagnostic0. 기존 미변경 line diagnostic28개는 별도이며 파일 전체 Ruff green 주장 아님 |
+| 실제 backup/restore | 4,226,377 B artifact / 최대 INSERT line49,288 B / 새 빈 target 전체 re-dump bytes 일치 / 두 media 각1,048,576 B 길이·hash 일치 / checkout0 |
+
+성능 계측은 작은 합성 입력만 다뤘다.64MiB packet 유지, 64KiB 주입 command 예산 테스트 PASS,
+청크24,576 B에서 실제 결과 row packet 최대24,585 B. 기본256KiB 청크의 별도 rollback 대조까지
+포함한 command 최대524,463 B. 새 연결 hash·신규 ref rollback·같은 Connection ID 유지와
+seed probe의 Aborted_clients delta0을 확인했다. Python ru_maxrss85,072 KiB는 프로세스 전체
+HWM이며 driver allocation/DB peak/동시 처리량을 측정한 것이 아니다.
+과거38.36MB→76.72MB 실패를 이 합성 PASS로 바꾸지 않는다.
+
+첫 두 복원은 harness socket readiness가 init용 임시 server를 통과해 중간 실패했다.
+두 번째에서2013을 확보했고 OOM/컨테이너 restart는 없었다. 실패 target에는 재시도하지 않았다.
+TCP final-server readiness를 적용한 **세 번째 빈 volume**에서 성공했고 앞선 실패는 보존했다.
+export 추가 회귀도 port 생략에 따른 proxy 연결 불능/QUEUED 대기로 SIGINT 종료(완료33 PASS,
+run 전체 PASS 아님) 후 명시적 :3306으로 위 최종52 PASS를 확보했다. 다른 harness/setup 실패와
+Windows delete-pending listing 실패도 구현 메모에 구분했다.
+
+Migration은 additive/forward-only이며 legacy BLOB은 분할 읽기를 지원한다. 새 청크 행의 legacy
+content는 NULL이므로 **구버전 코드 rollback은 호환되지 않는다**. 배포 approval의 rollback_targets에
+청크를 모르는 revision을 허용할 근거가 아니다. `get_prepared_content`의 bytes 반환 호환 API와
+export snapshot/report, materializer part/최종 bytes는 여전히 전체 bytes 할당이 남는다.
+논리 backup도 statement만 분리했으며 전체 dump capture/pack/unpack 메모리는 남는다.
+
+독립 fresh read-only reviewer는 구현 대화 이력 없이 요구 원문과 diff를 검토했다.
+초기4건(transaction 실패 stream 누수, metadata 전체 읽기, temp pin/lease 우회, 기존 단일 INSERT
+회귀)을 보완한 뒤 **같은 reviewer가 재확인하여4건 해결·추가 actionable finding 없음**으로 판단했다.
+reviewer 직접 실행은 새 청크/backup/ownership/durable facts **94 PASS**, 실제 transaction helper에
+COMMIT 오류를 주입한 독립 시뮬레이션에서 `CommitOutcomeUnknown` 후 closed=True, diff 검사 PASS다.
+초기 media policy 테스트의 junction 생성 권한1실패는 환경 실패로 별도 보존했다.
+reviewer는 MySQL/Docker/복원을 재실행하지 않았으며 지정한 안전한 JSON5개와 작성자 실행 결과·문서를
+읽었다. 실제 DB52 PASS와 복원/hash는 작성자 실행 증거이고 reviewer 직접 실행으로 합산하지 않는다.
+
+owner label을 확인하고 작업 소유 컨테이너5개와 internal network를 정리했다. 성공 source/target3
+DB volume2개와 secret·SQL artifact를 제거했다. 소유 컨테이너0, 정리 직전 open InnoDB transaction0을
+확인했다. 첫 실패 복원 volume2개(`issue452-chunks-restore-db`, `issue452-chunks-restore2-db`)는
+비공개 실패 증거로 보존한다. 기존 `issue452-capacity-db`는 사용/재시작/삭제하지 않았다.
+비민감 크기·판정·실패 ledger와 harness는 ignored 작업 전용 scratch에만 남긴다.
+공유 Docker/WSL 재시작·prune·공유 cache·타인 scratch 변경은 없었다.
+
+NOT_RUN: 전체 로컬 pytest·전체 mandatory MySQL·strict/mutation/aggregator,38.36MB 대조,
+원본/실영상 encode·20분 E2E·1시간 지원·provider·ingress·AWS/배포/rollback·원격 CI.
+NOT_REACHED: 이번 합성 저장 실험에서 실제 Search provider/Case/Web 처리.
+UNKNOWN: 과거packet128 대조 저장/재조회/rollback 및 timeout↔OOM 인과,
+신규 구조의 대규모 peak·처리량·동시 지원 수.
+20분 E2E 전에는 materializer/서비스 전체 content 보유, Search 준비·base64/JSON·request cap,
+Case 대기/timeout·발주/병합, ingress body/time 예산과 실제 입력 실험을 별도로 닫아야 한다.
+#452 전체 해결·20분 완주·운영 지원 길이를 선언하지 않는다.
+
+### 2026-11-02 — #470·#523 A안 preview / Top-3 Runtime 독립 slice
+
+정철원(Runtime/Recording). 현재 브랜치 `codex/rt10b-preview-frames`, HEAD `204b85eb`에서
+기존 index/working tree가 비어 있음을 확인하고 작업했다. 최신 #470·#523 전체 댓글과 #525 Web Owner 리뷰,
+관련 계약·실제 코드를 대조했다. #470은 미병합이며 PR을 merge/cherry-pick하지 않았다.
+
+입력 detach/현재성 검증, handler의 Case 위치 함수 주입 경계, 문자열/null payload 검증과
+Worker ProducedReader 소비 경로를 구현했다. production의 Case helper/Top-3 selector/소비는 미연결이며
+테스트 대역을 연결하지 않았다. 직접 검증·원본 증거·전체 파일 목록·미해결 Owner 인터페이스와
+#525 준비 중 판정 확인 제안은 [Implementation Notes](rt10b-preview-frames.md)에 한 번만 기록한다.
+기존 [#470](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/470) 및
+[#523 합의 원본](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/523#issuecomment-6559417301),
+기술 결과 원본 링크는 Notes가 보존하며 여기 중복 복제하지 않는다.
+
+**IN_PROGRESS — 독립 구현과 실제 Case/Web 통합·배포 완료를 구분한다.**
+전체 pytest/mandatory MySQL 로컬 일괄 반복, 원격 CI dispatch, AWS/EC2/provider/배포/기존 서비스 중지는
+하지 않는다. staging·commit·push·PR·댓글 게시·merge도 하지 않는다.
+
+## 2026-11-02 — #527 실제 Case preview/Top-3 production 연결 후속
+
+정철원(Runtime/Recording). branch `codex/rt10b-preview-frames`, HEAD `a561f475`의 빈 working tree/index에서 시작했다.
+최신 develop `ea2bc5e3` 및 #470/#527/#532/#525 본문·댓글·HEAD·CI와 #523 Runtime 답변을 직접 확인했다.
+Case 공개 selector/위치 함수 세 개를 production composition에 직접 연결했다.
+#532는 Draft/미병합이므로 고정 HEAD `1ee6d66f`와 develop을 별도 임시 archive 사본에 적용하여
+실제 Case/Recording/MySQL/CaseView/HTTP·replay 경계를 검증했다. 원본 branch/HEAD와 다른 Owner 코드는 유지한다.
+
+RED→GREEN, focused 회귀, MySQL 후보 0~3/stale/세대 변경, T1/T2/receipt rollback·redelivery,
+과거 payload, 두 Readout·별도 process/HTTP 증거와 실패/진단은
+[Implementation Notes 후속](rt10b-preview-frames.md#실제-case-통합-후속--실행-계획-2026-11-02-kst)에 기록했다.
+fresh read-only reviewer의 P2(옛 receipt assertion)를 보완했고 최종 source/test 재검토에 추가 actionable finding은 없었다.
+
+**선행 조건:** #532 병합과 develop 동기화 전 원본 단독 checkout의 새 import는 실행할 수 없다.
+Web #525의 전체 running job 기반 준비 중 판정과 실제 화면 확인은 Owner 후속이다.
+전체 로컬 pytest/mandatory MySQL 반복, live provider·AWS/배포, staging/commit/push·PR/외부 댓글·merge는 하지 않는다.
+최종 전체 회귀는 사용자의 추후 push 뒤 원격 CI 조건으로 남긴다. 기존 로그는 append만 하여 보존한다.
+작업 전용 MySQL/익명 volume·임시 검증 사본/media를 정리했고 증거/patch는 보존했다.
+33개 focused MySQL 시나리오의 마지막 단계 결과와 최종 파일 동일성을 확인했다(실행 간 중복 제거 요약).
+branch/HEAD 유지, index 비어 있음, 미커밋·미스테이징으로 종료한다.
+
+
+<a id="rt527-develop-integration-20261103"></a>
+
+### 2026-11-03 — #527 실제 브랜치 develop 통합·focused 재검증
+
+정철원(Runtime/Recording). `codex/rt10b-preview-frames`의 clean tree/index,
+시작 `f379276fc88a1e60b8c49d86cc06ae1bb98e7ad1`에서 최신 원격 develop을 조회·fetch했다.
+승인된 merge `d0b5b6e947760fe151376c357eefff46a515df2c`의 부모는 보존 커밋 `f379276f`와
+`ba8e21ea57a400db1820594f5b50303bbf7df454`다. 종료 전 원격 재조회도 develop 동일·#527 `a561f475`였다.
+Log append 충돌은 develop 원문 전체 뒤에 기존 브랜치 추가분을 붙여 양쪽 byte 원문을 보존했다.
+자동 병합된 composition의 실제 Case 세 함수와 최신 metadata envelope/청크 reader/temp 배선을 함께 확인했다.
+
+이번에는 임시 사본의 PASS를 쓰지 않고 실제 통합 브랜치에서 focused 155 passed,
+media/API 150 passed·기존 사용자 영상 opt-in 1 skipped, 중복 제외 MySQL 31개 마지막 시나리오의
+setup/call/teardown passed를 확인했다. 단일 전체 suite 결과로 합산하지 않는다.
+초기 MySQL 18 passed/1 failed의 새 process 하네스 순서 가정을 기준 develop과 대조하고 역순 DB 진단으로 재현했다.
+실제 queue 순서를 따라 두 Readout의 첫 kind 양쪽을 강제하는 테스트 보완은 미커밋·미스테이징이다.
+최종 두 경우 2 passed, 품질·boundary·Contract·diff PASS. 제품/timeout/skip/xfail 정책은 변경하지 않았다.
+
+전달 이력 없는 fresh reviewer의 정적 리뷰와 같은 reviewer의 최종 delta 재확인에서 추가 actionable 지적은 없었다.
+reviewer의 작성자 JSON/JUnit/RAW 증거 검토와 독립 테스트 실행은 구분한다(reviewer 직접 실행 없음).
+상세 실패·환경 이력·31개 집계·원격 옛 HEAD CI 구분·18개 기능 경로/114개 merge 유입 경로·NOT_RUN과
+후속 조건은 [이번 Implementation Notes](rt10b-preview-frames.md#rt527-develop-integration-20261103)에 둔다.
+Web #525는 병합됐고 준비 중은 INCIDENT_CLIP_BUILD로 한정됐으나 카드별 자격/실제 화면은 Owner 후속이다.
+유소연 Owner 복귀 정책 검토는 별도 후속이며 현재 통합의 새 차단 조건이 아니다.
+전체 로컬 pytest/mandatory MySQL·TCP/브라우저·사용자 영상·provider·AWS/배포는 실행하지 않았다.
+이번 merge 외 새 commit/push·PR 변경·댓글·Draft 해제·PR 병합은 하지 않는다.
+
+작업 전 RAM/C 디스크 예산 확인 후 전용 MySQL만 사용했고, 종료 전 조회자 외 client/transaction/lock 0을 확인했다.
+task label·ID·mount를 대조해 작업 컨테이너/새 익명 volume 하나만 정상 정리했으며 보호 volume 3개는 유지했다.
+작업 scratch의 생성 media·credential·baseline 사본만 정리하고 RAW/JSON/JUnit은 보존했다.
+Notes·이 Log의 HEAD 원문 byte prefix 보존, 종료 HEAD 동일·index 비어 있음·새 수정 3파일 미커밋을 확인한다.

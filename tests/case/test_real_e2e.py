@@ -1,11 +1,12 @@
-"""W5/W6 데드라인 증빙: `scenario_happy_001` 대표 시나리오가 recording→search→readout→
+"""5·6주차(W5/W6) 마감 증빙: `scenario_happy_001` 대표 시나리오가 recording→search→readout→
 evidence→`CaseView`까지 **전부 real 함수 호출로** 통과하는지 확인한다.
 
 `test_scenario_happy_smoke.py`/`test_service.py`가 `MockFixtureAdapter`로 같은 시나리오를
 검증하는 것과 짝을 이룬다 — 이 파일은 "같은 계약 모양이 나오는가"가 아니라 "실제 모듈
 호출 체인이 안 끊기고 끝까지 도는가"를 확인한다. 그래서 mock 정답지와 완전히 같은 값을
-요구하지 않는다 — id는 이 실행에서 새로 생성되고, `situation_response`/`observation_facts`가
-없어(real_e2e.py 「알려진 단순화 2」) `package`는 `None`일 수 있다.
+요구하지 않는다 — id는 이 실행에서 새로 생성된다. 이 파일의 테스트는 상황 응답을 기록하지
+않고, fixture 경로는 `observation_facts`도 `None`으로 둔다(`real_e2e.py` 모듈 docstring
+「알려진 단순화」). 상황 응답이 없으면 Package가 나가지 않으므로 `package`는 `None`일 수 있다.
 """
 from __future__ import annotations
 
@@ -130,7 +131,7 @@ def test_unique_video_media_stream_ref_raises_when_no_video():
 
 
 def test_unique_video_media_stream_ref_raises_when_multiple_video():
-    """복수 카메라(front/rear)는 W7 후속 — case가 임의로 고르지 않고 실패한다."""
+    """복수 카메라(front/rear)는 아직 지원하지 않는다 — case가 임의로 고르지 않고 실패한다."""
     streams = [
         _media_stream(ref="ms_front", media_type="VIDEO"),
         _media_stream(ref="ms_rear", media_type="VIDEO"),
@@ -195,17 +196,16 @@ def test_evidence_bundle_uses_real_plate_and_time_values():
     assert bundle.evidence_record["occurred_at"]["value"] == "2026-08-24T18:05:12+09:00"
     assert bundle.requirement_report_evidence["scope"] == "EVIDENCE"
     assert bundle.requirement_report_package["scope"] == "FINAL_PACKAGE"
-    # 알려진 단순화 2(situation_response/observation_facts 없음) 때문에 package는 못
-    # 만들 수 있다 — 이게 조용한 실패가 아니라 사유가 남는다는 것까지 확인한다.
+    # `build_fixture_evidence_bundle()`은 상황 응답을 받지 않고 `observation_facts`도 `None`이라
+    # package는 못 만들 수 있다 — 이게 조용한 실패가 아니라 사유가 남는다는 것까지 확인한다.
     if bundle.report_package is None:
         assert bundle.package_error is not None
 
 
 def test_evidence_bundle_wires_search_stream_context(monkeypatch):
-    """`search.verify_visual_with_stream_context`(서어진, 2026-09-21 합의)가 아직
-    어느 브랜치에도 push되지 않아서, 여기서는 합의된 계약대로 동작하는 스텁으로
-    case 쪽 배선만 검증한다 — search가 실제로 push되면 이 스텁을 지우고 real
-    호출로 교체한다. 확인하는 것: ① `AnalysisSourceStream`을
+    """`search.verify_visual_with_stream_context`(서어진, 2026-09-21 합의)를 합의된 계약대로
+    동작하는 스텁으로 바꿔 case 쪽 배선만 검증한다. 처음 쓸 때는 search에 이 함수가 없었다.
+    지금은 있지만 이 테스트는 스텁으로 둔다. 확인하는 것: ① `AnalysisSourceStream`을
     `analysis_source.media_stream_refs`·`fixture.media_streams`로부터 만드는지
     ② `target_hint`를 그대로 전달하는지 ③ 돌려받은 `selected_video_stream`으로
     두 번째 span 선택을 좁혀도 회귀 없이 끝까지 도는지."""
@@ -361,6 +361,7 @@ def test_real_adapter_recomputes_evidence_after_report_type_change_correction():
     case.select_candidate(candidates[0].candidate_id)
 
     record_before = real.get_evidence_record()
+    assert record_before["event"]["safety_report_type"]["value"] == "TRAFFIC_VIOLATION"
     jobs_before = list(case.job_records)
     correction.apply_correction(
         case,
@@ -382,10 +383,9 @@ def test_real_adapter_recomputes_evidence_after_report_type_change_correction():
 
 def test_real_e2e_happy_path_reaches_ready_caseview():
     """recording→search→후보 선택→readout→evidence 전부 real로 돌려서 `CaseView`까지
-    도달하는지 확인한다 — 이번 W5/W6 마감의 증빙 테스트다.
+    도달하는지 확인한다 — 5·6주차(W5/W6) 마감의 증빙 테스트다.
 
-    `READY`는 Package가 실제로 준비됐을 때만이다(#167). 상황 응답 전에는 ADR-EVIDENCE-005
-    D2-c로 Package가 막혀 `EVIDENCE_REVIEW`에 머문다."""
+    #597에 따라 OBSERVED의 필수 자산이 확보되면 무응답으로도 READY에 도달한다."""
     scope = _real_scope()
     case = CaseAggregate.intake(case_id="case_h001_full_e2e", hints=_real_hints(), manifest_summary={})
     real = RealAdapter(case_id="case_h001_full_e2e", case=case, search_scope=scope, mock_root=MOCK_ROOT)
@@ -406,9 +406,8 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
 
     view = service.build_view_from_adapter(case, real)
 
-    # READY ⇔ Package 존재(#167). 상황 응답 전이라 지금은 둘 다 아니다.
-    assert (view["stage"] == "READY") == (view["package"] is not None)
-    assert view["stage"] == "EVIDENCE_REVIEW"
+    assert view["candidates"][0]["situation_confirmation"] == "NOT_ASKED"
+    assert view["stage"] == "READY"
     assert view["evidence"]["plate_display"]["value"] == "12가3456"
     assert view["evidence"]["event_time_display"]["value"] == "2026-08-24T18:05:12+09:00"
     assert view["evidence"]["location_display"]["value"] == "상무중앙로 사거리 부근"
@@ -416,8 +415,7 @@ def test_real_e2e_happy_path_reaches_ready_caseview():
     assert view["requirements_evidence"]["readiness"] == "PASS"
     # 이슈 #103 — hints가 더 이상 {}로 고정되지 않는다.
     assert view["hints"] != {}
-    # package는 알려진 단순화 2 때문에 None일 수 있다 — 존재 자체를 요구하지 않는다.
-    assert view["package"] is None or "package_ref" in view["package"]
+    assert "package_ref" in view["package"]
 
 
 def test_real_adapter_runs_other_scenario():

@@ -16,7 +16,7 @@ from daesingo.case.domain import ANALYSIS_JOB_KINDS, CaseAggregate, InvalidTrans
 from daesingo.case.scope import build_analysis_scope
 from daesingo.case.timeline_source import CaseTimelineSource
 
-# 사용자가 유형을 고르는 입력이 없어 늘 4개 전부(spec §3-2).
+# 사용자가 유형을 고르는 입력이 없어 늘 4개 전부(`start-analysis.md` §3-2).
 TARGET_EVENT_TYPES: tuple[str, ...] = (
     "SIGNAL",
     "CENTER_LINE_CROSSING",
@@ -29,10 +29,12 @@ _HINT_FIELDS = {"time": "time_hint", "vehicle": "vehicle_hint", "situation": "si
 
 @dataclass(frozen=True)
 class InitialSearchBudget:
-    """첫 탐색 예산(spec §3-3). `max_cost_krw`는 설정값 — composition root가 바꿔 넘길 수 있다."""
+    """첫 탐색 예산(`start-analysis.md` §3-3). `max_cost_krw`는 설정값 — composition root가 바꿔 넘길 수 있다."""
 
     max_cost_krw: float = 1000.0
-    max_latency_sec: float = 150.0
+    # 공개 RC 동안 600초 유지(#452, 11/6 회의 · `decisions/case-wait-timeout.md` §3-9 · §3-10). 150초 복귀는
+    # RC 이후 입력 길이별 처리시간을 보고 다시 정한다. Fine(70초)은 바꾸지 않는다.
+    max_latency_sec: float = 600.0
 
 
 class AnalysisStartNotAllowed(Exception):
@@ -40,7 +42,7 @@ class AnalysisStartNotAllowed(Exception):
 
 
 def fingerprint(payload: dict[str, Any]) -> str:
-    """첫 발주 `input_fingerprint`(spec §3-4) — 구현 이름표는 아직 섞지 않는다."""
+    """첫 발주 `input_fingerprint`(`start-analysis.md` §3-4) — 구현 이름표는 아직 섞지 않는다."""
     canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -107,7 +109,8 @@ def start_analysis(
     case.description = description
     case.start_search()
     if not description.strip():
-        # 타임라인 실패는 그대로 올라간다 — aggregate는 바뀐 채지만 호출자가 save하지 않는다(Task 4).
+        # 타임라인 실패는 그대로 올라간다 — aggregate는 바뀐 채지만 호출자가 save하지 않는다
+        # (실패한 요청은 저장하지 않는다 — `start-analysis-plan.md` Task 4).
         issue_initial_search(case, timelines=timelines, budget=budget)
         return
     jobs.issue_job(
@@ -159,7 +162,7 @@ def reflect_hint_extraction(
 ) -> bool:
     """`job_id`(`HINT_EXTRACT`)를 case가 아직 기다릴 때만 hints를 채우고 그 job을 정산한 뒤 첫 탐색을 발주한다.
     중단(`CANCELLED`) · 이미 반영된 job의 결과면(늦은 결과 · 같은 결과의 두 번째 도착) 아무것도 바꾸지 않고
-    `False`(8-9, #245 C-4). 결과 상태는 상태를 바꾸기 전에 검사한다."""
+    `False`(`decisions/stop-analysis.md`, #245 C-4). 결과 상태는 상태를 바꾸기 전에 검사한다."""
     record = next((r for r in case.job_records if r["job_id"] == job_id), None)
     if record is not None and record["kind"] != "HINT_EXTRACT":
         raise ValueError(f"HINT_EXTRACT job이 아니다: {job_id!r} ({record['kind']})")

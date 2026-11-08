@@ -1,4 +1,5 @@
-"""web → case 공용 command 진입점 — `docs/modules/case/contracts/contract-case-command.md`(Draft v0).
+"""web → case 공용 command 진입점 — `docs/modules/case/contracts/contract-case-command.md`(Draft v0 · 입력형 command
+`MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME`은 §12 v1 초안).
 
 `get_view()`가 읽기 방향이라면 이 파일은 쓰기 방향이다. transport(HTTP 경로·인증·직렬화)는
 여기 없다 — transport는 요청을 그대로 넘기고 응답을 그대로 돌려주기만 한다(#106). 상태 확인·
@@ -15,6 +16,7 @@ stale 검사·허용 조건·실패 코드는 전부 여기서 정한다.
 from __future__ import annotations
 
 import copy
+from collections.abc import Callable
 import functools
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -39,6 +41,7 @@ _ACTION_JOB_KIND = {
 }
 
 _PAYLOAD_KEYS = {
+    "REQUEST_CANDIDATE_VIDEO_PREVIEW": frozenset({"candidate_id"}),
     "SELECT_OTHER_CANDIDATE": frozenset({"candidate_id"}),
     "RECORD_SITUATION_RESPONSE": frozenset({"value"}),
     "MARK_REVIEWED": frozenset(),
@@ -105,8 +108,21 @@ def _select_other_candidate(case: CaseAggregate, payload: dict[str, Any], view: 
     except InvalidTransition:
         raise _Rejected("not_allowed") from None
     correction.reselect_candidate(case, candidate_id)
-    # 새 후보의 첫 빠진 관찰 단계부터 발주한다 — 같은 탐색 결과 안에서 끝난 관찰은 재사용한다(W12:C2, §4-6).
+    # 새 후보의 첫 빠진 관찰 단계부터 발주한다 — 같은 탐색 결과 안에서 끝난 관찰은 재사용한다(`decisions/incident-clip-observation-input.md` §4-6).
     observation.issue_missing_for_selected(case)
+
+
+def _request_candidate_video_preview(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
+    from daesingo.case.candidate_video import PreviewRequestsDisabled, eligible, request_preview
+    candidate = next((c for c in case.candidates if c.candidate_id == payload["candidate_id"]), None)
+    if candidate is None:
+        raise _Rejected("unknown_target")
+    if case.stage not in {"CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"} or not eligible(case, candidate):
+        raise _Rejected("not_allowed")
+    try:
+        request_preview(case, candidate)
+    except PreviewRequestsDisabled:
+        raise _Rejected("not_allowed") from None
 
 
 def _record_situation_response(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
@@ -197,6 +213,15 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"} and export_requests is not None:
         prior = next((r for r in reversed(case.job_records) if r["kind"] == kind
             and r["job_id"] in case.export_inputs and case.export_inputs[r["job_id"]] == export_requests.get(kind)), None)
+        if prior is None and kind in export_requests:
+            # A refused automatic order has no persisted intent for this input.
+            # The visible action is an explicit first order, not a retry of an old input.
+            from daesingo.recording.exports import export_fingerprint
+            request = export_requests[kind]
+            case.bump_revision()
+            jobs.issue_job(case, kind, input_fingerprint=export_fingerprint({"kind": kind, "input": request}),
+                           export_input=request)
+            return
     if prior is None:
         raise _Rejected("not_allowed")
     # 결과 없음(`CANDIDATE_REVIEW` · 후보 0개)에서 다시 찾으면 `SEARCHING`으로 돌아간다(#426) — 탐색 결과 반영은
@@ -204,6 +229,10 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     if kind == "COARSE_SEARCH" and case.stage == "CANDIDATE_REVIEW":
         case.regress_to_searching()
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
+    if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}:
+        # A new explicit intent needs a new revision. Replaying its old payload
+        # must be stale, while a later failed-export retry has a different admission identity.
+        case.bump_revision()
     jobs.issue_same_input(case, prior)
 
 
@@ -252,7 +281,13 @@ def _stop_analysis(case: CaseAggregate, payload: dict[str, Any], view: dict[str,
         raise _Rejected("not_allowed") from None
 
 
+# 성공 뒤 export · READY gate(#167)를 다시 보지 않는 command. 후보 영상 미리보기는 Fine/OCR/export와
+# READY gate를 실행하지 않는다(`decisions/candidate-video-preview.md` §2).
+_SKIP_EXPORT_GATE = frozenset({"REQUEST_CANDIDATE_VIDEO_PREVIEW"})
+
+
 _HANDLERS = {
+    "REQUEST_CANDIDATE_VIDEO_PREVIEW": _request_candidate_video_preview,
     "SELECT_OTHER_CANDIDATE": _select_other_candidate,
     "RECORD_SITUATION_RESPONSE": _record_situation_response,
     "MARK_REVIEWED": _mark_reviewed,
@@ -311,6 +346,7 @@ def execute_command(
     timelines: CaseTimelineSource | None = None,
     budget: InitialSearchBudget | None = None,
     now: datetime | None = None,
+    admit_auto_exports: Callable[[list[dict[str, Any]]], bool] | None = None,
 ) -> CommandResult:
     """command 하나를 받아 `{ok, error, case_view}`(§4)와 이번 command로 append된 JobRecord를 돌려준다.
 
@@ -318,7 +354,7 @@ def execute_command(
     (§5 — 그 전이도 `case_rev`를 올린다). 검사 순서는 §6 그대로 `invalid_payload` → `unknown_target`(case) → `stale_revision` →
     `unknown_target`(대상) → `not_allowed`다. 실패하면 아무 상태도 바꾸지 않고 현재 CaseView를
     싣는다 — case_id가 없을 때만 `case_view=None`이다. `notices`는 `get_view()`에 그대로 넘긴다(사용자가 본
-    화면과 같은 notices로 `RUN_NOTICE_ACTION`을 검사하기 위해). 실행 상태는 `store`의 read port로 읽는다(8-10).
+    화면과 같은 notices로 `RUN_NOTICE_ACTION`을 검사하기 위해). 실행 상태는 `store`의 read port로 읽는다(`decisions/jobexecution-read-port.md`).
     `START_ANALYSIS` · `EDIT_HINT`는 `timelines`(필수) · `budget`(기본 `InitialSearchBudget()`)을 쓴다.
 
     case를 잠근 뒤 마감(`now`, 기본 현재 시각)이 지난 job을 먼저 `STOPPED_WAITING`으로 정산한다 — 사용자가 본 timeout 화면의
@@ -368,11 +404,19 @@ def execute_command(
     except _Rejected as rejected:
         return CommandResult(_response(rejected.reason, view))
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
-    # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
-    if case.stage == "EVIDENCE_REVIEW":
+    # 부르면 통로에 판단이 들어간다(#106). UNCERTAIN의 상황 응답이나 정정 뒤 Package가 풀리는 경우가 대표적이다(§5).
+    if case.stage == "EVIDENCE_REVIEW" and request["kind"] not in _SKIP_EXPORT_GATE:
         from daesingo.case.exports import issue_missing_exports
         adapter = store.adapter_for(case)
+        corrected = copy.deepcopy(case) if admit_auto_exports is not None else None
+        before_exports = len(case.job_records)
         issue_missing_exports(case, adapter, view_of(case))
+        if (admit_auto_exports is not None and len(case.job_records) > before_exports
+                and not admit_auto_exports(copy.deepcopy(case.job_records[jobs_before:]))):
+            # Keep the accepted review/correction. Only automatic export effects
+            # are deferred; explicit jobs and domain validation stay atomic.
+            assert corrected is not None
+            case = corrected
         mark_ready_if_package_ready(case, adapter)
     store.save(case)
     appended = copy.deepcopy(case.job_records[jobs_before:])

@@ -29,6 +29,8 @@
   --rs-r-media: 16px;
   /* 움직임은 한 곡선으로 — 처음엔 움직이다 끝에서 부드럽게 선다. 튕김 없음 */
   --rs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* 예외: 복사 확인만 살짝 튕긴다(.rs-copy) */
+  --rs-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   font-family: 'Pretendard Variable', 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
   color: var(--rs-ink);
 }
@@ -78,13 +80,21 @@ body:has(.rs-page) { background: #fff; }
   cursor: pointer;
   transition: background-color .3s var(--rs-ease), border-color .2s var(--rs-ease), color .3s var(--rs-ease), transform .12s var(--rs-ease);
 }
-.rs-btn:active:not(:disabled) { transform: scale(.98); }
+.rs-btn:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(.98); }
 .rs-btn.pri { background: var(--rs-ink); color: #fff; }
 .rs-btn.pri:hover { background: #424245; }
 .rs-btn.sec { background: #fff; color: var(--rs-ink); border-color: var(--rs-line); }
 .rs-btn.sec:hover { border-color: var(--rs-ink); }
+/* 복사 — 누르면 더 깊게 눌리고, 성공하면 버튼이 검정으로 채워지며 튀어 오르고 체크가 그려진다 */
+.rs-btn.rs-copy { gap: 6px; }
+.rs-btn.rs-copy:active:not(:disabled) { transform: scale(.92); }
+.rs-btn.is-copied, .rs-btn.is-copied:hover { background: var(--rs-ink); border-color: var(--rs-ink); color: #fff; animation: rs-copy-pop .5s var(--rs-spring); }
+.rs-copy-check { flex: 0 0 auto; }
+.rs-copy-check path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: rs-copy-draw .32s ease-out .1s both; }
+@keyframes rs-copy-pop { 0% { transform: scale(.9); } 45% { transform: scale(1.08); } 72% { transform: scale(.97); } 100% { transform: scale(1); } }
+@keyframes rs-copy-draw { to { stroke-dashoffset: 0; } }
 .rs-btn.lg { min-height: 54px; padding: 0 32px; font-size: 17px; }
-.rs-btn:disabled, .rs-btn:disabled:hover { background: var(--rs-fill); color: var(--rs-off); border-color: transparent; cursor: not-allowed; }
+.rs-btn:disabled, .rs-btn:disabled:hover, .rs-btn[aria-disabled="true"], .rs-btn[aria-disabled="true"]:hover { background: var(--rs-fill); color: var(--rs-off); border-color: transparent; cursor: not-allowed; }
 
 /* ============================================================
    업로드 화면
@@ -164,6 +174,8 @@ body:has(.rs-page) { background: #fff; }
   mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 88%, transparent 100%);
 }
 .rs.upload.bg-off .rs-bgcar { opacity: 0; }
+/* 1048px 그림이 좁은 폭(640·320px)에서 가로 스크롤을 만들지 않게 넘친 부분을 자른다(#559, WCAG 1.4.10) */
+body:has(.rs-bgcar) { overflow-x: clip; }
 
 /* 안내 줄 — 글자·버튼은 그림과 겹치지 않고 제자리 */
 .rs-cap { display: flex; align-items: center; gap: 16px; padding: 18px 22px; border-top: 1px solid rgba(0, 0, 0, .06); }
@@ -269,31 +281,6 @@ body:has(.rs-page) { background: #fff; }
   position: absolute; border: 2px solid rgba(29, 29, 31, .35); border-radius: 50%; pointer-events: none; opacity: 0;
 }
 
-/* 진행 — 「장면 찾기」 중 대표 영상 박스 안(components/SearchFx.tsx). 영상 위를 옅게 덮고 도로가 흐르는 위를
-   차가 제자리에서 달린다. 바퀴 1초에 한 바퀴 반, 차체는 잘게 떨리고, 연기·레이더 파동이 계속 이어진다 */
-.flow-thumb-frame:has(.flow-search-fx) .flow-thumb-fallback { visibility: hidden; }
-.flow-search-fx { position: absolute; inset: 0; overflow: hidden; background: rgba(245, 245, 247, .72); animation: rs-fade-in .3s var(--rs-ease) both; }
-.flow-search-road {
-  position: absolute; left: 0; right: 0; bottom: 20%; height: 3px;
-  background: repeating-linear-gradient(90deg, #b8b8be 0 26px, transparent 26px 46px);
-  animation: flow-road .5s linear infinite;
-}
-@keyframes flow-road { to { background-position: -46px 0; } }
-/* 바퀴 바닥(원본 높이의 85%)이 도로선에 닿게 — 차 높이가 박스 높이의 약 41%라 15% 몫(6%)만큼 내린다 */
-.flow-search-car { position: absolute; left: 50%; bottom: calc(20% - 6%); width: 46%; aspect-ratio: 2 / 1; transform: translateX(-50%); }
-.flow-search-body { position: absolute; inset: 0; animation: flow-bob .24s linear infinite; }
-.flow-search-body > img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.flow-search-wheel { position: absolute; }
-.flow-search-wheel img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.flow-search-wheel .spin { animation: flow-wheel .4s linear infinite; }
-@keyframes flow-wheel { to { transform: rotate(-360deg); } }
-@keyframes flow-bob { 0%, 100% { transform: translateY(0); } 25% { transform: translate(.5px, -1px); } 50% { transform: translateY(.4px); } 75% { transform: translate(-.5px, -.6px); } }
-.flow-search-at { position: absolute; width: 0; height: 0; }
-.flow-search-ring {
-  left: 50%; top: 52%; width: 22%; aspect-ratio: 1; margin-left: -11%; transform: translateY(-50%) scale(.4);
-  animation: flow-radar 2.4s ease-out var(--d) infinite;
-}
-@keyframes flow-radar { 0% { opacity: .75; transform: translateY(-50%) scale(.4); } 100% { opacity: 0; transform: translateY(-50%) scale(4.2); } }
 .rs.upload.is-departing .rs-check path { animation: none; stroke-dashoffset: 0; }
 .rs.upload.is-departing .rs-actions .rs-btn.pri { animation: none; }
 
@@ -332,8 +319,20 @@ body:has(.rs-page) { background: #fff; }
 .rs .field.situation::placeholder { color: var(--rs-faint); }
 .rs .field.situation:hover { border-color: var(--rs-line-strong); }
 /* 입력칸은 테두리 변화로만 포커스를 보인다 — 바깥 윤곽선을 겹치지 않는다 */
-.rs .field.situation:focus, .rs .field.situation:focus-visible { outline: none; border-color: var(--rs-ink); box-shadow: 0 0 0 3px rgba(29, 29, 31, .12); }
+/* outline을 투명으로 남긴다 — 강제 색상(고대비) 모드에서는 box-shadow가 지워지고 이 테두리가 보인다(#509 #9) */
+.rs .field.situation:focus, .rs .field.situation:focus-visible { outline: 2px solid transparent; border-color: var(--rs-ink); box-shadow: 0 0 0 3px rgba(29, 29, 31, .12); }
 .rs-hint { margin: 0; font-size: 14px; color: var(--rs-sub); }
+/* 상황 설명칸 아래 「예시 문장 넣기」 — Tab 대신 쓰는 명시적 버튼(#509 #4) */
+.rs-example { align-self: flex-start; margin: 8px 0 0; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--rs-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+.rs-label-opt { margin-left: 4px; font-size: 14px; font-weight: 400; color: var(--rs-sub); }
+
+/* 업로드 전 개인정보·외부 처리 동의(공개 운영 정책 §4) — 파일을 고른 직후 뜨는 모달(#606 리뷰) */
+.rs-consent { max-width: min(480px, calc(100vw - 32px)); padding: 24px; border: 0; border-radius: 16px; font-size: 15px; color: var(--rs-sub); background: var(--rs-bg); }
+.rs-consent::backdrop { background: rgb(0 0 0 / 0.4); }
+.rs-consent h2 { margin: 0 0 12px; font-size: 18px; color: var(--rs-ink); }
+.rs-consent ul { margin: 0 0 20px; padding-left: 18px; line-height: 1.7; }
+.rs-consent-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
 .rs-actions { display: flex; justify-content: flex-end; margin-top: 32px; }
 
@@ -407,6 +406,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 .flow-status { display: flex; align-items: center; gap: 8px; height: 24px; margin: 0; font-size: 15px; color: var(--rs-sub); }
 .flow-elapsed { margin: 0; font-size: 15px; color: var(--rs-sub); }
 .flow-elapsed span { color: var(--rs-ink); font-variant-numeric: tabular-nums; }
+.flow-leave-note { margin: 8px 0 0; font-size: 15px; color: var(--rs-sub); }
 .flow-status-mark { position: relative; flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--rs-line); transition: background-color .25s var(--rs-ease), border-color .25s var(--rs-ease); }
 .flow-status.is-running { color: var(--rs-ink); }
 .flow-status.is-running .flow-status-mark { border: 2px solid #e5e5ea; border-top-color: var(--rs-ink); animation: rs-spin 1s linear infinite; }
@@ -435,6 +435,21 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 }
 .flow-thumb-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: rs-fade-in .35s var(--rs-ease) both; }
 .flow-thumb-box { position: relative; }
+.flow-thumb-content { position: absolute; inset: 0; display: grid; place-items: center; }
+.flow-thumb-content[hidden] { display: none; }
+.flow-preview-switch {
+  position: absolute; z-index: 3; top: 10px; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; min-height: 34px; max-width: calc(100% - 20px); gap: 6px; padding: 0 10px; border: 1px solid rgba(0, 0, 0, .06); border-radius: 18px;
+  background: var(--rs-bg); color: var(--rs-ink);
+  font: inherit; font-size: 13px; font-weight: 500; line-height: 20px; cursor: pointer; touch-action: manipulation;
+}
+.flow-preview-switch.is-game { right: 10px; }
+.flow-preview-switch > svg { flex-shrink: 0; }
+.flow-preview-invite-copy { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flow-preview-switch:focus-visible { outline: 3px solid var(--rs-ink); outline-offset: 3px; }
+@media (pointer: coarse) {
+  .flow-preview-switch { min-height: 44px; }
+}
 
 .flow-thumb-fallback { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 15px; color: var(--rs-sub); }
 .flow-thumb-fallback svg { color: var(--rs-sub); }
@@ -462,17 +477,17 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 
 /* 단계 목록 — ProgressPanel 모양을 이 화면에서만 바꾼다(개발용 ?dev 화면은 그대로) */
 .rs.flow .panel { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
-.rs.flow .flow-steps .sec-label { align-items: baseline; padding-bottom: 14px; margin-bottom: 8px; border-bottom: 1px solid var(--rs-line); font-size: 18px; font-weight: 650; line-height: 1.3; color: var(--rs-ink); }
+.rs.flow .flow-steps .sec-label { align-items: baseline; padding-bottom: 14px; padding-right: 12px; margin-bottom: 8px; border-bottom: 1px solid var(--rs-line); font-size: 18px; font-weight: 650; line-height: 1.3; color: var(--rs-ink); }
 .flow-steps-count { font-size: 14px; font-weight: 500; color: var(--rs-sub); }
 .rs.flow .sec-label { margin: 0 0 4px; padding: 0; border: 0; font-size: 14px; font-weight: 600; color: var(--rs-sub); }
 .rs.flow .timeline { display: flex; flex-direction: column; gap: 2px; padding: 0; }
 .rs.flow .timeline li {
   align-items: center; gap: 12px; min-height: 54px;
-  padding: 12px 0 12px 70px; border-left: 0; border-bottom: 0;
+  padding: 12px 12px 12px 78px; border-left: 0; border-bottom: 0;
   font-size: 16px;
 }
 .rs.flow .timeline li::before {
-  left: 40px; top: 50%; width: 16px; height: 16px; margin-top: -8px;
+  left: 48px; top: 50%; width: 16px; height: 16px; margin-top: -8px;
   background: #fff; border: 1.5px solid var(--rs-line);
   animation: none;
 }
@@ -481,7 +496,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 /* 완료 — 검정 원 + 흰 체크 */
 .rs.flow .timeline .tl-done::before { background: var(--rs-ink); border-color: var(--rs-ink); }
 .rs.flow .timeline .tl-done::after {
-  content: ''; position: absolute; left: 46px; top: 50%; width: 4px; height: 8px; margin-top: -6px;
+  content: ''; position: absolute; left: 54px; top: 50%; width: 4px; height: 8px; margin-top: -6px;
   border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg);
 }
 /* 진행 중 — 검정 원형 로딩 */
@@ -490,8 +505,18 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
   animation: rs-spin 1s linear infinite;
 }
 .rs.flow .timeline .tl-running .tl-label { font-weight: 650; }
-/* 진행 중인 행만 아주 연한 회색 면 — 경로 칸(왼쪽 40px) 밖, 상태 아이콘부터. 여럿이 진행 중이면 모두 칠한다 */
-.rs.flow .timeline .tl-running { background: linear-gradient(90deg, transparent 30px, var(--rs-fill) 30px); border-radius: 0 10px 10px 0; }
+/* 진행 중인 행은 회색 카드로 살짝 떠 보인다 — 경로 칸(왼쪽 36px) 밖, 자동차와 겹치지 않게. 여럿이 진행 중이면 모두 띄운다.
+   카드 안쪽 여백을 고르게 둔다: 왼쪽(카드 끝 → 상태 아이콘) · 오른쪽(상태 글자 → 카드 끝) 12px, 위아래는 줄 padding 12px.
+   그래서 모든 행의 아이콘은 48px, 글자는 78px에서 시작하고 오른쪽을 12px 비운다(행끼리 줄을 맞춘다).
+   ::before는 상태 아이콘이라 카드는 ::after에 그리고 글자 뒤(z-index -1)로 보낸다. 단계가 바뀌면 카드가 다음 행으로 옮겨 간다 */
+.rs.flow .timeline .tl-running { isolation: isolate; }
+.rs.flow .timeline .tl-running::after,
+.rs.flow .timeline .scene-search-step.tl-running::after {
+  content: ''; display: block; position: absolute; inset: 0 0 0 36px; z-index: -1;
+  border-radius: 12px; background: var(--rs-fill);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 6px 16px rgba(0, 0, 0, .08);
+  animation: rs-fade-in .3s var(--rs-ease) both;
+}
 /* 세로 경로 — 경로 칸(40px) 가운데 얇은 회색 선, 단계마다 정류장 점(색이 바뀌지 않아 완료를 뜻하지 않음).
    위에서 본 같은 은색 자동차가 실제 진행 단계 옆에 서고, 단계가 바뀔 때만 이동한다(시간으로 움직이지 않음) */
 .flow-steps { position: relative; }
@@ -510,18 +535,18 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
 /* 진행 중인 작업 목록(running_jobs) */
 .rs.flow .timeline .scene-search-step {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px;
-  padding: 14px 12px 14px 70px; min-height: 80px;
+  padding: 14px 12px 14px 78px; min-height: 80px;
 }
 .rs.flow .timeline .scene-search-step::before,
 .rs.flow .timeline .scene-search-step::after { display: none; }
-.scene-search-mark { position: absolute; left: 38px; top: 17px; width: 20px; height: 20px; color: var(--rs-ink); }
+.scene-search-mark { position: absolute; left: 48px; top: 19px; width: 16px; height: 16px; color: var(--rs-ink); }
 .scene-search-ring { display: block; width: 100%; height: 100%; transform: rotate(-90deg); fill: none; stroke-width: 3; }
 .scene-search-track { stroke: var(--rs-line); }
 .scene-search-fill { stroke: currentColor; transition: stroke-dashoffset .45s var(--rs-ease); }
 .scene-search-step.is-active.is-preparing .scene-search-ring { animation: scene-search-spin 1s linear infinite; }
 .scene-search-step.tl-done .scene-search-mark { display: grid; place-items: center; background: var(--rs-ink); color: var(--rs-bg); border-radius: 50%; }
-.scene-search-mark > svg:not(.scene-search-ring) { width: 14px; height: 14px; stroke-width: 2.5; }
-.scene-search-detail { grid-column: 1 / -1; margin: 0; padding-left: 16px; min-height: 24px; font-size: 14px; line-height: 24px; color: var(--rs-sub); word-break: keep-all; overflow-wrap: anywhere; }
+.scene-search-mark > svg:not(.scene-search-ring) { width: 11px; height: 11px; stroke-width: 3; }
+.scene-search-detail { grid-column: 1 / -1; margin: 0; padding-left: 0; min-height: 24px; font-size: 14px; line-height: 24px; color: var(--rs-sub); word-break: keep-all; overflow-wrap: anywhere; }
 .scene-search-detail > span { display: inline-block; max-width: 100%; vertical-align: top; }
 .scene-search-detail.is-running > span {
   background: linear-gradient(105deg, var(--rs-sub) 36%, var(--rs-ink) 50%, var(--rs-sub) 64%);
@@ -537,7 +562,7 @@ body:has(.rs-upload-exit) { overflow-x: clip; }
   50% { -webkit-text-stroke-color: color-mix(in srgb, var(--rs-ink) 35%, transparent); text-shadow: 0 0 3px color-mix(in srgb, var(--rs-ink) 24%, transparent); }
 }
 @media (max-width: 460px) {
-  .scene-search-detail { padding-left: 8px; min-height: 48px; font-size: 13px; }
+  .scene-search-detail { min-height: 48px; font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .scene-search-step .scene-search-ring, .scene-search-detail > span { animation: none !important; }
@@ -666,6 +691,13 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 /* 머리글 안내 띠는 차 자리(오른쪽 520px + 여백)까지 오지 않는다 — 선명하게 도착하는 차가 띠 뒤에 잘리지
    않고, 띠 안 버튼도 차에 가리지 않는다 */
 .res-head .res-notices { margin-right: 544px; }
+/* 좁은 화면(200% 확대 포함)에서는 차 자리를 비우지 않는다 — 띠가 눌려 본문이 넘치고 가로 스크롤이 생긴다(#509 #8).
+   차는 글자 뒤(z-index -1) · 흐린 상태라 띠와 겹쳐도 읽기와 누르기를 막지 않는다 */
+/* 도착 연기(.rs-puff)도 화면 오른쪽 밖으로 나가 가로 스크롤을 만들므로 차 상자 가로로 자른다 */
+@media (max-width: 960px) {
+  .res-head .res-notices { margin-right: 0; }
+  .res-bgcar { overflow-x: clip; }
+}
 .res-head { display: flex; flex-direction: column; gap: 12px; }
 .res-head .state-context { margin: 0; }
 .res-title { margin: 0; font-size: var(--rs-h1); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; }
@@ -708,6 +740,10 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 .res-report { position: relative; display: block; width: 100%; max-width: 760px; padding: 18px 104px 18px 22px; border-radius: 14px; background: var(--rs-fill); }
 .res-report .rs-btn { position: absolute; top: 14px; right: 14px; }
 .res-report-text { white-space: pre-wrap; font-weight: 500; }
+/* 이 화면에서만 고치기 — 값 아래에서 입력칸이 열린다 */
+.res-edit { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 760px; }
+.res-edit textarea.field { height: auto; padding: 14px 16px; resize: vertical; line-height: 1.6; }
+.res-edit-actions { display: flex; gap: 8px; }
 
 /* 신고 양식 — 왼쪽 칸 이름(안전신문고 양식 순서), 오른쪽 값. 값 바로 옆에 상태 배지와 복사, 아래에 출처 */
 .res-form { padding-top: 32px; border-top: 1px solid var(--rs-line); }
@@ -718,6 +754,9 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   font: inherit; font-size: 15px; font-weight: 600; color: var(--rs-ink); cursor: pointer;
 }
 .res-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* 신고서 초안 제목 옆 「어떻게 작성했는지」 — 문구가 길어 이것만 키우고, 좁으면 제목 아래로 내린다 */
+.res-form > .res-sec-head { flex-wrap: wrap; row-gap: 4px; }
+.res-details-link { font-size: 17px; text-align: left; }
 .res-item { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 24px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--rs-line-soft); }
 .res-item.is-review { margin: 0 -16px; padding: 22px 16px; border-radius: 12px; border-bottom-color: transparent; background: var(--orange-soft); }
 .res-item-k { margin: 0; padding-top: 3px; font-size: 15px; font-weight: 500; color: var(--rs-sub); }
@@ -740,18 +779,32 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 
 /* 동영상 — 미리보기 자리(왼쪽)와 다운로드·상태·다른 후보(오른쪽) */
 .res-video { display: grid; grid-template-columns: minmax(0, 480px) minmax(0, 1fr); gap: 28px; align-items: start; width: 100%; }
+/* 좁은 화면에서는 미리보기가 480px를 먼저 차지해 오른쪽 칸이 밖으로 밀린다 — 위아래로 쌓는다 */
+@media (max-width: 960px) {
+  .res-video { grid-template-columns: minmax(0, 1fr); }
+}
 .res-frame {
   aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
   padding: 0 16px; border-radius: var(--rs-r-media); background: var(--rs-fill); color: var(--rs-sub); font-size: 15px; text-align: center;
 }
 .res-video-side { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .res-video-cap { margin: 0; font-size: 15px; line-height: 1.55; color: var(--rs-ink); }
+.res-preview { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.res-preview-label { margin: 0; font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
 .res-video-side .res-link { margin-top: 6px; }
 
 /* 차량 번호 — 큰 번호판과 확인·수정 진입점을 한 칸에 */
 .res-plate { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .res-plate-v { margin: 0; font-size: 44px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .res-plate-v.is-none { font-size: 24px; font-weight: 600; color: var(--rs-sub); }
+.res-plate-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+/* 번호판을 읽은 장면 썸네일 — 누르면 번호판 확인 화면에서 크게 본다(#597) */
+.res-plate-thumb { padding: 0; border: 1px solid var(--rs-line); border-radius: 8px; background: none; cursor: pointer; overflow: hidden; }
+.res-plate-thumb-img { width: 160px; aspect-ratio: 16 / 9; display: grid; place-items: center; font-size: 13px; }
+.res-plate-thumb-img > img { width: 100%; height: 100%; object-fit: cover; }
+.res-situation-fix fieldset { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.res-situation-fix legend { margin-bottom: 8px; font-weight: 600; }
+.res-situation-fix label { display: flex; align-items: center; gap: 8px; }
 .res-plate-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .res-src { font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
 .res-plate-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; }
@@ -814,7 +867,7 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 }
 .plate-frame.plate-crop { aspect-ratio: 3 / 1; }
 .res-frame, .plate-frame { overflow: hidden; }
-.res-frame > img, .plate-frame > img { width: 100%; height: 100%; object-fit: contain; }
+.res-frame > img, .plate-frame > img, .cand-th > img { width: 100%; height: 100%; object-fit: contain; }
 .plate-value { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 24px; border-top: 1px solid var(--rs-line); }
 .plate-value > .rs-btn { margin-top: 10px; }
 .plate-ai { margin: 0; font-size: 15px; color: var(--rs-sub); }
@@ -825,7 +878,7 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   width: 100%; height: 64px; padding: 0 18px; border: 1px solid var(--rs-ink); border-radius: 14px; background: #fff;
   font: inherit; font-size: 30px; font-weight: 700; letter-spacing: -0.01em; color: var(--rs-ink);
 }
-.plate-input:focus { outline: none; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
+.plate-input:focus { outline: 2px solid transparent; box-shadow: 0 0 0 4px rgba(29, 29, 31, .12); }
 .plate-form-actions { display: flex; gap: 10px; }
 /* 설명 고치기(#410) — 업로드 화면의 입력 틀을 하위 화면에서 다시 쓴다 */
 .hint-page .rs-field { margin-top: 24px; }
@@ -904,14 +957,43 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
   .rs.flow.rs-push-in { animation: none !important; }
   .flow-car { transition: none !important; }
   .rs.flow .timeline li::before, .flow-status-mark { animation: none !important; transition: none !important; }
-  .flow-status.is-running .flow-status-mark { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
-  .rs.flow .timeline .tl-running::before { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
-  .rs-spin-sm { border-color: var(--rs-ink); border-right-color: #e5e5ea; }
   .rs-vcard { display: none; }
   .rs-check path { stroke-dashoffset: 0; }
   /* 자동차 출발·진행·도착 연출 — 출발은 위의 복사본(.rs-upload-exit)째 숨는다. 연기·속도선·잔상·스키드 자국·
      파동은 애니메이션이 없으면 투명하게 남아 보이지 않고, 도착한 차는 제자리에 10% 흐린 배경으로 서 있다.
-     「장면 찾기」 박스 연출은 통째로 숨겨 정지 화면만 보인다 */
-  .flow-search-fx { display: none; }
-  .flow-thumb-frame:has(.flow-search-fx) .flow-thumb-fallback { visibility: visible; }
+     주행 화면의 움직임 설정은 해당 컴포넌트에서 처리한다 */
+  /* 로딩 원은 설정과 상관없이 돈다 — 멈춘 원은 「멈췄다」로 읽힌다(11/02 결정). 화면을 크게 움직이지 않는 제자리 회전이다.
+     복사 확인도 버튼 안에서만 잠깐 튀어 남긴다 — 눌렀다는 손맛이 이 기능의 전부다 */
+  .rs .rs-spin-sm, .rs .flow-status.is-running .flow-status-mark, .rs.flow .timeline .tl-running::before { animation: rs-spin 1s linear infinite !important; }
+  .rs .scene-search-step.is-active.is-preparing .scene-search-ring { animation: scene-search-spin 1s linear infinite !important; }
+  .rs .rs-btn.is-copied { animation: rs-copy-pop .5s var(--rs-spring) !important; }
+  .rs .rs-copy-check path { animation: rs-copy-draw .32s ease-out .1s both !important; }
+}
+
+/* 위치 칸 지도(LocationMap) — 카카오 지도. 아래 한 줄로 어느 위치인지(GPS · 내 위치) 말한다 */
+/* 너비·비율은 동영상 칸의 장면(.res-frame, 480 · 16:9)과 맞춘다 — 안내 글 길이에 따라 지도 폭이 바뀌지 않게 */
+.res-map { width: min(100%, 480px); margin: 12px 0 0; }
+.res-map-canvas { width: 100%; aspect-ratio: 16 / 9; border-radius: var(--rs-r-media); overflow: hidden; background: var(--rs-fill); }
+.res-map-note { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--rs-sub); }
+.res-map-addr { display: block; margin-bottom: 2px; color: var(--rs-ink); }
+.res-map-hint { display: block; margin-top: 2px; }
+.res-map-reset { display: flex; margin-top: 6px; }
+.res-map-empty { margin-top: 12px; }
+.res-map-empty > .res-map-note:first-child { margin: 0 0 8px; }
+.res-map-empty .rs-btn { gap: 6px; }
+
+@media (max-width: 960px) {
+  .res-situation { grid-template-columns: minmax(0, 1fr); }
+  .res-situation > .res-frame { grid-row: auto; }
+  .res-situation > :not(.res-sec-head):not(.res-frame) { grid-column: 1; }
+}
+
+@media (max-width: 720px) {
+  .res-details-link { font-size: 15px; }
+  .res-item { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .res-report { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+  .res-report .rs-btn { position: static; align-self: flex-end; order: 1; }
+  .res-handoff { grid-template-columns: minmax(0, 1fr); padding: 24px; }
+  .res-handoff .res-actions { justify-content: flex-start; }
+  .res-toast { position: static; }
 }

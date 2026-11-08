@@ -121,7 +121,7 @@ def test_service_keeps_uncertain_lane_candidates_and_normalizes_rank_and_time():
     assert "점선처럼 보이나 횡단" in lane.uncertainties
     assert "점선 차로로 변경" not in lane.uncertainties
     record = service.ledger.records()[0]
-    assert record.prompt_version == "coarse-p3"
+    assert record.prompt_version == "coarse-p3+coarse-brief-v1"
     assert len(record.prompt_fingerprint) == 64
 
 

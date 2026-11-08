@@ -31,7 +31,8 @@ INTENT_USER_PROMPT: Final = load_prompt("intent-user-v1")
 # Coarse · Fine 모델(DAESINGO_GEMINI_MODEL)을 바꿔도 intent 모델은 따로 남는다.
 INTENT_MODEL_ENV: Final = "DAESINGO_INTENT_MODEL"
 DEFAULT_INTENT_MODEL: Final = "gemini-3.8-flash"
-# Search가 argon tenant 경로로 옮겨도 intent는 지금 쓰는 Flash 경로를 그대로 쓴다(case 결정 유지).
+# Search(Coarse · Fine)는 gemini-4-argon 전용 base URL을 쓰지만, intent는 Flash 모델용
+# base URL을 그대로 쓴다(case 결정 유지).
 INTENT_BASE_URL_ENV: Final = "DAESINGO_INTENT_BASE_URL"
 DEFAULT_INTENT_BASE_URL: Final = (
     "https://mlapi.run/a90d8545-f100-4276-bf86-eb774596b91d/v1"

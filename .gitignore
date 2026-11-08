@@ -123,9 +123,17 @@ eval/manifests/**/*.private.json
 # 검토 사실은 gt/*.json 의 meta.coverage 가 소유한다.
 eval/manifests/**/events_draft.json
 
+# AI-Hub 실험의 runner 원본 출력은 커밋하지 않는다(PR #496에서 13만 줄). 채점 결과(eval/results/)만 커밋하고
+# 원본은 공유 드라이브 zip(daesingo_eval_aihub_predictions_*.zip)에 둔다.
+eval/predictions/aihub_*.json
+
 # search 실험용 로컬 영상·정답지(원본 영상은 저장소에 두지 않는다)
 src/daesingo/search/video/
 
 # search 실험 결과 원본은 로컬에만 보관하고 요약 보고서만 커밋한다.
 /docs/modules/search/experiments/**/*.json
 /docs/modules/search/experiments/**/*.jsonl
+
+# Playwright(A11Y-08)
+apps/web/test-results/
+apps/web/playwright-report/

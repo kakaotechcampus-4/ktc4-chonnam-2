@@ -1,5 +1,7 @@
 # Real E2E 실행 기록 — 첫 Positive 결과 (`youtube_clip_01.mp4`)
 
+> 2026-11-08 기준: 이 기록은 2026-09-23 시점 결과다(`api`가 비어 있다 · web에 라우터가 없다 등도 당시 상태). 현재 동작은 [docs/modules/case/README.md](../README.md).
+
 **날짜:** 2026-09-23 · **실행자:** 유소연(Claude Code 보조) · **브랜치:** `fix/case-search-stream-context-wiring`
 
 **관련 문서:** `real-e2e-20260923-positive-candidate-miss.md`(후보 1, `YT_0002_C00.mp4`,

@@ -52,17 +52,27 @@ def test_every_plate_input_participates_in_identity(field, value):
     assert len(case.job_records) == 3 and case.job_records[-1]["input_fingerprint"] != original
 
 
-@pytest.mark.parametrize("condition", ["no_evidence", "partial", "unanswered", "no_requirements"])
+@pytest.mark.parametrize("condition", ["no_evidence", "partial", "no_requirements"])
 def test_no_orders_before_351_gate(condition):
     module = import_module("daesingo.case.exports")
     view = eligible()
     if condition == "no_evidence": view["evidence"] = None
     if condition == "partial": view["evidence"]["record_id"] = None
-    if condition == "unanswered": view["candidates"][0]["situation_confirmation"] = "NOT_ASKED"
     if condition == "no_requirements": view["requirements_package"] = None
     case = CaseAggregate.empty("case")
     module.issue_missing_exports(case, SimpleNamespace(get_export_requests=requests), view)
     assert not case.job_records
+
+
+def test_assembled_evidence_orders_without_situation_response():
+    # #597 B안 — 응답 전(`NOT_ASKED`)이어도 EvidenceRecord가 조립됐으면(Fine `OBSERVED`) 바로 발주한다.
+    # `UNCERTAIN`은 응답 전에는 조립되지 않아 위 「partial」(`record_id` null)에서 걸린다.
+    module = import_module("daesingo.case.exports")
+    view = eligible()
+    view["candidates"][0]["situation_confirmation"] = "NOT_ASKED"
+    case = CaseAggregate.empty("case")
+    module.issue_missing_exports(case, SimpleNamespace(get_export_requests=requests), view)
+    assert [r["kind"] for r in case.job_records] == ["REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"]
 
 
 @pytest.mark.parametrize("mutation", ["change", "remove"])

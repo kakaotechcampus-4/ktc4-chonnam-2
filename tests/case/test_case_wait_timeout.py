@@ -1,6 +1,7 @@
 """case 대기 timeout — `COARSE_SEARCH`의 마감이 지나면 기다리기를 멈춘다(고도화 8-9, `decisions/case-wait-timeout.md`).
 
-타이머는 없다. 마감 = 발주 시각 + AnalysisScope `budget.max_latency_sec` + 큐 대기 여유 30초이고, CaseView 조립은 마감이
+타이머는 없다. 마감 = 발주 시각 + AnalysisScope `budget.max_latency_sec` + 큐 대기 여유 30초 + 준비 여유(분석 범위 길이 × 2,
+#452)이고 전체 상한은 60분이다. CaseView 조립은 마감이
 지난 job을 기다리지 않는 것으로 보이고(저장 안 함), command · T2 반영은 `STOPPED_WAITING`으로 정산해 저장한다. 마감 뒤
 도착한 결과는 반영하지 않는다(`NOT_APPLIED(STOPPED_WAITING)`). 실행은 취소하지 않는다.
 """
@@ -24,12 +25,20 @@ EVENT = {
 }
 
 
+# 10초 타임라인의 마감 — 600(공개 RC 탐색 예산, §3-9 · §3-10) + 30 + 준비 여유 10 × 2
+DEADLINE_SEC = 650
+
+
 class FakeTimelines:
+    def __init__(self, duration_ms: int = 10_000):
+        self.duration_ms = duration_ms
+
     def timeline_for(self, sources):
-        return CaseTimeline(timeline_id="tl_1", revision=1, duration_ms=10_000)
+        return CaseTimeline(timeline_id="tl_1", revision=1, duration_ms=self.duration_ms)
 
 
-def _searching(description: str = "", budget: InitialSearchBudget | None = None) -> tuple[CaseStore, str]:
+def _searching(description: str = "", budget: InitialSearchBudget | None = None,
+               duration_ms: int = 10_000) -> tuple[CaseStore, str]:
     store = CaseStore(conn=object())
     case_id = service.create_case(store=store)
     service.record_source_registered(
@@ -39,7 +48,7 @@ def _searching(description: str = "", budget: InitialSearchBudget | None = None)
         store=store,
     )
     start = {"case_id": case_id, "expected_case_rev": 1, "kind": "START_ANALYSIS", "payload": {"description": description}}
-    result = command.execute_command(start, store=store, timelines=FakeTimelines(), budget=budget)
+    result = command.execute_command(start, store=store, timelines=FakeTimelines(duration_ms), budget=budget)
     assert result.response["ok"] is True
     return store, case_id
 
@@ -74,18 +83,42 @@ class Reader:
 # ── 마감 ───────────────────────────────────────────────────────────────────
 
 
-def test_deadline_is_requested_at_plus_scope_latency_plus_queue_margin():
-    store, case_id = _searching()
+def _deadline_sec(store: CaseStore, case_id: str) -> float:
     case = store.get_case(case_id)
-    record = jobs.latest_job_record(case, "COARSE_SEARCH")
-    assert case.wait_deadline(record) == _requested_at(store, case_id) + timedelta(seconds=150 + 30)
+    deadline = case.wait_deadline(jobs.latest_job_record(case, "COARSE_SEARCH"))
+    return (deadline - _requested_at(store, case_id)).total_seconds()
+
+
+def test_deadline_is_requested_at_plus_scope_latency_queue_margin_and_preparation():
+    store, case_id = _searching()
+    assert _deadline_sec(store, case_id) == 600 + 30 + 10 * 2 == DEADLINE_SEC
 
 
 def test_deadline_follows_the_scope_budget():
     store, case_id = _searching(budget=InitialSearchBudget(max_latency_sec=60.0))
-    case = store.get_case(case_id)
-    record = jobs.latest_job_record(case, "COARSE_SEARCH")
-    assert case.wait_deadline(record) == _requested_at(store, case_id) + timedelta(seconds=90)
+    assert _deadline_sec(store, case_id) == 60 + 30 + 10 * 2
+
+
+def test_long_input_gets_preparation_allowance_without_raising_the_search_budget():
+    # #452 — Recording 준비 시간이 마감 안에 든다. 26분 입력은 준비 여유 26분 × 2를 더 기다린다.
+    store, case_id = _searching(duration_ms=1_560_000, budget=InitialSearchBudget(max_latency_sec=150.0))
+    assert _deadline_sec(store, case_id) == 150 + 30 + 1560 * 2
+    scope = next(iter(store.get_case(case_id).analysis_scopes.values()))
+    assert scope["budget"]["max_latency_sec"] == 150  # 준비 여유는 Search 실행 상한을 올리지 않는다
+
+
+def test_e2e_search_budget_still_fits_under_the_sixty_minute_cap():
+    # #452 — 탐색 예산 600초면 26분 입력(1,584초)은 60분 상한에 걸린다. 발주 → Search 진입이
+    # 3600 − 630 = 2970초 안이어야 Search 600초를 다 쓴다(§3-9).
+    store, case_id = _searching(duration_ms=1_584_173)
+    assert _deadline_sec(store, case_id) == 3600
+    scope = next(iter(store.get_case(case_id).analysis_scopes.values()))
+    assert scope["budget"]["max_latency_sec"] == 600
+
+
+def test_wait_is_capped_at_sixty_minutes():
+    store, case_id = _searching(duration_ms=2_400_000)
+    assert _deadline_sec(store, case_id) == 3600
 
 
 def test_hint_extraction_has_no_deadline():
@@ -111,7 +144,7 @@ def test_coarse_without_known_scope_has_no_deadline():
 
 def test_view_before_deadline_still_waits():
     store, case_id = _searching()
-    just_before = _requested_at(store, case_id) + timedelta(seconds=179)
+    just_before = _requested_at(store, case_id) + timedelta(seconds=DEADLINE_SEC - 1)
 
     view = service.get_view(case_id, store=store, now=just_before)
 
@@ -124,7 +157,7 @@ def test_view_after_deadline_stops_waiting_without_saving():
     store, case_id = _searching()
     rev = store.get_case(case_id).case_rev
 
-    view = service.get_view(case_id, store=store, now=_requested_at(store, case_id) + timedelta(seconds=180))
+    view = service.get_view(case_id, store=store, now=_requested_at(store, case_id) + timedelta(seconds=DEADLINE_SEC))
 
     assert view["running_jobs"] == []
     assert (view["stage"], view["case_rev"], _coarse_state(view)) == ("SEARCHING", rev, "PARTIAL")
@@ -156,7 +189,7 @@ def test_result_after_deadline_is_not_applied_and_settlement_is_saved():
     reader = Reader()
 
     result = reflect_execution(outcome, store=store, reader=reader, timelines=FakeTimelines(),
-                               now=_requested_at(store, case_id) + timedelta(seconds=200))
+                               now=_requested_at(store, case_id) + timedelta(seconds=DEADLINE_SEC))
 
     assert (result.status, result.reason, result.appended_job_records) == ("NOT_APPLIED", "STOPPED_WAITING", [])
     case = store.get_case(case_id)
@@ -175,7 +208,7 @@ def test_other_job_result_also_records_expired_settlement():
     outcome = ExecutionOutcome("exec_plate", other["job_id"], case_id, "PLATE_READ", 1, "SUCCEEDED")
 
     result = reflect_execution(outcome, store=store, reader=Reader(), timelines=FakeTimelines(),
-                               now=_requested_at(store, case_id) + timedelta(seconds=200))
+                               now=_requested_at(store, case_id) + timedelta(seconds=DEADLINE_SEC))
 
     assert result.status == "APPLIED"
     assert store.get_case(case_id).settled_jobs[coarse["job_id"]] == "STOPPED_WAITING"
@@ -187,7 +220,7 @@ def test_other_job_result_also_records_expired_settlement():
 def test_resume_after_timeout_issues_new_search_without_cancel():
     store, case_id = _searching()
     old = jobs.latest_job_record(store.get_case(case_id), "COARSE_SEARCH")
-    later = _requested_at(store, case_id) + timedelta(seconds=200)
+    later = _requested_at(store, case_id) + timedelta(seconds=DEADLINE_SEC)
     request = {
         "case_id": case_id,
         "expected_case_rev": store.get_case(case_id).case_rev,
@@ -213,7 +246,7 @@ def test_stop_after_timeout_is_not_allowed():
                "kind": "STOP_ANALYSIS", "payload": {}}
 
     result = command.execute_command(request, store=store,
-                                     now=_requested_at(store, case_id) + timedelta(seconds=200))
+                                     now=_requested_at(store, case_id) + timedelta(seconds=DEADLINE_SEC))
 
     assert result.response["error"]["code"] == "case.command.not_allowed"
     assert result.cancelled_job_ids == []

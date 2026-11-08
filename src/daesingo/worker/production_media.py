@@ -22,8 +22,17 @@ class ProductionMediaFactory:
         self.settings, self.search_settings, self.media = settings, search_settings, media
 
     @contextmanager
+    def frame_service(self, data):
+        repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root, temp_root=self.temp_root,
+            temp_context=self.media.detached_temp if self.media is not None else None)
+        with build_recording_service(repository, self.settings, temp_root=self.temp_root,
+                case_id=data.case_id, analysis_checkpoint=data.checkpoint) as recording:
+            yield recording
+
+    @contextmanager
     def __call__(self, data):
-        repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root)
+        repository = TransactionalRecordingRepository(self.transaction, storage_root=self.storage_root, temp_root=self.temp_root,
+            temp_context=self.media.detached_temp if self.media is not None else None)
         materializer = partial(self.media.materializer, LocalAnalysisMaterializer) if self.media is not None else None
         with build_recording_service(repository, self.settings, temp_root=self.temp_root,
                                      materializer_factory=materializer, case_id=data.case_id,
@@ -63,7 +72,13 @@ class ProductionMediaFactory:
             resolver = RecordingAnalysisSourceResolver({scope.scope_id: (ref,)},
                 {ref.ref: SourceMeta(source.duration_sec, source.timeline_ref.timeline_id,
                     source.timeline_ref.revision, source.timeline_range.start_sec)}, recording)
+            from daesingo.common.public_runtime.temporary import temporary_root
+            options = {}
+            if temporary_root.get() is not None:
+                if self.media is None:
+                    raise ValueError("public media lease required")
+                options["temp_context"] = self.media.detached_temp
             service = search.build_gemini_search_service(self.search_settings.api_key.get_secret_value(),
-                                                       resolver, self.search_settings.config)
+                                                       resolver, self.search_settings.config, **options)
             data.checkpoint()
             yield service

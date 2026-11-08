@@ -47,7 +47,16 @@ API_HEALTH_PARAMETERS = tuple(("api_health", scenario, parameter) for scenario, 
     ("ready", "normal"), ("ready", "pool_exhausted"), ("ready", "connection_lost"),
     ("ready", "server_stopped"), ("storage", "readonly"), ("process", "single_worker")))
 
+# #554 candidate video preview: tests/worker/test_candidate_video_mysql.py · test_candidate_video_process_mysql.py
+CANDIDATE_VIDEO_CHECKS = tuple(("candidate_video", scenario) for scenario in (
+    "counts", "end_to_end", "failure_local_retry", "t1_t2_faults", "chain_boundary", "crash_before_t1",
+    "tcp_process", "commit_unknown", "parallel_fine", "storage_damage", "source_lost", "stale_generation",
+    "process_kill", "range_concurrency", "compatible_bridge"))
+
 REQUIRED_CHECKS = (
+    ("public_a1", "supported_funding"),
+    *(("public_a1", scenario) for scenario in ("admission", "budget_worker", "api_atomicity", "deletion", "session_isolation", "lifecycle", "recovery", "local_work", "stop_modes", "export_deferral")),
+    *CANDIDATE_VIDEO_CHECKS,
     *EXHAUSTION_CHECKS,
     *OBSERVABILITY_CHECKS,
     *ASSET_CHECKS,
@@ -138,6 +147,10 @@ REQUIRED_CHECKS = (
 )
 
 REQUIRED_PARAMETERS = (
+    *(("public_a1", "supported_funding", mode) for mode in ("usage", "cancel_db", "cancel_signal", "restart")),
+    *(("public_a1", "local_work", mode) for mode in ("repeat", "concurrent", "ip_limit")),
+    *(("public_a1", "stop_modes", kind) for kind in ("REPORT_VIDEO_EXPORT", "FINE_VERIFY", "exhaustion_pause", "exhaustion_stop")),
+    *(("public_a1", "export_deferral", mode) for mode in ("capacity", "repeat", "stop")),
     *EXHAUSTION_PARAMETERS,
     *OBSERVABILITY_PARAMETERS,
     *ASSET_PARAMETERS,

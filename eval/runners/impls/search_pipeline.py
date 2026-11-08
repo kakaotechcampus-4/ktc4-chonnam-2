@@ -9,7 +9,13 @@
 | --- | --- | --- | --- | --- |
 | s1 | 9/18 baseline | gemini-3.8-flash | 1 / 1 (1x) | 없음 |
 | s2 | 10/01 v3 늘린 영상 | gemini-3.8-flash | 2 / 4 (0.5x / 0.25x) | 없음 |
-| s3 | 10/27 v4 argon (현재 운영) | gemini-4-argon | 2 / 4 | fine-gore-v1 |
+| s3 | 10/27 v4 argon (10/28 측정 당시 운영) | gemini-4-argon | 2 / 4 | fine-gore-v1 |
+
+시점 표에 없는 이후 변경도 모든 시점에 함께 적용된다. 10/28 결과(실행 코드 `be362664`)
+이후 제품 Search에 들어온 것: Coarse 준비 영상 270p · crf28(v5, #452, media.py에 고정)과
+Coarse 프롬프트 coarse-brief-v1(후보 최대 5개, #609). 지금 다시 돌리면 10/28 결과와
+같은 조건이 아니다. `meta`의 설정 버전 표기(gemini-search-v2~v4)는 시점 이름표이고,
+실제 Coarse 준비 조건은 실행 시점 코드를 따른다.
 
 s1의 Fine은 당시 2 fps·720p로 보냈지만 프록시가 1 fps·low로 처리했으므로
 (gemini-proxy-video-sampling-2026-09-28) 모델 입력 기준 1 fps로 둔다.
@@ -32,7 +38,7 @@ from daesingo.search import (
 )
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.media import MediaPreparer
-from daesingo.search.prompts import FINE_PROMPT, load_prompt
+from daesingo.search.prompts import COARSE_PROMPT, FINE_PROMPT, load_prompt
 from daesingo.search.provider import (
     CoarseRequest,
     FineRequest,
@@ -236,7 +242,7 @@ def run_point(point: Point, scope: dict[str, str]) -> list[dict[str, object]]:
         "model": service.config.model,
         "coarse_fps": point.coarse_fps,
         "fine_fps": point.fine_fps,
-        "prompt_version": "coarse-p3",
+        "prompt_version": COARSE_PROMPT.version,
         "fine_prompt_version": point.fine_prompt_version,
         "fine_top_k": FINE_TOP_K,
         "usd_per_million": list(point.usd_per_million),

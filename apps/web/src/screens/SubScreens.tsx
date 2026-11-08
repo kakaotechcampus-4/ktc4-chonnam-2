@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
+import type { CandidatePlayback } from '../components/CandidateVideo'
+import { useEffect, useId, useRef, useState, type JSX, type ReactNode } from 'react'
 import { ChevronLeft, Film } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { sourceLabel } from '../contracts/labels'
 import { splitDateTime } from '../state/resultModel'
-import { CandidateCard } from '../components/CandidateCard'
 import { FrameSlot } from '../components/FrameSlot'
 import { StatusBadge } from '../components/StatusBadge'
-import { CandidatesScreen } from './CandidatesScreen'
+import { CandidatesScreen, PlayableCandidateCard } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
-import { SituationInput } from './UploadScreen'
+import { ExampleButton, SituationInput } from './UploadScreen'
 
 // Figma 03_Sub_* 공통 틀: 「<」 뒤로 + 제목 + 본문.
 // 열리면 제목이 키보드 포커스를 받아 화면이 바뀐 것을 알린다. 뒤로는 결과 화면으로 돌아간다.
@@ -40,17 +40,17 @@ export function CandidateCompare(props: {
   view: CaseView
   onBack: () => void
   onSelect: (candidateId: string) => void
-}): JSX.Element {
+} & CandidatePlayback): JSX.Element {
   return (
     <SubPage title="다른 후보" onBack={props.onBack} className="cands-page">
-      <CandidatesScreen view={props.view} onSelect={props.onSelect} />
+      <CandidatesScreen {...props} />
     </SubPage>
   )
 }
 
 // 03_Sub_Details_Check — 왼쪽에 지금 신고자료의 기준 장면(후보 카드: AI가 본 내용·시각 출처),
 // 오른쪽에 그 장면에서 정한 값과 출처·상태를 나란히 둔다. 어느 장면에서 무엇을 정했는지 한 화면에서 본다.
-export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX.Element {
+export function DetailsCheck(props: { view: CaseView; onBack: () => void } & CandidatePlayback): JSX.Element {
   const i = props.view.candidates.findIndex((c) => c.selected)
   const basis = i >= 0 ? props.view.candidates[i] : null
   return (
@@ -58,7 +58,7 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void }): JSX
       <div className={basis ? 'details-grid' : undefined}>
         {basis && (
           <aside className="details-scene">
-            <CandidateCard candidate={basis} ordinal={i + 1} />
+            <PlayableCandidateCard {...props} candidate={basis} ordinal={i + 1} />
           </aside>
         )}
         {/* 다른 후보는 결과 화면의 「다른 후보 영상」에서만 연다 */}
@@ -89,6 +89,8 @@ export function PlateCheck(props: {
   onEdit?: (plate: string) => void
   /** FrameRef를 이미지 주소로 바꾼다(API 모드). 없으면(시연) 자리 표시만 둔다 */
   frameSrc?: (frameRef: string) => string
+  /** 신고자료의 번호판 이미지 주소(결과 화면 다운로드와 같은 plate_image_ref). 없으면 자리 표시만 둔다 */
+  plateImageSrc?: string
 }): JSX.Element {
   const [editing, setEditing] = useState<string | null>(() =>
     props.startEditing ? (props.view.evidence?.plate_display.value ?? '') : null,
@@ -121,7 +123,7 @@ export function PlateCheck(props: {
   const plateOk = PLATE_FORMAT.test(plateInput.replace(/\s/g, ''))
   const plateWrong = plateInput !== '' && !plateOk
   // 도는 job이 없으면 이미지는 더 오지 않는다(번호판을 못 읽으면 plate_preview_ref는 null로 끝난다) — 「준비 중」이라 하지 않는다
-  const pending = props.view.running_jobs.length > 0
+  const pending = props.view.running_jobs.some((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW')
   return (
     <SubPage title="번호판 확인" onBack={props.onBack} className="plate-page">
       <div className="plate-grid">
@@ -134,10 +136,10 @@ export function PlateCheck(props: {
         </figure>
         <div className="plate-side">
           <figure className="plate-fig">
-            <div className="plate-frame plate-crop">
+            <FrameSlot className="plate-frame plate-crop" src={props.plateImageSrc ?? null} alt="번호판 확대">
               <Film size={24} strokeWidth={1.5} aria-hidden />
               <span>{pending ? '번호판 이미지 준비 중' : '번호판 이미지가 없어요'}</span>
-            </div>
+            </FrameSlot>
             <figcaption>번호판 확대</figcaption>
           </figure>
           <section className="plate-value" aria-labelledby="plate-k">
@@ -229,13 +231,15 @@ export function TimeEdit(props: { view: CaseView; onBack: () => void; onSave: (v
       >
         <label className="rs-field">
           <span className="rs-label">날짜</span>
-          <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input type="date" className="field" aria-describedby="time-edit-hint" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label className="rs-field">
           <span className="rs-label">시간</span>
-          <input type="time" step={1} className="field" value={time} onChange={(e) => setTime(e.target.value)} />
+          <input type="time" step={1} className="field" aria-describedby="time-edit-hint" value={time} onChange={(e) => setTime(e.target.value)} />
         </label>
-        <span className="rs-hint">한국 시간 기준으로 저장해요.</span>
+        <span id="time-edit-hint" className="rs-hint">
+          한국 시간 기준으로 저장해요.
+        </span>
         <div className="rs-actions">
           <button type="submit" className="rs-btn pri" disabled={!date || !time}>
             저장
@@ -268,6 +272,8 @@ export function EditHint(props: {
 // 설명 입력 폼만 — 위반 미관찰에 다른 후보가 없으면 화면 안에 바로 둔다(#431)
 export function HintForm(props: { view: CaseView; onSearch: (description: string) => void; onHome: () => void }): JSX.Element {
   const [text, setText] = useState(props.view.description ?? '')
+  const id = useId()
+  const example = '아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요.'
   return (
     <form
       className="rs-group"
@@ -280,13 +286,18 @@ export function HintForm(props: { view: CaseView; onSearch: (description: string
         <span className="rs-label">어떤 상황이었나요?</span>
         <SituationInput
           label="어떤 상황이었나요?"
-          example="아침 7시쯤이었던 것 같아요. 검은 승용차가 중앙선을 넘어 제 쪽으로 들어왔어요."
+          example={example}
           rows={4}
           value={text}
           onChange={setText}
+          id={id}
+          describedBy={`${id}-hint`}
         />
-        <span className="rs-hint">시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 고쳐 주세요.</span>
+        <span className="rs-hint" id={`${id}-hint`}>
+          시간이나 차 색깔, 어떤 일이 있었는지를 떠오르는 대로 고쳐 주세요.
+        </span>
       </label>
+      <ExampleButton example={example} value={text} onChange={setText} inputId={id} />
       <div className="rs-actions">
         {/* 비어 있으면 보내지 않는다(#410 web 의견) — 서버는 빈 설명도 받지만 web에서 그 경로는 쓰지 않는다 */}
         <button type="submit" className="rs-btn pri" disabled={!text.trim()}>

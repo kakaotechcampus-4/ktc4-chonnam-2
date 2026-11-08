@@ -14,7 +14,7 @@
 
 이전 초안의 포괄적인 `workflow`, `run_data`, `results`, `snapshot` JSON 묶음을 핵심 도표에서 제거했다. **관계를 설명하기 위해 상세 컬럼을 생략한 것과, 실제 JSON embed 저장을 제안한 것을 구분**한다. JSON 저장 제안은 §5 대응표에 구체적인 부모·필드와 함께 적었다.
 
-독립 참조·생명주기가 있는 기록 25개에 recording 내부 연결 테이블 `case_asset_links`를 추가하여 **26개 테이블 후보**를 제시한다. 이는 26개 모두 구현이 확정됐다는 뜻이 아니다. 업무 중심 관계도와 두 상세 관계도로 나누며, 반복된 테이블은 같은 테이블의 참조용 표시다.
+독립 참조·생명주기가 있는 기록 25개에 recording 내부 연결의 논리 모델 `case_asset_links`를 추가하여 **26개 테이블 후보**를 제시한다. 이는 26개 모두 구현이 확정됐다는 뜻이 아니다. 업무 중심 관계도와 두 상세 관계도로 나누며, 반복된 테이블은 같은 테이블의 참조용 표시다.
 
 | 표기 | 의미 |
 | --- | --- |
@@ -27,7 +27,7 @@
 
 **검토 상태:** evidence는 전체 논리 ERD 방향을 수용하고 참조·생명주기·Fine 입력 명확화를 요청했다. case는 현재 selection_rev 저장 및 중단 후 재개 방식을 결정했다. 이 결정들은 아래에 반영했으며, 나머지 테이블·JSON embed 선택의 세부 승인까지 완료됐다는 뜻은 아니다. 미확정 항목은 `미정` 또는 `검토 대기`로 표시한다.
 
-readout의 A-1~A-3과 search의 run당 VisualEvidence 수 결정을 반영했다. web의 현재 포인터·package stale 표시 및 실행 산출물 정규화는 아래에서 **제안**으로 구분한다. 선택지인 `job_execution_products`는 아직 채택하지 않아 26개 테이블 수에 포함하지 않는다.
+readout의 A-1~A-3과 search의 run당 VisualEvidence 수 결정을 반영했다. web의 현재 포인터·package stale 표시는 당시 제안으로 기록한다. 실행 산출물의 초기 `job_execution_products` 제안은 논리 후보 수에 포함하지 않았으며, 현재 MySQL 저장 대응은 §5.2에 표시한다.
 
 ## 2. 업무 중심 논리 ERD — 사건·작업·증거·신고자료
 
@@ -312,7 +312,9 @@ erDiagram
 
 ### 4.1 Case→recording 자산 연결 — recording 결정
 
-`purge_case(case_id)`가 관리 자산을 찾는 근거로 recording 내부 **`case_asset_links` 테이블**을 둔다. 공개 Canonical Contract를 새로 만들거나 모든 자산 Contract에 case_id를 추가하지 않는다. case_id는 연결 문맥으로 보관하며 recording이 Case의 업무 상태를 해석하지 않는다.
+`purge_case(case_id)`가 관리 자산을 찾는 근거로 recording 내부 연결을 논리 모델의 **`case_asset_links`**로 표현한다. 공개 Canonical Contract를 새로 만들거나 모든 자산 Contract에 case_id를 추가하지 않는다. case_id는 연결 문맥으로 보관하며 recording이 Case의 업무 상태를 해석하지 않는다.
+
+> **MySQL 저장 대응 (2026-11-07):** `recording_entry`의 `kind=case_asset` 행에 Case와 자산 참조를 저장한다. repository의 `associate_case_asset`·`get_case_assets`가 이 행을 쓰고 읽는다. 아래 관계도는 논리 설계이며, 별도 공개 등록 호출안의 계약 반영 여부는 Recording·Case Owner 검토 항목이다. [Recording 저장 구현](../../src/daesingo/recording/mysql_repository.py)
 
 ```mermaid
 erDiagram
@@ -390,7 +392,7 @@ MVP의 단일 Case 소속 규칙은 `(asset_kind, asset_ref)`의 논리 유일�
 | --- | --- | --- | --- |
 | Case (아키텍처 내부 aggregate) | 독립 테이블 | `cases` · PK `case_id`, `case_rev` · `stage` · `selection_rev` 칼럼, `state` JSON, `created_at` · `updated_at` | 현재 stage/user_reviewed/revision·선택 참조. user_reviewed 등 나머지는 `state` JSON (2026-10-06 구현, `decisions/case-store-mysql.md` §4) / 유소연 |
 | Selection 현재값·과거 문맥 | Case 내부 필드 — case 결정 | `cases.selection_rev` 단일 현재값. 별도 선택 이력 테이블 없음 | 후보 선택 시 case_rev와 함께 증가. CaseView 비노출. 기존 CorrectionRecord/EvidenceRecord snapshot·supersedes 및 JobRecord 이력 활용 / 유소연 |
-| Case↔recording 자산 매핑 (내부 구조) | 독립 테이블 — recording 결정 | `case_asset_links` · `(case_id, asset_kind, asset_ref)` PK | §4.1. 새 공개 Contract 아님. 관리 자산은 MVP에서 단일 Case 소속, 외부 원본은 제외 |
+| Case↔recording 자산 매핑 (내부 구조) | 독립 논리 관계 — recording 결정 | 논리 `case_asset_links` · `(case_id, asset_kind, asset_ref)`. MySQL은 `recording_entry`의 `case_asset` 행 | §4.1. 새 공개 Contract 아님. 관리 자산은 MVP에서 단일 Case 소속, 외부 원본은 제외 |
 | AssetSpan | JSON embed | `incident_clips.source_provenance.asset_spans[]` | 독립 identity 금지. sequence와 두 범위·source/stream 참조 보존 / 정철원 |
 | SpanResolution | 미정 | recording 호출 결과 snapshot의 저장 부모·내부 키 검토 | clip 생성 전·실패 결과도 있으므로 clip JSON 하나로 대체 불가 / 정철원 |
 | TimeSourceCheck | 미정 | recording probe/시간 추출 결과 보존 위치 검토 | 시각 후보가 없는 이유를 후보 행 부재만으로 대체하지 않음 / 정철원 |
@@ -415,7 +417,7 @@ MVP의 단일 Case 소속 규칙은 `(asset_kind, asset_ref)`의 논리 유일�
 | CandidateEvent 상세 | JSON embed 제안 — search 권고 반영 | `candidate_events.details`에 ranking_score·event_type_hint·summary·uncertainties·thumbnail_ref 보존 | 독립 결과의 종속 상세. thumbnail_ref 참조 검증은 유지. details는 내부 저장 컬럼명 제안 / 서어진 |
 | 판독 프레임·합의 상세 | JSON embed — readout 동의 | `plate_readouts.frame_results`, `.best_frame`, `.consensus`, `.target_association`; `overlay_time_readouts.samples`, `.validation` | input_ref.source_profile·incident_clip_ref는 별도 컬럼. input_ref 전체를 embed하지 않음. provenance도 보존하되 상세 저장 위치는 후속 설계. canonical frame_ref 검증; crop_ref는 readout 내부 ref / 신유민 |
 | AnalysisRun 구현·요약 | JSON embed | `analysis_runs.implementation`, `.issues`, `.usage_summary` | 완료 시점 usage_summary는 immutable snapshot / 서어진 |
-| JobExecution.produced | **논리 Contract 확정 / 물리 저장 미정** | `job_executions.produced` JSON 또는 `job_execution_products(execution_id, kind, ref)` 정규화 | Final JobExecution Contract의 `produced: ContractRef[]` 존재·의미는 확정. 미정인 것은 MySQL 물리 표현뿐이다. 후자는 execution FK·typed 대상 검증, 실행별 run/UsageRecord 조회에 유리. 공개 produced는 Contract대로 조립하며 두 저장소를 독립 정본으로 이중 관리하지 않음. readout 호출 실행의 run 1건 및 STALE 예외 유지 / 김준영·정철원·유소연 |
+| JobExecution.produced | **논리 Contract 확정 / MySQL 저장 대응 확인** | 실행의 ref 목록은 `job_execution.produced`, 참조된 산출물 payload는 `produced_objects`에 저장 | 초기 `job_execution_products` 제안과 현재 저장을 구분한다. [runtime_0005 migration](../../migrations/runtime/versions/0005_produced_objects.py) · [산출물 저장 구현](../../src/daesingo/common/jobs/produced.py) / 김준영·정철원·유소연 |
 | AnalysisRun / ReadoutRun.usage_refs | projection·파생 | UsageRecord.run_kind/run_ref로 조회 | 정본은 UsageRecord.run_ref. 별도 양방향 원장 없음 / 김준영 |
 | JobExecution.usage_refs | **논리 Contract 확정 / 물리 materialization 미정** | Final serialization에는 `usage_refs: ID[]`가 존재. DB에서는 별도 저장하거나 `UsageRecord.execution_ref`로 projection하는 두 방식 검토 | UsageRecord가 비용 원장이고 JobExecution은 참조만 소비한다. `usage_refs`를 물리 저장할지 projection할지는 Runtime 구현에서 결정하되 두 방향을 독립 authoritative 원장으로 이중 관리하지 않음 / 김준영·정철원 |
 | CorrectionRecord 수정 전후 값 | JSON embed — case 결정(2026-10-06, decisions/case-store-mysql.md §4) | `correction_records.record` JSON에 `previous_value`, `.new_value` 포함 | target별 타입 검증은 확정. 값 저장은 계약 dict를 `record` JSON으로 그대로 — 닫음 (2026-10-06 구현, `decisions/case-store-mysql.md` §4) / 유소연 |
@@ -481,7 +483,7 @@ MVP의 단일 Case 소속 규칙은 `(asset_kind, asset_ref)`의 논리 유일�
 | RequirementReport | PASS / WARN / BLOCK / UNKNOWN. EVIDENCE와 FINAL_PACKAGE 검사 이력 분리 |
 | EvidenceRecord | 별도 readiness를 발명하지 않음. situation_response는 CONFIRMED / CORRECTED / USER_UNSURE; USER_UNSURE 단순 응답으로 CorrectionRecord 미생성 |
 | UsageRecord | 실제 invocation이 **시작된 호출만 기록 대상**. 성공·실패·STALE 여부와 무관하게 호출별 append. dispatch 전에 종료된 실행은 row 미생성. run_ref가 없으면 DIRECT_NO_RUN / RUN_NOT_PRODUCED 구분, 사건 비용은 case_id 기준 |
-| Case 관리 자산 — recording 결정 | 생성·사용 연결 시 case_asset_links 기록. MVP에서 Case 간 관리 자산 공유 금지. purge_case는 해당 Case 관리 자산만 처리하고 외부 원본 제외. FAILED/PENDING_EXPIRY 대상은 후속 처리 연결 유지 |
+| Case 관리 자산 — recording 결정 | 생성·사용 연결 시 §4.1의 논리 연결 기록. MVP에서 Case 간 관리 자산 공유 금지. purge_case는 해당 Case 관리 자산만 처리하고 외부 원본 제외. FAILED/PENDING_EXPIRY 대상은 후속 처리 연결 유지 |
 
 계약 버전·시각·출처·금액·입력 지문·상세 조건 등은 도표에서 생략했을 뿐 필수성을 변경하지 않는다. 핵심 상태를 제외한 enum·정밀도·컬럼 길이는 해당 Canonical Contract와 후속 구현 설계가 정한다.
 
@@ -490,6 +492,8 @@ MVP의 단일 Case 소속 규칙은 `(asset_kind, asset_ref)`의 논리 유일�
 **UsageRecord의 생성 조건과 저장 시점은 다르다.** 위의 '시작된 호출'은 기록 대상을 정하는 조건이며, 시작 순간에 아직 모르는 비용·소요시간을 확정 기록하라는 뜻이 아니다. 관측 가능한 호출 결과·사용량·실패 정보를 바탕으로 원장 row를 append하고, 모르는 값은 계약의 null 규칙을 따른다. 미완성 원장 row를 먼저 INSERT한 뒤 UPDATE하는 방식을 확정하지 않는다. 진행 중 호출 추적·worker 소멸 후 복구·중복 방지와 최종 append 시점의 구현은 common/runtime 후속 설계다. JobExecution의 mutable 상태 행과 UsageRecord의 append-only 원장을 혼동하지 않는다.
 
 ## 8. Owner 검토 결과 및 잔여 요청
+
+> 아래 표는 당시 Owner 검토 기록이다. 이후 확인한 Recording·Runtime 물리 저장 대응은 §4.1·§5.2에 표시했다. 공개 등록 호출의 계약 반영 여부는 해당 Owner가 확인한다.
 
 | Owner | 이번 문서에서 확인할 것 |
 | --- | --- |

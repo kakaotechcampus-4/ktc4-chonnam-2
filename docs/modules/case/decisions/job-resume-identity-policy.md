@@ -1,10 +1,11 @@
 # 재개("이어서 찾기") 시 Job identity 정책 — 새 job_id
 
 > 결정일 2026-09-13 · 담당 유소연(`case`) · 근거 `docs/architecture/erd-draft.md`(`codex/erd`, 미머지) 리뷰 항목 ③, `contract-job-execution.md` §10/v1.1 노트가 위임한 판단
+> (2026-11-08 현재: `erd-draft.md`는 develop에 있다 — `docs/architecture/erd-draft.md`. 이 정책은 `src/daesingo/case/jobs.py` `issue_resume_search()`(새 `job_id`, kind `COARSE_SEARCH`)로 구현돼 있다. 다만 이 함수를 부르는 command · notice action은 아직 없고, web도 `RESUME_SEARCH`를 action으로 다루지 않는다.)
 
 ## 배경
 
-`JobExecution.status=CANCELLED`(`job-execution/v1.1`, 이슈 #33 A-2)가 추가되면서, "중단 후 재개(`이어서 찾기`) 시 같은 `job_id`를 재사용할지 새 `Job`으로 볼지"를 `JobRecord` 소유자인 case의 판단으로 남겨뒀다(`contract-job-execution.md` v1.1 노트). `codex/erd` ERD 리뷰 과정에서 이 항목을 처음엔 "같은 `job_id`+새 `attempt`"로 답했으나, 기존 컨벤션과의 일관성을 재검토해 아래로 정정한다.
+`JobExecution.status=CANCELLED`(`job-execution/v1.1`, 이슈 #33 A-2)가 추가되면서, "중단 후 재개(`이어서 찾기`) 시 같은 `job_id`를 재사용할지 새 `Job`으로 볼지"를 `JobRecord` 소유자인 case의 판단으로 남겨뒀다(`docs/architecture/contracts/contract-job-execution.md` v1.1 노트). `codex/erd` ERD 리뷰 과정에서 이 항목을 처음엔 "같은 `job_id`+새 `attempt`"로 답했으나, 기존 컨벤션과의 일관성을 재검토해 아래로 정정한다.
 
 ## 결정된 것
 

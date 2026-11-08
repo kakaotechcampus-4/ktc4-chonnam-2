@@ -73,7 +73,7 @@ class I4RulesRemovalTests(unittest.TestCase):
         codes |= {case["code"] for case in final["conditional"][0]["cases"] if "code" in case}
         self.assertTrue(REMOVED_CODES.isdisjoint(codes))
         self.assertEqual(11, len(final["always"]))
-        self.assertEqual("policy/requirement-rules-v6", catalog["policy_ref"])
+        self.assertEqual("policy/requirement-rules-v7", catalog["policy_ref"])
 
     # --- A · 번호판 가시성 관찰 없음 ------------------------------------------------------------
 
@@ -149,9 +149,10 @@ class I4RulesRemovalTests(unittest.TestCase):
         self.assertEqual("UNKNOWN", self._outcomes(report)["package.time.post_stamp_applied"])
         self.assertEqual("UNKNOWN", report["overall"])
 
-    def test_c_missing_situation_response_is_still_unknown(self):
+    def test_c_missing_situation_response_for_unresolved_type_is_still_unknown(self):
         record = deepcopy(self.record)
         record.pop("situation_response")
+        record["event"]["visual_event_type"]["value"] = None
         report = self._final(record=record)
         self.assertEqual("UNKNOWN", self._outcomes(report)["package.evidence.situation_response"])
         self.assertEqual("UNKNOWN", report["overall"])

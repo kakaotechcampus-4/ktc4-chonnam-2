@@ -5,7 +5,7 @@ import unittest
 from copy import deepcopy
 from pathlib import Path
 
-from daesingo.evidence import validate_contract
+from daesingo.evidence import ContractInputError, render_report_draft, validate_contract
 from daesingo.evidence.mock_integration import run_scenario
 from daesingo.evidence.validation import validate_report_package, validate_report_package_v1_1
 
@@ -56,6 +56,30 @@ class ContractValidationTests(unittest.TestCase):
             self.assertIn(
                 "location.coord:value", validate_contract(invalid_coordinate)
             )
+
+    def test_draft_rejects_malformed_values_even_when_time_is_missing(self):
+        result = run_scenario(ROOT, "scenario_happy_001", CONFIGS["scenario_happy_001"])
+        valid = result["policy_guard_check"]["without_confirmation"]["evidence_record"]
+        for invalid in (
+            {"situation_response": {"value": "NOT_ASKED"}},
+            {"situation_response": {}},
+            {"situation_response": "CONFIRMED"},
+            {"occurred_at": {"value": "not-a-time"}},
+            {"provenance": {"input_refs": "not-refs"}},
+            {"vehicle_number": {"value": ""}},
+        ):
+            with self.subTest(invalid=invalid):
+                record = deepcopy(valid)
+                record.pop("occurred_at")
+                record.update(invalid)
+                with self.assertRaises(ContractInputError):
+                    render_report_draft(record)
+
+        record = deepcopy(valid)
+        record.pop("occurred_at")
+        record["event"]["visual_event_type"]["value"] = "UNREGISTERED"
+        with self.assertRaisesRegex(ContractInputError, "unsupported VisualEventType"):
+            render_report_draft(record)
 
     def test_requirement_report_validator_rejects_incomplete_basis_and_checks(self):
         outputs = run_scenario(

@@ -2,6 +2,8 @@
 
 **날짜:** 2026-09-19 · **작성:** 유소연 · **브랜치:** `docs/design-refinement`
 
+> **2026-11-08 현재 상태 — 닫힌 계획 기록.** 마지막 갱신은 아래 2026-10-26 줄이다(W7 = 프로젝트 7주차 품질 · 위험 정리 단계, `8-n` = §1 「8순위」 표의 항목 번호). 그 뒤 composition 주입(`src/daesingo/api/composition.py` · `src/daesingo/worker/case_composition.py`), recording `RecordingFacts`(`src/daesingo/recording/queries.py`), 단서 구조화 재시도 소진 출구(#405 — `EXHAUSTED` 정산, `src/daesingo/case/domain.py`), 신고용 export 자동 발주(`src/daesingo/case/exports.py`)가 들어왔다. 지금 동작은 [`README.md`](README.md) 「한눈에 보기」 · [`case-edge-cases.md`](case-edge-cases.md) · [`decisions/README.md`](decisions/README.md)를 본다. 「초안 준비 중」 중단(product 미결) 같은 미결은 본문 그대로 남는다.
+
 **목적:** "모듈별 설계 고도화" 요청의 case 몫. **W7 Quality/Risk Burn-down 단계에서 실제 고도화를 진행할 때 그대로 쓰일 기준 문서**다 — 여기서 우선순위를 정해두면 W7에서 다시 처음부터 뭘 할지 고민하지 않는다.
 
 W5/W6 Real E2E 공지와는 별개의 기존 요청이지만, 오늘(2026-09-18) 진행한 Real E2E 작업(`feature/case-mock-real-service-adapter`)에서 실제로 드러난 병목·실패 유형을 반영해서 우선순위를 조정했다 — 추측이 아니라 오늘 직접 실행해서 관찰한 것들이다.

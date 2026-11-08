@@ -174,7 +174,7 @@ def test_rollback_independent_of_tip_but_preserves_target_gate(monkeypatch, tip,
     env = {"GITHUB_EVENT_NAME": "workflow_dispatch", "GITHUB_REF": "refs/heads/develop",
         "GITHUB_REPOSITORY": m.REPOSITORY, "GITHUB_REPOSITORY_ID": m.REPOSITORY_ID,
         "GITHUB_SHA": "a" * 40, "RT14_EXECUTION_ENABLED": "true", "AWS_REGION": m.REGION,
-        "AWS_ACCOUNT_ID": "1" * 12, "DEPLOY_REVISION": "b" * 40,
+        "AWS_ACCOUNT_ID": "1" * 12, "DEPLOY_REVISION": "b" * 40, "PUBLISH_REVISION": "b" * 40,
         "DEPLOY_CONFIG_ID": "config-1", "DEPLOY_INSTANCE_ID": "i-" + "c" * 17,
         "DEPLOY_IMAGE": "1" * 12 + ".dkr.ecr.ap-northeast-2.amazonaws.com/runtime@sha256:" + "d" * 64}
     monkeypatch.setattr(m.os, "environ", env)

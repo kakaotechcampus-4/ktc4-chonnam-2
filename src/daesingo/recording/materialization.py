@@ -52,6 +52,9 @@ class MaterializedVideo:
     best_effort: bool = False
     # Selected source coverage before encoding; not serialized as output facts.
     source_frames: tuple[tuple[Fraction, Fraction], ...] = ()
+    # 선택 원본의 정확한 경계. Timeline 투영·metadata 반올림의 내부 증거다.
+    source_bounds: tuple[Fraction, Fraction] | None = None
+    source_end: Fraction | None = None  # 선택 전에 검증한 원본 전체 frame coverage의 끝.
 
 
 def _millisecond_quantization(payload, base, frames):
@@ -239,13 +242,17 @@ class LocalAnalysisMaterializer:
             with TemporaryDirectory(prefix="recording-analysis-", dir=self._temp_root) as work:
                 output = Path(work) / "prepared.mp4"
                 with phase("encode"):
+                    # MP4 sample durations follow DTS deltas. Reordering variable
+                    # presentation intervals can change their observed coverage.
+                    bframe_options = (["-bf", "0"]
+                        if len({length for _, _, length in selected}) > 1 else [])
                     command = [self._ffmpeg, "-nostdin", "-v", "error", "-xerror", "-n",
                         "-protocol_whitelist", "file", "-noautorotate", "-i", str(source.path),
                         "-map", f"0:{index}", "-an", "-sn", "-dn", "-map_metadata", "-1", "-map_chapters", "-1",
                         "-vf", f"trim=start_frame={first[0]}:end_frame={last[0]+1},setpts=PTS-STARTPTS,scale={width}:{profile.height}",
                         "-fps_mode", "passthrough", "-enc_time_base", str(base),
                         "-video_track_timescale", str(base.denominator),
-                        "-c:v", "libx264", "-preset", profile.preset, "-crf", str(profile.crf),
+                        "-c:v", "libx264", "-preset", profile.preset, "-crf", str(profile.crf), *bframe_options,
                         "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output)]
                     try:
                         self._run(command)
@@ -320,7 +327,8 @@ class LocalAnalysisMaterializer:
                 result = MaterializedVideo(content, duration, TimeRange(
                     start_sec=float(shift + actual_start), end_sec=float(shift + actual_end)),
                     tuple(output_frames), output_base, (width, profile.height), fallback,
-                    tuple((at - actual_start, length) for _, at, length in selected))
+                    tuple((at - actual_start, length) for _, at, length in selected),
+                    (actual_start, actual_end), frames[-1][0] + frames[-1][1])
             # 출력 검증·원본 재검사·cleanup까지 성공한 inspection만 공유한다.
             if inspections is not None:
                 inspections.put(inspection_key, inspected)

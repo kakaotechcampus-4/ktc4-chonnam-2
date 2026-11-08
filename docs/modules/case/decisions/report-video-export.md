@@ -1,6 +1,6 @@
 # 신고용 영상 — 첫 발주 시점 · `case.report_video_not_generated` · 재시도 버튼
 
-> **상태: 결정 · notice 구현 · 자동 발주 배선 보류** · 결정일 2026-10-13 · 담당 유소연(`case`) · 근거 [#351](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/351) [결정 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/351#issuecomment-6143734339), #47 Q3, #280, `core-user-flow.md` 「신고자료 묶음 전」 · 「신고용 영상 생성」
+> **상태: 결정 · notice 구현 · 자동 발주 배선 보류**(2026-11-08 현재: 배선됨 — 아래 §4 「2026-11-08 상태」. 발주 시점은 #597로 「상황 응답 뒤」에서 「EvidenceRecord 조립 뒤」로 바뀜 — `observed-skips-situation-response.md`) · 결정일 2026-10-13 · 담당 유소연(`case`) · 근거 [#351](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/351) [결정 코멘트](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/351#issuecomment-6143734339), #47 Q3, #280, `core-user-flow.md` 「신고자료 묶음 전」 · 「신고용 영상 생성」
 > 발주와 notice는 case 소관이다(#351). 신고용 영상 생성 자체(C-07)는 recording, 요건 판정은 evidence 몫이다. 규칙 원문은 CaseView 계약 A§7(발주 시점 · `GENERATE_REPORT_VIDEO` 매핑) · B§7(`notices[].code`)로 옮겼다.
 
 ## 1. 문제
@@ -23,6 +23,7 @@
    - 실행 중에도 붙인다 — 거두면 web이 없는 영상을 있는 것처럼 그린다.
    - `GENERATE_REPORT_VIDEO`는 이전 `REPORT_VIDEO_EXPORT` JobRecord가 있고 그 kind가 `running_jobs`에 없을 때만 싣는다.
 3. **[R-3] `RUN_NOTICE_ACTION`은 이전 `JobRecord`를 계속 요구한다.** 첫 발주는 [R-1]이 하므로 버튼은 실패 뒤 재시도다. 계약 표의 「기존 `job_id` 없으면 새로 만든다」를 「직전 발주 입력으로 새 `job_id`」로 고쳤다.
+   - (2026-11-08 현재: #629(공개 준비 작업 A-1)에서 예외가 하나 생겼다. 자동 발주가 호출자 `admit_auto_exports`에 거절된 현재 입력은 이전 JobRecord가 없어도 버튼(`GENERATE_REPORT_VIDEO`)이 뜨고, 누르면 그 입력의 첫 JobRecord를 만든다 — `command._run_notice_action`, `service.derive_notices`의 `report_video_export_basis`. 이유는 `command-appended-job-records.md` 「A-1 후속 명확화」.)
 
 ## 3. 고르지 않은 것
 
@@ -37,6 +38,7 @@
 - **한 것:** `report_video_missing()` · notice(`derive_notices`) · 재시도 근거(`build_view_from_adapter`가 이전 `REPORT_VIDEO_EXPORT` JobRecord 유무를 넘김) · 계약 A§7 · B§7 · `scenario_plate_reread_001` rev4에서 notice 제거(응답 전이다 — 다음 행동은 `case.situation_response_pending`).
 - **보류 — 자동 발주 배선([R-1]).** 지금은 영상을 만들 실행기가 없다 — recording `REPORT_VIDEO_EXPORT` capability(C-07)와 Worker handler 등록(RT-10 #297)이 없고, 동기 real 경로는 후보 선택 뒤 관찰을 JobRecord 없이 adapter가 돌린다. 실행기 없이 발주하면 정산되지 않는 job이 `running_jobs`에 남아 「신고용 영상 만드는 중」이 끝나지 않는다. 그동안 notice는 버튼 없이 「아직 없어요」만 보인다.
 - **T2 반영기(2026-10-24):** `REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT` 결과는 정산 + READY gate로 반영한다(`result-reflection.md` §3-4). [R-3] 재시도로 발주한 job이 Worker에서 돌아와도 멈추지 않는다. 자동 발주([R-1])는 아래 재개 조건 그대로 보류다.
+- **2026-11-08 상태 — 자동 발주([R-1]) 배선됨.** `case/exports.py`의 `issue_missing_exports()`가 `report_video_missing()`과 「같은 입력(fingerprint)의 발주 없음」으로 `REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`를 발주한다. 부르는 곳은 command 처리 뒤(`command.py`)와 T2 결과 반영 뒤(`reflection.py`)다. 실행은 Worker `worker/export_handlers.py`가 맡는다. command 경로에서 호출자가 넘긴 `admit_auto_exports`가 거절하면 자동 발주만 빼고 정정 등 command 결과는 저장한다(`tests/case/test_public_export_deferral.py`). 위 「보류」와 아래 「재개 조건」은 그 전 기록으로 남긴다.
 - **재개 조건:** recording export handler가 생기면 command 처리 뒤(`execute_command`의 READY gate 자리)와 T2 관찰 반영 뒤(`observation-storage.md` §4-5)에서 `report_video_missing()`과 「같은 입력의 발주 없음」으로 발주한다. 입력(IncidentClip · 사후 각인 값)과 fingerprint는 RT-10 「handler가 읽는 case 입력」(#297 Consult)에서 함께 정한다 — 지금 adapter는 TimeResolution · IncidentClip ref를 내보내지 않는다.
 
 ## 5. 미결 (채우지 않는다)

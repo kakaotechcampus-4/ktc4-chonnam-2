@@ -150,7 +150,7 @@ def test_key_registry_matches_canonical_baseline_candidates():
                     candidates.add(token)
                 elif token.startswith("…_"):
                     candidates.add(PREFIX + token[2:])
-    extra = {PREFIX + suffix for suffix in ("DB_URL", "MEDIA_ROOT", "API_TEMP_ROOT", "WORKER_TEMP_ROOT")}
+    extra = {PREFIX + suffix for suffix in ("DB_URL", "MEDIA_ROOT", "API_TEMP_ROOT", "WORKER_TEMP_ROOT", "PUBLIC_MODE", "PUBLIC_POLICY_FILE")}
     assert runtime_keys() == candidates | extra
 
 

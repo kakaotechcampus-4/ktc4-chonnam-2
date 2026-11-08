@@ -78,6 +78,9 @@ Canonical §4.3의 timeline_range는 입력이 포괄하는 Timeline 범위, §4
 두 실제 값을 각 필드에 표현한다. 요청 범위는 입력 span에 남으며 출력 Canonical에 새 requested_range를 추가하지 않는다.
 Consumer는 반환 timeline_range를 확인해야 한다. 정확한 요청 경계 고정이 필요한 후속 정책은 별도 합의 대상이다.
 
+전체 source 길이의 마이크로초 표현 차이가 여러 연결 경계에서 누적되는 경우의 내부 검증과
+부정 대조는 [연결 길이 정밀도 재현·검증](experiments/2026-11-04-chain-duration-precision.md)에 기록한다.
+
 출력은 단일 H.264 video, 설정된 해상도, yuv420p, MP4, frame 수·PTS·duration을 재검사한다.
 MP4 box를 읽어 moov가 mdat보다 앞에 있는지도 확인한다. 검증 전 AVAILABLE을 발행하지 않는다.
 

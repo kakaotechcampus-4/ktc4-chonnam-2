@@ -1,4 +1,5 @@
-"""관찰 job 발주 순서 — 8-6 2단계 · RT-10(b), `docs/modules/case/decisions/incident-clip-observation-input.md`.
+"""선택한 후보의 관찰 job(Fine 확인 · 사건 clip · 번호판/화면 시각 판독)을 어떤 순서로 발주할지 정한다
+(`design-refinement-w7-baseline.md` 8-6 2단계 · RT-10(b), `docs/modules/case/decisions/incident-clip-observation-input.md`).
 
 선택된 후보 → `FINE_VERIFY` → (`NOT_OBSERVED`가 아니면) `INCIDENT_CLIP_BUILD` → `PLATE_READ` ·
 `OVERLAY_TIME_READ`(같은 clip). 각 발주는 입력(후보 · 세대 · span · clip ref)을 case state에 고정하고, `scope_ref`는
@@ -118,7 +119,8 @@ def issue_missing_for_selected(case: CaseAggregate) -> list[dict[str, Any]]:
         return []
     mine = [
         r for r in case.job_records
-        if (source := case.observation_inputs.get(r["job_id"])) is not None
+        if r["kind"] in jobs.OBSERVATION_KINDS
+        and (source := case.observation_inputs.get(r["job_id"])) is not None
         and source["candidate_id"] == selected
         and source["generation_job_id"] == generation
     ]

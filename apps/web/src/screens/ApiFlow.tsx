@@ -1,21 +1,24 @@
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import { createApi, type Api, type Command } from '../api/client'
 import { AppHeader } from '../components/AppHeader'
 import { isAction, type Action, type CaseView } from '../contracts/caseView'
 import { CircleAlert } from 'lucide-react'
 import { ACTION_LABELS, errorMessage, noticeMessage } from '../contracts/labels'
+import { forgetCase, rememberCase, rememberedCase } from '../state/lastCase'
 import { selectScreen } from '../state/selectScreen'
 import { useCaseFlow } from '../state/useCaseFlow'
 import { FailedScreen } from './FailedScreen'
 import { FlowScreen } from './FlowScreen'
 import { NoResultScreen } from './NoResultScreen'
 import { NotObservedScreen } from './NotObservedScreen'
-import { ResultScreen } from './ResultScreen'
+import { ResultScreen, type ReportEdits } from './ResultScreen'
 import { StoppedScreen } from './StoppedScreen'
+import { useScreenFocus } from './screenFocus'
+import { useSubStack } from './subStack'
 import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from './SubScreens'
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
-// 실제 HTTP API(`?api`)로 도는 흐름 — 시연(DemoFlow)과 같은 화면을 쓰고, 어느 화면인가는 CaseView가 정한다.
+// 실제 HTTP API로 도는 흐름(기본 진입) — 시연(DemoFlow)과 같은 화면을 쓰고, 어느 화면인가는 CaseView가 정한다.
 // 로컬에 둔 것은 사용자가 고른 파일 · 입력한 설명 · 열어 둔 하위 화면뿐이다(web-stack.md 확정 4).
 // 화면 → command 연결은 `contract-case-command.md`를, 요청 · 재시도 규칙은 `contract-http-api.md` §6을 따른다.
 
@@ -35,19 +38,23 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_PLATE_IMAGE',
 ])
 
-export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Element {
+export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api)
   const { view } = state
   const cid = state.caseId
   const frameSrc = cid ? (ref: string) => api.frameUrl(cid, ref) : undefined
+  // 제목·신고 내용·위치를 화면에서만 고친 값. 다른 case · 다른 후보의 초안으로 넘기지 않는다
+  const draftKey = `${cid}/${view?.candidates.find((c) => c.selected)?.candidate_id}`
+  const [edited, setEdited] = useState<{ key: string; edits: ReportEdits }>({ key: '', edits: {} })
+  const edits = edited.key === draftKey ? edited.edits : {}
   const [situation, setSituation] = useState('')
-  const [subs, setSubs] = useState<Sub[]>([])
+  const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [unsupported, setUnsupported] = useState(false)
 
-  // 주소의 case id로 이어간다. 새로 만든 case는 주소에 남겨 새로고침해도 이어진다.
-  // 경과 시간은 이어받은 시점부터 다시 센다 — CaseView에 시작 시각이 없다.
+  // 주소(또는 이 브라우저가 기억한) case id로 이어간다. 새로 만든 case는 주소와 브라우저에 남겨
+  // 새로고침하거나 창을 닫았다 와도 이어진다. 경과 시간은 이어받은 시점부터 다시 센다 — CaseView에 시작 시각이 없다.
   const { caseId } = props
   useEffect(() => {
     if (caseId) void resume(caseId)
@@ -56,8 +63,21 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     if (!state.caseId) return
     const url = new URL(location.href)
     url.searchParams.set('case', state.caseId)
-    history.replaceState(null, '', url)
+    history.replaceState(history.state, '', url) // 하위 화면 기록 깊이(subStack)는 그대로 둔다
   }, [state.caseId])
+  // 서버가 돌려준 case만 기억한다 — 없는 case 주소를 열어도 기억해 둔 내 case를 덮지 않는다
+  const seen = view?.case_id
+  useEffect(() => {
+    if (seen) rememberCase(seen)
+  }, [seen])
+  // 기억한 case가 서버에 없으면(보관 기간이 지나 지워짐 등) 잊는다. 주소 없이 이어받던 중이면 새 신고로 시작한다 —
+  // 사용자가 연 적 없는 「찾을 수 없어요」를 보이지 않는다.
+  const gone = state.error?.code === 'http.not_found'
+  useEffect(() => {
+    if (!gone) return
+    if (rememberedCase() === state.caseId) forgetCase()
+    if (props.remembered) location.assign(location.pathname)
+  }, [gone, state.caseId, props.remembered])
 
   // 자동차 출발 — [영상에서 찾아보기]를 누른 뒤 진행 화면이 실제로 열리는 순간부터 업로드 화면 겉모습
   // 복사본에서 차가 출발한다(시연과 같은 연출). 시작 요청이 실패해 진행 화면이 열리지 않으면 접는다.
@@ -96,11 +116,17 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
   // 보낼 command가 없는 동작은 화면이 사용 불가와 이유를 보인다
   const canRun = (action: Action) => !!INPUT_SUB[action] || SENDABLE.has(action)
   const reselect = (candidateId: string) => {
-    setSubs([])
+    closeAll()
     run({ kind: 'SELECT_OTHER_CANDIDATE', payload: { candidate_id: candidateId } })
   }
+  const playback = {
+    videoSrc: cid ? (ref: string) => api.candidateVideoUrl(cid, ref) : undefined,
+    frameSrc,
+    onPreview: (candidateId: string) => run({ kind: 'REQUEST_CANDIDATE_VIDEO_PREVIEW', payload: { candidate_id: candidateId } }),
+    previewBusy: state.busy,
+  }
   const editHint = (description: string) => {
-    setSubs([])
+    closeAll()
     setSituation(description) // 진행 화면이 새 설명을 보인다
     setStartedAt(Date.now())
     run({ kind: 'EDIT_HINT', payload: { description } })
@@ -113,19 +139,28 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     run({ kind: 'EDIT_EVENT_TIME', payload: { value } })
   }
   const open = (sub: Sub) => {
-    setSubs((s) => [...s, sub])
+    rememberOpener()
+    openSub(sub)
     setArriving(false)
   }
-  const back = () => setSubs((s) => s.slice(0, -1))
   const sub = subs[subs.length - 1]
+  const mainRef = useRef<HTMLElement>(null)
+  const rememberOpener = useScreenFocus(mainRef, `${kind}-${subs.join('/')}`, subs.length)
 
-  const newReport = () => location.assign(`${location.pathname}?api`)
+  const newReport = () => {
+    forgetCase()
+    location.assign(location.pathname)
+  }
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
+  const deferredWork = view?.notices.find(n => n.code === 'public.local_work_not_queued')
+  // 지워진 기억 case는 새 신고로 넘어가는 중이다 — 그 사이 「찾을 수 없어요」가 깜빡이지 않게 머리줄만 둔다
+  if (gone && props.remembered) return <AppHeader onNewReport={newReport} />
 
   return (
     <>
       <AppHeader onNewReport={newReport} />
-      <main className="web-main rs-page">
+      <main className="web-main rs-page" ref={mainRef}>
+        {deferredWork && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
         {banner && !state.viewUnavailable && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
@@ -172,7 +207,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
               )}
             </section>
           </div>
-        ) : !view || view.stage === 'INTAKE' ? upload() : analysis(view)}
+        ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
       </main>
     </>
   )
@@ -189,11 +224,15 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
     const uploadState: UploadState = uploading ? 'uploading' : anyDone ? 'done' : uploads.length > 0 ? 'fail' : 'idle'
     const files = already > 0 ? [{ name: `이미 올린 영상 ${already}개` }] : uploads
     const skipped = uploads.filter((u) => u.status === 'FAILED').map((u) => u.name)
+    const failCode = uploads.find((u) => u.error)?.error
     return (
       <UploadScreen
         state={uploadState}
         files={files}
         skipped={skipped}
+        failReason={failCode ? errorMessage(failCode) : undefined}
+        // 같은 신고에서는 한 번만 묻는다 — case가 생기면 동의를 받은 뒤다. 새 신고(caseId 없음)는 다시 묻는다
+        consent={!state.caseId}
         situation={situation}
         onFiles={(picked) => void addFiles(picked)} // 올리는 중에 고른 파일은 store가 받지 않는다
         onSituation={setSituation}
@@ -217,19 +256,25 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
             view={view}
             files={
               state.uploads.length
-                ? state.uploads.filter((u) => u.status === 'DONE')
+                ? state.uploads.filter((u) => u.status === 'DONE').map((u) => u.file)
                 : [{ name: `영상 ${view.manifest_summary.ok_file_count}개` }]
             }
             situation={situation || view.description || ''}
             startedAt={startedAt}
             pushIn={!!leaving}
             onStop={view.stage === 'SEARCHING' ? () => run({ kind: 'STOP_ANALYSIS', payload: {} }) : undefined}
+            // 결과 화면에서 다시 준비하거나 창을 닫았다 오면 브라우저에 원본이 없다 — 고른 후보의 장면 이미지로 대신한다.
+            // 후보 썸네일이 없으면 근거 장면(evidence.preview_ref)을 쓴다 — 결과 화면 포스터·후보 카드와 같은 순서(#634 리뷰)
+            fallbackSrc={(() => {
+              const thumb = view.candidates.find((c) => c.selected)?.thumb_ref ?? view.evidence?.preview_ref
+              return thumb && frameSrc ? frameSrc(thumb) : null
+            })()}
           />
         )
       case 'STOPPED':
         return <StoppedScreen view={view} onAction={onAction} />
       case 'SEARCH_FAILED':
-        return <FailedScreen view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} />
+        return <FailedScreen {...playback} view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} />
       case 'NO_RESULT':
         // 시연과 같은 틀. case가 실은 동작(설명 고치기 · 같은 조건으로 다시 찾기)을 버튼으로 두고, 첫 버튼만 강조한다.
         // 「처음으로」는 서버 action과 따로 언제나 둔다(#410)
@@ -263,26 +308,41 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null }): JSX.Eleme
         )
       case 'NOT_OBSERVED':
         return (
-          <NotObservedScreen view={view} onSelect={reselect} restyled onNewReport={newReport} onAction={onAction} canRun={canRun} onEditHint={editHint} />
+          <NotObservedScreen {...playback} view={view} onSelect={reselect} restyled onNewReport={newReport} onAction={onAction} canRun={canRun} onEditHint={editHint} />
         )
       default:
-        if (sub === 'candidates') return <CandidateCompare view={view} onBack={back} onSelect={reselect} />
+        if (sub === 'candidates') return <CandidateCompare {...playback} view={view} onBack={back} onSelect={reselect} />
         if (sub === 'plate' || sub === 'plateEdit')
-          return <PlateCheck view={view} onBack={back} onEdit={editPlate} startEditing={sub === 'plateEdit'} frameSrc={frameSrc} />
+          return (
+            <PlateCheck
+              view={view}
+              onBack={back}
+              onEdit={editPlate}
+              startEditing={sub === 'plateEdit'}
+              frameSrc={frameSrc}
+              plateImageSrc={cid && view.package?.plate_image_ref ? api.assetUrl(cid, view.package.plate_image_ref) : undefined}
+            />
+          )
         if (sub === 'time') return <TimeEdit view={view} onBack={back} onSave={editTime} />
-        if (sub === 'details') return <DetailsCheck view={view} onBack={back} />
+        if (sub === 'details') return <DetailsCheck {...playback} view={view} onBack={back} />
         return (
           <ResultScreen
+            {...playback}
             view={view}
             onCandidates={() => open('candidates')}
             onPlate={() => open('plate')}
             onDetails={() => open('details')}
             onTime={() => open('time')}
+            edits={edits}
+            onEdit={(key, value) => setEdited({ key: draftKey, edits: { ...edits, [key]: value } })}
             onRespond={respond}
+            onReviewed={() => run({ kind: 'MARK_REVIEWED', payload: {} })}
+            onCorrect={(type) => run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: type } })}
             onAction={onAction}
             canRun={canRun}
             arriving={arriving}
             videoHref={cid && view.package?.artifact_ref ? api.assetUrl(cid, view.package.artifact_ref) : undefined}
+            plateImageHref={cid && view.package?.plate_image_ref ? api.assetUrl(cid, view.package.plate_image_ref) : undefined}
             frameSrc={frameSrc}
           />
         )

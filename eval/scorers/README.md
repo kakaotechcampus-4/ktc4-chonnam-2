@@ -12,4 +12,6 @@ prediction + GT version + metric version → metrics.
 | `classification.py` | Classification | `cl3` |
 | `plate.py` | Plate | `p2` |
 | `cost.py` | Cost (stage 무관, 항상 계산) · 속도 포함 | `c3` |
+| `pipeline.py` | Coarse → Fine 전체 경로(Fine 판정 분포 · 최종 Recall). candidate stage에서 Fine 판정이 있을 때만 | `pl1` |
+| `persistence.py` | Persistence(차량 검출 지속성) | `t1` |
 | `interval.py` | 비율 지표의 Wilson 95% 구간 (stage 무관 · 공용) | — |

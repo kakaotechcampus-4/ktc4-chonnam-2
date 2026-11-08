@@ -158,6 +158,7 @@ def expired_fixture(queue, execution):
 
 def record(engine, execution, status, waits, stream):
     config = RuntimeConfig.from_mapping("worker", {
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
         "DAESINGO_RUNTIME_DB_URL": engine.url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": "/private/clock-media",
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": "/private/clock-temp",

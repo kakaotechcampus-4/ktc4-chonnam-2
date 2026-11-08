@@ -1,6 +1,6 @@
 # Worker T2 결과 반영 — `reflect_execution()` · 처리한 `execution_id` · `ProducedReader`
 
-> **상태: 결정 · 구현** · 결정일 2026-10-11 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-8(`../design-refinement-w7-baseline.md`), #245 D-5, Runtime Tech Spec §12.2, RT-04(b) `ResultReflector`(`src/daesingo/common/jobs/reflection.py`), RT-09(#296)
+> **상태: 결정 · 구현** · 결정일 2026-10-11 · 담당 유소연(`case`) · 근거 W7(7주차) 설계 고도화 목록 8순위 8-8(`../design-refinement-w7-baseline.md`), #245 D-5, Runtime Tech Spec §12.2, RT-04(b) `ResultReflector`(`src/daesingo/common/jobs/reflection.py`), RT-09(#296)
 > case 반영 함수의 모양 · 중복 판단 · kind별 반영은 case 결정 범위다. T2 transaction(반영 → 후속 enqueue → `case_applied_at` 표식)과 port 모양은 Runtime 소유(Tech Spec §12.2)이고, 모듈 결과가 process 밖 어디에 남는지는 8-6 2단계(RT-10 Gate)다. 이 문서는 case 쪽만 둔다.
 
 ## 1. 목표 · 범위
@@ -35,7 +35,7 @@ Worker가 terminal execution 하나를 넘기면 case가 한 번만, 기다리�
 4. **kind별 반영(이번 판).**
    - `HINT_EXTRACT` — `SUCCEEDED`면 reader가 준 단서 구조화 결과, `FAILED`면 `{"status": "FAILED"}`로 `reflect_hint_extraction(job_id=…)` — 실패해도 빈 단서로 첫 탐색을 발주한다(case-command Draft §11). 그 `COARSE_SEARCH`가 후속 JobRecord다.
    - `COARSE_SEARCH` — `SUCCEEDED`면 reader의 `{outcome, candidate_events}`: Run이 `FAILED`면 탐색 실패, 아니면 후보 수신. 실행이 `FAILED`면 reader를 부르지 않고 탐색 실패. 후보 변환은 동기 경로와 같은 `service.candidates_from_events()`다.
-   - `REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`(2026-10-24) — 판독과 같이 **정산(`REFLECTED`)하고 `EVIDENCE_REVIEW`면 READY gate만 다시 본다.** reader는 부르지 않는다 — export가 만든 파생 asset은 recording이 IncidentClip lineage로 등록하고, CaseView 조립 때 case asset 목록에서 고른다(`real_e2e.select_case_assets`, `real-e2e-scenarios.md` §4-2). case state에 asset ref를 복사하면 recording 등록과 두 군데가 된다. 실패 terminal도 정산만 한다 — kind가 `running_jobs`에서 빠지면 「신고용 영상 만들기」 재시도 버튼이 열린다(`report-video-export.md` [R-2]). 실패 code 매핑은 그 문서 §5 미결 그대로다. **발주하는 kind는 모두 반영기를 가진다**(테스트로 지킨다) — 빠지면 Worker가 그 결과에서 `ValueError`로 멈춘다.
+   - `REPORT_VIDEO_EXPORT` · `PLATE_IMAGE_EXPORT`(2026-10-24) — 판독과 같이 **정산(`REFLECTED`)하고 `EVIDENCE_REVIEW`면 READY gate만 다시 본다.** reader는 부르지 않는다 — export가 만든 파생 asset은 recording이 IncidentClip lineage로 등록하고, CaseView 조립 때 case asset 목록에서 고른다(`real_e2e.select_case_assets`, `real-e2e-scenarios.md` §4-2). case state에 asset ref를 복사하면 recording 등록과 두 군데가 된다. 실패 terminal도 정산만 한다 — kind가 `running_jobs`에서 빠지면 「신고용 영상 만들기」 재시도 버튼이 열린다(`report-video-export.md` [R-2]). 실패 code 매핑은 그 문서 §5 미결 그대로다. (2026-11-08 현재: 닫혔다 — 실패 notice는 view가 실행 기록으로 계산한다, `exports.export_notices()`.) **발주하는 kind는 모두 반영기를 가진다**(테스트로 지킨다) — 빠지면 Worker가 그 결과에서 `ValueError`로 멈춘다.
 5. **결과 내용은 주입한 `ProducedReader`(`(conn, kind, produced) -> dict`)가 준다.** `produced`는 `(kind, ref)` 참조뿐이다. 무엇을 어디서 읽는지는 8-6 2단계가 정하고, 그때 reader를 꽂는다. reader 예외는 그대로 올라가고 아무것도 저장되지 않는다.
 6. **반영했을 때만 저장한다.** `ALREADY_APPLIED` · `NOT_APPLIED`는 case를 바꾸지 않는다 — 결정적이라 재전달에도 같은 답이다.
 
@@ -56,8 +56,26 @@ Worker가 terminal execution 하나를 넘기면 case가 한 번만, 기다리�
 - `tests/case/test_case_repository_contract.py::test_processed_executions_survive_save_and_load` — in-memory · MySQL.
 - `tests/case/test_result_reflection_mysql.py`(MySQL opt-in, CI 필수) — 실제 Runtime `enqueue` · `claim_one` · `finish` · `reflect_terminal`에 어댑터로 꽂아 `APPLIED` → 재전달 `ALREADY_APPLIED` · `case_applied_at` 표식 · `running_jobs=[]`, rollback이면 case · 표식 둘 다 남지 않음.
 
+## A-1 완료 정산과 자동 export 보류 (2026-11-08 로컬 구현, #629)
+
+A-1은 공개 배포 준비 작업 묶음(#629 「공개 API 보호와 공유 예산·삭제 연결」)의 항목 번호다. 코드는 `reflect_execution(admit_auto_exports=…)`.
+
+
+관찰/export terminal의 settle·관측 결과를 먼저 반영한다. 자동 export는 그 뒤 후보 aggregate에 만들고
+선택적 admission이 거부하면 후보만 폐기한다. 완료 aggregate의 processed_executions와 Runtime T2 표식은
+같은 호출자 transaction에서 commit되어 기존 terminal 재전달은 ALREADY_APPLIED가 된다.
+따라서 active export2/상한2에서 정정 후 후속이 거부되어도 이전 terminal이 슬롯 해제를 막지 않는다.
+이 규칙은 추가 자동 REPORT_VIDEO_EXPORT/PLATE_IMAGE_EXPORT에만 적용한다.
+Fine→clip·clip→판독·HINT→Coarse 등 필수 후속은 기존 admission/원자성 규칙을 유지한다.
+수락한 자동 발주는 같은 transaction의 receipt/Case JobRecord/enqueue로 결속하고 중복 차감하지 않는다.
+일반 pause에서는 승인 상한 내 무료 발주만 허용, 긴급 stop에서는 자동 무료 발주도 보류한다.
+기존 완료 결과·T1·산출물·비용/예약은 지우지 않는다. 보류는 성공 응답/재조회 notice로 구분하고 READY로 꾸미지 않는다.
+재개 후 이전 terminal을 재전달해 새 job을 만들지 않으며, 사용자의 명시 action은 현재 입력으로 별도 admission을 받는다.
+
 ## 6. 남은 것
 
 - RT-09(#296) · RT-06(T2 재전달)이 composition root에서 이 함수를 `ResultReflector`로 꽂는다.
 - 8-6 2단계: 모듈 결과 저장 위치와 실제 `ProducedReader`, adapter 제거. *(판독 · Fine 반영기는 2026-10-13 — 정산 + READY gate, `observation-storage.md` §4-5. export 반영기는 2026-10-24 — §3-4.)*
 - 후보 수신 뒤 자동 선택 · 판독 · Fine 발주와 선택 context 대조(6.6순위 조건 1 · 2).
+
+> (2026-11-08 현재: 세 항목 모두 끝났다. Worker는 `src/daesingo/worker/case_reflector.py`에서 이 함수를 꽂는다. 결과 저장 위치 · reader는 `observation-storage.md`, 자동 선택과 후속 발주는 `incident-clip-observation-input.md` §9, 재선택 가드는 `reselect-while-preparing.md`. 반영기는 `CANDIDATE_VIDEO_PREVIEW`까지 9개 kind 모두에 있다(`reflection._APPLIERS`).)

@@ -1,3 +1,4 @@
+import type { CandidatePlayback } from '../components/CandidateVideo'
 import type { JSX } from 'react'
 import { isAction, type Action, type CaseView } from '../contracts/caseView'
 import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
@@ -21,8 +22,9 @@ export function NotObservedScreen(props: {
   canRun?: (action: Action) => boolean
   /** 다른 후보가 없으면 설명 입력란을 화면에 바로 두고, 여기로 고친 설명을 보낸다 */
   onEditHint?: (description: string) => void
-}): JSX.Element {
+} & CandidatePlayback): JSX.Element {
   const others = props.view.candidates.filter((c) => !c.selected).length
+  const hasPlayback = !!props.videoSrc && props.view.candidates.some((c) => c.video_preview && c.video_preview.status !== 'UNAVAILABLE')
   const r = props.restyled
   const code = 'evidence.visual_event_not_observed'
   const { onAction, canRun } = props
@@ -36,9 +38,14 @@ export function NotObservedScreen(props: {
     <div className="stack">
       {/* 기존 모양일 때 감싸는 div는 display: contents라 .stack 간격이 그대로다 */}
       <div className={r ? 'rs rs-screen state-page notobs' : 'notobs-legacy'}>
-        <h1 className={r ? 'state-context' : 'page-title'}>신고자료</h1>
+        {/* 새 모양은 분석 중단 화면처럼 상태 문구가 h1이다(#509 #3). 기존 모양은 그대로 둔다 */}
+        {r ? <p className="state-context">신고자료</p> : <h1 className="page-title">신고자료</h1>}
         <section className={r ? 'state-card' : 'panel panel-p stack'}>
-          <h2 className={r ? 'state-head' : 'panel-t'}>{noticeMessage('notice.visual_event_not_observed')}</h2>
+          {r ? (
+            <h1 className="state-head">{noticeMessage('notice.visual_event_not_observed')}</h1>
+          ) : (
+            <h2 className="panel-t">{noticeMessage('notice.visual_event_not_observed')}</h2>
+          )}
           <p className={r ? 'state-body' : 'kv-src'}>
             영상은 정상적으로 확인했습니다.
             {others > 0 && ' 다른 장면이었다면 아래 후보 중에서 골라 주세요.'}
@@ -62,9 +69,9 @@ export function NotObservedScreen(props: {
           )}
         </section>
       </div>
-      {others > 0 && props.onSelect && (
+      {((others > 0 && props.onSelect) || hasPlayback) && (
         <div className={r ? 'rs notobs-cands' : undefined}>
-          <CandidatesScreen view={props.view} onSelect={props.onSelect} selectedLabel="먼저 확인한 장면" />
+          <CandidatesScreen {...props} onSelect={props.onSelect} selectedLabel="먼저 확인한 장면" />
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 # Correction 로그 재사용 정책 — 전제 「재사용 한다」와 익명화 규칙
 
-> 결정일 2026-09-04 · 근거 `management/cross-cutting-decisions.md` C-4 · §3-(2)
+> 결정일 2026-09-04 · 근거 `docs/management/cross-cutting-decisions.md` C-4(학습 · 평가 데이터 재사용 운영 결정) · §3-(2)
 > **담당:** 유소연(`case`) · **Consulted:** 정철원(`recording` — 보관·삭제 실태) · 김준영(마스킹 로거 + Product Spec 승인)
 
 ## 결정된 것
@@ -11,7 +11,7 @@
 
 | 단계 | 무엇에 쓰나 | 경로 | 10주 내 |
 | --- | --- | --- | --- |
-| **1단계 — 평가 재사용** | 팀이 채점 · hard-negative 후보 · 실패 통계에 쓴다 | `case.export_learning_log()` → 익명화 파일 → `eval` (`module-architecture.md` §9-5) | **구현** |
+| **1단계 — 평가 재사용** | 팀이 채점 · hard-negative 후보 · 실패 통계에 쓴다 | `case.export_learning_log()` → 익명화 파일 → `eval` (`module-architecture.md` §9-5) | **구현** (`src/daesingo/case/correction_log.py`, 동의 게이팅 없음 — 아래 표 1번 미결) |
 | **2단계 — 학습 재사용** | 모델 fine-tuning 학습 데이터 | 없음. §10-3 `[미결 유지]`의 fine-tuning과 연결 | 전제만 |
 
 고지 문구는 처음부터 두 단계를 구분해서 쓴다. 한 줄로 뭉뚱그리면 2단계를 열 때 동의를 다시 받아야 한다.

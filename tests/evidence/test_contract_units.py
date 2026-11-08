@@ -114,8 +114,7 @@ class ContractUnitTests(unittest.TestCase):
         self.assertIn("package.asset.video.each_size", codes)
         self.assertIn("package.deadline.within_policy", codes)
         self.assertNotIn("package.asset.report_video.size", codes)
-        # #280 — ADR-EVIDENCE-010이 활성 catalog를 v6로 바꿨다.
-        self.assertEqual("policy/requirement-rules-v6", report["policy_ref"])
+        self.assertEqual("policy/requirement-rules-v7", report["policy_ref"])
 
     def test_all_four_event_mappings_render_with_adopted_template_and_length(self):
         for visual_type, policy in EVENT_POLICY.items():
@@ -164,9 +163,9 @@ class ContractUnitTests(unittest.TestCase):
                 violation_expression="확인이 필요한 주행 상황",
             )
 
-    def test_unconfirmed_specific_evidence_cannot_build_package(self):
+    def test_unsure_specific_evidence_cannot_build_package(self):
         unconfirmed = deepcopy(self.record)
-        unconfirmed.pop("situation_response")
+        unconfirmed["situation_response"]["value"] = "USER_UNSURE"
         report = self._ready_report()
         with self.assertRaisesRegex(PackageNotReady, "package.input.situation_unconfirmed"):
             build_report_package(

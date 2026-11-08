@@ -1,7 +1,7 @@
 # 다른 후보를 골랐다가 돌아올 때(A→B→A) 관찰 결과 재사용
 
-> **상태: 결정 — (b) 채택** · 결정일 2026-09-30 · 담당 유소연(`case`) · 근거 W7 고도화 7순위 orchestration 지표 러너 2차 측정(PR #214)
-> 정책 표(`doc-research/부분 재실행 정책 표 초안 v1`)의 해석이라 case 단독 결정 범위다(`ownership.md` — case는 「무엇을 왜 언제 다시」를 정한다).
+> **상태: 결정 — (b) 채택** · 결정일 2026-09-30 · 담당 유소연(`case`) · 근거 W7(7주차) 설계 고도화 목록 7순위(`../design-refinement-w7-baseline.md`) orchestration 지표 러너 2차 측정(PR #214)
+> 정책 표(`doc-research/부분 재실행 정책 표 초안 v1` — 파일 이름 끝에 Notion id가 붙어 있다)의 해석이라 case 단독 결정 범위다(`ownership.md` — case는 「무엇을 왜 언제 다시」를 정한다).
 
 ## 배경
 

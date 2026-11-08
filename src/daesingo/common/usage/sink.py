@@ -10,6 +10,7 @@ from sqlalchemy import insert, select, update
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import IntegrityError
 from daesingo.common.logging import log_event_best_effort
+from daesingo.common.jobs.cancel import CancellationRequested
 
 from .amount import amount_string
 from .port import (UsageError, UsageConflictError, UsagePersistenceError,
@@ -139,7 +140,10 @@ class DurableUsageSink:
     def __init__(self, *, execution_ref: str, case_id: str,
                  transaction: Callable[[Callable[[Connection], None]], None],
                  clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
-                 logger=None, late_observe: Callable[[str], None] | None = None):
+                 logger=None, late_observe: Callable[[str], None] | None = None,
+                 before_begin: Callable[[Connection, dict], None] | None = None,
+                 after_finish: Callable[[Connection, str, dict], None] | None = None,
+                 begin_transaction: Callable[[Callable[[Connection], None]], None] | None = None):
         try:
             self._execution_ref = _string(execution_ref, "execution_ref", identifier=True, length=128)
             self._case_id = _string(case_id, "case_id", identifier=True, length=128)
@@ -147,6 +151,9 @@ class DurableUsageSink:
             raise UsageValidationError() from None
         self._transaction, self._clock = transaction, clock
         self._logger, self._late_observe = logger, late_observe
+        self._before_begin = before_begin
+        self._after_finish = after_finish
+        self._begin_transaction = begin_transaction
         self._begins: dict[str, dict] = {}
         self._lock = Lock()
 
@@ -158,11 +165,17 @@ class DurableUsageSink:
             cost={"amount": None, "currency": "KRW"})
         return {**record, **changes}
 
-    def _execute(self, callback, identity):
+    def _execute(self, callback, identity, *, beginning=False):
         try:
+            if beginning and self._begin_transaction is not None:
+                return self._begin_transaction(callback)
             return self._transaction(callback)
         except UsageError:
             raise
+        except CancellationRequested:
+            if beginning:
+                raise
+            raise UsagePersistenceError(usage_id=identity) from None
         except Exception:
             raise UsagePersistenceError(usage_id=identity) from None
 
@@ -204,7 +217,11 @@ class DurableUsageSink:
                     raise UsageConflictError()
                 if not _same(snapshot, intent, _INTENT):
                     raise UsageConflictError()
-        self._execute(lambda conn: _begin(conn, snapshot), usage_id)
+        def start(conn):
+            if self._before_begin is not None:
+                self._before_begin(conn, dict(snapshot))
+            _begin(conn, snapshot)
+        self._execute(start, usage_id, beginning=True)
         return usage_id
 
     def finish(self, usage_id: str, *, token_usage, processed_duration_sec, latency_ms,
@@ -224,6 +241,10 @@ class DurableUsageSink:
         late = False
         def operation(conn):
             nonlocal late
+            # Same global->usage lock order as begin. The callback neither
+            # refunds reservations nor changes the authoritative usage facts.
+            if self._after_finish is not None:
+                self._after_finish(conn, identity, dict(cost))
             late = _finish(conn, identity, self._execution_ref, self._case_id, snapshot, observed_at) or late
         self._execute(operation, identity)
         if late:

@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import tempfile
 from collections.abc import Generator
-from contextlib import AbstractContextManager, contextmanager
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, ClassVar, final
@@ -23,7 +23,7 @@ _CHUNK = 64 * 1024  # 64 KiB read chunks
 
 
 # ---------------------------------------------------------------------------
-# ffprobe JSON model (replaces all manual dict-traversal helpers)
+# ffprobe JSON model
 # ---------------------------------------------------------------------------
 
 
@@ -233,15 +233,28 @@ def _scale_filter(max_height: int) -> str:
 class MediaPreparer:
     """Materializes, probes, and produces bounded Coarse or Fine MP4s."""
 
-    def __init__(self, config: GeminiSearchConfig) -> None:
+    def __init__(self, config: GeminiSearchConfig, *, temp_context=None) -> None:
         self._cfg = config
+        self._temp_context = temp_context
+
+    @contextmanager
+    def _temporary_directory(self):
+        # Runtime supplies its pinned, leased per-Case root. Standalone CLI/eval
+        # retain their original temp lifetime, without importing Runtime policy.
+        scope = self._temp_context() if self._temp_context is not None else nullcontext(None)
+        with scope as root:
+            directory = Path(tempfile.mkdtemp(prefix="daesingo_media_", dir=root))
+            try:
+                yield directory
+            finally:
+                shutil.rmtree(directory, ignore_errors=True)
 
     def prepare_coarse(
         self,
         media_input: MediaInput,
         deadline: RunDeadline,
     ) -> AbstractContextManager[PreparedMedia]:
-        """Materialize + probe + coarse_fps/360p/no-audio proxy, slowed to 1 frame per
+        """Materialize + probe + coarse_fps/270p/no-audio proxy, slowed to 1 frame per
         playback second; yield it; rmtree in finally.
 
         Temp dir is cleaned up on every exit — success, failure, timeout,
@@ -266,8 +279,7 @@ class MediaPreparer:
                 f"declared size {media_input.declared_byte_size} > cap {max_src}"
             )
 
-        tmpdir = Path(tempfile.mkdtemp(prefix="daesingo_media_"))
-        try:
+        with self._temporary_directory() as tmpdir:
             src_path = tmpdir / "source.mp4"
             materialized = _materialize(media_input, src_path, max_src, deadline)
 
@@ -277,7 +289,10 @@ class MediaPreparer:
                 src_path,
                 coarse_path,
                 fps=cfg.coarse_fps,
-                max_height=360,
+                # #452: 26분 입력이 40 MiB 안에 들도록 Coarse만 270p · crf28(PM 잠정 승인, E2E 검증용).
+                # 근거 experiments/coarse-270p-quality-2026-11-04.md. Fine은 360p · 기본 CRF 유지.
+                max_height=270,
+                crf=28,
                 deadline=deadline,
             )
             _verify_output(coarse_path, max_inline)
@@ -291,8 +306,6 @@ class MediaPreparer:
                 origin_end_sec=materialized.probe.duration_sec,
                 playback_speed=1 / cfg.coarse_fps,
             )
-        finally:
-            shutil.rmtree(tmpdir, ignore_errors=True)
 
     def prepare_fine(
         self,
@@ -328,8 +341,7 @@ class MediaPreparer:
                 f"declared size {media_input.declared_byte_size} > cap {max_src}"
             )
 
-        tmpdir = Path(tempfile.mkdtemp(prefix="daesingo_media_"))
-        try:
+        with self._temporary_directory() as tmpdir:
             src_path = tmpdir / "source.mp4"
             materialized = _materialize(media_input, src_path, max_src, deadline)
 
@@ -359,12 +371,10 @@ class MediaPreparer:
                 origin_end_sec=end,
                 playback_speed=1 / cfg.fine_fps,
             )
-        finally:
-            shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------
-# Internal helpers called from prepare()
+# Internal helpers called from _prepare_coarse() / _prepare_fine()
 # ---------------------------------------------------------------------------
 
 
@@ -415,8 +425,12 @@ def _run_ffmpeg_encode(
     deadline: RunDeadline,
     start_sec: float | None = None,
     end_sec: float | None = None,
+    crf: int | None = None,
 ) -> None:
-    """Encode src → dest as H.264 MP4, downscale-only, no audio, 1 frame per playback second."""
+    """Encode src → dest as H.264 MP4, downscale-only, no audio, 1 frame per playback second.
+
+    ``crf`` None이면 libx264 기본값(23).
+    """
     args = [_ffmpeg_path(), "-y"]
     if start_sec is not None:
         args += ["-ss", str(start_sec)]
@@ -430,6 +444,7 @@ def _run_ffmpeg_encode(
         f"fps={fps},{_scale_filter(max_height)},setpts=(PTS-STARTPTS)*{fps},fps=1",
         "-c:v",
         "libx264",
+        *(["-crf", str(crf)] if crf is not None else []),
         "-an",  # no audio
         "-movflags",
         "+faststart",

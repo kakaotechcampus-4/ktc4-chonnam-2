@@ -66,12 +66,17 @@
           "timeline_revision": 1,
           "stale_revision": false,
           "stale_revision_label_key": null,
-          "situation_confirmation": "NOT_ASKED"
+          "situation_confirmation": "NOT_ASKED",
+          "video_preview": {
+            "status": "UNAVAILABLE",
+            "clip_ref": null
+          }
         }
       ],
       "evidence": null,
       "requirements_evidence": null,
       "requirements_package": null,
+      "report_draft": null,
       "package": null,
       "running_jobs": [],
       "notices": []
@@ -126,12 +131,17 @@
           "timeline_revision": 1,
           "stale_revision": true,
           "stale_revision_label_key": "candidate.stale_timeline_revision",
-          "situation_confirmation": "NOT_ASKED"
+          "situation_confirmation": "NOT_ASKED",
+          "video_preview": {
+            "status": "UNAVAILABLE",
+            "clip_ref": null
+          }
         }
       ],
       "evidence": null,
       "requirements_evidence": null,
       "requirements_package": null,
+      "report_draft": null,
       "package": null,
       "running_jobs": [],
       "notices": []

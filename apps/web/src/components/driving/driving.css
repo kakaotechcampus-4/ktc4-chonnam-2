@@ -1,0 +1,107 @@
+.driving-preview {
+  position: absolute;
+  inset: 0;
+  color-scheme: light;
+  color: #34424c;
+}
+.driving-preview[hidden],
+.driving-preview [hidden] {
+  display: none !important;
+}
+.driving-preview .media {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  background: #c0e1f0;
+}
+.driving-preview .drive-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+.driving-preview:not([data-status='ready']) .drive-frame {
+  visibility: hidden;
+}
+.driving-preview .flow-preview-switch.is-back {
+  position: absolute;
+  z-index: 2;
+  left: 14px;
+  top: 14px;
+  bottom: auto;
+  right: auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #ffffff99;
+  border-radius: 50%;
+  background: #ffffffc9;
+  color: #4c5b61;
+}
+.driving-preview .is-back:hover {
+  background: #fff;
+}
+.driving-preview .is-back:focus-visible {
+  outline: 2px solid #496e5a;
+  outline-offset: 3px;
+}
+.driving-preview .flow-preview-back-label,
+.driving-preview .drive-message {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.driving-preview .drive-unavailable {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--rs-fill);
+  color: var(--rs-sub);
+  font-size: 15px;
+  text-align: center;
+  padding: 16px;
+}
+.driving-preview .media:fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+@container (max-width:520px) {
+  .driving-preview .flow-preview-switch.is-back {
+    left: 9px;
+    top: 9px;
+    width: 30px;
+    height: 30px;
+  }
+}
+@container (max-width:300px) {
+  .driving-preview .flow-preview-switch.is-back {
+    left: 6px;
+    top: 6px;
+    width: 26px;
+    height: 26px;
+  }
+}
+.driving-preview {
+  container-type: size;
+}
+.driving-preview .media:fullscreen .flow-preview-switch.is-back {
+  left: 22px;
+  top: 20px;
+  width: 38px;
+  height: 38px;
+}

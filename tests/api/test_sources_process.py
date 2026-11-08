@@ -16,7 +16,8 @@ def test_upload_timeout_closes_without_status(tmp_path, reason):
         reservation.bind(('127.0.0.1', 0))
         port = reservation.getsockname()[1]
     env_file = tmp_path / 'runtime.env'
-    env_file.write_text('DAESINGO_RUNTIME_DB_URL=mysql+pymysql://test:secret@127.0.0.1:1/test_upload\n'
+    env_file.write_text('DAESINGO_RUNTIME_PUBLIC_MODE=internal\n'
+        'DAESINGO_RUNTIME_DB_URL=mysql+pymysql://test:secret@127.0.0.1:1/test_upload\n'
         f'DAESINGO_RUNTIME_MEDIA_ROOT={tmp_path}\nDAESINGO_RUNTIME_API_TEMP_ROOT={tmp_path}\n'
         'DAESINGO_RUNTIME_API_UPLOAD_IDLE_TIMEOUT_SEC=0.15\n'
         f'DAESINGO_RUNTIME_API_UPLOAD_MAX_DURATION_SEC={.3 if reason == "duration" else 3}\n', encoding='utf-8')

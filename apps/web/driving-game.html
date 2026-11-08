@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>드라이브</title>
+  </head>
+  <body>
+    <main id="game" data-phase="ready">
+      <canvas
+        id="view"
+        tabindex="0"
+        aria-label="3인칭 드라이브. 좌우 방향키나 드래그로 이동. 위 방향키 또는 스페이스로 점프. 짧게 누르면 점프, 두 번 누르면 높게, 누르고 있으면 부스트, 놓으면 하강"
+        aria-describedby="controls-description"
+        aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp Space"
+      ></canvas>
+      <div class="top-fade"></div>
+      <div id="hud">
+        <span id="level" aria-label="현재 레벨"
+          >Lv.<b id="level-number">1</b></span
+        ><span class="divider"></span>
+        <div class="distance" aria-label="주행 거리">
+          <strong id="distance">0</strong><small>m</small>
+        </div>
+      </div>
+      <div id="speedometer" aria-label="현재 속도">
+        <strong id="speed">65</strong><small>km/h</small>
+      </div>
+      <div
+        id="rewards"
+        aria-label="보호막까지 동전 0/10개, 보호막 0개 남음"
+        title="한 판에서 보호막은 총 3회만 사용할 수 있어요. 사용한 보호막은 다시 충전되지 않아요."
+      >
+        <svg id="coin-symbol" viewBox="0 0 20 20">
+          <circle cx="10" cy="10" r="7.5" />
+          <path d="M10 6v8" /></svg
+        ><span><b id="coin-count">0</b><span id="coin-target"> / 10</span></span
+        ><span class="reward-divider"></span
+        ><svg id="shield-symbol" viewBox="0 0 20 20">
+          <path d="m10 2 6 2.5v4.8c0 3.8-3 6.5-6 8.5-3-2-6-4.7-6-8.5V4.5z" />
+          <path d="m7 9.5 2 2 4-4" /></svg
+        ><span
+          ><span class="shield-word">보호막 </span
+          ><b id="shield-count">0</b></span
+        >
+      </div>
+      <div class="view-tools">
+        <button id="help" class="tool" aria-label="조작 방법">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5m0 4h.01" />
+          </svg></button
+        ><button
+          id="sound"
+          class="tool"
+          aria-label="소리 끄기"
+          aria-pressed="true"
+        >
+          <svg viewBox="0 0 24 24">
+            <path d="M11 5 6 9H3v6h3l5 4z" />
+            <path
+              class="sound-on"
+              d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"
+            />
+            <path class="sound-off" d="m16 9 5 6m0-6-5 6" />
+          </svg></button
+        ><button id="pause" class="tool" aria-label="일시정지">
+          <svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14" /></svg></button
+        ><button id="fullscreen" class="tool" aria-label="전체 화면">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
+          </svg>
+        </button>
+      </div>
+      <div id="hint">
+        <span class="keyboard-copy"
+          ><kbd>← →</kbd> 이동 · <kbd>↑</kbd> 점프 / 누르고 있기</span
+        ><span class="touch-copy">밀어서 이동 · 탭 / 길게 누르기</span>
+      </div>
+      <div id="event" role="status" aria-live="polite"></div>
+      <div id="warning"></div>
+      <div
+        id="level-up"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        hidden
+      >
+        <span>레벨 업</span><strong id="new-level">LEVEL 1</strong>
+      </div>
+      <div id="overlay">
+        <section id="card">
+          <div class="card-content">
+            <span id="eyebrow">기다리는 동안 가볍게</span>
+            <h1 id="heading">드라이브</h1>
+            <p id="description">차선을 바꾸고, 직접 점프 길이를 조절해요.</p>
+            <div class="instructions" id="controls-description">
+              <div class="instruction">
+                <span class="key">← → / 드래그</span><span>차선 이동</span>
+              </div>
+              <div class="instruction">
+                <span class="key"
+                  ><span class="keyboard-copy">↑ / Space</span
+                  ><span class="touch-copy">짧게 한 번</span></span
+                ><span>짧게 점프</span>
+              </div>
+              <div class="instruction">
+                <span class="key">빠르게 두 번</span><span>높게 점프</span>
+              </div>
+              <div class="instruction">
+                <span class="key">누르고 있기</span
+                ><span>부스트 · 놓으면 하강</span>
+              </div>
+            </div>
+            <div id="results">
+              <div class="result-stat">
+                <span class="result-label">도달 레벨</span
+                ><span class="result-value"
+                  >Lv.<strong id="result-level">1</strong></span
+                >
+              </div>
+              <div class="result-stat">
+                <span class="result-label">주행 거리</span
+                ><span class="result-value"
+                  ><strong id="result-distance">0</strong>m</span
+                >
+              </div>
+            </div>
+          </div>
+          <button id="start">시작하기</button>
+          <p id="tip">↑ · Space 또는 화면으로 점프해요.</p>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="/src/components/driving/game/game.js"></script>
+  </body>
+</html>

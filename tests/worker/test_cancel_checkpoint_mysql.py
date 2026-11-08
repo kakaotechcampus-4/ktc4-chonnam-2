@@ -37,6 +37,13 @@ def test_cancel_metrics_end_at_durable_commit_ack(resources, mode, monkeypatch, 
     writes, logger_calls = [], []
     active, locked = Event(), Event()
     writer_ready, writer_ids, holders = Event(), [], []
+    terminal_transactions = set()
+    original_finish = composition.finish
+    def finish_attempt(conn, *args, **kwargs):
+        # Lost-COMMIT replay may confirm the durable row without a second UPDATE.
+        terminal_transactions.add(conn.get_transaction())
+        return original_finish(conn, *args, **kwargs)
+    monkeypatch.setattr(composition, "finish", finish_attempt)
     remove = lambda: None
     original_log = startup.logger.log
     def log(level, message, *args, **kwargs):
@@ -72,7 +79,9 @@ def test_cancel_metrics_end_at_durable_commit_ack(resources, mode, monkeypatch, 
         active.set()
         ctx.checkpoint()
     def commit(conn):
-        if not active.is_set():
+        # A-1's Case-tag read also commits after checkpoint. Measure only the
+        # transaction that attempted finish(), including its read-only replay.
+        if not active.is_set() or conn.get_transaction() not in terminal_transactions:
             return
         driver = conn.connection.driver_connection
         original = driver.commit

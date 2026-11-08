@@ -1,4 +1,4 @@
-"""빈 case 생성 · adapter 없는 등록 · 업로드마다 `manifest_summary` 갱신 (W7 8순위 8-12).
+"""빈 case 생성 · adapter 없는 등록 · 업로드마다 `manifest_summary` 갱신 (case 고도화 계획 8-12, `design-refinement-w7-baseline.md`).
 
 `docs/modules/case/decisions/empty-case-and-manifest.md`.
 """

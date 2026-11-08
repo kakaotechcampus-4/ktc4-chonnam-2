@@ -57,7 +57,7 @@ def main():
             media, temp = root / "media", root / "temp"
             media.mkdir(); temp.mkdir()
             source = generate(root, Path(sys.argv[1]))
-            values = dict(DAESINGO_RUNTIME_DB_URL=url.render_as_string(hide_password=False),
+            values = dict(DAESINGO_RUNTIME_PUBLIC_MODE="internal", DAESINGO_RUNTIME_DB_URL=url.render_as_string(hide_password=False),
                 DAESINGO_RUNTIME_MEDIA_ROOT=str(media), DAESINGO_RUNTIME_API_TEMP_ROOT=str(temp),
                 DAESINGO_RUNTIME_WORKER_TEMP_ROOT=str(temp), GEMINI_API_KEY="offline",
                 DAESINGO_RECORDING_ANALYSIS_PROFILE_REF="acceptance", DAESINGO_RECORDING_ANALYSIS_HEIGHT="720",
@@ -113,7 +113,11 @@ def main():
                 [token for token in ("Traceback", "FatalError", "SIGTERM") if token in stderr])
             assert all(token not in stdout for token in (str(root), "Traceback", "PP-OCRv5", ".paddlex"))
             view = public(local, ("GET", f"/cases/{identity}/view", None))
-            assert not view["running_jobs"] and view["evidence"] is not None
+            assert view["evidence"] is not None
+            # #597 B안: Fine OBSERVED면 판독 뒤 상황 응답 없이 조립돼 신고용 export가 자동 발주된다.
+            # 이 검사는 Readout까지만 돌리므로 남은 대기 작업은 그 export뿐이어야 한다.
+            assert {job["kind"] for job in view["running_jobs"]} <= {
+                "REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}, [job["kind"] for job in view["running_jobs"]]
             with engine.connect() as conn:
                 facade = stored_case_store(conn, storage_root=media)
                 adapter = facade.adapter_for(facade.get_case(identity))

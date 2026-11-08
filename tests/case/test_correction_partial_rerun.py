@@ -49,7 +49,7 @@ def _happy_case_with_selection() -> tuple[CaseAggregate, RealAdapter]:
 def test_evidence_after_selection_does_not_rerun_coarse_search(monkeypatch):
     """정책 표 2행(`OTHER_CANDIDATE`): 선택이 바뀌어도 1차 탐색은 「절대 안 건드리는 것」이다.
     evidence 조립은 선택된 CandidateEvent를 이미 받은 탐색 결과에서 찾아야 한다 — search를 다시
-    부르면 실제 search 서비스에서는 영상 전체 Coarse가 다시 돈다(W7 7순위 러너가 찾음).
+    부르면 실제 search 서비스에서는 영상 전체 Coarse가 다시 돈다(`scripts/measure_case_orchestration.py` 측정에서 찾음).
     `RealVideoAdapter`는 이미 `candidate_id`별로 캐시한다."""
     scope = MockFixtureAdapter(MOCK_ROOT, SCENARIO_ID).get_analysis_scopes()[0]
     case = CaseAggregate.intake(case_id="case_h001_no_coarse_rerun", hints={}, manifest_summary={})

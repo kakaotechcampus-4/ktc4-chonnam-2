@@ -43,6 +43,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Verify pinned compatibility commits and trees
+        shell: bash
+        run: |
+          set -euo pipefail
+          for revision in \
+            e50b2976ef4edc3a030cfc5b03a5206340dd917b \
+            ce0750d5a3317ad1c810783d67f8a05ba88bce08 \
+            70f1c47cbc7c08fa848d057687f7130047f1126c \
+            b915808898077509e6f499b7be197310e5045b7a \
+            bb29d750d23765a73b7b6853b22086648684a392; do
+            git cat-file -e "${revision}^{commit}"
+            git cat-file -e "${revision}^{tree}"
+            test "$(git cat-file -t "${revision}:src")" = tree
+            test "$(git cat-file -t "${revision}:migrations")" = tree
+            printf 'Verified compatibility revision %s tree %s\n' "$revision" "$(git rev-parse "${revision}^{tree}")"
+          done
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -126,7 +143,8 @@ jobs:
 
   mysql:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # 3m setup + 40m canonical + 1m strict + 5m mutations + 1m cleanup.
+    timeout-minutes: 50
     services:
       mysql:
         image: mysql:8.4
@@ -150,6 +168,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Verify pinned compatibility commits and trees
+        shell: bash
+        run: |
+          set -euo pipefail
+          for revision in \
+            e50b2976ef4edc3a030cfc5b03a5206340dd917b \
+            ce0750d5a3317ad1c810783d67f8a05ba88bce08 \
+            70f1c47cbc7c08fa848d057687f7130047f1126c \
+            b915808898077509e6f499b7be197310e5045b7a \
+            bb29d750d23765a73b7b6853b22086648684a392; do
+            git cat-file -e "${revision}^{commit}"
+            git cat-file -e "${revision}^{tree}"
+            test "$(git cat-file -t "${revision}:src")" = tree
+            test "$(git cat-file -t "${revision}:migrations")" = tree
+            printf 'Verified compatibility revision %s tree %s\n' "$revision" "$(git rev-parse "${revision}^{tree}")"
+          done
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

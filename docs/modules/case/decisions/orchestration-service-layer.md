@@ -2,7 +2,9 @@
 
 > 결정일 2026-09-16(§1-§5) · 2026-09-18(§6-§8, W6 Real E2E) · 담당 유소연(`case`) · Consulted 없음 — `case` 내부 실행 구조 결정이며 다른 모듈의 계약·경계를 바꾸지 않는다(§4 범위 참고)
 >
-> 적용 범위: `src/daesingo/case/adapters.py`·`service.py`·`store.py`·`real_e2e.py`, Mock→Real 교체(W5/W6) 진행
+> 적용 범위: `src/daesingo/case/adapters.py`·`service.py`·`store.py`·`real_e2e.py`, Mock→Real 교체(W5/W6 = 프로젝트 5·6주차 단계) 진행
+>
+> (2026-11-08 현재: 이 문서는 9월 기록이다. 지금 구조는 `../tech-spec.md`가 설명한다. 바뀐 점 — 테스트는 `tests/case/`에 있다. `get_view()`는 `running_jobs` 인자 없이 `store`의 실행 기록 read port로 계산한다(`jobexecution-read-port.md`). `CaseStore`는 MySQL repository를 받는다(`case-store-mysql.md`). 비동기 경로의 adapter는 `StoredObservationAdapter`다(`observation-storage.md`).)
 >
 > 근거: `docs/modules/case/tech-spec.md` §1(case가 하는 일 — "자연어 단서 구조화" 등) · `docs/modules/case/ui-tests/01_yu-soyeon_web-manual-ui-check_2026-09-16.md`(직전 UI 점검) · `tests/case/test_scenario_*_smoke.py`(기존 실행 경로)
 
@@ -12,7 +14,7 @@ W5(Mock → Real 교체) 착수 전, "어댑터만 바꾸면 나머지는 그대
 
 ## 2. 배경
 
-`case`는 지금까지 `MockFixtureAdapter` 하나만 갖고 있었고, 그 도크스트링은 "case의 domain/view 코드는 이 인터페이스에만 의존한다"고 적어뒀다. 그런데 실제로 `MockFixtureAdapter`를 인스턴스화하는 곳은 `src/daesingo/case/tests/test_scenario_*_smoke.py` 뿐이었다 — "adapter로 데이터 가져오기 → 도메인 메서드 호출 → 결과 반영"이라는 orchestration 흐름 자체가 테스트 코드 안에만 손으로 짜여 있었고, `case`의 실행 코드(`domain.py`/`jobs.py`/`view.py`)에는 이 흐름을 재사용할 자리가 없었다.
+`case`는 지금까지 `MockFixtureAdapter` 하나만 갖고 있었고, 그 도크스트링은 "case의 domain/view 코드는 이 인터페이스에만 의존한다"고 적어뒀다. 그런데 실제로 `MockFixtureAdapter`를 인스턴스화하는 곳은 `src/daesingo/case/tests/test_scenario_*_smoke.py`(지금은 `tests/case/`로 옮겼다) 뿐이었다 — "adapter로 데이터 가져오기 → 도메인 메서드 호출 → 결과 반영"이라는 orchestration 흐름 자체가 테스트 코드 안에만 손으로 짜여 있었고, `case`의 실행 코드(`domain.py`/`jobs.py`/`view.py`)에는 이 흐름을 재사용할 자리가 없었다.
 
 이 상태로 Real 어댑터를 아무리 잘 만들어도, "그 어댑터를 실제로 호출하는 코드"가 테스트 바깥에 없으므로 Mock→Real 교체가 실행 가능한 형태로 존재하지 않는다.
 
@@ -112,3 +114,5 @@ PM 공지(W5 Baseline + W6 Real E2E, 2026-09-22 월 20:00 회의 데드라인 �
 
 - 여러 요청에 걸쳐 `CaseStore`를 어디서 살려둘지(FastAPI app state 등)는 이 ADR 범위 밖 — 실제 배선 시점에 결정한다.
 - 정식 DB 영속화·동시성 제어는 W5/W6 요청 문서가 이번 범위 밖으로 뺐다.
+
+> (2026-11-08 현재: 둘 다 정해졌다. api · Worker composition root가 요청 transaction마다 `CaseStore(repository=MySQLCaseRepository(), conn=…)`를 만든다 — `case-store-mysql.md`, `src/daesingo/case/store.py` `CaseStore` docstring.)

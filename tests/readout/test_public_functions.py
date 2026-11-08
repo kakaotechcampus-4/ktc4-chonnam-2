@@ -332,6 +332,45 @@ class OverlayTextParseTest(unittest.TestCase):
             with self.subTest(raw=raw):
                 self.assertIsNone(api._parse_overlay_text(raw, self.TZ))
 
+    def test_missing_date_time_separator(self):
+        """OCR이 날짜와 시간 사이 공백을 빠뜨린다(#536 실측 `2026-11-0214:00:29`)."""
+        for raw in ("2026-11-0214:00:29", "2026/11/0214:00:29", "2026.11.0214:00:29",
+                    "CH1 2026-11-0214:00:29 13.20"):
+            with self.subTest(raw=raw):
+                self.assertEqual(
+                    api._parse_overlay_text(raw, self.TZ), "2026-11-02T14:00:29+09:00")
+
+    def test_missing_separator_does_not_rescue_bad_or_glued_digits(self):
+        for raw in ("2026-13-4514:00:29",   # 날짜가 아니다
+                    "2026-11-0299:00:29",   # 시각이 아니다
+                    "2026-11-02114:00:29",  # 날짜 뒤 숫자 하나가 더 붙었다
+                    "12026-11-0214:00:29",  # 더 긴 숫자열의 일부다
+                    "2026-11-0214:00"):     # 초가 없다
+            with self.subTest(raw=raw):
+                self.assertIsNone(api._parse_overlay_text(raw, self.TZ))
+
+    def test_twelve_hour_clock_keeps_am_pm(self):
+        """12시간제 블랙박스(#575 데모 `04:17:34PM`) — AM/PM을 버리면 오후가 오전으로 확정된다."""
+        for raw, want in (("2026/10/26 04:17:34PM", "2026-10-26T16:17:34+09:00"),
+                          ("2026/10/26 04:17:34 PM", "2026-10-26T16:17:34+09:00"),
+                          ("2026/10/26 04:17:34pm 13.20", "2026-10-26T16:17:34+09:00"),
+                          ("2026/10/26 04:17:34AM", "2026-10-26T04:17:34+09:00"),
+                          ("2026/10/26 12:05:00PM", "2026-10-26T12:05:00+09:00"),
+                          ("2026/10/26 12:05:00AM", "2026-10-26T00:05:00+09:00"),
+                          ("2026-10-2604:17:34PM", "2026-10-26T16:17:34+09:00")):
+            with self.subTest(raw=raw):
+                self.assertEqual(api._parse_overlay_text(raw, self.TZ), want)
+
+    def test_twelve_hour_clock_rejects_impossible_hours(self):
+        for raw in ("2026/10/26 16:17:34PM", "2026/10/26 00:17:34AM"):
+            with self.subTest(raw=raw):
+                self.assertIsNone(api._parse_overlay_text(raw, self.TZ))
+
+    def test_letters_after_seconds_are_not_a_meridiem(self):
+        """`PMX`처럼 단어의 앞부분이면 AM/PM으로 읽지 않는다 — 24시간제 그대로다."""
+        self.assertEqual(api._parse_overlay_text("2026/10/26 16:17:34 PMX", self.TZ),
+                         "2026-10-26T16:17:34+09:00")
+
     def test_first_timestamp_wins_when_two_are_present(self):
         """어느 것이 프레임 시각인지 고를 근거가 여기 없다 — 판정을 숨기지 않고 앞의 것을 쓴다."""
         self.assertEqual(
@@ -402,6 +441,44 @@ class OverlayBranchTest(unittest.TestCase):
         for overlay in (self.absent, self.undetermined, self.ocr_failed):
             with self.subTest(readout=overlay.readout_id):
                 self.assertIn(overlay.observation.reason.code, registry.OVERLAY_REASON_CODES)
+
+    # #536 실측 — 9.6초 샘플만 OCR이 날짜와 시간 사이 공백을 빠뜨렸다
+    SEVEN = [(3.2, "2026-11-02 14:00:23"), (4.8, "2026-11-02 14:00:24"),
+             (6.4, "2026-11-02 14:00:26"), (8.0, "2026-11-02 14:00:28"),
+             (9.6, "2026-11-0214:00:29"), (11.2, "2026-11-02 14:00:31"),
+             (12.8, "2026-11-02 14:00:32")]
+
+    def _read_samples(self, stamps):
+        class Samples(providers.OcrProvider):
+            def read_overlay_time(self, input_ref):
+                return providers.OverlayReading(
+                    presence=providers.PRESENT,
+                    samples=[providers.OverlaySampleReading(f"fr_{i}", t, raw)
+                             for i, (t, raw) in enumerate(stamps)],
+                )
+
+        return api.read_overlay_time(request_for("clip_h001"), provider=Samples())[1]
+
+    def test_one_sample_missing_separator_still_validates_the_whole_flow(self):
+        """#536 재현 — 7개 중 하나만 공백이 빠져도 형식 · 단조 · 재생 시간 검증을 모두 거친다."""
+        overlay = self._read_samples(self.SEVEN)
+        self.assertEqual(overlay.observation.status, "OK")
+        self.assertIs(overlay.validation.format_ok, True)
+        self.assertIs(overlay.validation.monotonic_ok, True)
+        self.assertIs(overlay.validation.duration_match_ok, True)
+        self.assertEqual(overlay.samples[4].raw_text, "2026-11-0214:00:29", "원문은 덮어쓰지 않는다")
+
+    def test_other_unreadable_sample_still_makes_the_whole_overlay_unknown(self):
+        """공백 생략만 받아 준다 — 다른 이유로 못 읽은 샘플이 하나라도 있으면 지금처럼 전체를 보류한다."""
+        stamps = list(self.SEVEN)
+        stamps[2] = (6.4, "2026-11-02 14:0O:26")  # OCR이 0을 O로 읽었다
+        overlay = self._read_samples(stamps)
+        self.assertEqual(overlay.observation.status, "UNKNOWN")
+        self.assertEqual(overlay.observation.reason.code, "readout.overlay.ocr_failed")
+        self.assertIs(overlay.validation.format_ok, False)
+        self.assertIsNone(overlay.validation.monotonic_ok)
+        self.assertIsNotNone(overlay.samples[4].parsed_at, "공백 빠진 샘플은 읽혔다")
+        self.assertIsNone(overlay.samples[2].parsed_at)
 
     def test_validation_failure_does_not_fail_the_run(self):
         """`OVERLAY_VALIDATION`은 run 실패가 아니다 — 시간이 역행해도 outcome은 내려가지 않는다."""
