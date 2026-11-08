@@ -143,14 +143,29 @@ describe('신고용 영상 다운로드', () => {
     expect(button(r).getAttribute('aria-disabled')).toBe('false')
   })
 
-  it('서버가 못 준다고 하면 실패 안내로 바뀌고 버튼이 다시 막힌다. 다른 주소(다른 후보)면 다시 열린다', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
+  it('받지 못하면 실패 안내를 보이고 버튼은 열어 둔다. 다시 누르면 안내를 지우고 다시 받는다(#563 리뷰)', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503 })
+      .mockRejectedValueOnce(new TypeError('network'))
+      .mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['mp4']) })
+    vi.stubGlobal('fetch', fetchMock)
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    URL.revokeObjectURL = vi.fn()
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
     const r = show('/cases/c1/assets/ref1')
+    const failed = '신고용 영상을 받지 못했어요. 다시 눌러 받아 주세요.'
     fireEvent.click(button(r))
-    await r.findByText('신고용 영상을 받지 못했어요')
-    expect(button(r).getAttribute('aria-disabled')).toBe('true')
-    r.rerender(<ResultScreen view={HAPPY} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} videoHref="/cases/c1/assets/ref2" />)
+    await r.findByText(failed)
     expect(button(r).getAttribute('aria-disabled')).toBe('false')
+    // 연결이 끊긴 실패도 같다
+    fireEvent.click(button(r))
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    await r.findByText(failed)
+    fireEvent.click(button(r))
+    await vi.waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalled(), { timeout: 3000 })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(r.queryByText(failed)).toBeNull()
   })
 })
 
@@ -168,7 +183,7 @@ describe('번호판 이미지 다운로드', () => {
     expect(query(show())).toBeNull()
   })
 
-  it('주소가 있으면 누를 때 png로 받고, 실패하면 막고 이유를 말한다. 영상 버튼은 그대로다', async () => {
+  it('주소가 있으면 누를 때 png로 받고, 실패하면 이유를 말하고 다시 받을 수 있게 둔다. 영상 버튼은 그대로다', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['png']) }).mockResolvedValueOnce({ ok: false })
     vi.stubGlobal('fetch', fetchMock)
     URL.createObjectURL = vi.fn(() => 'blob:x')
@@ -185,8 +200,8 @@ describe('번호판 이미지 다운로드', () => {
     expect(fetchMock).toHaveBeenCalledWith('/cases/c1/assets/p1')
     expect(names).toEqual([expect.stringMatching(/^daesingo_plate_\d{8}_\d{6}\.png$/)])
     fireEvent.click(query(r)!)
-    await r.findByText('번호판 이미지를 받지 못했어요')
-    expect(query(r)!.getAttribute('aria-disabled')).toBe('true')
+    await r.findByText('번호판 이미지를 받지 못했어요. 다시 눌러 받아 주세요.')
+    expect(query(r)!.getAttribute('aria-disabled')).toBe('false')
     expect(r.getByRole('button', { name: '신고용 영상 다운로드' }).getAttribute('aria-disabled')).toBe('false')
   })
 })
@@ -208,7 +223,7 @@ describe('번호판 장면 다운로드 (#600)', () => {
     expect(query(show(HAPPY, true))).toBeNull()
   })
 
-  it('번호판 확인 화면과 같은 frame 주소를 png로 받고, 실패하면 막고 이유를 말한다. 번호판 이미지 버튼과 따로다', async () => {
+  it('번호판 확인 화면과 같은 frame 주소를 png로 받고, 실패하면 이유를 말하고 다시 받을 수 있게 둔다. 번호판 이미지 버튼과 따로다', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['png']) }).mockResolvedValueOnce({ ok: false })
     vi.stubGlobal('fetch', fetchMock)
     URL.createObjectURL = vi.fn(() => 'blob:x')
@@ -224,8 +239,8 @@ describe('번호판 장면 다운로드 (#600)', () => {
     expect(fetchMock).toHaveBeenCalledWith(`/cases/c1/frames/${HAPPY.evidence!.plate_preview_ref}`)
     expect(names).toEqual([expect.stringMatching(/^daesingo_plate_scene_\d{8}_\d{6}\.png$/)])
     fireEvent.click(query(r)!)
-    await r.findByText('번호판 장면을 받지 못했어요')
-    expect(query(r)!.getAttribute('aria-disabled')).toBe('true')
+    await r.findByText('번호판 장면을 받지 못했어요. 다시 눌러 받아 주세요.')
+    expect(query(r)!.getAttribute('aria-disabled')).toBe('false')
   })
 })
 
