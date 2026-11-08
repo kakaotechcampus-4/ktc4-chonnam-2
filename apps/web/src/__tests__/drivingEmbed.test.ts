@@ -6,21 +6,37 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
-function mount() {
+function mount(sessionKey?: string) {
   const root = document.createElement('div')
   root.innerHTML = '<div class="media"></div>'
   document.body.append(root)
   const failed = vi.fn(),
     ready = vi.fn(),
-    scene = createDrivingScene(root, failed, ready),
+    scene = createDrivingScene(root, failed, ready, sessionKey),
     frame = root.querySelector('iframe')!
-  const api = { connect: vi.fn(), setActive: vi.fn(), dispose: vi.fn() }
+  const api = { connect: vi.fn(), setActive: vi.fn(), dispose: vi.fn(), snapshot: vi.fn(), restore: vi.fn() }
   Object.defineProperty(frame.contentWindow, 'drivingGame', {
     value: api,
     configurable: true,
   })
   return { root, scene, frame, api, failed, ready }
 }
+it('restores the same case after candidate review and starts a new case fresh', () => {
+  const first = mount('case-resume')
+  first.frame.dispatchEvent(new Event('load'))
+  const state = { level: 17, distance: 6800, phase: 'paused' }
+  first.api.snapshot.mockReturnValue(state)
+  first.scene.dispose()
+  expect(first.api.dispose).toHaveBeenCalledOnce()
+  const next = mount('case-resume')
+  next.frame.dispatchEvent(new Event('load'))
+  expect(next.api.restore).toHaveBeenCalledWith(state)
+  next.scene.dispose()
+  const other = mount('case-new')
+  other.frame.dispatchEvent(new Event('load'))
+  expect(other.api.restore).not.toHaveBeenCalled()
+  other.scene.dispose()
+})
 it('keeps the game inactive when the user returns before its document loads', () => {
   const m = mount()
   expect(m.ready).not.toHaveBeenCalled()

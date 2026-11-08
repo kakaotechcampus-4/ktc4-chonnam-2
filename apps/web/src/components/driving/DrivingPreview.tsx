@@ -24,7 +24,7 @@ export function softwareRendering(): boolean {
 }
 
 /** A browser-local waiting activity. It never reads or changes analysis state. */
-export function DrivingPreview({ active, onBack }: { active: boolean; onBack: () => void }) {
+export function DrivingPreview({ active, onBack, sessionKey }: { active: boolean; onBack: () => void; sessionKey?: string }) {
   const root = useRef<HTMLDivElement>(null)
   const back = useRef<HTMLButtonElement>(null)
   const scene = useRef<DrivingScene | null>(null)
@@ -46,6 +46,7 @@ export function DrivingPreview({ active, onBack }: { active: boolean; onBack: ()
         root.current,
         () => { if (!cancelled) setStatus('unavailable') },
         () => { if (!cancelled) setStatus('ready') },
+        sessionKey,
       )
       scene.current.setActive(activeRef.current)
     }).catch(() => {
@@ -56,7 +57,7 @@ export function DrivingPreview({ active, onBack }: { active: boolean; onBack: ()
       scene.current?.dispose()
       scene.current = null
     }
-  }, [])
+  }, [sessionKey])
 
   return (
     <div className="driving-preview" ref={root} data-status={status} hidden={!active}>

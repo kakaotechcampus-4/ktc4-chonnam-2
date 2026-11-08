@@ -1,5 +1,6 @@
 import { it } from 'vitest'
 import assert from 'node:assert/strict'
+import { motion } from '../components/driving/game/motion.mjs'
 import {
   createRun,
   jump,
@@ -8,6 +9,20 @@ import {
   courseBetween,
   speedAt,
 } from '../components/driving/game/rules.mjs'
+it('a held jump rolls once and respects reduced motion', () => {
+  const run = createRun(17)
+  run.phase = 'playing'
+  setJumpHeld(run, true)
+  jump(run)
+  for (let i = 0; i < 96; i++) advance(run, 1 / 120)
+  assert.equal(run.rolls, 1)
+  assert.ok(motion(run).stuntRoll < -0.1)
+  assert.equal(motion(run, true).stuntRoll, 0)
+  for (let i = 0; i < 65; i++) advance(run, 1 / 120)
+  assert.equal(run.rolls, 1)
+  assert.equal(run.rollProgress, 1)
+  assert.ok(Math.abs(motion(run).stuntRoll + Math.PI * 2) < 1e-6)
+})
 it('short, held and double jumps', () => {
   const step = (s, t) => {
     while (t > 1e-8) {

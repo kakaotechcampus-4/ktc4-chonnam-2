@@ -410,6 +410,22 @@ function dispose() {
   audio.dispose()
 }
 window.drivingGame = {
+  snapshot() {
+    const state = structuredClone(run)
+    if (state.phase === 'playing') state.phase = 'paused'
+    state.jumpHeld = false
+    state.boostActive = false
+    state.jumpBufferUntil = -100
+    return state
+  },
+  restore(state) {
+    run = structuredClone(state)
+    previousSeed = run.seed
+    // Restoring progress must not replay old coin, shield, or level sounds.
+    signals = { ...run }
+    last = 0
+    draw()
+  },
   connect(callbacks) {
     onUnavailable = callbacks.onUnavailable
     onFullscreen = callbacks.onFullscreen

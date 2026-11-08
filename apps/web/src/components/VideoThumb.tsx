@@ -35,6 +35,7 @@ export function VideoThumb(props: {
   name: string
   /** 분석 중 선택해서 여는 주행 게임. 미리보기 성공 여부와 무관하다. */
   canDrive?: boolean
+  gameSessionKey?: string
 }): JSX.Element {
   const [shot, setShot] = useState<{ file: File; src: string } | null>(null)
   const [failed, setFailed] = useState<File | null>(null)
@@ -152,7 +153,7 @@ export function VideoThumb(props: {
             )}
           </div>
           {props.canDrive && driving !== 'unopened' && (
-            <DrivingPreview active={gameVisible} onBack={() => setDriving('preview')} />
+            <DrivingPreview active={gameVisible} onBack={() => setDriving('preview')} sessionKey={props.gameSessionKey} />
           )}
         </div>
       </div>

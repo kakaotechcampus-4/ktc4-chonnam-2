@@ -4,4 +4,4 @@ export interface DrivingScene {
   setActive(active: boolean): void
 }
 /** Load the local game document after opt-in; dispose releases its resources. */
-export function createDrivingScene(root: HTMLDivElement, onUnavailable: () => void, onReady?: () => void): DrivingScene
+export function createDrivingScene(root: HTMLDivElement, onUnavailable: () => void, onReady?: () => void, sessionKey?: string): DrivingScene

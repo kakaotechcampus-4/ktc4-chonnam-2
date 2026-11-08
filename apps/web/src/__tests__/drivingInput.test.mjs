@@ -43,6 +43,24 @@ const key = (type, code) =>
   window.dispatchEvent(new KeyboardEvent(type, { code }))
 const state = () => view.draw.mock.calls.at(-1)[0]
 
+it('restores distance, level, course and pickups in a paused run', () => {
+  document.getElementById('start').click()
+  Object.assign(state(), { level: 17, distance: 6800, coins: 24, shields: 2 })
+  state().collected.add('coin-before-review')
+  key('keydown', 'ArrowUp')
+  const saved = window.drivingGame.snapshot()
+  expect(saved.phase).toBe('paused')
+  expect(saved.jumpHeld).toBe(false)
+  window.drivingGame.restore(saved)
+  expect(state()).toMatchObject({ level: 17, distance: 6800, coins: 24, shields: 2 })
+  expect(state().collected.has('coin-before-review')).toBe(true)
+  expect(document.getElementById('level-number').textContent).toBe('17')
+  document.getElementById('start').click()
+  expect(state().phase).toBe('playing')
+  expect(state().distance).toBe(6800)
+  expect(state().seed).toBe(saved.seed)
+})
+
 it('ignores jump and steering while the host hides the game', () => {
   window.drivingGame.setActive(false)
   key('keydown', 'ArrowUp')

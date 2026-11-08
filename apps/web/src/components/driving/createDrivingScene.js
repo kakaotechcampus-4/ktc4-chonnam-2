@@ -1,5 +1,11 @@
+// Keep only the latest case's run in memory while releasing its graphics on navigation.
+let savedSession = null
+
 // Keep game styles and input inside its document; the host owns visibility and cleanup.
-export function createDrivingScene(root, onUnavailable, onReady = () => {}) {
+export function createDrivingScene(root, onUnavailable, onReady = () => {}, sessionKey) {
+  if (sessionKey && savedSession?.key !== sessionKey)
+    savedSession = { key: sessionKey, state: null }
+  const session = sessionKey ? savedSession : null
   const media = root.querySelector('.media'),
     frame = document.createElement('iframe'),
     events = new AbortController()
@@ -34,6 +40,7 @@ export function createDrivingScene(root, onUnavailable, onReady = () => {}) {
           else await media.requestFullscreen()
         },
       })
+      if (session?.state) game.restore(session.state)
       sync()
       onReady()
     },
@@ -61,6 +68,7 @@ export function createDrivingScene(root, onUnavailable, onReady = () => {}) {
       disposed = true
       events.abort()
       observer?.disconnect()
+      if (session && game) session.state = game.snapshot()
       game?.dispose()
       game = null
       if (
