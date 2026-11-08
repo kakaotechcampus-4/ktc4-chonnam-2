@@ -229,9 +229,10 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     if kind == "COARSE_SEARCH" and case.stage == "CANDIDATE_REVIEW":
         case.regress_to_searching()
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
-    if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}:
+    if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT", "PLATE_READ"}:
         # A new explicit intent needs a new revision. Replaying its old payload
-        # must be stale, while a later failed-export retry has a different admission identity.
+        # must be stale, while a later failed local-job retry has a different
+        # admission identity. Preserve the existing same-clip/input snapshot.
         case.bump_revision()
     jobs.issue_same_input(case, prior)
 

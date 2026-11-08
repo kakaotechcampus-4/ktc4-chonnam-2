@@ -10,7 +10,7 @@ from daesingo.common.usage.schema import usage_inflight
 
 from . import schema as t
 from .policy import PublicDenied
-from .work import local_only, LOCAL_RESULT_KINDS
+from .work import local_only, local_ocr_usage, LOCAL_RESULT_KINDS, LOCAL_OCR_KINDS, LOCAL_OCR_OPERATIONS
 
 
 def now(conn):
@@ -144,7 +144,7 @@ class PublicStore:
             t.local_admissions.c.active.is_(True))).scalars().all()
         inherited = conn.scalar(sa.select(sa.func.count()).select_from(t.admissions).where(
             t.admissions.c.case_id == context.case_id, t.admissions.c.active.is_(True)))
-        if not inherited and not any(context.job_id in group for group in ids):
+        if not any(context.job_id in group for group in ids) and (context.kind in LOCAL_OCR_KINDS or not inherited):
             raise PublicDenied("INPUT")
         return row
 
@@ -309,24 +309,46 @@ class PublicStore:
         """Guard an attempt; return whether it belongs to a public Case."""
         # Always detect tagged Cases, even if a new Worker was misconfigured internal.
         self.locked(conn)
-        row = self._bound_case(conn, snapshot["case_id"])
+        case_key(snapshot["case_id"])
+        tagged = conn.execute(sa.select(t.cases.c.case_id).where(
+            t.cases.c.case_id == snapshot["case_id"]).with_for_update()).first()
+        if tagged is None:
+            if self.require_public:
+                raise PublicDenied("NOT_FOUND")
+            return False
+        execution = conn.execute(sa.select(job_execution.c.case_id, job_execution.c.status, job_execution.c.kind,
+            job_execution.c.job_id,
+            job_execution.c.lease_owner, job_execution.c.lease_expires_at, job_execution.c.cancel_requested_at)
+            .where(job_execution.c.execution_id == snapshot.get("execution_ref")).with_for_update()).mappings().one_or_none()
+        local = execution is not None and execution["kind"] in LOCAL_OCR_KINDS
+        row = self._bound_case(conn, snapshot["case_id"], local=local)
         if row is None:
             return False
-        execution = conn.execute(sa.select(job_execution.c.case_id, job_execution.c.status,
-            job_execution.c.lease_owner, job_execution.c.lease_expires_at, job_execution.c.cancel_requested_at)
-            .where(job_execution.c.execution_id == snapshot["execution_ref"]).with_for_update()).mappings().one_or_none()
         if (execution is None or execution["case_id"] != snapshot["case_id"] or execution["status"] != "RUNNING"
                 or self.worker_id is None or execution["lease_owner"] != self.worker_id
                 or execution["lease_expires_at"] is None or execution["lease_expires_at"] <= now(conn)):
             raise PublicDenied("CLAIM_LOST")
         if execution["cancel_requested_at"] is not None:
             raise PublicDenied("CANCELLED")
-        if not conn.execute(sa.select(sa.func.count()).select_from(t.admissions).where(
+        if local or snapshot.get("operation") in LOCAL_OCR_OPERATIONS.values() or snapshot.get("provider_label") == "ocr-local":
+            if not local_ocr_usage(execution["kind"], snapshot):
+                raise PublicDenied("UNSUPPORTED")
+            groups = conn.execute(sa.select(t.local_admissions.c.job_ids).where(
+                t.local_admissions.c.case_id == snapshot["case_id"], t.local_admissions.c.active.is_(True))).scalars()
+            if not any(execution["job_id"] in group for group in groups):
+                raise PublicDenied("INPUT")
+        elif not conn.execute(sa.select(sa.func.count()).select_from(t.admissions).where(
                 t.admissions.c.case_id == snapshot["case_id"], t.admissions.c.active.is_(True))).scalar_one():
             raise PublicDenied("INPUT")
         values = {k: snapshot[k] for k in ("usage_id", "execution_ref", "case_id", "operation", "provider_label")}
         existing = conn.execute(sa.select(t.reservations).where(t.reservations.c.usage_id == snapshot["usage_id"])
                                 .with_for_update()).mappings().one_or_none()
+        if local:
+            if existing is not None and any(existing[k] != v for k, v in values.items()):
+                raise PublicDenied("CONFLICT")
+            # Keep local OCR observations and all prior liabilities. No monetary
+            # reservation is invented, and external-call bounds remain below.
+            return True
         if self.policy.funding_mode == "elice_supported":
             self.policy.require_supported(snapshot["operation"], snapshot["provider_label"])
             if existing is not None and any(existing[k] != v for k, v in values.items()):

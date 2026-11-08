@@ -34,6 +34,7 @@ from daesingo.common.public_runtime.policy import load_policy, PublicDenied
 from daesingo.common.public_runtime.repository import PublicStore
 from daesingo.common.public_runtime import schema as public_schema
 from daesingo.common.public_runtime.temporary import case_temp_scope, public_temp_root
+from daesingo.common.public_runtime.work import local_ocr_usage
 from daesingo.worker.public_reflection import PublicResultReflector, PublicExhaustionReceiver
 from daesingo.worker.bootstrap import require_supported_elice
 
@@ -72,7 +73,8 @@ def compose_worker(
             context.checkpoint()
             try:
                 scoped = public.reserve(conn, snapshot)
-                if scoped and public.policy is not None and public.policy.funding_mode == "elice_supported":
+                if (scoped and public.policy is not None and public.policy.funding_mode == "elice_supported"
+                        and not local_ocr_usage(context.kind, snapshot)):
                     require_supported_elice(startup.modules, snapshot)
             except PublicDenied as error:
                 if error.code == "CANCELLED":

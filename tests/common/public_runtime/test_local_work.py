@@ -78,7 +78,7 @@ def test_batch_export_counts_two_concurrent_jobs_not_one_receipt(public, tmp_pat
     assert denied.value.code == "LOCAL_CONCURRENT"
 
 
-@pytest.mark.parametrize("kind", ["FINE_VERIFY", "INCIDENT_CLIP_BUILD", "PLATE_READ", "FUTURE_JOB"])
+@pytest.mark.parametrize("kind", ["FINE_VERIFY", "INCIDENT_CLIP_BUILD", "REMOTE_OCR", "FUTURE_JOB"])
 def test_local_receipt_cannot_authorize_other_handlers(public, tmp_path, kind):
     configured(public, tmp_path)
     with pytest.raises(PublicDenied):
