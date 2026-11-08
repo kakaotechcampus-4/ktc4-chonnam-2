@@ -44,6 +44,10 @@ async function expectNamedControls(page: Page) {
 }
 
 test('키보드로 업로드 → 진행 → 결과 → 안전신문고 이동까지 간다', async ({ page }) => {
+  // 외부 사이트의 응답 지연과 키보드 동작을 분리한다. 실제 window.open은 그대로 실행한다.
+  await page.context().route('https://www.safetyreport.go.kr/**', route => route.fulfill({
+    status: 200, contentType: 'text/html', body: '<!doctype html><title>Offline destination</title>',
+  }))
   await page.goto('/?demo')
   await expectNamedControls(page)
 
@@ -83,10 +87,15 @@ test('키보드로 업로드 → 진행 → 결과 → 안전신문고 이동까
   await expect(ready).toBeVisible()
 
   // 안전신문고 이동은 새 창을 연다
+  await expect(ready).toBeEnabled()
   const popup = page.waitForEvent('popup')
   await tabTo(page, ready)
+  await expect(ready).toBeFocused()
   await page.keyboard.press('Enter')
-  await (await popup).close()
+  const destination = await popup
+  await expect(destination).toHaveURL('https://www.safetyreport.go.kr/')
+  expect(await destination.evaluate(() => window.opener)).toBeNull()
+  await destination.close()
 })
 
 test('파일을 고르기 전 「영상에서 찾아보기」는 못 누르는 이유를 보조기기에 알린다', async ({ page }) => {
