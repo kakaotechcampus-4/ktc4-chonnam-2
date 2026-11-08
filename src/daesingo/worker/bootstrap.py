@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 from pydantic import SecretStr
 
 from daesingo.common.bootstrap import ModuleFactory, Startup, bootstrap_service
-from daesingo.common.public_runtime.policy import PublicDenied
+from daesingo.common.public_runtime.policy import PublicDenied, supported_policy_operation
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.intent import intent_config_from_dotenv
 from daesingo.recording.factory import RECORDING_KEYS, RecordingSettings
@@ -24,7 +24,7 @@ class SearchSettings:
 
 def require_supported_elice(modules: Mapping[str, object], snapshot) -> None:
     """A legacy `elice:` label alone does not prove the actual provider endpoint."""
-    operation = snapshot["operation"]
+    operation = supported_policy_operation(snapshot["operation"])
     if operation == "HINT_EXTRACT":
         config = modules.get("intent")
     elif operation in ("SEARCH_COARSE", "SEARCH_FINE"):
