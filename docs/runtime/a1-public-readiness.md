@@ -1,6 +1,105 @@
-# A-1 server integration and release gate
+# A-1 서버 연결과 공개 운영 검수
 
-## Elice 지원 모드 — 2026-11-08 정책 변경 (운영 미적용)
+## 제한적 외부 공개 운영 인계 — 2026-11-09 KST
+
+**현재 상태: 운영자(사용자)의 공개 승인에 따라 공식 샘플 전용 A-1을 외부에 개방했다.**
+공개 전환은 07:42:12 KST, 후속 서버 조회는 07:46:34 KST다.
+이 절이 아래 구현·NO-GO·운영 미적용 snapshot보다 최신이며, 아래 기록은 당시 이력으로 보존한다.
+추가 분석·Case 생성·provider 호출 없이 진입 화면과 GET 접근만 확인했다.
+
+| 항목 | 실제 확인값 |
+| --- | --- |
+| 공개 진입 | **https://daesingo-ktc4.duckdns.org/?sample** — 기본 `/`의 기존 흐름과 구분 |
+| 최종 source / schema revision | `91e41a15de0fe1c1879b76026ee454cb809be08f` |
+| image digest | `sha256:24664217733dbd6da1781bfe193ee1ae102288510ca9d7ae14c7e68d0fac114c` |
+| config / heads | `aws-a1-local-ocr-v4` / `case_0001`, `recording_0002`, `runtime_0008` |
+| 공식 묶음 | `synthetic-v3-1min-full10`：10개, 합계 600,000ms, 244,829,133B. 임의 업로드 거부 유지 |
+| manifest SHA256 | `e7f54761ffad29333155085c15161f37e5aff826cce7a1c66afe030287a0a9f5` |
+| 분석 admission 한도 | `session_daily=1`, `ip_daily=10`, `case_repeats=2`, `session_concurrent=1`, `global_concurrent=1` |
+| 무료 작업 별도 한도 | `local_work.case_jobs=12`, `ip_daily_jobs=40`, `global_concurrent=2` |
+| TTL | session / Case 각 604,800초(7일), source 86,400초(24시간). 세션 권한·만료 검사 유지 |
+| 실행 / 비용 보호 | Coarse 600초 유지. `elice_supported` 명시 모드. 체험별·일·누적 **원화 상한은 강제하지 않는다**. 무제한 지원·추가 청구 없음의 보장이 아니다. 기존 비용·예약·사용량 원장 보존 |
+| gate | `accepting=true`, `jobs_stopped=false`, policy 일치. 일반 분석 수용 중단과 모든 신규 job 긴급 중단 기능 유지 |
+| 서비스 / 자원 | API·MySQL healthy, Worker running, 재시작 0. RAM 여유 6,198,882,304B / reserve 961,544,192B. disk 여유 13,630,697,472B / reserve 10,737,418,240B |
+| 작업 / 배포 상태 | 후속 조회 시 blocking jobs=0, 미정산·미관측 usage=0, dirty/operation.lock 없음 |
+| 복구 | 같은 SHA의 guarded current 재기동 실제 PASS. 현재 schema rollback 허용은 **이 SHA 하나**. 구버전으로 세션 보호를 우회하지 않는다. 전체 DB/media backup restore는 **NOT_RUN** |
+
+SSM 공개 전환 `84eb2fce-fdd3-4d12-9468-826bfa567d3a`와 후속 읽기 전용 조회
+`cc476cae-932e-42d7-9ed5-28824ca2f197`는 모두 Success / exit 0이다.
+Caddy의 운영자 IP 제한 두 줄만 제거하고 128MiB body 제한·no-store·loopback API 경로를 보존했다.
+현재 Caddyfile SHA256은 `01dea60f0135ea97c483971bdb7a8273b4b8f88571a82debbac5c5920ca2ae39`다.
+이전 allowlist 밖의 TLS loopback 검사에서 진입·샘플 목록·version·readiness가 모두 200이었다.
+새 익명 Chrome context에서도 정상 TLS로 진입 200, 공식 묶음 표시, 선택 후 준비 버튼 활성화,
+version 정확한 SHA 및 readiness 200을 확인했다. 준비 버튼은 누르지 않았고 페이지 요청은 GET뿐이다.
+브라우저 인증자료는 저장하지 않았다. 기존 검수 브라우저는 이 확인 전에 연결이 종료된 상태여서
+인증을 복사하지 않은 새 익명 context로 공개 진입만 확인했다.
+
+### 알려진 문제: 삭제 최초 응답 유실
+
+실제 검수에서 첫 삭제 요청 한 번은 Web의 15초 AbortSignal 이후 `web.network_error`로 표시됐다.
+이는 삭제 실패 확정이 아니다. 서버 읽기 전용 대조에서 `DELETED`, 전용 원본·파생·분석·청크·임시 파일 삭제,
+공식 원본 10개 및 비용·예약·사용량 원장 보존을 확인했다. 이어 같은 소유 세션에서 명시적으로 한 번
+재확인한 멱등 DELETE는 **200 / DELETED / files=0**, UI는 **“삭제했어요.”**였다.
+최초 1회 + 명시적 재확인 1회이며 중복 클릭이나 자동 반복이 아니다.
+15초를 넘긴 정확한 서버 세부 구간은 **원인 미확정**이다. RAM 부족·Docker 장애·lock deadlock으로 단정하지 않는다.
+
+운영 재확인 순서:
+
+1. 같은 브라우저·같은 세션을 유지한다. 쿠키 삭제·새 체험 생성·분석 재실행으로 확인하지 않는다.
+2. 202 / DELETING이면 기존 **“삭제 다시 확인”**을 사용한다. 첫 응답 유실이면 운영자가 상태를 먼저 확인하고,
+   기존 **“체험 데이터 삭제” → 확인**으로 한 번만 멱등 재확인한다. 200 / DELETED와 완료 안내로 판정한다.
+   404만으로 물리 삭제·원장 보존까지 완료됐다고 판단하지 않는다.
+3. timeout 반복·DELETING 지속·소유 상태 확인 불가 시 자동/맹목 반복을 중단한다. Runtime/Case 담당이 읽기 전용으로
+   `public_case.state`, 저장된 삭제 계획·lease·활성 job·usage, 전용 파일/청크/임시 파일과 공식 원본·원장 보존을 대조한다.
+   이번 시험의 고정 Case용 audit를 다른 Case에 그대로 적용하거나 대상 보호 assertion을 풀지 않는다.
+4. 원본·원장·백업·증거를 보존한다. 임의 SQL/파일 삭제, lock 제거, timeout·한도 완화로 완료 처리하지 않는다.
+
+기존 [ownership](../management/ownership.md) 기준의 인계 창구다. 새 담당 수락이나 팀 통지를 수행했다는 뜻은 아니다.
+
+| 책임 경계 | 인계 담당 |
+| --- | --- |
+| 운영 중단·재개 판정 / common-runtime | 김준영(PM) |
+| Case 삭제 상태·멱등 재확인·long-running 계약 | 유소연, Web 지원 신유민 |
+| Web 15초 응답 유실 안내·완료 재확인 UX | 신유민 |
+| 전용 저장물·청크·임시 파일 잔여 및 공식 원본 보존 | 정철원 |
+
+### 중단 조건과 복구 경계
+
+세션 간 Case/미디어/Range/다운로드 노출, 임의 업로드·비공식 입력 수용, policy/release/key 불일치,
+원장 중복·정산 훼손, 공유/공식 원본 삭제 의심, 반복되는 삭제 결과 확인 불가가 발생하면 신규 job을 중단하고 증거를 보존한다.
+API/Worker 비정상, dirty/lock 불명, 위 RAM/disk reserve 미달도 신규 수용 중단 조건이다.
+한 번의 알려진 응답 유실 뒤 실제 DELETED·보존 증거·멱등 완료 응답이 확인된 경우와 구분한다.
+진행 중인 팀원 작업을 임의 취소하거나 이미 시작된 provider 호출이 취소됐다고 가정하지 않는다.
+
+기존 운영자 control을 사용한다(아래는 비상 시 명령이며 이번 공개 확인에서는 실행하지 않았다).
+
+```sh
+sudo docker compose --project-name daesingo-runtime -f /opt/daesingo/release-compose.json exec -T api \
+  python -m daesingo.api.public_control stop --env-file /run/secrets/runtime.env
+sudo docker compose --project-name daesingo-runtime -f /opt/daesingo/release-compose.json exec -T api \
+  python -m daesingo.api.public_control status --env-file /run/secrets/runtime.env
+# 세션 보호 노출 또는 stop 성공을 확인할 수 없을 때 ingress도 차단한다.
+sudo systemctl stop caddy
+```
+
+`stop` 결과는 `accepting=false`, `jobs_stopped=true`로 확인한다. 기존 결과 조회/다운로드는 세션·만료 검사를 유지한다.
+재개는 원인 해소·동일 identity·서비스·정책·보호 검사를 확인한 뒤 기존 `open` 절차로 판정하며 자동 재개하지 않는다.
+Caddy의 개방 전 백업과 전환 영수증은 `/opt/daesingo/a1-public-go-20261109/`에 보호 보관했다.
+백업 권한을 그대로 복사하는 `cp -p`나 과거 Caddyfile 무조건 덮어쓰기를 복구 명령으로 사용하지 않는다.
+검증한 동일 SHA guarded current 경로를 재사용하고 구버전 rollback을 새로 승인하지 않는다.
+
+남은 제한: 진입 화면에 과거 **“보관·삭제 기간과 반복 횟수 미확정 / 공개 준비 중”** 문구가 남아 있다(Web 후속).
+실제 승인·적용값은 위 표이며 이번 공개에서 Web bundle을 바꾸지 않았다.
+candidate video preview는 비활성 상태다. 실제 전체 DB/media 복원, overlay OCR 실제 재시도,
+26분/대형 실패 재현·전체 capacity·메모리 peak 검증은 이번 공개 확인에서 **NOT_RUN**이다.
+세션 격리·임의 업로드 거부·긴급 중단·실제 다운로드/재생·삭제 검수는 직전 동일 SHA의 증거를 재사용했다.
+#452의 범위 초과·미지원 입력 실패 안내는 코드와 CI에서 확인했다. 배포본의 실제 API 응답·화면 안내·재시도 버튼 검수는 `NOT_RUN`이다. [#452 종료 기록](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/452)
+
+로컬 상세 증거: `.codex-scratch/a1-public-go-20261109/PUBLIC_GO_RESULT.json`,
+`browser-entry-proof.json`, `open2-result.private.json`, `post-open-result.private.json`.
+공개 전환 당시에는 이 인계 문서를 로컬에만 준비했다. 이후 문서 전용 커밋으로 제출하며, 실행 코드나 배포 이미지를 변경하지 않는다.
+
+## Elice 지원 모드 — 2026-11-08 정책 변경 (당시 운영 미적용 이력)
 
 이 절은 아래 과거 snapshot과 후속 문서의 원화 예약 필수 문구보다 우선한다.
 과거 문구는 기존 `krw` 모드의 계약으로 보존한다.
