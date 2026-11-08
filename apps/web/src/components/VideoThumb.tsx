@@ -35,6 +35,7 @@ export function VideoThumb(props: {
   name: string
   /** 분석 중 선택해서 여는 주행 게임. 미리보기 성공 여부와 무관하다. */
   canDrive?: boolean
+  gameSessionKey?: string
   /**
    * 브라우저에 원본이 없거나(결과 화면에서 다시 준비 · 창을 닫았다 옴) 그리지 못할 때 대신 보일
    * 서버의 장면 이미지(고른 후보의 thumb_ref). 이것도 못 불러오면 원래 안내를 둔다.
@@ -161,7 +162,7 @@ export function VideoThumb(props: {
             )}
           </div>
           {props.canDrive && driving !== 'unopened' && (
-            <DrivingPreview active={gameVisible} onBack={() => setDriving('preview')} />
+            <DrivingPreview active={gameVisible} onBack={() => setDriving('preview')} sessionKey={props.gameSessionKey} />
           )}
         </div>
       </div>
