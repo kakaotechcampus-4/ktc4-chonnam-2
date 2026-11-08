@@ -24,7 +24,8 @@ def compose_search_registry(*, engine, startup, service_factory=None, failures=N
     recording = modules.get("recording")
     if service_factory is None and recording is not None and recording.profile_ref is not None:
         cleanup = configured_cleanup(startup.config, startup.logger)
-        media = MediaRoot(next(s for s in cleanup.scanners if s.kind == "temp"))
+        media = MediaRoot(next(s for s in cleanup.scanners if s.kind == "temp"),
+                          public_root=startup.config.media_root / "public-temp")
         service_factory = ProductionMediaFactory(transaction=transaction,
             storage_root=startup.config.media_root, temp_root=startup.config.temp_root,
             settings=recording, search_settings=modules["search"], media=media)

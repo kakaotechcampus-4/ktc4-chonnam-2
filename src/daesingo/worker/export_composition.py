@@ -41,7 +41,8 @@ def compose_export_registry(*, engine, startup, service_factory=None):
         store_factory=lambda conn: stored_case_store(conn, storage_root=startup.config.media_root))
     if service_factory is None and isinstance(getattr(startup, "config", None), RuntimeConfig):
         cleanup = configured_cleanup(startup.config, startup.logger)
-        media = MediaRoot(next(s for s in cleanup.scanners if s.kind == "temp"))
+        media = MediaRoot(next(s for s in cleanup.scanners if s.kind == "temp"),
+                          public_root=startup.config.media_root / "public-temp")
         service_factory = ExportRecordingFactory(transaction=transaction, storage_root=startup.config.media_root,
             temp_root=startup.config.temp_root, media=media)
     return export_registry(load=inputs, service_factory=service_factory)
