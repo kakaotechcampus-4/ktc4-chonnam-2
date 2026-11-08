@@ -163,7 +163,8 @@ it('진행 화면 대표 영상 자리는 원본이 없으면 고른 후보 썸�
   const selected = { ...BASE.candidates[0], selected: true }
   const evidence = { ...BASE.evidence!, preview_ref: 'fr_evidence' }
   const shown = async (thumb: string | null) => {
-    const { api } = setup({ get: view({ case_rev: 5, stage: 'EVIDENCE_REVIEW', running_jobs: JOBS, candidates: [{ ...selected, thumb_ref: thumb }], evidence }) })
+    // 다시 준비하는 동안(CANDIDATE_REVIEW + job)이 진행 화면이다. EVIDENCE_REVIEW는 job이 돌아도 결과 화면이다(#621)
+    const { api } = setup({ get: view({ case_rev: 5, stage: 'CANDIDATE_REVIEW', running_jobs: JOBS, candidates: [{ ...selected, thumb_ref: thumb }], evidence }) })
     ;(api as { frameUrl: (c: string, r: string) => string }).frameUrl = (_c, r) => `/frames/${r}`
     const r = render(<ApiFlow api={api} caseId="c1" />)
     await waitFor(() => expect(r.container.querySelector('.flow-thumb img')).not.toBeNull())
