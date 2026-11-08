@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { OfficialSampleEntry } from '../screens/OfficialSampleEntry'
 import { createPublicSamplesApi } from '../api/publicSamples'
 import { SNAPSHOTS } from '../contracts/fixtures'
+import { errorMessage } from '../contracts/labels'
 
 vi.mock('../screens/ApiFlow', () => ({ ApiFlow: (p: { caseId?: string | null }) => <p>기존 결과 흐름 {p.caseId}</p> }))
 afterEach(cleanup)
@@ -88,4 +89,36 @@ it('준비 중 중복 클릭은 하나의 Case만 만들고 삭제202는 완료�
   fireEvent.click(screen.getByRole('button', { name: '삭제 다시 확인' }))
   await screen.findByText('삭제했어요.')
   await waitFor(() => expect(screen.queryByRole('button', { name: '분석 시작' })).toBeNull())
+})
+
+it.each([
+  ['public.busy', 409, '이미 처리 중인 요청이 있어요. 진행 상태를 확인해 주세요.'],
+  ['public.origin', 403, '이 주소에서는 요청을 보낼 수 없어요. 안내받은 체험 주소에서 다시 열어 주세요.'],
+  ['public.stopped', 503, '지금은 새 분석을 받지 않고 있어요. 잠시 뒤 다시 확인해 주세요.'],
+  ['public.jobs_stopped', 503, '서비스 점검으로 새 작업을 잠시 멈췄어요. 기존 결과를 확인해 주세요.'],
+  ['public.unconfigured', 503, '지금은 체험을 열지 않았어요. 운영 준비가 끝난 뒤 다시 확인해 주세요.'],
+  ['public.limit', 429, '체험 이용 한도에 도달했어요. 요청을 자동으로 다시 보내지 않아요.'],
+] as const)('%s를 샘플과 결과 화면에서 구분하며 자동 재요청하지 않는다', async (code, status, text) => {
+  const fetcher = vi.fn(async () => new Response(JSON.stringify({ error: { code, message_key: code }, case_view: null }), { status }))
+  render(<OfficialSampleEntry client={createPublicSamplesApi({ fetch: fetcher })} />)
+  expect((await screen.findByRole('alert')).textContent).toContain(text)
+  expect(errorMessage(code)).toBe(text) // ApiFlow의 결과/정정 오류도 같은 계약을 사용한다.
+  expect(fetcher).toHaveBeenCalledTimes(1)
+})
+
+it('샘플 준비 전에 10분 한도와 보관 정책 미확정을 알리고 아직 요청하지 않는다', async () => {
+  const { seen } = setup()
+  await screen.findByRole('radio', { name: /시험 샘플/ })
+  expect(screen.getByText(/한 번에 합계 10분까지/)).toBeTruthy()
+  expect(screen.getByText(/보관·삭제 기간과 반복 횟수는 아직 확정되지 않았어요/)).toBeTruthy()
+  expect(seen.map(x => x.url)).toEqual(['/public/samples'])
+})
+
+it('접근 거부 상태에서 사용자에게 Case라는 구현 용어를 표시하지 않는다', async () => {
+  const client = createPublicSamplesApi({ fetch: vi.fn(async input => new Response(JSON.stringify(
+    String(input) === '/public/samples' ? { samples: [] } : { error: { code: 'http.not_found', message_key: 'http.not_found' }, case_view: null }),
+    { status: String(input) === '/public/samples' ? 200 : 404 })) })
+  const result = render(<OfficialSampleEntry client={client} caseId="foreign" />)
+  await screen.findByRole('alert')
+  expect(result.container.textContent).not.toContain('Case')
 })

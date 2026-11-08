@@ -19,8 +19,10 @@ afterEach(cleanup)
 beforeEach(() => localStorage.clear())
 
 it.each([
-  ['', 'sample - (기억)'],
-  ['?case=c1', 'sample c1'],
+  ['', 'api - (기억)'],
+  ['?case=c1', 'api c1'],
+  ['?sample', 'sample - (기억)'],
+  ['?sample&case=c1', 'sample c1'],
   ['?api', 'api - (기억)'],
   ['?api&case=c1', 'api c1'],
   ['?demo', 'demo false'],
@@ -34,8 +36,8 @@ it.each([
 it('주소에 case가 없으면 기억한 case로 이어가고, 주소의 case가 기억보다 앞선다', () => {
   localStorage.setItem('daesingo.lastCase', 'c9')
   history.replaceState(null, '', '/')
-  expect(render(<App />).container.textContent).toBe('sample c9 (기억)')
+  expect(render(<App />).container.textContent).toBe('api c9 (기억)')
   cleanup()
   history.replaceState(null, '', '/?case=c1')
-  expect(render(<App />).container.textContent).toBe('sample c1')
+  expect(render(<App />).container.textContent).toBe('api c1')
 })

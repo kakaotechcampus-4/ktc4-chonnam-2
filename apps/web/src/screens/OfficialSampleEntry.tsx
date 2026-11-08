@@ -3,13 +3,11 @@ import { createPublicSamplesApi, type OfficialSample, type PublicSamplesApi } fr
 import type { CaseView } from '../contracts/caseView'
 import { forgetCase, rememberCase } from '../state/lastCase'
 import { ApiFlow } from './ApiFlow'
+import { errorMessage } from '../contracts/labels'
 
 function message(code: string) {
   if (code === 'http.not_found') return '이 브라우저에서 접근할 수 있는 체험을 찾지 못했어요.'
-  if (code === 'public.budget' || code === 'public.limit') return '체험 이용 한도에 도달했어요. 새 분석을 자동으로 요청하지 않아요.'
-  if (code === 'public.concurrent') return '진행 중인 체험이 있어요. 잠시 뒤 다시 확인해 주세요.'
-  if (code === 'public.input') return '선택한 샘플을 준비할 수 없어요. 샘플을 다시 확인해 주세요.'
-  return '현재 요청을 완료할 수 없어요. 잠시 뒤 다시 확인해 주세요.'
+  return errorMessage(code)
 }
 
 /** A-1 intake only; existing CaseView-driven results/downloads remain in ApiFlow. */
@@ -114,13 +112,15 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
         <p>서버에 등록된 영상 {view.manifest_summary.ok_file_count}개를 준비했어요.</p>
         <label>찾을 장면 설명<textarea value={description} onChange={e => setDescription(e.target.value)} disabled={busy} /></label>
         <button type="button" className="rs-btn pri" disabled={busy || !description.trim()} onClick={() => void start()}>분석 시작</button>
-      </> : caseId && !view ? <p>체험 준비 결과를 확인해 주세요. 새 Case를 자동으로 만들지 않아요.</p> : <>
+      </> : caseId && !view ? <p>체험 준비 결과를 확인해 주세요. 새 체험을 자동으로 시작하지 않아요.</p> : <>
         {samples === null ? <p>샘플 목록을 확인하고 있어요.</p> : samples.length === 0 ? <p>지금 이용할 수 있는 샘플이 없어요.</p> : <fieldset disabled={busy}>
           <legend>체험할 샘플</legend>
           {samples.map(s => <label key={s.sample_id}><input type="radio" name="official-sample" checked={selected === s.sample_id} onChange={() => select(s.sample_id)} />
             {s.label} · {Math.ceil(s.duration_ms / 1000)}초 · 영상 {s.file_count}개
           </label>)}
         </fieldset>}
+        <p>공식 샘플은 한 번에 합계 10분까지 이용할 수 있어요.</p>
+        <p>보관·삭제 기간과 반복 횟수는 아직 확정되지 않았어요. 현재는 공개 준비 중이에요.</p>
         <button type="button" className="rs-btn pri" disabled={busy || !selected} onClick={() => void prepare()}>샘플 준비</button>
       </>}
     </main>}

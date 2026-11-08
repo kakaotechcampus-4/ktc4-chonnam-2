@@ -152,6 +152,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     location.assign(location.pathname)
   }
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
+  const deferredWork = view?.notices.find(n => n.code === 'public.local_work_not_queued')
   // 지워진 기억 case는 새 신고로 넘어가는 중이다 — 그 사이 「찾을 수 없어요」가 깜빡이지 않게 머리줄만 둔다
   if (gone && props.remembered) return <AppHeader onNewReport={newReport} />
 
@@ -159,6 +160,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     <>
       <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page" ref={mainRef}>
+        {deferredWork && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
         {banner && !state.viewUnavailable && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
