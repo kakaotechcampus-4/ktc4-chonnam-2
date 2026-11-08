@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from datetime import timedelta
+from datetime import datetime, timedelta
+from decimal import Decimal
+from math import isfinite
 
 from ._contract import Contract, contract_ref, parse_rfc3339, require
 from .corrections import correction_heads
+from .errors import ContractInputError
 from .policy import TIME_POLICY_REF
 
 _SOURCE_KIND = {
@@ -43,6 +46,86 @@ def _valid_overlay(overlay: Contract | None) -> bool:
         and isinstance(observation.get("value"), str)
         and all(validation.get(key) is True for key in ("format_ok", "monotonic_ok", "duration_match_ok"))
     )
+
+
+def _overlay_anchor(
+    overlay: Contract, incident_clip: Contract | None, event_span: Contract,
+) -> tuple[tuple[str, str, int] | None, str | None]:
+    """Find an OCR anchor in the AssetSpan that contains the event."""
+    uncovered = "time.overlay_event_not_covered"
+    unusable = "time.overlay_samples_unusable"
+    clip_ref = (incident_clip or {}).get("incident_clip_ref")
+    if not incident_clip or not clip_ref or (overlay.get("input_ref") or {}).get("incident_clip_ref") != clip_ref:
+        return None, uncovered
+    clip_range = incident_clip.get("timeline_range")
+    timeline = incident_clip.get("timeline_ref") or {}
+    provenance = incident_clip.get("source_provenance") or {}
+    if (
+        not clip_range
+        or timeline != provenance.get("timeline_ref")
+        or timeline.get("timeline_id") != event_span.get("timeline_id")
+        or timeline.get("revision") != event_span.get("timeline_revision")
+    ):
+        return None, uncovered
+
+    start = Decimal(str(clip_range["start_sec"]))
+    end = Decimal(str(clip_range["end_sec"]))
+    event_at = Decimal(event_span["representative_ms"]) / 1000
+    ranges = sorted(
+        (Decimal(str(item["timeline_range"]["start_sec"])), Decimal(str(item["timeline_range"]["end_sec"])))
+        for item in provenance.get("asset_spans") or []
+    )
+    if any(right_start < left_end for (_, left_end), (right_start, _) in zip(ranges, ranges[1:])):
+        return None, uncovered
+    event_range = next((bounds for bounds in ranges if bounds[0] <= event_at < bounds[1]), None)
+    if event_range is None or not start <= event_at < end:
+        return None, uncovered
+    span_start, span_end = event_range
+
+    anchors_by_frame: dict[str, tuple[Decimal, datetime, str]] = {}
+    for sample in overlay.get("samples") or []:
+        offset = sample.get("frame_offset_sec")
+        if type(offset) not in (int, float) or (isinstance(offset, float) and not isfinite(offset)):
+            return None, unusable
+        sample_at = start + Decimal(str(offset))
+        if not start <= sample_at < end or not any(lo <= sample_at < hi for lo, hi in ranges):
+            return None, uncovered
+        if not span_start <= sample_at < span_end:
+            continue
+        frame_ref = sample.get("frame_ref")
+        if not isinstance(frame_ref, str) or not frame_ref:
+            return None, unusable
+        value = sample.get("parsed_at")
+        try:
+            clock = parse_rfc3339(value)
+        except ContractInputError:
+            return None, unusable
+        anchor = (sample_at, clock, value)
+        if anchors_by_frame.setdefault(frame_ref, anchor) != anchor:
+            return None, unusable
+
+    anchors = sorted(anchors_by_frame.values(), key=lambda sample: sample[0])
+    if len(anchors) < 2 or not anchors[0][0] <= event_at <= anchors[-1][0]:
+        return None, uncovered
+
+    first_at, first_clock, _ = anchors[0]
+    clock_origins = [
+        Decimal(str((clock - first_clock).total_seconds())) - (at - first_at)
+        for at, clock, _ in anchors
+    ]
+    if (
+        max(clock_origins) - min(clock_origins) > 1  # The overlay displays whole seconds.
+        or any(right[0] <= left[0] or right[1] < left[1] for left, right in zip(anchors, anchors[1:]))
+    ):
+        return None, unusable
+
+    anchor_at, clock, anchor_value = min(anchors, key=lambda sample: abs(sample[0] - event_at))
+    offset_ms = round((event_at - anchor_at) * 1000)
+    try:
+        value = (clock + timedelta(milliseconds=offset_ms)).isoformat() if offset_ms else anchor_value
+    except OverflowError:
+        return None, unusable
+    return (anchor_value, value, offset_ms), None
 
 
 def _correction_head(
@@ -90,9 +173,9 @@ def resolve_time(
 ) -> Contract:
     """Resolve existing contract values without calling an upstream module.
 
-    With `incident_clip`, a base-plus-offset time uses only the time sources of the source asset that holds the
-    representative moment, offset from inside that asset. Without it the timeline position is added to the base
-    as is, which is right only when the timeline is a single source starting at 0."""
+    Overlay OCR requires a mapped clip and decoded samples covering the representative moment.
+    With a clip, Recording fallback uses the time source and position inside the event's source asset.
+    Without a clip, Recording fallback assumes a single source starting at timeline zero."""
     candidates = [dict(item) for item in time_source_candidates]
     for item in candidates:
         require(item.get("observation_status") in {"OK", "UNKNOWN", "ERROR"}, "invalid time observation status")
@@ -112,6 +195,10 @@ def resolve_time(
 
     considered: list[Contract] = []
     selected_ref: Contract | None = None
+    overlay_anchor = None
+    overlay_reason = "time.overlay_not_verified"
+    if correction is None and overlay_time_readout and _valid_overlay(overlay_time_readout):
+        overlay_anchor, overlay_reason = _overlay_anchor(overlay_time_readout, incident_clip, span)
 
     if correction is not None:
         selected_ref = contract_ref("correction_record", correction["correction_id"])
@@ -153,19 +240,30 @@ def resolve_time(
                 },
             }
         )
-    elif _valid_overlay(overlay_time_readout):
+    elif overlay_anchor is not None:
         assert overlay_time_readout is not None
         readout_id = overlay_time_readout.get("readout_id")
         require(isinstance(readout_id, str) and readout_id, "OverlayTimeReadout.readout_id is required")
         selected_ref = contract_ref("overlay_time_readout", readout_id)
-        value = overlay_time_readout["observation"]["value"]
-        parse_rfc3339(value)
+        anchor_value, value, offset_ms = overlay_anchor
+        computation: Contract = {
+            "mode": "DIRECT",
+            "timezone": {
+                "zone_id": "Asia/Seoul",
+                "utc_offset": "+09:00",
+                "source": "PRODUCT_CONTEXT",
+            },
+        }
+        if offset_ms:
+            computation.update(
+                mode="BASE_PLUS_OFFSET", base_input_ref=selected_ref, source_offset_ms=offset_ms,
+            )
         considered.append(
             {
                 "input_kind": "OBSERVATION",
                 "input_ref": selected_ref,
                 "source": {"kind": "readout.overlay_ocr"},
-                "value": value,
+                "value": anchor_value,
                 "observation_status": "OK",
                 "verification": "VERIFIED",
                 "used": True,
@@ -180,14 +278,7 @@ def resolve_time(
                     "value": value,
                     "source": {"kind": "readout.overlay_ocr", "input_ref": selected_ref},
                     "verification": "VERIFIED",
-                    "computation": {
-                        "mode": "DIRECT",
-                        "timezone": {
-                            "zone_id": "Asia/Seoul",
-                            "utc_offset": "+09:00",
-                            "source": "PRODUCT_CONTEXT",
-                        },
-                    },
+                    "computation": computation,
                     "user_corrected": False,
                 },
                 "conflict": {"exists": False, "between_refs": [], "requires_user_notice": False},
@@ -210,7 +301,7 @@ def resolve_time(
                     "observation_status": observation.get("status"),
                     "verification": "UNVERIFIED",
                     "used": False,
-                    "reason_code": "time.overlay_not_verified",
+                    "reason_code": overlay_reason,
                 }
             )
         # A time source value is the clock of one source asset; it may only meet a position inside that asset.

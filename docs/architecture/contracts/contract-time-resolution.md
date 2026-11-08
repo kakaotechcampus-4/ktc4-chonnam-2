@@ -156,7 +156,7 @@ ContractRef {
 
 `evidence`는 Architecture v4의 Timestamp 정책을 적용한다.
 
-1. 검증을 통과한 Video Overlay가 있으면 가장 강한 근거로 사용한다.
+1. 검증을 통과하고 사건 시점에 대응시킬 수 있는 Video Overlay를 자동 선택 시 가장 강한 근거로 사용한다(§18).
 2. 검증된 Overlay가 없으면 Filename / File Metadata / 제조사 metadata 등의 후보를 비교한다.
 3. Filename / metadata 계열이 충돌하면 MVP 기본 정책에 따라 Filename 기반 값을 사용할 수 있으나 `conflict.exists=true`와 사용자 안내 필요성을 함께 보존한다. 비교·충돌 판단은 사건 대표 순간이 담긴 원본의 후보끼리만 한다(§17).
 4. 사용자가 사건 시각을 명시적으로 수정한 경우 `USER_INPUT` provenance를 사용할 수 있다.
@@ -379,3 +379,12 @@ conflict.requires_user_notice
 - `IncidentClip`과 `CandidateEvent`의 timeline id · revision이 다르면 Contract 입력 오류다.
 
 계약 필드 모양은 바뀌지 않는다. 원본이 하나이고 timeline 0초에서 시작하는 경우 결과는 v1 구현과 같다. 원본을 실제 녹화 시각 순서로 정렬하거나 gap을 반영하는 일은 recording 몫이며 이 결정과 무관하다 — 이 기준은 원본 사이 배치에 의존하지 않는다.
+
+
+## 18. 검증된 Overlay 시계를 사건 대표 시점에 대응시키기
+
+- `CandidateEvent.span.representative_ms`는 해당 revision의 timeline 좌표다. OCR 샘플의 `frame_offset_sec`에 IncidentClip의 실제 `timeline_range.start_sec`를 더해 같은 축에서 비교한다. Fine의 `temporal_facts`는 별도 입력 기준의 선택적 관찰이라 대표 시점 선택에 쓰지 않는다.
+- 동일한 IncidentClip과 timeline revision에서 사건과 샘플을 대응시킨다. 사건을 포함하는 하나의 AssetSpan 안에서 시각 흐름이 일치하는 서로 다른 프레임 두 개 이상이 사건 시점을 포함해야 한다. 샘플 범위 밖 외삽과 원본 경계 또는 gap을 넘는 계산은 보류한다.
+- 가장 가까운 샘플의 `parsed_at`에 같은 원본 안의 위치 차이(ms)를 더한다. 거리가 같으면 앞선 프레임을 쓴다. `considered[].value`에는 실제로 사용한 샘플 시각을 남기고, `base_input_ref`는 이 샘플을 담은 OverlayTimeReadout을 참조한다. 위치 차이가 0ms면 `DIRECT`, 그 외에는 `BASE_PLUS_OFFSET`이다. 계산 결과의 소수부는 위치 차이를 반영하며 OCR 시계나 Search 대표 시점의 정확도를 높여 주지 않는다.
+- OCR 검증 실패는 `time.overlay_not_verified`, 실제 프레임 위치 누락이나 불일치는 `time.overlay_samples_unusable`, 시점 대응이나 샘플 범위 조건 미충족은 `time.overlay_event_not_covered`로 남긴다. 기존 Recording fallback과 `UNKNOWN` 경로를 사용한다. 사용자 정정 우선순위와 사후 각인 정책은 유지한다.
+- 기존 `TimeResolution v1`의 계산 모드와 참조 필드를 사용한다. Readout의 실제 프레임 위치 계약은 [OverlayTimeReadout §7](contract-plate-overlay-readout.md#7-overlaytimereadout-validation-필드-정의)을 따른다.

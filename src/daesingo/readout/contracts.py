@@ -9,7 +9,8 @@
 
 **1. 키가 없는 것과 값이 null인 것은 다르다.** `contract`·`contract_version`·`observation.reason`은
    fixture에서 「키 자체가 없는」 형태로 나타나고 명시적 null로 쓰인 적이 없다. 그래서 이 셋만
-   `None = 키 없음`으로 두고 직렬화에서 생략한다. 나머지 nullable 필드(`failure`·`abstain_reason`·
+   `None = 키 없음`으로 두고 직렬화에서 생략한다. v1.3의 `samples[].frame_offset_sec`도 좌표 근거가
+   없으면 생략한다. 나머지 nullable 필드(`failure`·`abstain_reason`·
    `validation.format_ok` 등)는 키를 항상 쓰고 값만 null이 된다.
 
 **2. 모르는 키는 조용히 버리지 않는다.** readout은 이 세 계약의 Producer라서, fixture에 내가 모르는
@@ -426,18 +427,22 @@ class OverlaySample:
     offset_sec: float
     raw_text: str
     parsed_at: Optional[str]
+    frame_offset_sec: Optional[float] = None
 
     @classmethod
     def from_dict(cls, d: dict) -> "OverlaySample":
-        return cls(*_take(d, "frame_ref", "offset_sec", "raw_text", "parsed_at"))
+        return cls(*_take(d, "frame_ref", "offset_sec", "raw_text", "parsed_at", "frame_offset_sec"))
 
     def to_dict(self) -> dict:
-        return {
+        out = {
             "frame_ref": self.frame_ref,
             "offset_sec": self.offset_sec,
             "raw_text": self.raw_text,
             "parsed_at": self.parsed_at,
         }
+        if self.frame_offset_sec is not None:
+            out["frame_offset_sec"] = self.frame_offset_sec
+        return out
 
 
 @dataclass

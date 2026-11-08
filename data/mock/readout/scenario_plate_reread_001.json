@@ -267,12 +267,14 @@
         {
           "frame_ref": "fr_p001_plate1",
           "offset_sec": 12.0,
+          "frame_offset_sec": 12.0,
           "raw_text": "2026-08-29 20:10:12",
           "parsed_at": "2026-08-29T20:10:12+09:00"
         },
         {
           "frame_ref": "fr_p001_plate2",
           "offset_sec": 12.6,
+          "frame_offset_sec": 12.6,
           "raw_text": "2026-08-29 20:10:13",
           "parsed_at": "2026-08-29T20:10:13+09:00"
         }
