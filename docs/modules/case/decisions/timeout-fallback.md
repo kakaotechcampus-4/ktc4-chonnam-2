@@ -5,6 +5,7 @@
 > **2026-09-28 잠정값 기재** — 이슈 #72, `search` 실측 `docs/modules/search/experiments/latency-baseline-2026-09-28.md`(#182, 서어진)
 > **2026-09-29 클립 분할 범위 반영** — 이슈 #168 (c)
 > **2026-10-03 표기 정합** — `core-user-flow.md` #168 결정 3 · #170 F에 맞춰 「이어서 찾기 = 남은 클립만 새 Job」 문구 폐기 · 현재 범위의 부분 후보 미보존 명시. 새 결정 아님(Runtime §5 검토 중 발견, case Owner 확인 요청 — #245)
+> **2026-11-08 #72 정리** — 공개 RC 기준값은 `case-wait-timeout.md` §3-8 · §3-10을 따르고(Coarse 600초 · 준비 여유 · 60분 상한), Fine 70초를 유지한다. 운영값 확정은 RC 뒤로 넘긴다(아래 「남은 것」 첫 행)
 > **2026-10-13 Fine 상한 전달 정정** — Fine이 Coarse scope 상한을 이어받는다는 문구를 잠정값 표(후보당 70초)에 맞춰 고쳤다. search가 Fine 상한을 호출마다 받게 됐다(PR #328 · #226)
 
 ## 결정된 것
@@ -41,7 +42,7 @@
 
 | 항목 | 상태 | 무엇으로 정하는가 |
 | --- | --- | --- |
-| 위 잠정값 확정 | 잠정 | runtime 머신 재측정(`common/runtime` 배치 후). **Recording 준비 · 큐 대기 · Search를 나눠 잰다**(2026-10-29, #452 — case 대기 마감은 셋을 모두 포함한다, `long-analysis-range.md` §3). Fine 70초는 근거 표본이 29회(#182)뿐이고 시계가 전처리 · provider 호출 · 재시도 대기를 모두 포함하므로, 재측정 때 **Fine timeout 발생 횟수**도 함께 본다(#328) |
+| 위 잠정값 확정 | **공개 RC 기준 결정(2026-11-08, #72)** · 운영값은 RC 뒤 | **RC:** Coarse는 `case-wait-timeout.md` §3-10(600초, 150초 복귀는 RC 이후로 미룸 — 김준영 #452 2026-11-07), 준비 여유 · 60분 상한은 같은 문서 §3-8, Fine은 70초 유지. runtime 머신 근거: 11/6 EC2 20분 E2E(#603) — Coarse job 418초 중 provider 54.5초, Fine provider 12.9초. Fine 시간 초과(`SEARCH_DEADLINE_EXCEEDED`)는 11/8 로컬 통합 E2E 5회 중 1회(`experiments/real-e2e-20261108-597-integrated.md` §3-6). **RC 뒤:** 공개 후 입력 길이별 처리시간 · `case.analysis_timed_out` 기록 · Fine timeout 발생 횟수로 운영값을 다시 정한다[미정]. 그때도 **Recording 준비 · 큐 대기 · Search를 나눠 잰다**(2026-10-29, #452 — case 대기 마감은 셋을 모두 포함한다, `long-analysis-range.md` §3). Fine 70초는 근거 표본이 29회(#182)뿐이고 시계가 전처리 · provider 호출 · 재시도 대기를 모두 포함하므로, 재측정 때 **Fine timeout 발생 횟수**도 함께 본다(#328) |
 | Fine 70초 실제 적용 | Worker 경로 반영(2026-10-26, #412) · 동기 경로 미반영 | Worker 경로는 관찰 입력 `max_latency_sec`(`observation.FINE_MAX_LATENCY_SEC`)로 handler에 넘긴다. 동기 경로 `real_e2e.py`는 아직 Coarse 값(150초)을 이어받는다 |
 | 클립 분할 발주 구현 | 미구현 · **MVP 범위 밖**(2026-10-29, #452 — `long-analysis-range.md`. 상한을 넘는 범위는 Recording이 변환 전에 거르고 case가 구분된 notice로 알린다. 분할 크기에는 Recording 저장 상한도 들어가야 한다) | Case는 영상을 클립으로 나누지 않고 Coarse를 한 번 발주한다. 동기 `real_e2e.py`의 150초는 별도 경로의 값이다(#200). 분할은 인라인 상한을 넘는 영상에만 필요하고(#168 (c)), 그 전에 #168에 남은 overlap 길이·중복 제거 호출 지점을 정한다 |
 | 부분 재실행 정책 표와의 정합 | 미결 | `module-architecture.md` §7-4 |
