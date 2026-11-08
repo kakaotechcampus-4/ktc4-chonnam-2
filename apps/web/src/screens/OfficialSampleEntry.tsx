@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPublicSamplesApi, type OfficialSample, type PublicSamplesApi } from '../api/publicSamples'
 import type { CaseView } from '../contracts/caseView'
 import { forgetCase, rememberCase } from '../state/lastCase'
@@ -22,6 +22,8 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
   const [busy, setBusy] = useState(false)
   const [deletion, setDeletion] = useState<'DELETING' | 'DELETED' | null>(null)
   const pending = useRef(false)
+  const deleteDialog = useRef<HTMLDialogElement>(null)
+  const deleteTitle = useId()
 
   useEffect(() => {
     let active = true
@@ -100,9 +102,27 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
     })
   }
   const ready = !!view && view.manifest_summary.ok_file_count > 0
-  const deleteButton = caseId && deletion !== 'DELETED' && <button type="button" className="rs-btn sec" disabled={busy} onClick={() => void remove()}>
-    {deletion === 'DELETING' ? '삭제 다시 확인' : '체험 데이터 삭제'}
-  </button>
+  const deleteButton = caseId && deletion !== 'DELETED' && <>
+    <button type="button" className="rs-btn sec" disabled={busy} onClick={() => {
+      if (pending.current) return
+      if (deletion === 'DELETING') void remove()
+      else if (!deleteDialog.current?.open) deleteDialog.current?.showModal()
+    }}>
+      {deletion === 'DELETING' ? '삭제 다시 확인' : '체험 데이터 삭제'}
+    </button>
+    <dialog ref={deleteDialog} className="rs-consent" aria-labelledby={deleteTitle} aria-describedby={`${deleteTitle}-description`}>
+      <h2 id={deleteTitle}>체험 데이터를 삭제할까요?</h2>
+      <p id={`${deleteTitle}-description`}>삭제하면 분석 결과와 신고자료를 다시 볼 수 없어요</p>
+      <div className="rs-consent-actions">
+        <button type="button" className="rs-btn sec" onClick={() => deleteDialog.current?.close()}>취소</button>
+        <button type="button" className="rs-btn pri" disabled={busy} onClick={() => {
+          if (pending.current) return
+          deleteDialog.current?.close()
+          void remove()
+        }}>삭제하기</button>
+      </div>
+    </dialog>
+  </>
   return <>
     {view && view.stage !== 'INTAKE' && !deletion ? <ApiFlow api={client.cases} caseId={caseId}
       intake={<p role="status">체험 진행 정보를 확인하고 있어요.</p>} /> : <main className="web-main rs-page">

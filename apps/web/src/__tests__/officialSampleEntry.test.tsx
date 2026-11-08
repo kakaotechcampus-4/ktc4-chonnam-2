@@ -1,12 +1,21 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { OfficialSampleEntry } from '../screens/OfficialSampleEntry'
 import { createPublicSamplesApi } from '../api/publicSamples'
 import { SNAPSHOTS } from '../contracts/fixtures'
 import { errorMessage } from '../contracts/labels'
 
 vi.mock('../screens/ApiFlow', () => ({ ApiFlow: (p: { caseId?: string | null }) => <p>기존 결과 흐름 {p.caseId}</p> }))
+// jsdom has no native dialog methods; real modal/focus/Escape is checked in Chromium.
+beforeAll(() => Object.defineProperties(HTMLDialogElement.prototype, {
+  showModal: { configurable: true, value(this: HTMLDialogElement) { this.setAttribute('open', '') } },
+  close: { configurable: true, value(this: HTMLDialogElement) { this.removeAttribute('open') } },
+}))
+afterAll(() => {
+  Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal')
+  Reflect.deleteProperty(HTMLDialogElement.prototype, 'close')
+})
 afterEach(cleanup)
 beforeEach(() => { localStorage.clear(); history.replaceState(null, '', '/') })
 
@@ -74,20 +83,45 @@ it('다른 세션의 Case404를 새 세션 생성이나 임의 업로드로 우�
   expect(screen.queryByRole('button', { name: '샘플 준비' })).toBeNull()
 })
 
-it('준비 중 중복 클릭은 하나의 Case만 만들고 삭제202는 완료로 표시하지 않는다', async () => {
+it('삭제 확인을 취소하면 요청하지 않고 기존 결과를 유지한다', async () => {
+  const { client } = setup()
+  fireEvent.click(await screen.findByRole('radio', { name: /시험 샘플/ }))
+  fireEvent.click(screen.getByRole('button', { name: '샘플 준비' }))
+  await screen.findByRole('button', { name: '분석 시작' })
+  const deleted = vi.spyOn(client, 'deleteCase')
+  fireEvent.click(screen.getByRole('button', { name: '체험 데이터 삭제' }))
+  const dialog = screen.getByRole('dialog', { name: '체험 데이터를 삭제할까요?' })
+  expect(dialog.textContent).toContain('삭제하면 분석 결과와 신고자료를 다시 볼 수 없어요')
+  expect(deleted).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: '취소' }))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(deleted).not.toHaveBeenCalled()
+  expect(screen.getByRole('button', { name: '분석 시작' })).toBeTruthy()
+})
+
+it('준비·삭제 중복 클릭을 막고 확인1회·삭제202·완료 재확인을 구분한다', async () => {
   const { client, seen } = setup()
   fireEvent.click(await screen.findByRole('radio', { name: /시험 샘플/ }))
   const button = screen.getByRole('button', { name: '샘플 준비' })
   fireEvent.click(button); fireEvent.click(button)
   await screen.findByRole('button', { name: '분석 시작' })
   expect(seen.filter(x => x.url === '/cases')).toHaveLength(1)
-  vi.spyOn(client, 'deleteCase').mockResolvedValueOnce({ ok: true, status: 202, data: { state: 'DELETING' } })
+  let finish!: (result: Awaited<ReturnType<typeof client.deleteCase>>) => void
+  const deleted = vi.spyOn(client, 'deleteCase').mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
     .mockResolvedValueOnce({ ok: true, status: 200, data: { state: 'DELETED' } })
   fireEvent.click(screen.getByRole('button', { name: '체험 데이터 삭제' }))
+  expect(deleted).not.toHaveBeenCalled()
+  const confirm = screen.getByRole('button', { name: '삭제하기' })
+  fireEvent.click(confirm); fireEvent.click(confirm)
+  fireEvent.click(screen.getByRole('button', { name: '체험 데이터 삭제' }))
+  expect(deleted).toHaveBeenCalledTimes(1)
+  expect((screen.getByRole('button', { name: '체험 데이터 삭제' }) as HTMLButtonElement).disabled).toBe(true)
+  await act(async () => { finish({ ok: true, status: 202, data: { state: 'DELETING' } }) })
   await screen.findByText('삭제 중이에요. 완료 여부를 다시 확인할 수 있어요.')
   expect(screen.queryByText('삭제했어요.')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: '삭제 다시 확인' }))
   await screen.findByText('삭제했어요.')
+  expect(deleted).toHaveBeenCalledTimes(2)
   await waitFor(() => expect(screen.queryByRole('button', { name: '분석 시작' })).toBeNull())
 })
 
