@@ -16,6 +16,12 @@ from daesingo.common.usage.port import UsageError
 Positive = Annotated[int, Field(strict=True, gt=0, le=10**15)]
 
 
+def supported_policy_operation(operation: str) -> str:
+    """Translate existing Search usage names only at supported-mode guards."""
+    return {"CANDIDATE_SEARCH": "SEARCH_COARSE",
+            "VISUAL_VERIFY": "SEARCH_FINE"}.get(operation, operation)
+
+
 class PublicDenied(UsageError):
     """Fixed codes cross HTTP/Worker boundaries without inputs or SQL text."""
     def __init__(self, code="UNCONFIGURED"):
@@ -150,6 +156,7 @@ class PublicPolicy(BaseModel):
         return matches[0].reserve_micros
 
     def require_supported(self, operation, provider):
+        operation = supported_policy_operation(operation)
         if not any((b.operation, b.provider_label) == (operation, provider) for b in self.supported_calls):
             raise PublicDenied("UNSUPPORTED")
 
