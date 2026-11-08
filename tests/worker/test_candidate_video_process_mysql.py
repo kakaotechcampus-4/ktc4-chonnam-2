@@ -12,6 +12,8 @@ import time
 
 import httpx
 import pytest
+
+from tests.preview_writer_fixture import final_preview_writer  # noqa: F401
 import sqlalchemy as sa
 
 from daesingo.common.jobs.produced import produced_objects

@@ -111,13 +111,16 @@ def _select_other_candidate(case: CaseAggregate, payload: dict[str, Any], view: 
 
 
 def _request_candidate_video_preview(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:
-    from daesingo.case.candidate_video import eligible, request_preview
+    from daesingo.case.candidate_video import PreviewRequestsDisabled, eligible, request_preview
     candidate = next((c for c in case.candidates if c.candidate_id == payload["candidate_id"]), None)
     if candidate is None:
         raise _Rejected("unknown_target")
     if case.stage not in {"CANDIDATE_REVIEW", "EVIDENCE_REVIEW", "READY"} or not eligible(case, candidate):
         raise _Rejected("not_allowed")
-    request_preview(case, candidate)
+    try:
+        request_preview(case, candidate)
+    except PreviewRequestsDisabled:
+        raise _Rejected("not_allowed") from None
 
 
 def _record_situation_response(case: CaseAggregate, payload: dict[str, Any], view: dict[str, Any]) -> None:

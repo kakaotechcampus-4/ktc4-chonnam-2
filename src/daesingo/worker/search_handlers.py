@@ -25,6 +25,7 @@ from daesingo.common.usage.port import UsageError
 from daesingo.search.runs import RunOutcome
 from daesingo.worker.registry import KindRegistry
 from daesingo.worker.production_media import _UnsupportedAnalysisInput
+from daesingo.worker.coarse_frames import validate_frame_refs
 
 SEARCH_KINDS = frozenset({"HINT_EXTRACT", "COARSE_SEARCH", "FINE_VERIFY"})
 
@@ -77,6 +78,7 @@ def search_registry(
     service_factory: Callable[[SearchInput], AbstractContextManager[search.SearchService]] | None = None,
     failures: SearchFailures | None = None,
     report_progress: Callable[[ExecutionContext, search.SearchPhase], None] | None = None,
+    coarse_frames: Callable | None = None,
 ) -> KindRegistry:
     """One immutable registry. Factories must release execution resources on exit."""
     failures = failures if failures is not None else _public_failures()
@@ -134,6 +136,11 @@ def search_registry(
                 payload = {"outcome": str(result.analysis_run.outcome),
                            "analysis_run": result.analysis_run.model_dump(mode="json"),
                            "candidate_events": [c.model_dump(mode="json") for c in result.candidates]}
+                if coarse_frames is not None and result.analysis_run.outcome != RunOutcome.FAILED and result.candidates:
+                    # Outside _public_call: frame/DB errors must not retry the paid Search invocation.
+                    payload['candidate_frame_refs'] = validate_frame_refs(
+                        coarse_frames(context, data, result.candidates), result.candidates)
+                    context.checkpoint()
             else:
                 if data.candidate is None:
                     raise ValueError("fixed candidate required")
