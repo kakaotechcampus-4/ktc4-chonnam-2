@@ -71,7 +71,7 @@ class ResolvedAnalysisSource:
 
 
 # ---------------------------------------------------------------------------
-# CandidateSourceLink (unchanged behaviour)
+# CandidateSourceLink
 # ---------------------------------------------------------------------------
 
 

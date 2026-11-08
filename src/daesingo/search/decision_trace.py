@@ -1,4 +1,5 @@
-"""Private experiment wire shapes: p3 facts plus inspectable observations."""
+"""Private experiment wire shapes: production-prompt (coarse-p3 / fine-p3) facts
+plus inspectable observations."""
 
 from enum import StrEnum
 from math import ceil

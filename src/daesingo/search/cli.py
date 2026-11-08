@@ -195,7 +195,7 @@ def _run_smoke_live(args: argparse.Namespace) -> int:
         print(render_report(NotExecutedReport(missing_prerequisite=exc.missing)))
         return 2
 
-    # api_key is not None here: _check_live_preconditions raises if it is.
+    # api_key is not None here: check_live_preconditions raises if it is.
     assert api_key is not None
     try:
         service, config, options = build_live_smoke_service(

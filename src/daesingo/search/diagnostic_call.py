@@ -1,4 +1,5 @@
-"""Structured diagnostic calls and p3/observation profile routing."""
+"""Structured diagnostic calls and routing between the production-prompt
+(coarse-p3 / fine-p3) and observation profiles."""
 
 import time
 import hashlib
