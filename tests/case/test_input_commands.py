@@ -89,14 +89,24 @@ def test_manual_plate_input_records_correction_and_reaches_evidence():
 
 def test_second_input_supersedes_first_with_its_value():
     store, case_id = _store()
-    _send(store, case_id, "MANUAL_PLATE_INPUT", {"value": "34나5678"})
+    before = _evidence(store, case_id)
+    result = _send(store, case_id, "MANUAL_PLATE_INPUT", {"value": "12가3457"})
+
+    assert result.response["ok"] is True
+    evidence = result.response["case_view"]["evidence"]
+    assert evidence["plate_display"]["value"] == "12가3457"
+    assert evidence["plate_display"]["info_state"] == "INFO_USER_CONFIRMED"
+    assert evidence["plate_display"]["needs_review"] is False
+    assert evidence["plate_preview_ref"] == before["plate_preview_ref"] == "fr_h001_plate1"
 
     assert _send(store, case_id, "MANUAL_PLATE_INPUT", {"value": "56다7890"}).response["ok"] is True
 
     first, second = store.get_case(case_id).correction_records
     assert second["previous_value"] == first["new_value"]
     assert second["supersedes_ref"] == {"kind": "correction_record", "ref": first["correction_id"]}
-    assert _evidence(store, case_id)["plate_display"]["value"] == "56다7890"
+    evidence = _evidence(store, case_id)
+    assert evidence["plate_display"]["value"] == "56다7890"
+    assert evidence["plate_preview_ref"] == before["plate_preview_ref"]
 
 
 def test_same_value_as_current_is_not_allowed():
@@ -139,6 +149,7 @@ def test_first_input_without_plate_records_null_previous_value():
     assert _send(store, case_id, "MANUAL_PLATE_INPUT", {"value": "34나5678"}).response["ok"] is True
 
     assert store.get_case(case_id).correction_records[-1]["previous_value"] is None
+    assert _evidence(store, case_id)["plate_preview_ref"] is None
 
 
 def _rebind(store: CaseStore, case_id: str, cls: type[RealAdapter]) -> RealAdapter:
