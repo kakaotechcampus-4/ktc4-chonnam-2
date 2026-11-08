@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import { createApi, type Api, type Command } from '../api/client'
 import { AppHeader } from '../components/AppHeader'
 import { isAction, type Action, type CaseView } from '../contracts/caseView'
@@ -38,7 +38,7 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_PLATE_IMAGE',
 ])
 
-export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean }): JSX.Element {
+export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api)
   const { view } = state
@@ -152,6 +152,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     location.assign(location.pathname)
   }
   const banner = state.error ? errorMessage(state.error.code) : unsupported ? '이 동작은 아직 연결되지 않았어요.' : null
+  const deferredWork = view?.notices.find(n => n.code === 'public.local_work_not_queued')
   // 지워진 기억 case는 새 신고로 넘어가는 중이다 — 그 사이 「찾을 수 없어요」가 깜빡이지 않게 머리줄만 둔다
   if (gone && props.remembered) return <AppHeader onNewReport={newReport} />
 
@@ -159,6 +160,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     <>
       <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page" ref={mainRef}>
+        {deferredWork && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
         {banner && !state.viewUnavailable && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
@@ -205,7 +207,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
               )}
             </section>
           </div>
-        ) : !view || view.stage === 'INTAKE' ? upload() : analysis(view)}
+        ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
       </main>
     </>
   )

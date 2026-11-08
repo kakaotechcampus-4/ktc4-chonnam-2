@@ -10,7 +10,7 @@ import time
 from collections.abc import Callable
 
 from sqlalchemy import select
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine, Connection
 
 from daesingo.common.db.transactions import run_worker_transaction
 from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation, safe_error_type
@@ -29,7 +29,8 @@ def observe_reflection(incoming: ReflectionInput, result: ReflectionResult,
 
 
 def redeliver_once(engine: Engine, reflector: ResultReflector, *,
-                   sleep: Callable = time.sleep, logger: logging.Logger | None = None
+                   sleep: Callable = time.sleep, logger: logging.Logger | None = None,
+                   transaction_guard: Callable[[Connection], object] | None = None
                    ) -> tuple[ReflectionResult, ...]:
     """Startup/periodic pass. Scan failures propagate; candidate faults isolate.
 
@@ -48,6 +49,9 @@ def redeliver_once(engine: Engine, reflector: ResultReflector, *,
 
         def operation(conn):
             nonlocal incoming, trace_id
+            if transaction_guard is not None:
+                # Caller-wide quota locks must precede the first RR snapshot.
+                transaction_guard(conn)
             row = conn.execute(select(jobs).where(jobs.c.execution_id == execution_id)).mappings().one_or_none()
             if row is None or row["status"] not in ("SUCCEEDED", "FAILED"):
                 return None

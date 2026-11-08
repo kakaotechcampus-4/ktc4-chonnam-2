@@ -5,6 +5,7 @@ existing factory and arguments when a real media capability is registered.
 """
 from contextlib import contextmanager, ExitStack
 from functools import wraps
+import re
 
 from ._filesystem import (
     UnsafePath, configuration_path, identity, pin_root, tool_directory,
@@ -12,13 +13,14 @@ from ._filesystem import (
 
 
 class MediaRoot:
-    def __init__(self, scanner):
+    def __init__(self, scanner, *, public_root=None):
         if scanner.kind != 'temp':
             raise ValueError('temp scanner required')
         self.scanner = scanner
         self.root = scanner.root
         self._configured_root = scanner.configured_root
         self._identity_root = configuration_path(scanner.root)
+        self.public_root = public_root
 
     @contextmanager
     def _pinned_tool_root(self):
@@ -35,7 +37,17 @@ class MediaRoot:
             except (OSError, ValueError):
                 raise UnsafePath('unverifiable media root') from None
             # Keep every ancestor pinned through tool execution and temp I/O.
-            yield path
+            from daesingo.common.public_runtime.temporary import temporary_root
+            scoped = temporary_root.get()
+            if scoped is not None:
+                with pin_root(self.public_root if self.public_root is not None else path) as expected, pin_root(scoped.parent) as actual:
+                    if (identity(expected.stat()) != identity(actual.stat())
+                            or re.fullmatch(r"a1-[0-9a-f]{32}", scoped.name) is None):
+                        raise UnsafePath("invalid scoped temp root")
+                    with actual.child(scoped.name, directory=True) as owned:
+                        yield tool_directory(owned)
+            else:
+                yield path
 
     def materializer(self, factory, /, *args, **kwargs):
         # Override rather than allow an invocation to silently use global /tmp.

@@ -119,18 +119,28 @@ def _parse_metadata(payload: object) -> tuple[float | None, tuple[ProbedStream, 
 class FfprobeMediaProbe:
     """metadata만 조사한다. stream 전체 decode 가능성을 보증하지 않는다."""
 
-    def __init__(self, executable: str = "ffprobe", *, timeout_sec: float = 30.0) -> None:
+    def __init__(self, executable: str = "ffprobe", *, timeout_sec: float = 30.0,
+                 input_format: Literal["mov"] | None = None) -> None:
         if not math.isfinite(timeout_sec) or timeout_sec <= 0:
             raise ValueError("timeout_sec은 유한한 양수여야 합니다")
+        if input_format is not None and input_format != "mov":
+            raise ValueError("unsupported forced input format")
         self.executable = executable
         self.timeout_sec = timeout_sec
+        self.input_format = input_format
 
     def probe(self, path: Path) -> LocalSource:
         try:
             resolved = path.resolve(strict=True)
             before = _snapshot(resolved)
+            # Opt-in official self-contained MP4 boundary; default registration
+            # keeps its existing autodetection. A hash-pinned playlist is not a
+            # hash-pinned video; do not enable references to unapproved files.
+            format_options = ([] if self.input_format is None else
+                              ["-f", "mov", "-enable_drefs", "0", "-use_absolute_path", "0"])
             result = subprocess.run(
                 [self.executable, "-v", "error", "-protocol_whitelist", "file",
+                 *format_options,
                  "-show_error", "-show_entries", "error=code:format=duration:stream=index,codec_type,duration:stream_tags=DURATION:stream_disposition=attached_pic",
                  "-of", "json", str(resolved)],
                 stdin=subprocess.DEVNULL, capture_output=True, timeout=self.timeout_sec,

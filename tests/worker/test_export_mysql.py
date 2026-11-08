@@ -62,7 +62,8 @@ def prepare_export(engine, tmp_path, kind, *, limit=30_000_000):
     with engine.begin() as conn:
         stored_case_store(conn, storage_root=root).register(case)
         execution, = enqueue(conn, [job], "trace")
-    config = RuntimeConfig.from_mapping("worker", {"DAESINGO_RUNTIME_DB_URL": engine.url.render_as_string(hide_password=False),
+    config = RuntimeConfig.from_mapping("worker", {"DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
+        "DAESINGO_RUNTIME_DB_URL": engine.url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(root), "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(temp)})
     stream = StringIO()
     startup = Startup(config, MappingProxyType({}), configure_logging("worker", stream=stream))

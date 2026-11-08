@@ -22,6 +22,8 @@ from .routes_candidate_videos import candidate_videos_router
 from .frame_lifetime import FrameLifetimeMiddleware
 from .asset_lifetime import AssetLifetimeMiddleware
 from .upload import NoUploadResponse, SourceBodyLimitMiddleware
+from .public_access import PublicHTTPMiddleware, public_router, denied
+from daesingo.common.public_runtime.policy import PublicDenied
 
 
 def create_app(*, revision: str | None = None, startup: Startup | None = None) -> FastAPI:
@@ -68,6 +70,10 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     app.include_router(frames_router(composition))
     app.include_router(assets_router(composition))
     app.include_router(candidate_videos_router(composition))
+    app.include_router(public_router(composition))
+    @app.exception_handler(PublicDenied)
+    async def public_denied(request, error):
+        return denied(error)
     # Keep the byte-limit receiver inside the access receive proxy: exceptions
     # then reach the normal HTTP handler without an AnyIO ExceptionGroup wrapper.
     app.add_middleware(SourceBodyLimitMiddleware, composition=composition)
@@ -110,4 +116,5 @@ def create_app(*, revision: str | None = None, startup: Startup | None = None) -
     # This must surround access/BaseHTTPMiddleware's real outer body send.
     app.add_middleware(FrameLifetimeMiddleware, composition=composition)
     app.add_middleware(AssetLifetimeMiddleware, composition=composition)
+    app.add_middleware(PublicHTTPMiddleware, composition=composition)
     return app

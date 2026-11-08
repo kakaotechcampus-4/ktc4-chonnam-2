@@ -28,7 +28,7 @@ def test_both_exports_after_response_restart_and_duplicate_t2(async_db, tmp_path
     source = tmp_path / "input.avi"
     subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-f", "lavfi", "-i", "testsrc2=s=160x96:r=10:d=1",
         "-c:v", "mpeg4", str(source)], capture_output=True, check=True, timeout=30)
-    env = {"DAESINGO_RUNTIME_DB_URL": engine.url.render_as_string(hide_password=False),
+    env = {"DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": engine.url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(root), "DAESINGO_RUNTIME_API_TEMP_ROOT": str(temp),
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(temp), "GEMINI_API_KEY": "offline",
         "DAESINGO_RECORDING_ANALYSIS_PROFILE_REF": "process-test",

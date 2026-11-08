@@ -38,7 +38,7 @@ def prepare(queue, tmp_path, monkeypatch, *, multisource=False, frame_candidates
     subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-n", "-f", "lavfi", "-i",
         "testsrc2=s=64x48:r=10:d=1", "-c:v", "mpeg4", "-pix_fmt", "yuv420p", str(video)],
         check=True, capture_output=True, timeout=30)
-    values = {"DAESINGO_RUNTIME_DB_URL": queue.url.render_as_string(hide_password=False),
+    values = {"DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": queue.url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(root), "DAESINGO_RUNTIME_API_TEMP_ROOT": str(temp),
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(temp), "GEMINI_API_KEY": "offline",
         "DAESINGO_RECORDING_ANALYSIS_PROFILE_REF": "test-analysis",

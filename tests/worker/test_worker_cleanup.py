@@ -29,6 +29,7 @@ def test_worker_scans_temp_only_before_first_claim_and_joins_on_exit(tmp_path):
     published.mkdir()
     (published/'upload-publish_').write_bytes(b'keep')
     config = RuntimeConfig.from_mapping('worker', {
+        'DAESINGO_RUNTIME_PUBLIC_MODE': 'internal',
         'DAESINGO_RUNTIME_DB_URL': 'mysql+pymysql://test@127.0.0.1:1/test_cleanup',
         'DAESINGO_RUNTIME_MEDIA_ROOT': str(media), 'DAESINGO_RUNTIME_WORKER_TEMP_ROOT': str(temp)})
     startup = Startup(config, MappingProxyType({}), configure_logging('worker', stream=StringIO()))

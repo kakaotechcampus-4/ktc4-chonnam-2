@@ -135,7 +135,13 @@ class _LogSettings(_Settings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
 
-_GROUPS = (DbSettings, HeartbeatSettings, WorkerSettings, UploadSettings,
+class PublicSettings(_Settings):
+    key_prefix = "PUBLIC_"
+    mode: Literal["internal", "a1"] = "a1"
+    policy_file: Path | None = None
+
+
+_GROUPS = (DbSettings, HeartbeatSettings, WorkerSettings, UploadSettings, PublicSettings,
            FrameSettings, CleanupSettings, ReadySettings, _LogSettings)
 _PATH_KEYS = (PREFIX + "MEDIA_ROOT", PREFIX + "API_TEMP_ROOT", PREFIX + "WORKER_TEMP_ROOT")
 
@@ -183,6 +189,7 @@ class RuntimeConfig:
     upload: UploadSettings | None = None
     frame: FrameSettings | None = None
     ready: ReadySettings | None = None
+    public: PublicSettings = field(default_factory=PublicSettings)
 
     @classmethod
     def from_mapping(cls, service: Literal["api", "worker"], values: Mapping[str, str]) -> "RuntimeConfig":
@@ -198,6 +205,7 @@ class RuntimeConfig:
                         defaults={"staging_age_sec": 3600, "orphan_age_sec": 86400} if service == "api" else None,
                         exclude=("staging_age_sec", "orphan_age_sec") if service == "worker" else ())
         log = _read(_LogSettings, values, errors)
+        public = _read(PublicSettings, values, errors)
         worker = heartbeat = upload = frame = ready = None
         if service == "worker":
             worker = _read(WorkerSettings, values, errors)
@@ -219,7 +227,7 @@ class RuntimeConfig:
         if errors:
             raise ConfigError(errors) from None
         return cls(service, db, media_root, temp_root, cleanup, log.log_level,
-                   worker, heartbeat, upload, frame, ready)
+                   worker, heartbeat, upload, frame, ready, public)
 
 
 __all__ = ["ConfigError", "DbSettings", "RuntimeConfig", "runtime_keys"]

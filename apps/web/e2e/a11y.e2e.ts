@@ -2,6 +2,7 @@
 // 다루는 것: E2E-01(키보드 완주) · 02(focus 표시) · 03(이름 있는 조작 요소) · 05 일부(업로드 상태 aria-live). 04(색 외 구분)는 아직 없다.
 // 실제 분석·배포 서버는 쓰지 않는다 — 그 확인은 배포본 수동 완주 기록이 맡는다.
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
 /** focus 표시에 쓰이는 값. 투명한 outline은 보이지 않으므로 없는 것으로 친다 */
 const ringOf = (el: Element) => {
@@ -44,6 +45,10 @@ async function expectNamedControls(page: Page) {
 }
 
 test('키보드로 업로드 → 진행 → 결과 → 안전신문고 이동까지 간다', async ({ page }) => {
+  // 외부 사이트의 응답 지연과 키보드 동작을 분리한다. 실제 window.open은 그대로 실행한다.
+  await page.context().route('https://www.safetyreport.go.kr/**', route => route.fulfill({
+    status: 200, contentType: 'text/html', body: '<!doctype html><title>Offline destination</title>',
+  }))
   await page.goto('/?demo')
   await expectNamedControls(page)
 
@@ -83,10 +88,16 @@ test('키보드로 업로드 → 진행 → 결과 → 안전신문고 이동까
   await expect(ready).toBeVisible()
 
   // 안전신문고 이동은 새 창을 연다
+  await expect(ready).toBeEnabled()
   const popup = page.waitForEvent('popup')
   await tabTo(page, ready)
+  await expect(ready).toBeFocused()
   await page.keyboard.press('Enter')
-  await (await popup).close()
+  const destination = await popup
+  // #632 is pending: accept only the current landing page or its exact final form URL.
+  await expect(destination).toHaveURL(/^https:\/\/www\.safetyreport\.go\.kr\/(?:#safereport\/safereport3)?$/)
+  expect(await destination.evaluate(() => window.opener)).toBeNull()
+  await destination.close()
 })
 
 test('파일을 고르기 전 「영상에서 찾아보기」는 못 누르는 이유를 보조기기에 알린다', async ({ page }) => {
@@ -94,4 +105,42 @@ test('파일을 고르기 전 「영상에서 찾아보기」는 못 누르는 �
   const search = page.getByRole('button', { name: '영상에서 찾아보기' })
   await expect(search).toHaveAttribute('aria-disabled', 'true')
   await expect(search).toHaveAccessibleDescription(/.+/)
+})
+
+test('체험 삭제는 키보드 확인을 거치고 취소·삭제202·완료를 구분한다', async ({ page }) => {
+  let deleted = 0
+  const happy = JSON.parse(readFileSync(new URL('../../../data/mock/case/scenario_happy_001.json', import.meta.url), 'utf8'))
+  const view = { ...happy.case_views[0], case_id: 'owned', stage: 'INTAKE', running_jobs: [] }
+  await page.route('**/public/samples', route => route.fulfill({ json: { samples: [] } }))
+  await page.route('**/cases/owned/view', route => route.fulfill({ json: view }))
+  await page.route('**/cases/owned', route => {
+    expect(route.request().method()).toBe('DELETE')
+    deleted++
+    return route.fulfill({ status: deleted === 1 ? 202 : 200,
+      json: { state: deleted === 1 ? 'DELETING' : 'DELETED' } })
+  })
+  await page.goto('/?sample&case=owned')
+  const remove = page.getByRole('button', { name: '체험 데이터 삭제' })
+  await tabTo(page, remove)
+  await page.keyboard.press('Enter')
+  const dialog = page.getByRole('dialog', { name: '체험 데이터를 삭제할까요?' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toHaveAccessibleDescription('삭제하면 분석 결과와 신고자료를 다시 볼 수 없어요')
+  await expectNamedControls(page)
+  await expect(page.getByRole('button', { name: '취소', exact: true })).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(dialog).not.toBeVisible()
+  expect(deleted).toBe(0)
+  await expect(remove).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(dialog).toBeVisible()
+  await tabTo(page, page.getByRole('button', { name: '삭제하기', exact: true }))
+  await page.keyboard.press('Enter')
+  await expect(page.getByText('삭제 중이에요. 완료 여부를 다시 확인할 수 있어요.')).toBeVisible()
+  expect(deleted).toBe(1)
+  await expect(page.getByText('삭제했어요.', { exact: true })).not.toBeVisible()
+  await tabTo(page, page.getByRole('button', { name: '삭제 다시 확인' }))
+  await page.keyboard.press('Enter')
+  await expect(page.getByText('삭제했어요.', { exact: true })).toBeVisible()
+  expect(deleted).toBe(2)
 })

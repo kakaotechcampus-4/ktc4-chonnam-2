@@ -14,7 +14,7 @@ from daesingo.common.logging import configure_logging
 def async_db(mysql_schema_url, tmp_path):
     upgrade_all(mysql_schema_url)
     config = RuntimeConfig.from_mapping("api", {
-        "DAESINGO_RUNTIME_DB_URL": mysql_schema_url.render_as_string(hide_password=False),
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": mysql_schema_url.render_as_string(hide_password=False),
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(tmp_path),
         "DAESINGO_RUNTIME_API_TEMP_ROOT": str(tmp_path),
     })

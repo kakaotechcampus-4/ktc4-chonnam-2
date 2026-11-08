@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
     fs: { allow: ['../..'] },
-    proxy: { '/cases': loadEnv(mode, '.', '').API_PROXY_TARGET ?? 'http://localhost:8000' },
+    proxy: {
+      '/cases': loadEnv(mode, '.', '').API_PROXY_TARGET ?? 'http://localhost:8000',
+      '/public': loadEnv(mode, '.', '').API_PROXY_TARGET ?? 'http://localhost:8000',
+    },
   },
 }))

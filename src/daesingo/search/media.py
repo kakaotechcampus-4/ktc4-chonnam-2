@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import tempfile
 from collections.abc import Generator
-from contextlib import AbstractContextManager, contextmanager
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, ClassVar, final
@@ -233,8 +233,21 @@ def _scale_filter(max_height: int) -> str:
 class MediaPreparer:
     """Materializes, probes, and produces bounded Coarse or Fine MP4s."""
 
-    def __init__(self, config: GeminiSearchConfig) -> None:
+    def __init__(self, config: GeminiSearchConfig, *, temp_context=None) -> None:
         self._cfg = config
+        self._temp_context = temp_context
+
+    @contextmanager
+    def _temporary_directory(self):
+        # Runtime supplies its pinned, leased per-Case root. Standalone CLI/eval
+        # retain their original temp lifetime, without importing Runtime policy.
+        scope = self._temp_context() if self._temp_context is not None else nullcontext(None)
+        with scope as root:
+            directory = Path(tempfile.mkdtemp(prefix="daesingo_media_", dir=root))
+            try:
+                yield directory
+            finally:
+                shutil.rmtree(directory, ignore_errors=True)
 
     def prepare_coarse(
         self,
@@ -266,8 +279,7 @@ class MediaPreparer:
                 f"declared size {media_input.declared_byte_size} > cap {max_src}"
             )
 
-        tmpdir = Path(tempfile.mkdtemp(prefix="daesingo_media_"))
-        try:
+        with self._temporary_directory() as tmpdir:
             src_path = tmpdir / "source.mp4"
             materialized = _materialize(media_input, src_path, max_src, deadline)
 
@@ -294,8 +306,6 @@ class MediaPreparer:
                 origin_end_sec=materialized.probe.duration_sec,
                 playback_speed=1 / cfg.coarse_fps,
             )
-        finally:
-            shutil.rmtree(tmpdir, ignore_errors=True)
 
     def prepare_fine(
         self,
@@ -331,8 +341,7 @@ class MediaPreparer:
                 f"declared size {media_input.declared_byte_size} > cap {max_src}"
             )
 
-        tmpdir = Path(tempfile.mkdtemp(prefix="daesingo_media_"))
-        try:
+        with self._temporary_directory() as tmpdir:
             src_path = tmpdir / "source.mp4"
             materialized = _materialize(media_input, src_path, max_src, deadline)
 
@@ -362,8 +371,6 @@ class MediaPreparer:
                 origin_end_sec=end,
                 playback_speed=1 / cfg.fine_fps,
             )
-        finally:
-            shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------

@@ -240,13 +240,14 @@ def build_view_from_adapter(
         visual_verify_status=visual_verify_status,
         independent_facts=snapshot.independent_facts,
     )
+    requests = adapter.get_export_requests() if adapter is not None and hasattr(adapter, "get_export_requests") else {}
     view = derive_notices(
         view,
         evidence_needs=snapshot.evidence_needs,
         visual_evidence_decision=snapshot.visual_evidence_decision,
         plate_read_retry_basis=jobs.latest_job_record(case, "PLATE_READ") is not None,
         search_retry_basis=jobs.latest_job_record(case, "COARSE_SEARCH") is not None,
-        report_video_export_basis=jobs.latest_job_record(case, "REPORT_VIDEO_EXPORT") is not None,
+        report_video_export_basis=jobs.latest_job_record(case, "REPORT_VIDEO_EXPORT") is not None or "REPORT_VIDEO_EXPORT" in requests,
         analysis_timed_out=case.analysis_timed_out,
         clip_build_failed=selected_clip_failed(case),
         analysis_range_too_long=case.analysis_range_too_long,
@@ -256,7 +257,6 @@ def build_view_from_adapter(
         hint_unclear=case.hint_unclear,
     )
     from daesingo.case.exports import export_notices
-    requests = adapter.get_export_requests() if adapter is not None and hasattr(adapter, "get_export_requests") else {}
     return export_notices(case, executions, view, requests)
 
 

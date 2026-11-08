@@ -105,6 +105,7 @@ def test_error_observation_logging_fault_preserves_terminal(path, sink, capsys):
 def test_composition_supplies_logger_at_registry_exception_boundary(tmp_path):
     stream = StringIO()
     config = RuntimeConfig.from_mapping("worker", {
+        "DAESINGO_RUNTIME_PUBLIC_MODE": "internal",
         "DAESINGO_RUNTIME_DB_URL": "mysql+pymysql://test@127.0.0.1:1/not_connected",
         "DAESINGO_RUNTIME_MEDIA_ROOT": str(tmp_path / "media"),
         "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(tmp_path / "temp"),
@@ -114,10 +115,17 @@ def test_composition_supplies_logger_at_registry_exception_boundary(tmp_path):
     def fail(ctx):
         raise private_error()
 
-    worker = compose_worker(engine=object(), startup=Startup(config, MappingProxyType({}), logger),
+    from a1_support import sqlite_engine
+    from daesingo.common.public_runtime import schema
+    engine = sqlite_engine(tmp_path / "guard.sqlite")
+    schema.metadata.create_all(engine)
+    with engine.begin() as conn:
+        conn.execute(schema.control.insert().values(id=1, accepting=False, policy_hash=None))
+    worker = compose_worker(engine=engine, startup=Startup(config, MappingProxyType({}), logger),
         registry=KindRegistry({"TEST": fail}), stop=Event())
     result = worker.dispatch(ExecutionContext("exec", "job", "case", "TEST", 1, "trace"))
     assert result == HandlerResult(status="FAILED", failure_kind="RUNTIME_HANDLER_ERROR")
+    engine.dispose()
     row = json.loads(stream.getvalue())
     assert row["event"] == "runtime.execution.failed" and row["error_type"] == "_FrameCoverageError"
     assert row["execution_id"] == "exec"

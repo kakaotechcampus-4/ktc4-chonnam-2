@@ -142,7 +142,8 @@ def acknowledge_exhaustion(conn: Connection, notice: JobExhaustionNotice,
 
 
 def redeliver_exhaustion_once(engine: Engine, receiver: ExhaustionReceiver, *,
-                              sleep: Callable = time.sleep, logger: logging.Logger | None = None
+                              sleep: Callable = time.sleep, logger: logging.Logger | None = None,
+                              transaction_guard: Callable[[Connection], object] | None = None
                               ) -> tuple[ExhaustionResult, ...]:
     """Nonlocking scan; isolated candidate transactions; scan DB faults propagate."""
     with engine.connect() as conn:
@@ -152,6 +153,8 @@ def redeliver_exhaustion_once(engine: Engine, receiver: ExhaustionReceiver, *,
     results = []
     for notice_id in candidates:
         def operation(conn):
+            if transaction_guard is not None:
+                transaction_guard(conn)
             stored = conn.execute(select(job_exhaustion_notice).where(
                 job_exhaustion_notice.c.notice_id == notice_id)).mappings().one_or_none()
             if stored is None or stored['case_acknowledged_at'] is not None:

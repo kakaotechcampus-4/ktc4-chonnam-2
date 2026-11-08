@@ -30,6 +30,7 @@ def worker_media(tmp_path):
     work = tmp_path / 'worker temp 한글'
     work.mkdir()
     config = RuntimeConfig.from_mapping('worker', {
+        'DAESINGO_RUNTIME_PUBLIC_MODE': 'internal',
         'DAESINGO_RUNTIME_DB_URL': 'mysql+pymysql://test@127.0.0.1:1/test_media_paths',
         'DAESINGO_RUNTIME_MEDIA_ROOT': str(tmp_path / 'media'),
         'DAESINGO_RUNTIME_WORKER_TEMP_ROOT': str(work),

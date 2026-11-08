@@ -9,11 +9,12 @@ def build_gemini_search_service(
     api_key: str,
     resolver: AnalysisSourceResolver,
     config: GeminiSearchConfig | None = None,
+    *, temp_context=None,
 ) -> SearchService:
     selected = config or GeminiSearchConfig.from_dotenv()
     return SearchService(
         resolver,
         GeminiProvider(api_key, selected),
         selected,
-        MediaPreparer(selected),
+        MediaPreparer(selected, temp_context=temp_context),
     )

@@ -79,7 +79,7 @@ def snapshot(engine, identity, job_id=None):
 class AsyncWorker:
     def __init__(self, observer_engine, tmp_path):
         config = RuntimeConfig.from_mapping("worker", {
-            "DAESINGO_RUNTIME_DB_URL": observer_engine.url.render_as_string(hide_password=False),
+            "DAESINGO_RUNTIME_PUBLIC_MODE": "internal", "DAESINGO_RUNTIME_DB_URL": observer_engine.url.render_as_string(hide_password=False),
             "DAESINGO_RUNTIME_MEDIA_ROOT": str(tmp_path),
             "DAESINGO_RUNTIME_WORKER_TEMP_ROOT": str(tmp_path),
         })

@@ -189,7 +189,7 @@ def cleanup_emitter(logger, *, emit=None):
     or execution identities. API may inject its existing bounded event queue.
     """
     def record(kind, result):
-        if kind not in ('staging', 'temp', 'orphan'):
+        if kind not in ('staging', 'temp', 'orphan', 'public_case'):
             raise ValueError('invalid cleanup event kind')
         for suffix, value in (('count', result.count), ('bytes', result.bytes),
                               ('failed_count', result.failed)):

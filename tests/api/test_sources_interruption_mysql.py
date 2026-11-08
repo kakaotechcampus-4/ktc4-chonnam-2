@@ -29,7 +29,7 @@ def test_owned_process_kill_keeps_file_before_row_order(api_db, monkeypatch, tmp
     app.state.composition.close()
     root = startup.config.media_root
     env_file = tmp_path/'runtime.env'
-    env_file.write_text('DAESINGO_RUNTIME_DB_URL='+engine.url.render_as_string(hide_password=False)+'\n'
+    env_file.write_text('DAESINGO_RUNTIME_PUBLIC_MODE=internal\nDAESINGO_RUNTIME_DB_URL='+engine.url.render_as_string(hide_password=False)+'\n'
         f'DAESINGO_RUNTIME_MEDIA_ROOT={root}\nDAESINGO_RUNTIME_API_TEMP_ROOT={root}\n', encoding='utf-8')
     marker = tmp_path/'checkpoint'
     with socket.socket() as sock:
