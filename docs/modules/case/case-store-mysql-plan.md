@@ -1,5 +1,9 @@
 # CaseStore MySQL 영속화 1단계 Implementation Plan
 
+> **상태 (2026-11-08 현재):** 완료된 계획 기록이다(1단계 구현 2026-10-06, #282 머지). 아래 체크박스는 갱신하지 않았다. 지금 동작은 `src/daesingo/case/store.py` · `store_mysql.py` · `store_state.py` · `migrations/case/`와 결정 문서 [`decisions/case-store-mysql.md`](decisions/case-store-mysql.md)에 있다. 이후 2단계(결과 저장소 · `adapter_factory`)는 [`decisions/observation-storage.md`](decisions/observation-storage.md)를 본다. 본문의 「CI는 바꾸지 않는다」도 당시 범위다 — 지금 CI(`.github/workflows/python-tests.yml`)에는 MySQL job이 있다.
+>
+> **용어.** `8-6` · `8-8` · `8-9` = [`design-refinement-w7-baseline.md`](design-refinement-w7-baseline.md)(7주차 설계 고도화 목록)의 항목 번호. `#245 D-2` 등 = case ↔ Runtime 접합 합의 이슈 #245의 결정 번호(`docs/runtime/runtime-tech-spec.md` §12). `RD-12f` = DB migration 실행 시점 · 순서 결정(`docs/runtime/open-decision-register.md`).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** case 상태(aggregate · JobRecord · CorrectionRecord · AnalysisScope)를 MySQL에 저장하고, 호출자 transaction에 참여하는 저장소로 바꾼다. 기존 테스트는 in-memory 저장소로 그대로 돈다.

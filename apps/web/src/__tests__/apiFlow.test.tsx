@@ -589,7 +589,7 @@ it('결과 화면에서 연 「어떻게 정했는지」는 기준 후보 영상
   }
   const { api } = setup({ get: initial })
   const screen = render(<ApiFlow api={api} caseId="c1" />)
-  fireEvent.click(await screen.findByRole('button', { name: '어떻게 정했는지' }))
+  fireEvent.click(await screen.findByRole('button', { name: '신고서를 어떻게 작성했는지 궁금하신가요?' }))
   await waitFor(() => expect(screen.container.querySelector('.details-scene video')?.getAttribute('src')).toBe('/candidate-video/basis-clip'))
 })
 

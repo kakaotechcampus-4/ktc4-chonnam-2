@@ -1,5 +1,7 @@
 # EvidenceNeeds 초안 v1
 
+> 2026-11-08 기준: Notion에서 가져온 초안 snapshot이다(본문은 당시 그대로). 현재 기준은 [EvidenceRecord · Needs 계약](../../../architecture/contracts/contract-evidence-record-needs.md)이다.
+
 ### 확정 가능한 매핑
 
 | kind | would_fill | 매핑 대상 | 근거 | 캐시 적용 여부 |

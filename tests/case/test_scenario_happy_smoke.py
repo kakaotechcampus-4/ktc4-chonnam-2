@@ -1,8 +1,8 @@
 """1차 구현 최소 기준: 공용 Fixture로 Happy Path 1개(scenario_happy_001)를 재현한다.
 
-recording/search/readout/evidence는 아직 코드가 없으므로 `MockFixtureAdapter`로 그
+이 테스트는 recording/search/readout/evidence를 부르지 않고 `MockFixtureAdapter`로 그
 모듈들의 산출물(Canonical Contract 모양)을 대신 읽는다 — case 코드 자체는 이 어댑터
-인터페이스만 알고, 실제 구현이 생기면 이 어댑터만 교체하면 된다.
+인터페이스만 안다. 실제 모듈 호출 체인은 `test_real_e2e.py`가 `RealAdapter`로 확인한다.
 
 비교 대상: `data/mock/case/scenario_happy_001.json`의 `case_views[]`(case 자신의
 Producer fixture, 정답지 역할). 이 테스트가 통과한다는 것은 "문서와 Mock JSON만 준비된
@@ -90,7 +90,7 @@ def test_happy_path_ready_matches_fixture():
     jobs.issue_overlay_time_read(case, input_fingerprint="sha1:h001-overlay-read-clip_h001")
     jobs.issue_fine_verify(case, input_fingerprint="sha1:h001-fine-verify-as_h001_fine")
 
-    # ── 다른 모듈이 (아직 stub이지만) 결과를 만들어줬다고 가정 ─────────────
+    # ── 다른 모듈이 결과를 만들어줬다고 가정(fixture 값) ───────────────────
     evidence_record = adapter.get_evidence_record()
     requirement_evidence = adapter.get_requirement_report("EVIDENCE")
     requirement_package = adapter.get_requirement_report("FINAL_PACKAGE")
@@ -167,8 +167,8 @@ def test_happy_path_before_situation_response_has_no_package():
     )
     case.select_candidate("candidate_h001")
 
-    # 실제 진입점(`build_view_from_adapter()`)처럼 파생 notice까지 붙인다 — 응답 전이라
-    # `case.situation_response_pending`, 검색어가 없어 `evidence.location_search_keyword_missing`.
+    # 실제 진입점(`build_view_from_adapter()`)처럼 파생 notice까지 붙인다 — 검색어가 없어
+    # `evidence.location_search_keyword_missing`. 응답 대기 notice는 #597 B안에서 조립된 evidence에 붙지 않는다.
     view = service.derive_notices(
         build_case_view(
             case,
@@ -183,6 +183,7 @@ def test_happy_path_before_situation_response_has_no_package():
     assert package_reports[0]["overall"] == "UNKNOWN"
     assert view["package"] is None
     assert view["candidates"][0]["situation_confirmation"] == "NOT_ASKED"
+    assert "case.situation_response_pending" not in {n["code"] for n in view["notices"]}
     assert {k: v for k, v in view.items() if k not in ("contract", "contract_version")} == {
         k: v for k, v in before.items() if k not in ("contract", "contract_version")
     }

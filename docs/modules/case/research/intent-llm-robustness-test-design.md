@@ -40,7 +40,7 @@ PM이 GPT-5 Nano 모델 선정 결과를 재검토하며 두 가지를 지적했
 
 ## 5. 이 카테고리들이 지금 하네스로 바로 테스트 가능한가
 
-**가능하다.** `candidates.py`가 `prior_hints`를 그대로 프롬프트에 주입하는 구조라(`CANDIDATE_USER_TEMPLATE`의 `prior_hints: {prior_hints_json}`), `correction_target` 오염 시도·새 사고 오인 방지 카테고리는 실제 `CaseAggregate` 프로덕션 배선(아직 안 됨 — `decisions/intent-llm-model-selection.md` §8)과 무관하게 지금 하네스에서 곧바로 실행할 수 있다. locked v1의 `case-07-correction`도 이미 같은 방식으로 `prior_hints`를 하네스가 직접 합성해 공급했다. 즉 프로덕션 배선 미완료는 이 테스트를 막는 조건이 아니다.
+**가능하다.** `candidates.py`가 `prior_hints`를 그대로 프롬프트에 주입하는 구조라(`CANDIDATE_USER_TEMPLATE`의 `prior_hints: {prior_hints_json}`), `correction_target` 오염 시도·새 사고 오인 방지 카테고리는 실제 `CaseAggregate` 프로덕션 배선(아직 안 됨 — `decisions/intent-llm-model-selection.md` §8. 2026-11-08 현재: 배선됨, 같은 §8 메모)과 무관하게 지금 하네스에서 곧바로 실행할 수 있다. locked v1의 `case-07-correction`도 이미 같은 방식으로 `prior_hints`를 하네스가 직접 합성해 공급했다. 즉 프로덕션 배선 미완료는 이 테스트를 막는 조건이 아니다.
 
 ## 6. 데이터셋 파일 명명 — 왜 `v2`가 아니라 별도 파일인가
 
@@ -64,7 +64,7 @@ PM이 GPT-5 Nano 모델 선정 결과를 재검토하며 두 가지를 지적했
 - [x] `dataset.py`의 `load_dataset()`으로 27케이스 전부 무료 로드 확인(2026-09-22) — 파싱 에러 없음, `prior_hints`가 있는 6케이스(`case-15a/b/c`·`case-16a/b/c`, §3 마지막 두 카테고리 각 3개 — 8이 아니라 6이었다, 이전 기재 정정)도 정상 인식됨. `candidates.py`가 `prior_hints`를 그대로 프롬프트에 주입하는 구조라 실제 API 호출 전에 걸릴 게 없음을 확인.
 - [x] **모델 선정 재검토 필요성 관련(PM 피드백 2)** — GPT-5 Nano의 100% field 정확도가 n=7 기반이라 근거가 얇다는 지적에 따라, 이번 27케이스 실측을 GPT-5 Nano 하나가 아니라 **3개 후보 모델 전부**에 대해 실행하기로 결정(2026-09-22) — robustness 검증과 모델 선정 재확인을 동시에 수행.
 - [ ] `decisions/intent-hint-robustness-policy.md` §3의 남은 항목(모순 정보 `expected_notes` 구체화 등) 진행
-- [ ] §7 "정보 위치/순서 편향" 케이스 추가 여부 결정
+- [ ] §7 "정보 위치/순서 편향" 케이스 추가 여부 결정 (2026-11-08 현재: §7에 2026-09-22 추가로 적혀 있다)
 - [x] Elice 실측 실행(3개 모델 × 27케이스, 2026-09-22) → §10 참고. `predictions-robustness/`·`results/summary-robustness-v1.md`에 저장(기존 v1 `predictions/`·결과와 분리, §6 명명 원칙 그대로 적용)
 
 ## 10. 실측 결과 (2026-09-22, judge_run_id `20260922T105457Z`)
@@ -88,7 +88,7 @@ PM이 GPT-5 Nano 모델 선정 결과를 재검토하며 두 가지를 지적했
 
 ## 11. 4번째 후보 추가 — Gemini 3.8 Flash (2026-09-22)
 
-모델 재선정 논의 중 "이 3개 후보로 한정해야 하나"라는 질문에서 나왔다. 웹에서 새 후보를 찾기보다, **search 모듈이 이미 Elice로 실사용 중인 모델**(`src/daesingo/search/config.py`의 `model: str = "gemini-3.8-flash"`, base_url `https://mlapi.run/a90d8545-.../v1`, `chat.completions.parse(response_format=...)` 패턴까지 case 하네스와 동일)을 그대로 재사용했다 — Gemini 3.1 Flash-Lite가 애초에 후순위였던 이유(Preview 상태, `research/llm-model-comparison-hint-extraction.md` §5)가 이 상위 버전에는 없다.
+모델 재선정 논의 중 "이 3개 후보로 한정해야 하나"라는 질문에서 나왔다. 웹에서 새 후보를 찾기보다, **search 모듈이 이미 Elice로 실사용 중인 모델**(`src/daesingo/search/config.py`의 `model: str = "gemini-3.8-flash"`, base_url `https://mlapi.run/a90d8545-.../v1`, `chat.completions.parse(response_format=...)` 패턴까지 case 하네스와 동일)을 그대로 재사용했다(2026-11-08 현재: search 기본 모델은 `gemini-4-argon`으로 바뀌었고, intent만 `src/daesingo/search/intent.py`에서 `gemini-3.8-flash`를 쓴다) — Gemini 3.1 Flash-Lite가 애초에 후순위였던 이유(Preview 상태, `research/llm-model-comparison-hint-extraction.md` §5)가 이 상위 버전에는 없다.
 
 `candidates.py`의 `MODEL_IDS`·`_MODEL_BASE_URL_ENV`에 추가하고(`.env`에 `ELICE_URL_GEMINI_3_8_FLASH` 추가), v1+robustness-v1 34케이스 전체에 실측(judge_run_id `20260922T120348Z`, candidate 34건+judge 34건 전부 `error=None`):
 
@@ -101,7 +101,7 @@ PM이 GPT-5 Nano 모델 선정 결과를 재검토하며 두 가지를 지적했
 | `새사고_정정오인_방지` | — | **100%**(4개 모델 중 최고 — GPT-5 Nano가 61%로 최저였던 카테고리) |
 | `correction_target_오염_시도` | — | 61% |
 
-원본: `results/summary-gemini-3.8-flash-v1.md`·`results/summary-gemini-3.8-flash-robustness.md`. **비용은 아직 `-`(None)** — `pricing.py`의 `KRW_PER_1M_TOKENS`에 이 모델 단가가 없다(구글 공식 요율 $0.75/$3.75는 찾았지만, Elice가 기존 3개 모델에 매긴 단가가 공식 요율보다 유의미하게 높았던 전례가 있어 그대로 못 쓴다 — Elice 모델 카드에서 직접 확인 필요, §12 참고).
+원본: `results/summary-gemini-3.8-flash-v1.md`·`results/summary-gemini-3.8-flash-robustness.md`. **비용은 아직 `-`(None)** — `pricing.py`의 `KRW_PER_1M_TOKENS`에 이 모델 단가가 없다(구글 공식 요율 $0.75/$3.75는 찾았지만, Elice가 기존 3개 모델에 매긴 단가가 공식 요율보다 유의미하게 높았던 전례가 있어 그대로 못 쓴다 — Elice 모델 카드에서 직접 확인 필요, §12 참고). (2026-11-08 현재: 2026-10-05에 단가를 넣었다 — `decisions/intent-llm-model-selection.md` §13.)
 
 4개 모델 중 거의 전 지표에서 가장 균형 잡힌 결과라, 모델 재선정 논의의 유력 후보가 됐다. **다만 최종 결론은 §12의 데이터셋 확장(50케이스 이상) 이후로 미룬다** — 지금 34케이스로도 이미 순위가 여러 번 뒤집힌 전례(§10)가 있어, 표본을 더 늘리기 전에 결론을 확정하지 않는다.
 

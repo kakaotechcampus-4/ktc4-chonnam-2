@@ -76,7 +76,7 @@ def test_record_source_registered_is_persisted():
 
 
 def test_view_and_command_read_adapter_from_factory():
-    # 진입점(get_view · execute_command)이 registry가 아니라 `store.adapter_for`를 거친다(8-6 2단계 §4-3).
+    # 진입점(get_view · execute_command)이 registry가 아니라 `store.adapter_for`를 거친다(`decisions/observation-storage.md` §4-3).
     store, case_id = _store_with_two_candidates()
     seen = []
     store.adapter_factory = lambda case, conn: seen.append(case.case_id) or _NoDownstream()

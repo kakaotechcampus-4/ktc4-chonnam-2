@@ -1,12 +1,14 @@
 # [Case] 자연어 단서 구조화용 LLM 모델 비교
 
-> **성격:** 자연어 단서 구조화("사용자 자연어 단서를 구조화한다", `phase1-completion-checklist.md` 74번 항목) 호출에 어떤 LLM을 쓸지에 대한 조사 문서다. **2026-09-19 실측 완료 — 결정은 `docs/modules/case/decisions/intent-llm-model-selection.md`에 있다.** 이 문서는 실측 이전 조사·가설을 그대로 보존하고(§9에 실측 결과 요약·링크만 추가), 규칙 원문을 결정 문서와 중복하지 않는다.
+> **성격:** 자연어 단서 구조화("사용자 자연어 단서를 구조화한다", `phase1-completion-checklist.md` §3-A hints 구조화 항목) 호출에 어떤 LLM을 쓸지에 대한 조사 문서다. **2026-09-19 실측 완료 — 결정은 `docs/modules/case/decisions/intent-llm-model-selection.md`에 있다.** 이 문서는 실측 이전 조사·가설을 그대로 보존하고(§9에 실측 결과 요약·링크만 추가), 규칙 원문을 결정 문서와 중복하지 않는다.
+>
+> (2026-11-08 현재: 최종 채택은 GPT-5 Nano가 아니라 Gemini 3.8 Flash다 — 같은 결정 문서 §10 · §13.)
 
 **Owner:** 유소연
 
 **관련 모듈:** 없음 (case 내부 결정 — 자연어 단서 구조화는 case의 책임 범위, `tech-spec.md` §1)
 
-**근거 자료:** `docs/modules/case/research/architecture-input-memo.md` §2("intent LLM 호출은 1회로 제한") · `docs/modules/case/tech-spec.md` §1 · `docs/modules/case/checklists/phase1-completion-checklist.md` 74번 항목(AI 모델 호출 필요로 Mock 1차 범위 밖) · 가격 조사(§5 출처 참고, 2026-09-16 웹 검색)
+**근거 자료:** `docs/modules/case/research/architecture-input-memo.md` §2("intent LLM 호출은 1회로 제한") · `docs/modules/case/tech-spec.md` §1 · `docs/modules/case/checklists/phase1-completion-checklist.md` §3-A hints 구조화 항목(AI 모델 호출 필요로 Mock 1차 범위 밖) · 가격 조사(§5 출처 참고, 2026-09-16 웹 검색)
 
 ---
 
@@ -19,7 +21,7 @@ web에서 사용자 자연어 답변 → case가 구조화(hints) → Job Intent
 → 결과 도메인 상태 반영 → CaseView로 web에 재투사
 ```
 
-이 중 "자연어 단서 구조화" 단계는 실제 AI 모델 호출이 필요해 Mock 1차 구현 범위에서 명시적으로 제외되어 있었다(`checklists/phase1-completion-checklist.md` 74번). 이 문서는 그 호출에 쓸 LLM을 고르기 위한 예비 조사다.
+이 중 "자연어 단서 구조화" 단계는 실제 AI 모델 호출이 필요해 Mock 1차 구현 범위에서 명시적으로 제외되어 있었다(`checklists/phase1-completion-checklist.md` §3-A hints 구조화 항목). 이 문서는 그 호출에 쓸 LLM을 고르기 위한 예비 조사다.
 
 ## 2. 확인된 제약
 
@@ -103,7 +105,7 @@ Gemini 2.5 Flash-Lite(현재 최저가 $0.10/$0.40)는 2026-10-16 서비스 종�
 
 - `docs/modules/case/research/architecture-input-memo.md` §2, §3 열린 결정 표 "intent 멀티턴 확장"
 - `docs/modules/case/tech-spec.md` §1
-- `docs/modules/case/checklists/phase1-completion-checklist.md` 74번 항목
+- `docs/modules/case/checklists/phase1-completion-checklist.md` §3-A hints 구조화 항목
 - 가격 조사(2026-09-16 웹 검색):
   - [Gemini API Pricing: Full Breakdown of Costs (Sep 2026)](https://developer.puter.com/tutorials/gemini-api-pricing/)
   - [Gemini 3.1 Flash Lite Preview API Pricing 2026](https://pricepertoken.com/pricing-page/model/google-gemini-3.1-flash-lite-preview)

@@ -8,6 +8,7 @@ import react from '@vitejs/plugin-react'
 // 기본 주소 8000은 uvicorn 기본값을 가정한 것이다 — 서버 포트가 정해지면(RT-08) 맞춘다. `API_PROXY_TARGET`으로 바꾼다.
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  build: { rollupOptions: { input: { app: 'index.html', driving: 'driving-game.html' } } },
   server: {
     fs: { allow: ['../..'] },
     proxy: {

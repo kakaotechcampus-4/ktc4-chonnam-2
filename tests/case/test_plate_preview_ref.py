@@ -89,7 +89,7 @@ def test_real_adapter_projects_plate_readout_best_frame() -> None:
 
 
 def test_plate_image_export_kind_is_registered() -> None:
-    """#47 Q3 — `PLATE_IMAGE_EXPORT`를 `REPORT_VIDEO_EXPORT`와 같은 급으로 등재한다(계약 A절 §7)."""
+    """#47 Q3 — `PLATE_IMAGE_EXPORT`를 `REPORT_VIDEO_EXPORT`와 같은 급으로 등재한다(JobRecord 계약 A절 §7)."""
     case = _selected_case("candidate_h001", "fr_h001_thumb")
 
     record = jobs.issue_job(case, "PLATE_IMAGE_EXPORT", input_fingerprint="sha1:plate-image-export")

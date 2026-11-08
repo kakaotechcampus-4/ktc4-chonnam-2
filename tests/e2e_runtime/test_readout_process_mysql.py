@@ -89,13 +89,18 @@ def test_full_chain_and_stored_caseview_in_separate_processes(async_db, tmp_path
         for _ in range(2): redeliver_once(engine, StoredCaseReflector(storage_root=root))
         local.send(("GET", f"/cases/{identity}/view", None))
         view = public(receive(local))
-        assert not view["running_jobs"] and view["evidence"] is not None
+        # #597 B안 — 판독이 끝나 EvidenceRecord가 조립되면 응답 없이 export가 자동 발주된다(실행 · 완료는
+        # test_export_process_mysql). 관찰 job은 모두 끝났고 남은 것은 export뿐이다.
+        running = {j["kind"] for j in view["running_jobs"]}
+        assert view["evidence"] is not None and view["evidence"]["record_id"] is not None
+        assert "REPORT_VIDEO_EXPORT" in running and running <= {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}
         codes = {item["code"] for item in view["notices"]}
         if notice:
             assert notice in codes
             assert len(codes & {"readout.overlay_not_present", "readout.overlay_presence_undetermined", "readout.overlay_ocr_failed"}) == 1
         with engine.begin() as conn:
-            rows = conn.execute(sa.select(job_execution)).mappings().all()
+            rows = [row for row in conn.execute(sa.select(job_execution)).mappings().all()
+                    if not row["kind"].endswith("EXPORT")]
             assert len(rows) == 6 and all(row["case_applied_at"] is not None for row in rows)
             facade = stored_case_store(conn, storage_root=root)
             adapter = facade.adapter_for(facade.get_case(identity))

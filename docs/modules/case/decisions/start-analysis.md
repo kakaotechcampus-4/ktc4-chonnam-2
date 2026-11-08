@@ -1,6 +1,7 @@
 # 분석 시작(`START_ANALYSIS`) — command · 단서 반영 · 첫 탐색 발주
 
-> **상태: 결정 · 구현**(`case/analysis_start.py`, [PR #315](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/315)) · 결정일 2026-10-07 · RC 다중 영상 범위 2026-11-01(#510, §3-1) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-1(`../design-refinement-w7-baseline.md`), case-command Draft §11(`../contracts/contract-case-command.md`), #247 H-2 · H-3 · H-5, #210 · #277(search 단서 구조화 함수), #313(여러 영상 · 탐지 유형 의견 수렴)
+> **상태: 결정 · 구현**(`src/daesingo/case/analysis_start.py`, [PR #315](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/315)) · 결정일 2026-10-07 · RC 다중 영상 범위 2026-11-01(#510, §3-1) · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-1(`../design-refinement-w7-baseline.md`), case-command Draft §11(`../contracts/contract-case-command.md`), #247 H-2 · H-3 · H-5, #210 · #277(search 단서 구조화 함수), #313(여러 영상 · 탐지 유형 의견 수렴)
+> 용어: `W7`은 프로젝트 7주차, `8-1` · `8-6` · `8-8` 같은 번호는 `../design-refinement-w7-baseline.md` §1 「8순위」(Runtime 결정 후속 작업) 표의 행 번호다. `#숫자`는 GitHub 이슈 · PR 번호다.
 > Draft §11이 이미 정한 것(빈 설명 · 실패 notice 없음 · `case_rev` 유지 · `HINT_EXTRACT` 이름 · CaseView `description`)은 다시 정하지 않는다. 이 문서는 Draft §11의 **미결 2 · 3 · 4**와 여러 영상 처리를 정하고, 구현 범위를 적는다. 규칙 원문은 구현 때 case-command 계약 정식 판본으로 옮긴다.
 
 ## 1. 목표 · 성공 기준
@@ -69,7 +70,7 @@
 1. 전방 · 후방을 **별도 파일**로 찍으면 앞뒤로 이어 붙여 후방 시각이 밀린다.
 2. 이어 붙인 총 길이가 Coarse 한 번의 한도를 넘으면 실패할 수 있다 — 긴 영상 1개와 같은 기존 한계, 클립 분할(#168)로 풀린다.
 3. 여러 파일 분석 입력은 recording(`prepare_analysis_source_from_resolution`)이 지원하지만 real 경로는 파일 1개로만 검증됐다.
-4. **한 파일 안에 VIDEO 스트림이 둘 이상**(전방 · 후방이 한 AVI)이면 스트림을 고를 기준이 없어 실패한다 — 지금 real 경로와 같은 한계다. 기본 카메라 선택 정책은 recording이 정하지 않았다(`multi-source-timeline.md`). **영상이 1개여도 같다** — 임시 구현이 발주 전에 막는다(composition root는 등록 때 `media_streams`를 넘겨야 한다). 실패는 §3-7 「타임라인을 만들지 못함」과 같이 처리한다.
+4. **한 파일 안에 VIDEO 스트림이 둘 이상**(전방 · 후방이 한 AVI)이면 스트림을 고를 기준이 없어 실패한다 — 지금 real 경로와 같은 한계다. 기본 카메라 선택 정책은 recording이 정하지 않았다(`docs/modules/recording/multi-source-timeline.md`). **영상이 1개여도 같다** — 임시 구현이 발주 전에 막는다(composition root는 등록 때 `media_streams`를 넘겨야 한다). 실패는 §3-7 「타임라인을 만들지 못함」과 같이 처리한다.
 5. **부를 때마다 recording 타임라인이 새로 생긴다.** 같은 원본이어도 `timeline_id`가 달라져 `COARSE_SEARCH` fingerprint도 달라진다(재전달 · 재시도 때) — 재사용 캐시가 생기면 적중하지 않는다. recording 저장소가 case와 같은 transaction이 아니면 case rollback 뒤 타임라인이 고아로 남는다. recording의 case 타임라인 기능(또는 재사용 조회)이 생기면 함께 풀린다.
 6. **파일 사이에 실제 끊김이 있을 때 경계를 걸친 IncidentClip · 신고용 영상은 확인하지 않았다**(#510 「확인 필요」). #491 이후 A→B 경계를 걸친 clip을 만들 수 있지만, 이어 붙인 타임라인은 끊김을 모르므로 끊긴 두 장면이 이어진 영상처럼 보일 수 있다. RC 입력 제한(위)으로 피하고, 실제 영상으로는 재현하지 않았다.
 
@@ -102,15 +103,15 @@
 ### 3-6. 진입 함수 · 저장 경계
 
 - **command:** `execute_command()`(8-6 · 8-7 그대로) — 성공 시 `CommandResult.appended_job_records`에 `HINT_EXTRACT` 또는 `COARSE_SEARCH`가 담긴다.
-- **반영:** 새 `service.receive_hint_extraction_result(case_id, result, *, store, timelines, budget) -> ReflectionResult(appended_job_records)`. `load_for_update` → 반영 → **성공했을 때만** `save`, 이번에 append한 JobRecord를 돌려준다 — composition root(Worker T2)가 같은 transaction에서 enqueue한다(`CommandResult`와 같은 장치, `decisions/command-appended-job-records.md`). 저장소는 commit하지 않는다(#245 D-2).
-- **정산 대상 · 중복 결과:** 아직 기다리는 `HINT_EXTRACT`(정산되지 않은 것)를 `REFLECTED`로 정산한다. **기다리는 `HINT_EXTRACT`가 없으면 아무것도 바꾸지 않는다** — 반영 뒤에도 stage는 `SEARCHING`(Coarse 대기)이라 stage 검사만으로는 같은 결과의 두 번째 도착을 막지 못하기 때문이다. execution 단위 idempotency는 8-8에서 한다.
+- **반영:** 새 `service.receive_hint_extraction_result(case_id, result, *, store, timelines, budget) -> ReflectionResult(appended_job_records)`. (2026-11-08 현재: 그 결과를 낸 job을 가리키는 `job_id` 키워드 인자가 더해졌고, `ReflectionResult`에 `reflected` 필드가 있다 — `src/daesingo/case/service.py`.) `load_for_update` → 반영 → **성공했을 때만** `save`, 이번에 append한 JobRecord를 돌려준다 — composition root(Worker T2)가 같은 transaction에서 enqueue한다(`CommandResult`와 같은 장치, `decisions/command-appended-job-records.md`). 저장소는 commit하지 않는다(#245 D-2).
+- **정산 대상 · 중복 결과:** 아직 기다리는 `HINT_EXTRACT`(정산되지 않은 것)를 `REFLECTED`로 정산한다. **기다리는 `HINT_EXTRACT`가 없으면 아무것도 바꾸지 않는다** — 반영 뒤에도 stage는 `SEARCHING`(Coarse 대기)이라 stage 검사만으로는 같은 결과의 두 번째 도착을 막지 못하기 때문이다. execution 단위 idempotency는 8-8에서 한다. (2026-11-08 현재: 「기다리는가」는 넘겨받은 `job_id` 하나로 판단한다 — `analysis_start.reflect_hint_extraction()`이 `case.awaits_result(job_id)`가 거짓이면 아무것도 바꾸지 않고 `False`를 돌려준다.)
 - **설명 원문:** 받은 문자열을 **그대로** 저장해 CaseView `description`으로 내린다. 비었는지는 앞뒤 공백을 지운 뒤 판단한다(공백만 적으면 저장은 원문, 구조화는 생략).
 
 ### 3-7. 실패 처리
 
 - **command:** 영상 0개 · `INTAKE` 아님(두 번째 클릭 포함) → `not_allowed`. payload 모양 → `invalid_payload`. 거부 시 상태를 바꾸지 않는다(case-command §6).
 - **타임라인을 만들지 못함(recording 오류):** 예외를 그대로 올린다. command 단계면 요청 실패, Worker 반영 단계면 transaction rollback 후 Runtime 재전달에 맡긴다. 탐색 실패 notice로 바꾸지 않는다 — 그 notice의 「다시 찾기」는 이전 `COARSE_SEARCH`가 있어야 동작해, 사용자가 누를 버튼 없이 막힌다. **한계:** 계속 실패하면 `SEARCHING`에 머문다(8-9 timeout에서 다룬다).
-- **반영 결과 모양이 모름(status 밖):** 지금처럼 `ValueError`로 멈춘다(`service.receive_hint_extraction()` 규칙 유지).
+- **반영 결과 모양이 모름(status 밖):** 지금처럼 `ValueError`로 멈춘다(`service.receive_hint_extraction()` 규칙 유지). (2026-11-08 현재: 이 검사는 `analysis_start.hints_from_result()`에 있다.)
 
 ## 4. 구현 범위
 
@@ -121,7 +122,7 @@
 | 새 `timeline_source.py` | `CaseTimeline` · `CaseTimelineSource` · `RecordingSequentialTimelineSource` |
 | 새 `analysis_start.py` | `start_analysis()` · `reflect_hint_extraction()` · `issue_initial_search()` · fingerprint · 예산 기본값(`InitialSearchBudget`) |
 | `command.py` | `START_ANALYSIS` handler, `execute_command(..., timelines=, budget=)` 주입 |
-| `service.py` | `receive_hint_extraction_result()`(load · 반영 · save · appended 반환) 추가, 기존 aggregate 수준 `receive_hint_extraction()`은 `analysis_start.reflect_hint_extraction()`으로 흡수 |
+| `service.py` | `receive_hint_extraction_result()`(load · 반영 · save · appended 반환) 추가, 기존 aggregate 수준 `receive_hint_extraction()`은 `analysis_start.reflect_hint_extraction()`으로 흡수 (2026-11-08 현재: `receive_hint_extraction()`은 hints만 반영하는 함수로 `service.py`에 남아 있다) |
 | `view.py` | `"description": case.description` |
 | case-command 계약 | §11을 정식 판본(§2 표 · §5 · §6)으로 이동, 미결 2 · 3 · 4 닫음 |
 | `design-refinement-w7-baseline.md` | 8-1 · 8-16 상태 |

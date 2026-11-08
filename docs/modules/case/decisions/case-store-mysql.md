@@ -2,6 +2,8 @@
 
 > **상태: 1단계 구현(2026-10-06, `case-store-mysql-plan.md`). §6 진입점은 `store=` 인자를 유지하고 `CaseStore`가 repository · conn · adapters를 묶는다 — 동작은 이 문서 그대로** · 2026-10-05 · 담당 유소연(`case`) · 근거 W7 고도화 8순위 8-6(`design-refinement-w7-baseline.md`), #245 D-1 · D-2 · D-5, #246 S-4, #250 RD-01
 > case schema · 저장소 인터페이스는 case 결정 범위다(#245 D-1 「Case table/schema는 case가 소유」). 다른 Owner와 맞춰야 하는 것은 §9에 따로 둔다.
+> **용어.** `W7 고도화 8-6` = 7주차 설계 고도화 목록(`design-refinement-w7-baseline.md`)의 항목 번호. `#245 D-x` · `#246 S-x` · `#250 RD-xx`/`01a` = case ↔ Runtime 합의 이슈의 결정 번호(정리본은 `docs/runtime/runtime-tech-spec.md` §12). `Ops §2` = `docs/runtime/ops-spec.md` §2.
+> **2026-11-08 현재:** 2단계(결과 저장소 · 요청마다 adapter를 만드는 `CaseStore.adapter_factory`)도 들어갔다 — [`observation-storage.md`](observation-storage.md). 아래 본문은 1단계 설계 기록이다.
 
 ## 1. 배경
 
@@ -95,6 +97,7 @@ analysis_scopes                            -- append-only, scope는 불변
 - `analysis_scopes`는 `state`에 넣지 않는다 — 테이블 하나에만 둔다.
 - **모르는 키는 보존한다(round-trip).** 로드할 때 따로 보관했다가 `save()` 때 그대로 다시 쓴다. ops-spec은 single EC2 · 단순 rollback이 전제라(L786), 새 코드가 새 키를 쓴 뒤 옛 코드로 돌아가도 읽히고 데이터가 지워지지 않아야 한다.
 - **없는 키는 dataclass 기본값으로 채운다** — expand 단계(필드 먼저 추가)에서도 읽힌다.
+- (2026-11-08 현재: 위 예시는 1단계 당시 키다. 지금 저장 키 목록은 `src/daesingo/case/store_state.py`의 `_STATE_FIELDS`이고, `state_version`은 여전히 1이다.)
 
 ### aggregate에 더하는 것
 
@@ -124,6 +127,8 @@ adapter는 저장소에서 빼서 process 메모리의 `AdapterRegistry`(case_id
 
 `RealAdapter` · `RealVideoAdapter`는 만들 때 받은 `CaseAggregate`를 `self._case`로 들고 후보 · 정정 · `selection_rev`를 거기서 읽는다(`adapters.py:282` · `516`). `load()`가 새 객체를 주면 adapter는 옛 객체를 보게 되므로, adapter에 `bind_case(case)`를 두고 `AdapterRegistry.for_case(case)`가 요청마다 방금 로드한 aggregate를 붙인다. adapter 캐시(evidence 결과 묶음 · 관찰)는 객체 동일성이 아니라 `case_rev` · `candidate_generation` 값으로 판단하므로 그대로 동작한다.
 
+(2026-11-08 현재: 행 번호는 바뀌었다 — `bind_case`는 `src/daesingo/case/adapters.py`의 두 adapter 클래스에, `for_case`는 `store.py` `AdapterRegistry`에 있다.)
+
 ## 6. 호출부
 
 | 진입점 | 바뀌는 것 |
@@ -131,7 +136,7 @@ adapter는 저장소에서 빼서 process 메모리의 `AdapterRegistry`(case_id
 | `service.get_view(case_id, *, repository, conn, adapters, …)` | `load(lock="share")` → `adapters.for_case(case)` → 조립 |
 | `command.handle_command(request, *, repository, conn, adapters, …)` | `load(lock="update")` → 검사 · 변경 → **성공했을 때만 `save()`**. 실패하면 저장하지 않는다(계약 §6 「실패하면 아무 상태도 바꾸지 않는다」). commit/rollback은 호출자 |
 | `demo_happy_001.py` · `scripts/dump_real_caseview.py` · `scripts/dump_real_video_caseview.py` · 테스트 5개 파일 | in-memory 저장소 + `conn=None` |
-| `scripts/measure_case_orchestration.py`(PR #234, 미머지) | 먼저 머지되는 쪽에 맞춰 같이 고친다 |
+| `scripts/measure_case_orchestration.py`(PR #234, 미머지 — 2026-11-08 현재 머지되어 있다) | 먼저 머지되는 쪽에 맞춰 같이 고친다 |
 | aggregate를 직접 받는 함수(`receive_search_candidates` 등) | 그대로. 부르는 쪽이 load · save — 실제 경로는 worker 배선(8-8)에서 생긴다 |
 
 「이번 command로 append한 JobRecord 목록」을 돌려주는 것은 8-7이라 넣지 않는다.
@@ -187,7 +192,9 @@ adapter는 저장소에서 빼서 process 메모리의 `AdapterRegistry`(case_id
 | 잠금 순서 규칙(§5) | common/runtime | case 행 먼저 |
 | Alembic 구성 — 공용 env인지 모듈별인지 미정 **(잠정, 위 확인 결과)** | common/runtime | 임시로 case 전용 env(`migrations/case/`), version table `case_alembic_version`. 공용이 정해지면 옮긴다 |
 | `pyproject.toml` 의존성(SQLAlchemy · PyMySQL · Alembic) 버전 | common/runtime (공용 파일) | Runtime과 같은 버전 |
-| CI MySQL — runtime-tech-spec §16이 실제 MySQL 통합 테스트를 요구하지만 CI에 없다(`open-decision-register.md` 「MySQL integration CI 없음」) | common/runtime | 요청만 한다. 이 PR에서 CI를 바꾸지 않는다 |
+| CI MySQL — runtime-tech-spec §16이 실제 MySQL 통합 테스트를 요구하지만 CI에 없다(`docs/runtime/open-decision-register.md` 「MySQL integration CI 없음」) | common/runtime | 요청만 한다. 이 PR에서 CI를 바꾸지 않는다 |
+
+(2026-11-08 현재: CI `.github/workflows/python-tests.yml`에 MySQL job이 있다.)
 
 ## 10. 범위 밖
 
@@ -204,4 +211,4 @@ adapter는 저장소에서 빼서 process 메모리의 `AdapterRegistry`(case_id
 - 기존 테스트 회귀 없음 · `scripts/check_boundaries.py` PASS
 - §9 항목 확인 결과를 PR에 남긴다
 - ✅ (2026-10-06) `erd-draft.md`의 case 부분(L380~392 · L421 `correction_records` 값 저장 「미정」)을 이 schema로 갱신
-- `design-refinement-w7-baseline.md` 8-6에 1단계 완료 · 2단계 남음을 적는다
+- `design-refinement-w7-baseline.md` 8-6에 1단계 완료 · 2단계 남음을 적는다 (2026-11-08 현재: 8-6 행에 반영돼 있다)

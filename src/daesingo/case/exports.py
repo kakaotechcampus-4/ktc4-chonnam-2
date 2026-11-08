@@ -1,4 +1,8 @@
-"""#351 order timing and relay of module-owned export inputs and limits."""
+"""신고용 export(신고 영상 · 번호판 이미지) 발주 시점 판단과 입력 전달.
+
+export 입력과 크기 상한은 각 모듈이 정한 값을 그대로 옮긴다. case는 언제 발주할지와
+실패 notice만 만든다(#351).
+"""
 import copy
 
 from daesingo.case import jobs
@@ -23,11 +27,14 @@ def issue_missing_exports(case, adapter, view):
     from daesingo.case.service import report_video_missing
     if adapter is None or not hasattr(adapter, "get_export_requests"):
         return
-    # Same #351 predicate as the visible missing-video notice. Plate is optional
-    # and shares the response gate, even when report video already exists.
+    # Same #351 predicate as the visible missing-video notice
+    # (= `case.report_video_not_generated` notice가 쓰는 `service.report_video_missing()` 조건). Plate is optional
+    # and shares the same gate, even when report video already exists.
+    # #597: no situation-response gate. An assembled EvidenceRecord (record_id) is
+    # the gate — Fine OBSERVED assembles before any response; UNCERTAIN only after
+    # USER_UNSURE (evidence disposition), so it still waits for the response.
     selected = [c for c in view.get("candidates", []) if c["selected"]]
     if (not (view.get("evidence") or {}).get("record_id") or len(selected) != 1
-            or selected[0]["situation_confirmation"] not in {"CONFIRMED", "CORRECTED", "USER_UNSURE"}
             or not any(c["code"] == "package.asset.report_video.exists"
                        for c in (view.get("requirements_package") or {}).get("checks", []))):
         return

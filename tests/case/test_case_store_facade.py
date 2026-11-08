@@ -48,7 +48,7 @@ def test_store_wraps_given_repository_and_registry():
 
 
 def test_adapter_for_builds_adapter_from_factory_with_case_and_conn():
-    # 8-6 2단계 §4-3 — composition root가 꽂은 factory가 요청마다 adapter를 만든다. registry는 보지 않는다.
+    # `decisions/observation-storage.md` §4-3 — composition root가 꽂은 factory가 요청마다 adapter를 만든다. registry는 보지 않는다.
     calls, made = [], _BindingAdapter()
     conn = object()
     store = CaseStore(conn=conn, adapter_factory=lambda case, c: calls.append((case, c)) or made)

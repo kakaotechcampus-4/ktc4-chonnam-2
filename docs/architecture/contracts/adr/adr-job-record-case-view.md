@@ -1,6 +1,8 @@
 # ADR-부록: JobRecord / CaseView
 
 > **후속 변경 (2026-09-07):** `case-view/v1.2` — B01·B02 종결(info_state 파생 입력 · requirements 두 객체 분리 · thumb_ref FrameRef)과 `JobRecord.kind` `OVERLAY_TIME_READ` 등재·1:1 불변조건은 `adr-data-contract-call-closure-2026-09-07.md` §4.1~§4.3·§4.9가 근거다. 아래 본문은 당시 결정 기록이며 고치지 않았다.
+>
+> **(2026-11-08 현재)** 본문의 닫힌 값 중 둘이 뒤에 늘었다 — `JobExecution.status`에 `CANCELLED`(`job-execution/v1.1`), `progress.state`에 `PARTIAL`(`case-view/v1.3`, `CANCELLED→PARTIAL`). 현재 판본은 `case-view/v1.13`이고 값 목록의 정본은 `../contract-job-record-case-view.md`다.
 
 ## ADR-부록A. `JobRecord` (Job Intent) 확정
 

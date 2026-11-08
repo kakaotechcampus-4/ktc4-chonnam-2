@@ -1,5 +1,7 @@
 # 분석 시작(START_ANALYSIS, 8-1) Implementation Plan
 
+> **상태(2026-11-08): 완료된 구현 계획 — 기록용.** PR #315(2026-10-07)로 구현됐다. 아래 본문은 당시 계획 그대로이며, 행 번호 · 예산(`max_latency_sec` 150 → 지금 600) · 반영 함수 시그니처(지금은 `job_id` 인자 추가)는 그 뒤 바뀌었다. 지금 동작은 `decisions/start-analysis.md`와 `src/daesingo/case/analysis_start.py` · `timeline_source.py` · `service.py`를 본다. `8-1`은 `design-refinement-w7-baseline.md` §1 「8순위」 표의 행 번호다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 사용자가 「분석 시작」을 누르면 case가 단서 구조화(`HINT_EXTRACT`)를 발주하고, 그 결과가 반영되면 `AnalysisScope` 1건과 `COARSE_SEARCH` 1건을 발주하는 경로를 만든다. 영상 개수와 무관하게 같은 경로로 동작한다.

@@ -24,7 +24,7 @@ Runtime이 `HINT_EXTRACT`를 재시도까지 `STALE`로 끝냈다고 확정하�
 - `service.receive_hint_exhaustion(case_id, *, job_id, kind, store, timelines, budget=None) -> ExhaustionResult` — `receive_hint_extraction_result()`와 같은 모양. `load_for_update` → 반영 → 바뀐 경우만 `save`. 예외는 그대로 올라가고 rollback · retry는 호출자 몫이다.
 - `ExhaustionResult(status: "APPLIED" | "NO_CHANGE", appended_job_records, reason)` — `APPLIED`면 첫 `COARSE_SEARCH` 1건을 composition root가 같은 transaction에서 enqueue한다.
 - lock 순서는 T2와 같다: case `load_for_update` → (Runtime) notice `FOR UPDATE` → enqueue · receipt.
-- Runtime port(`ExhaustionReceiver.receive(conn, notice)`)에 맞춘 adapter는 Runtime DTO가 정해진 뒤 더한다. 그때 notice의 `case_id` · `job_id` · `kind`를 이 진입점에 넘기기만 하면 된다.
+- Runtime port(`ExhaustionReceiver.receive(conn, notice)`)에 맞춘 adapter는 Runtime DTO가 정해진 뒤 더한다. 그때 notice의 `case_id` · `job_id` · `kind`를 이 진입점에 넘기기만 하면 된다. (2026-11-08 현재: `src/daesingo/case/exhaustion_adapter.py`의 `CaseExhaustionReceiver`로 구현됐다.)
 
 ## 4. 사용자 쪽 대기 — case 대기 timeout을 두지 않는다
 
@@ -56,6 +56,8 @@ Runtime 조건부 계산(첫 attempt 마지막 heartbeat부터 최종 소진까�
 `tests/case/test_hint_exhaustion.py` — `EXHAUSTED` 정산 · hints `None` · `hint_unclear` 없음 · 첫 탐색 발주 · `running_jobs`, `case_rev` 유지, 재전달 `NO_CHANGE(EXHAUSTED)` · 추가 발주 없음, 결과 먼저 `NO_CHANGE(REFLECTED)`, 중단 먼저 `NO_CHANGE(CANCELLED)` · `analysis_stopped` 유지, `NO_CHANGE`는 저장 안 함, 모르는 job · 다른 kind · 탐색 job 알림은 `ValueError`, 타임라인 실패는 저장 안 함.
 
 ## 8. 남은 것
+
+> 2026-11-08 현재: 아래 두 항목은 구현됐다. Runtime 쪽은 `src/daesingo/common/jobs/exhaustion.py`(알림 DTO · port · 재전달), Worker 연결은 `src/daesingo/worker/case_composition.py`, MySQL 통합 테스트는 `tests/` 아래 `test_exhaustion_*_mysql.py`다. case adapter는 `src/daesingo/case/exhaustion_adapter.py`다.
 
 - Runtime: `job_exhaustion_notice` outbox · redelivery · receipt · DTO · port, Worker composition에서 이 진입점 연결 · MySQL 통합 테스트.
 - case: Runtime port가 정해지면 `ExhaustionReceiver` adapter.

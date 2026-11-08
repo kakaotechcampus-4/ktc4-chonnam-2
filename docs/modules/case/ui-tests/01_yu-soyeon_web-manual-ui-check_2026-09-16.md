@@ -2,7 +2,7 @@
 
 > **작성일 2026-09-16 · 작성 담당 유소연(`case`) · 문서 성격: `apps/web` 수동 UI 점검 결과 기록(비정기, 필요 시 회차 누적).**
 > 이 문서는 1차 Mock Merge 통합(`develop`, PR #62) 반영 직후 `apps/web`을 로컬에서 직접 띄워 시나리오별 화면 전환·표시값을 눈으로 확인한 결과를 기록한다. `pytest`/`vitest`/`tsc` 등 자동화 검증(→ `docs/mock/04_mock_validation_report.md`)과는 별도 축이며, "코드가 안 깨진다"가 아니라 "화면이 의도대로 보인다"를 확인하는 것이 목적이다.
-> 근거: `apps/web/src/state/selectScreen.ts`(stage→화면 매핑 로직) · `apps/web/src/contracts/fixtures.ts`(스냅샷 로더/파싱 검증) · `docs/product/core-user-flow.md` §4 · `docs/architecture/contracts/adr/adr-location-absent-package.md`(ADR-EVIDENCE-003) · `docs/modules/case/checklists/phase1-completion-checklist.md`.
+> 근거: `apps/web/src/state/selectScreen.ts`(stage→화면 매핑 로직) · `apps/web/src/contracts/fixtures.ts`(스냅샷 로더/파싱 검증) · `docs/product/core-user-flow.md` §4 · `docs/modules/evidence/adr/adr-location-absent-package.md`(ADR-EVIDENCE-003) · `docs/modules/case/checklists/phase1-completion-checklist.md`.
 
 ---
 
@@ -60,9 +60,9 @@
 ## 4. 관찰 사항 (버그 아님, 검토 후보)
 
 1. `infra_failure`의 "부분 완료" progress 상태에 연결된 notice 문구가 "~가 중단됐습니다"로, severity=INFO와 달리 사용자에게 실패처럼 읽힐 수 있음. web 담당(신유민)과 문구 조정 검토 필요.
-2. (별건) `apps/web/README.md`가 아직 "코드도 package.json도 없다"는 병합 이전 문구를 유지하고 있음 — web merge(Step 6) 반영 후 갱신 필요.
+2. (별건) `apps/web/README.md`가 아직 "코드도 package.json도 없다"는 병합 이전 문구를 유지하고 있음 — web merge(Step 6) 반영 후 갱신 필요. (2026-11-08 현재: 그 문구는 지금 README에 없다.)
 
 ## 5. 다음 회차 예정
 
 - 본 문서는 case 주관 반복 점검용으로, 이후 회차는 같은 폴더(`docs/modules/case/ui-tests/`)에 `NN_yu-soyeon_<주제>_<날짜>.md` 형식으로 누적한다.
-- 다음 회차 후보: Mock→Real 전환(W5) 1차 모듈 교체 직후 회귀 확인.
+- 다음 회차 후보: Mock→Real 전환(W5 = 프로젝트 5주차) 1차 모듈 교체 직후 회귀 확인.

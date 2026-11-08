@@ -1,6 +1,6 @@
 # real E2E 시나리오 확장 · 관련 asset 선택 (4 · 5순위)
 
-> **상태: 결정** · 결정일 2026-10-12 · 담당 유소연(`case`) · 근거 W7 고도화 4순위 · 5순위(`../design-refinement-w7-baseline.md`), `real_e2e.py` 모듈 docstring 「시나리오 고정」, readout 계약 §3 `source_profile`, `reselect-observation-reuse.md`
+> **상태: 결정** · 결정일 2026-10-12 · 담당 유소연(`case`) · 근거 W7(7주차) 설계 고도화 목록 4순위 · 5순위(`../design-refinement-w7-baseline.md`), `real_e2e.py` 모듈 docstring 「시나리오 고정」, readout 계약 §3 `source_profile`, `reselect-observation-reuse.md`
 > fixture를 real 공개 함수로 어디까지 돌리는지와 case가 어떤 asset을 「이 case 것」으로 넘기는지는 case 결정 범위다. 어떤 역할의 asset이 신고 요건에 쓰이는지는 evidence 규칙이고(여기서 다시 정하지 않는다), `data/mock/{recording,search,readout,evidence}` fixture는 각 모듈 소유라 고치지 않는다.
 
 ## 1. 목표 · 범위

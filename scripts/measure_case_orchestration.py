@@ -386,7 +386,7 @@ def _press_notice(ctx: Ctx) -> None:
 # name → (실행, 허용 단계(①), 거부돼야 하는가(행동 직전 case로 판단), 기대 case_rev 증가)
 # command가 같은 요청 안에서 `READY`로 올리면 기대 증가에 +1을 더한다(case-command 계약 §5).
 # 4차 측정부터 command 대상 행동(다른 후보 · 상황 응답 · 최종 검토)은 `handle_command`로 보낸다.
-# 정정(입력형)은 command 판본이 아직 없어 domain을 그대로 부른다.
+# 정정(입력형)은 domain을 그대로 부른다. 입력형 command(case-command 계약 §12)는 이 러너보다 나중에 생겼다.
 ACTIONS: dict[str, tuple[Callable[[Ctx], None], frozenset[str], Callable[[Ctx], bool], int | None]] = {
     "PLATE_MANUAL_EDIT": (_plate_edit, _ASSEMBLE_ONLY, _before_selection, 1),
     "REPORT_TYPE_CHANGE": (_report_type, _ASSEMBLE_ONLY, _before_selection, 1),

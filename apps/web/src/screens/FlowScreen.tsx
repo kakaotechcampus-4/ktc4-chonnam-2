@@ -186,6 +186,7 @@ export function FlowScreen(props: {
 
       <div className="flow-main">
         <VideoThumb
+          gameSessionKey={props.view.case_id}
           key={`${props.view.case_id}:${representative?.name ?? ''}`}
           file={representative instanceof File ? representative : null}
           name={representative?.name ?? props.files[0]?.name ?? ''}

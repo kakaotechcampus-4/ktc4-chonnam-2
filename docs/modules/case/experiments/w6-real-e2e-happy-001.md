@@ -1,5 +1,7 @@
 # W6 Real E2E 실행 기록 — `scenario_happy_001`
 
+> 2026-11-08 기준: 이 기록은 2026-09-18 시점 결과다(아래 「미충족」 판정도 당시 상태). 현재 동작은 [docs/modules/case/README.md](../README.md).
+
 **날짜:** 2026-09-18 · **브랜치:** `feature/case-mock-real-service-adapter` · **실행자:** 유소연
 
 **목적:** W5 Baseline + W6 Real E2E 데드라인(2026-09-22 월 20:00 회의 — "대표 실제 데이터 시나리오 1개가 전체 흐름을 실제로 통과하는지 직접 실행 확인")의 case 몫 증빙. Recording → Search → 후보 선택 → Readout → Evidence → `CaseView`가 mock JSON을 읽는 게 아니라 각 모듈의 실제 공개 함수를 호출해서 통과하는지 실행하고 기록한다.

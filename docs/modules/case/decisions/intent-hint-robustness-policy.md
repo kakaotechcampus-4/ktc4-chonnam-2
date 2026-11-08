@@ -9,7 +9,7 @@
 
 `IntentHintExtraction`에 `is_report_related` 같은 필드를 신설하지 않는다. "화장실이 어디예요?" 같은 도메인 밖 입력도 기존과 동일하게 "6개 필드 전부 null/low"로 처리한다("애매한 사고"와 "사고가 아예 아님"을 스키마상 구분하지 않음).
 
-**이유:** 이 스키마는 아직 실제 프로덕션에 배선조차 안 됐다(`intent-llm-model-selection.md` §8 — `CaseAggregate.intake()`가 GPT-5 Nano를 호출하는 코드는 아직 없음). 실사용 연결이 없는 시점에 구분 필드부터 만드는 건 과설계다.
+**이유:** 이 스키마는 아직 실제 프로덕션에 배선조차 안 됐다(`intent-llm-model-selection.md` §8 — `CaseAggregate.intake()`가 GPT-5 Nano를 호출하는 코드는 아직 없음). 실사용 연결이 없는 시점에 구분 필드부터 만드는 건 과설계다. (2026-11-08 현재: 지금은 배선돼 있다 — 분석 시작이 `HINT_EXTRACT` job을 발주하고, Search `src/daesingo/search/intent.py`가 `IntentHintExtraction` 스키마로 기본 모델 `gemini-3.8-flash`를 부른다. 스키마에 구분 필드는 여전히 없다.)
 
 **재검토 트리거:** CaseView가 실제로 "이건 신고로 인식되지 않았어요" 같은 구분된 안내 문구를 보여줘야 하는 시점이 오면, 그때 필드 추가를 다시 검토한다.
 
@@ -25,5 +25,5 @@
 
 ## 3. 남은 것
 
-- [ ] §1.2 정책을 `datasets/intent-hint-robustness-v1.jsonl`의 `case-10a/b/c`(모순 정보) `expected_notes`에 반영해 채점 기준을 구체화할지 결정
+- [ ] §1.2 정책을 `experiments/intent-llm-model-comparison/datasets/intent-hint-robustness-v1.jsonl`의 `case-10a/b/c`(모순 정보) `expected_notes`에 반영해 채점 기준을 구체화할지 결정
 - [ ] 실측 실행 후 이 정책이 실제로 측정 가능한지(judge가 "마지막 값 채택" 여부를 판별할 수 있는지) 확인

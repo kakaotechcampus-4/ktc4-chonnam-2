@@ -8,7 +8,7 @@ import * as engine from '../components/driving/createDrivingScene.js'
 const dispose = vi.fn()
 const setActive = vi.fn(), onBack = vi.fn()
 let mount: MockInstance<typeof engine.createDrivingScene>
-beforeEach(() => { dispose.mockReset(); setActive.mockReset(); onBack.mockReset(); mount = vi.spyOn(engine, 'createDrivingScene').mockReturnValue({ dispose, setActive }) })
+beforeEach(() => { dispose.mockReset(); setActive.mockReset(); onBack.mockReset(); mount = vi.spyOn(engine, 'createDrivingScene').mockImplementation((_root, _fail, ready) => { ready?.(); return { dispose, setActive } }) })
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 it('StrictMode와 부모 상태 갱신에서도 엔진은 한 번 만들고 화면을 나갈 때 해제한다', async () => {
   const r = render(<StrictMode><DrivingPreview active onBack={onBack} /></StrictMode>)
@@ -29,7 +29,7 @@ it('WebGL 초기화 실패는 미리보기 안내로 처리하고 분석 화면�
   mount.mockImplementation(() => { throw new Error('WebGL unavailable') })
   const r = render(<DrivingPreview active onBack={onBack} />)
   await waitFor(() => expect(r.getByText('미리보기를 표시할 수 없어요')).toBeTruthy())
-  expect(r.container.querySelector('.drive-controls')?.hasAttribute('hidden')).toBe(true)
+  expect(r.container.querySelector('[data-status=unavailable]')).not.toBeNull()
   fireEvent.click(r.getByRole('button', { name: '미리보기로 돌아가기' }))
   expect(onBack).toHaveBeenCalledOnce()
 })
@@ -39,13 +39,12 @@ it('그래픽 컨텍스트가 유실되면 조작을 숨기고 대체 안내를 
   await waitFor(() => expect(mount).toHaveBeenCalledTimes(1))
   act(() => mount.mock.calls[0][1]())
   expect(r.getByText('미리보기를 표시할 수 없어요')).toBeTruthy()
-  expect(r.container.querySelector('.drive-controls')?.hasAttribute('hidden')).toBe(true)
+  expect(r.container.querySelector('[data-status=unavailable]')).not.toBeNull()
 })
 
 it('미리보기로 전환하면 엔진을 멈추고 다시 열 때 같은 엔진을 재개한다', async () => {
   const r = render(<DrivingPreview active onBack={onBack} />)
   await waitFor(() => expect(setActive).toHaveBeenLastCalledWith(true))
-  const canvas = r.container.querySelector('canvas')
   r.rerender(<DrivingPreview active={false} onBack={onBack} />)
   expect(setActive).toHaveBeenLastCalledWith(false)
   expect(r.queryByRole('button', { name: '미리보기로 돌아가기' })).toBeNull()
@@ -53,7 +52,6 @@ it('미리보기로 전환하면 엔진을 멈추고 다시 열 때 같은 엔�
   r.rerender(<DrivingPreview active onBack={onBack} />)
   expect(setActive).toHaveBeenLastCalledWith(true)
   expect(mount).toHaveBeenCalledOnce()
-  expect(r.container.querySelector('canvas')).toBe(canvas)
   expect(document.activeElement).toBe(r.getByRole('button', { name: '미리보기로 돌아가기' }))
 })
 

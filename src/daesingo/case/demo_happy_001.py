@@ -1,4 +1,4 @@
-"""W5/W6 데모 스크립트 — `scenario_happy_001`이 Recording→Search→Readout→Evidence→
+"""데모 스크립트 — `scenario_happy_001`이 Recording→Search→Readout→Evidence→
 `CaseView`까지 실제 함수 호출로 통과하는 걸 사람이 읽을 수 있게 보여준다.
 
     python -m daesingo.case.demo_happy_001
@@ -69,10 +69,11 @@ def run() -> dict[str, Any]:
     )
     jobs.issue_report_video_export(case, input_fingerprint="sha1:h001-report-video-export")
     # 이 데모는 각 단계 결과를 adapter로 바로 읽는다 — 결과가 반영된 것이므로 기다리는 job으로 남기지
-    # 않는다(`decisions/running-jobs-derivation.md`, 비동기 반영 경로는 8-8).
+    # 않는다(`decisions/running-jobs-derivation.md`, 비동기 반영 경로는 `reflection.py`).
     for record in case.waiting_job_records():
         case.settle_job(record["job_id"], "REFLECTED")
-    # Package가 실제로 준비됐을 때만 READY(#167). 상황 응답 전이면 EVIDENCE_REVIEW에 남는다.
+    # Package가 실제로 준비됐을 때만 READY(#167). Fine이 OBSERVED면 상황 응답 없이도 READY가 될 수 있고(#597),
+    # UNCERTAIN이면 「잘 모르겠어요」 응답 전까지 EVIDENCE_REVIEW에 남는다.
     service.mark_ready_if_package_ready(case, real)
 
     _step(4, 4, "CaseView 조립 중 (case.get_view 실제 호출)...")
@@ -94,8 +95,8 @@ def run() -> dict[str, Any]:
     package = view["package"]
     if package is None:
         print(
-            "  최종 패키지:   아직 없음 — situation_response/observation_facts 미확보"
-            "(알려진 단순화, real_e2e.py 참고. 실패 아님)"
+            "  최종 패키지:   아직 없음 — 요건 판정이 PASS/WARN에 못 미쳤거나 상황 응답을 기다린다"
+            "(실패 아님)"
         )
     else:
         print(f"  최종 패키지:   {package['package_ref']}")

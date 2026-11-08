@@ -1,4 +1,5 @@
-"""web → case 공용 command 진입점 — `docs/modules/case/contracts/contract-case-command.md`(Draft v0).
+"""web → case 공용 command 진입점 — `docs/modules/case/contracts/contract-case-command.md`(Draft v0 · 입력형 command
+`MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME`은 §12 v1 초안).
 
 `get_view()`가 읽기 방향이라면 이 파일은 쓰기 방향이다. transport(HTTP 경로·인증·직렬화)는
 여기 없다 — transport는 요청을 그대로 넘기고 응답을 그대로 돌려주기만 한다(#106). 상태 확인·
@@ -107,7 +108,7 @@ def _select_other_candidate(case: CaseAggregate, payload: dict[str, Any], view: 
     except InvalidTransition:
         raise _Rejected("not_allowed") from None
     correction.reselect_candidate(case, candidate_id)
-    # 새 후보의 첫 빠진 관찰 단계부터 발주한다 — 같은 탐색 결과 안에서 끝난 관찰은 재사용한다(W12:C2, §4-6).
+    # 새 후보의 첫 빠진 관찰 단계부터 발주한다 — 같은 탐색 결과 안에서 끝난 관찰은 재사용한다(`decisions/incident-clip-observation-input.md` §4-6).
     observation.issue_missing_for_selected(case)
 
 
@@ -353,7 +354,7 @@ def execute_command(
     (§5 — 그 전이도 `case_rev`를 올린다). 검사 순서는 §6 그대로 `invalid_payload` → `unknown_target`(case) → `stale_revision` →
     `unknown_target`(대상) → `not_allowed`다. 실패하면 아무 상태도 바꾸지 않고 현재 CaseView를
     싣는다 — case_id가 없을 때만 `case_view=None`이다. `notices`는 `get_view()`에 그대로 넘긴다(사용자가 본
-    화면과 같은 notices로 `RUN_NOTICE_ACTION`을 검사하기 위해). 실행 상태는 `store`의 read port로 읽는다(8-10).
+    화면과 같은 notices로 `RUN_NOTICE_ACTION`을 검사하기 위해). 실행 상태는 `store`의 read port로 읽는다(`decisions/jobexecution-read-port.md`).
     `START_ANALYSIS` · `EDIT_HINT`는 `timelines`(필수) · `budget`(기본 `InitialSearchBudget()`)을 쓴다.
 
     case를 잠근 뒤 마감(`now`, 기본 현재 시각)이 지난 job을 먼저 `STOPPED_WAITING`으로 정산한다 — 사용자가 본 timeout 화면의
@@ -403,7 +404,7 @@ def execute_command(
     except _Rejected as rejected:
         return CommandResult(_response(rejected.reason, view))
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
-    # 부르면 통로에 판단이 들어간다(#106). 상황 응답으로 Package가 풀리는 경우가 대표적이다(§5).
+    # 부르면 통로에 판단이 들어간다(#106). UNCERTAIN의 상황 응답이나 정정 뒤 Package가 풀리는 경우가 대표적이다(§5).
     if case.stage == "EVIDENCE_REVIEW" and request["kind"] not in _SKIP_EXPORT_GATE:
         from daesingo.case.exports import issue_missing_exports
         adapter = store.adapter_for(case)

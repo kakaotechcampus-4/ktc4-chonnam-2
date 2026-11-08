@@ -1,6 +1,8 @@
 # 새 후보 준비 중 재선택 금지 — 「준비 중」을 case가 판단한다 (6.6순위 조건 1)
 
-> **상태: case 결정 · 구현 · web(신유민) 확인 대기** · 결정일 2026-10-24 · 담당 유소연(`case`) · 근거 `core-user-flow.md` §8-1 「새 후보를 준비하는 동안에는 다시 후보를 바꾸는 동작을 제공하지 않는다. 준비가 끝난 뒤 결과 화면에서 다음 후보를 고를 수 있다」 · #173 E-4 조건 1([case 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/173#issuecomment-5865032697)) · `design-refinement-w7-baseline.md` 6.6순위 · `incident-clip-observation-input.md` §4-1
+> `6.6순위` = W7(7주차) 설계 고도화 목록의 「worker 배선 시 재선택 가드」 항목(`../design-refinement-w7-baseline.md`).
+
+> **상태: case 결정 · 구현 · web(신유민) 확인 대기** · 결정일 2026-10-24 · 담당 유소연(`case`) · 근거 `core-user-flow.md` §8-1 「새 후보를 준비하는 동안에는 다시 후보를 바꾸는 동작을 제공하지 않는다. 준비가 끝난 뒤 결과 화면에서 다음 후보를 고를 수 있다」 · #173 E-4 조건 1([case 댓글](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/173#issuecomment-5865032697)) · `../design-refinement-w7-baseline.md` 6.6순위 · `incident-clip-observation-input.md` §4-1
 > 무엇을 「준비 중」으로 보고 재선택을 거부하는지는 case 결정 범위다. 진행 화면에서 버튼을 주지 않는 것은 web 규칙이고(§8-1), 이 문서는 그 규칙과 같은 판단을 case가 command에서도 지키게 한다.
 
 ## 1. 목표 · 범위

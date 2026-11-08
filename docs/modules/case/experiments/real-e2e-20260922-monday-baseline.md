@@ -1,5 +1,7 @@
 # Real E2E 실행 기록 — 월요일 대표 영상 (`20260620_141956_EVT_1`)
 
+> 2026-11-08 기준: 이 기록은 2026-09-22 시점 결과다(「남은 것」 · 이슈 #132 언급도 당시 상태). 현재 동작은 [docs/modules/case/README.md](../README.md).
+
 **날짜:** 2026-09-22 · **실행자:** 유소연(Claude Code 보조) · **브랜치:** `fix/case-search-stream-context-wiring`
 
 **목적:** PM 전달사항(`doc/real-e2e-protocol.md`, git 미커밋)에 따라 실제 대표 영상 1개를

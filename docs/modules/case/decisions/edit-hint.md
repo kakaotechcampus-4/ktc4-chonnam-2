@@ -1,6 +1,7 @@
 # 설명 고쳐 다시 찾기 — `EDIT_HINT{description}` 한 command로 원문을 다시 받아 구조화부터 다시 돈다
 
-> 2026-10-27 · 결정 추적 [#410](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/410) · 관련 [#404](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/404) · [#405](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/405) · case-command 계약 §13 · CaseView 계약 B§7
+> 2026-10-27 · 결정 추적 [#410](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/410) · 관련 [#404](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/404) · [#405](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/405) · case-command 계약 §13(`../contracts/contract-case-command.md`) · CaseView 계약 B§7(`docs/architecture/contracts/contract-job-record-case-view.md` B절 §7)
+> **상태: 결정 · 구현**(`src/daesingo/case/analysis_start.py` `edit_hint()`, `command.py` `EDIT_HINT` handler)
 
 ## 1. 문제
 
@@ -46,4 +47,4 @@
 
 ## 7. 남은 것
 
-- web: 위반 미관찰 화면(`NotObservedScreen.tsx`)에 notice의 `EDIT_HINT`를 「설명 고치기」로 그리기(web 소유). command 연결과 입력 화면은 #418에서 끝났다.
+- web: 위반 미관찰 화면(`NotObservedScreen.tsx`)에 notice의 `EDIT_HINT`를 「설명 고치기」로 그리기(web 소유). command 연결과 입력 화면은 #418에서 끝났다. (2026-11-08 현재: `apps/web/src/screens/NotObservedScreen.tsx`가 `EDIT_HINT` 버튼을 그린다, #431.)

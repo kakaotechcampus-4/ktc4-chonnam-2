@@ -34,6 +34,8 @@ Search는 썸네일을 채우지 않기로 답했다(#446 4번). 이유는 셋�
 
 ## 3. 구현할 때 할 일
 
+> (2026-11-08 현재: 아래 반영기 · 투영 · 테스트는 끝났다 — §4 · §7 참고.)
+
 - 반영기: `INCIDENT_CLIP_BUILD` 반영(`reflection.py` `_apply_incident_clip_build`) 때 handler가 실은 근거 장면을 저장. 동기 real 경로(`real_e2e.py`)도 같은 위치 해석 함수를 쓴다.
 - 투영: `view.py` `preview_ref`를 저장한 값으로 바꾼다. `candidates[].thumb_ref`와 `preview_ref`가 「항상 같다」는 CaseView 계약 B§ 정의 행(#47, 2026-09-28)을 고친다.
 - 계약 · ADR: 「thumbnail 이미지 전달 방식」 Pending에 「생산자 case, 선택 후보만, IncidentClip 경유」를 반영한다.
