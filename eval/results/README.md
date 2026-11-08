@@ -13,6 +13,11 @@ scorer 집계 결과 JSON. **git으로 추적**한다. 실험 기록 방법은 `
 파일명이 같았기 때문이다. 정답지가 같아도 채점기가 다르면 다른 숫자이고,
 다른 숫자는 다른 파일이어야 비교할 수 있다.
 
+**이 규칙의 예외(2026-11-08 기준).**
+- pipeline 채점기 버전(`pl1`)은 이름에 없고 결과의 `meta.pipeline_scorer_version`에만 있다. Fine 판정이 있는 결과(`search_s*` 등)를 비교할 때는 이 값도 확인한다.
+- `eval.tools.evaluate_aihub_mixed`는 `eval.score`를 거치지 않고 `*.mixed-fine.json` · `*.mp2.json`처럼 버전 없는 이름으로 직접 쓴다. 채점 규칙은 그 결과 파일의 `meta`와 [10/30 실험 기록](../../docs/modules/eval/experiments/2026-10-30-aihub-best100-video-and-mixed.md)을 본다.
+- 아래 표는 치트·mock 대조 결과만 적는다. 실제 모델 결과(`gemini_*` · `search_s*` · `aihub_*`)는 [실험 기록 목록](../../docs/modules/eval/experiments/README.md)에서 찾는다.
+
 `eval.score` 는 **같은 이름이 이미 있으면 쓰지 않고 rc 3 으로 멈춘다**
 (예측과 같은 규율). 채점 프로세스가 바뀌면 이름이 달라져 나란히 남고,
 안 바뀌었는데 이름이 같다면 같은 숫자를 다시 쓰는 것이라 덮어쓸 이유가 없다.
