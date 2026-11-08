@@ -78,7 +78,7 @@ test('키보드로 업로드 → 진행 → 결과 → 안전신문고 이동까
   await expectNamedControls(page)
 
   // 하위 화면에 들어갔다가 키보드로 돌아온다
-  await tabTo(page, page.getByRole('button', { name: '어떻게 정했는지' }))
+  await tabTo(page, page.getByRole('button', { name: '신고서를 어떻게 작성했는지 궁금하신가요?' }))
   await page.keyboard.press('Enter')
   const back = page.locator('.sub-back')
   await expect(back).toBeVisible()

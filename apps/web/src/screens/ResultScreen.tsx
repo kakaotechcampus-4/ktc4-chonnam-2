@@ -401,8 +401,8 @@ export function ResultScreen(props: {
           <div className="res-sec-head">
             <h2 id="res-form-h">안전신문고 신고서 초안</h2>
             {ev && (
-              <button type="button" className="res-link" onClick={props.onDetails}>
-                어떻게 정했는지
+              <button type="button" className="res-link res-details-link" onClick={props.onDetails}>
+                신고서를 어떻게 작성했는지 궁금하신가요?
                 <ChevronRight size={16} strokeWidth={2} aria-hidden />
               </button>
             )}
