@@ -50,7 +50,11 @@ def search_candidates(
     usage_sink: UsageSink | None = None,
     on_progress: SearchProgress | None = None,
 ) -> CandidateSearchResult:
-    """Return the recorded coarse run and ranked candidates for a scope."""
+    """Run Coarse search for ``scope`` and return the run and ranked candidates.
+
+    With ``service`` this calls the live provider. Without it, this returns the
+    recorded fixture result from ``data/mock/search``.
+    """
     if service is None:
         return _FIXTURE_SERVICE.search_candidates(scope)
     if on_progress is not None:
@@ -68,7 +72,12 @@ def verify_visual(
     max_latency_sec: int | None = None,
     usage_sink: UsageSink | None = None,
 ) -> VisualVerificationResult:
-    """Return the recorded Fine run together with its visual evidence."""
+    """Run Fine verification and return the run with its visual evidence.
+
+    With ``service`` this calls the live provider and ``candidate`` is required
+    (``MissingCandidateError`` otherwise). Without ``service``, this returns the
+    recorded fixture result for ``input_ref``.
+    """
     if service is None:
         return _FIXTURE_SERVICE.verify_visual(input_ref, target_hint)
     if candidate is None:

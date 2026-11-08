@@ -130,10 +130,8 @@ class SmokeStageMetrics(SmokeModel):
 class SmokeReportV2(SmokeModel):
     """daesingo-search-smoke/v2 wire schema.
 
-    Coexists with v1 SmokeReport. v1 remains importable until Tasks 10/11
-    migrate the builder and orchestration; the controller will remove v1 once
-    all callers are updated. SmokeReportV2 is exported under the alias
-    SmokeReport only after that migration; for now both names are available.
+    Coexists with v1 SmokeReport. The smoke CLI still emits v1; v2 is built
+    only by ``SmokeReportBuilder.build_v2`` and is covered by tests.
     """
 
     schema_version: Literal["daesingo-search-smoke/v2"] = "daesingo-search-smoke/v2"
