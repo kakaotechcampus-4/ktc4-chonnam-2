@@ -21,7 +21,8 @@ AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 
 - `calculate_evidence_needs(...) -> EvidenceNeeds | None`
 - `evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution, asset_facts=(), observation_facts=None, supersedes_id=None) -> RequirementReport`
 - `build_report_package(...) -> ReportPackage`
-- `render_report(...) -> dict`: `safety-report-policy/v1.2`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED`, generic은 `USER_UNSURE`를 명시해야 하며 위치가 없으면 장소 슬롯 없는 template을, `vehicle_number=None`이면 차량번호 슬롯 없는 template을 고른다. 번호판 없는 신고문이 허용되는지는 호출자가 정한다.
+- `render_report_draft(evidence_record) -> dict[str, str] | None` — 조립된 EvidenceRecord에서 자산과 독립적으로 `title`·`description`을 렌더링한다. 렌더링이 보류되면 `None`을 반환하고 계약·정책 오류는 호출자에게 전달한다.
+- `render_report(...) -> dict`: `safety-report-policy/v1.2`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED` 또는 Fine이 관찰한 유형의 무응답(`observed=True`)에서 허용하고, generic은 유형이 없는 `USER_UNSURE`에 적용한다. 위치가 없으면 장소 슬롯 없는 template을, `vehicle_number=None`이면 차량번호 슬롯 없는 template을 고른다. 번호판 없는 신고문이 허용되는지는 호출자가 정한다.
 - `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증. `correction-record/v1.2`의 `previous_value=null`(값이 없던 상태의 첫 입력)을 받는다 — `contract_version`이 v1.2인 기록에만 적용하고 v1.1 기록에는 소급하지 않는다. 이미 기록된 위반 정정은 건너뛰지 않고 `ContractInputError`다.
 - `validate_correction_append(correction, *, existing_records) -> None`: case가 CorrectionRecord를 append하기 **전에** 부르는 검사(#235 E-3, ADR-EVIDENCE-011). `existing_records + [correction]`에 `correction_heads()`와 같은 검사를 돌린다 — 값 형식 + supersede chain 연속성. `new_value`만 값 공간 밖이면 `InvalidCorrectionValue`(사용자가 다시 입력해 고칠 수 있음, `target_field` 속성), case가 채운 나머지나 기존 기록의 위반이면 그 밖의 `ContractInputError`(내부 배선 오류)다. `InvalidCorrectionValue`는 `ContractInputError`의 하위 타입이므로 먼저 잡는다. case 네임스페이스 target은 검사하지 않는다.
 - `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
@@ -45,13 +46,14 @@ API/Worker composition은 이 공개 경계에서 받은 `max_byte_size`를 기�
 - `requirement_rules_v3.json` — D1 반영 후 실제 실행됐으나 ADR-EVIDENCE-005 D2로 대체된 보존 revision. 수정하거나 활성화하지 않는다.
 - `requirement_rules_v4.json` — ADR-EVIDENCE-005 D2로 사건 장면·전후 상황 세 rule을 제거한 revision. 실제 실행됐으나 ADR-EVIDENCE-008(#172 D-3)로 대체된 보존 revision. 수정하거나 활성화하지 않는다.
 - `requirement_rules_v5.json` — ADR-EVIDENCE-008(#172 D-3)의 revision. 실제 실행됐으나 ADR-EVIDENCE-010(#280)으로 대체된 보존 revision. 수정하거나 활성화하지 않는다. `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 12개와 시각 표시 조건부 3개 중 정확히 1개를 선택했다. v4에서 번호판 두 rule만 바꿨다 — `evidence.vehicle_number.present`는 값이 없을 때 `PlateReadout` 존재 여부로 `WARN`(판독 후 못 읽음)/`UNKNOWN`(판독 결과 없음·실행 실패)을 나누고, `package.vehicle.plate_visible_in_report_video`의 관찰 `false`는 `BLOCK` → `WARN`이다. `package.report.content_length`에는 번호판 없는 렌더 mode 두 개(`*_without_plate`, `plate_readout_performed` 필수)를 더했고, 신고문 policy는 `safety-report-policy/v1.2`를 참조한다. 나머지는 v4에서 그대로 계승한다.
-- `requirement_rules_v6.json` — **활성 catalog.** `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 11개와 시각 표시 4갈래 중 정확히 1갈래를 선택한다. v5에서 최종 신고용 영상 재관찰(I4) rule 두 개만 뺐다 — `package.vehicle.plate_visible_in_report_video`를 무조건 목록에서 지웠고, `OK` · `time.verified_overlay_already_present` 갈래는 선택되지만 rule을 추가하지 않는다(`no_rule`, 이전 `package.time.overlay_visible`). 따라서 `observation_facts`의 `plate_visible_in_report_video` · `time_overlay_visible`은 읽지 않는다. 나머지는 v5에서 그대로 계승한다(ADR-EVIDENCE-010).
+- `requirement_rules_v7.json` — **활성 catalog.** [#597 B안](../../../docs/modules/evidence/decisions/observed-report-draft.md)의 유형 관찰 무응답 조건과 렌더 입력 검사를 반영한다.
+- `requirement_rules_v6.json` — #280 개정본. `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 11개와 시각 표시 4갈래 중 정확히 1갈래를 선택한다. v5에서 최종 신고용 영상 재관찰(I4) rule 두 개만 뺐다 — `package.vehicle.plate_visible_in_report_video`를 무조건 목록에서 지웠고, `OK` · `time.verified_overlay_already_present` 갈래는 선택되지만 rule을 추가하지 않는다(`no_rule`, 이전 `package.time.overlay_visible`). 따라서 `observation_facts`의 `plate_visible_in_report_video` · `time_overlay_visible`은 읽지 않는다. 나머지는 v5에서 그대로 계승한다(ADR-EVIDENCE-010).
 - `safety_report_policy_v1_1.json` — 위치 유무에 따른 네 deterministic template과 신고유형 매핑. v1.2로 대체된 보존 revision.
 - `safety_report_policy_v1_2.json` — **활성 신고문 policy.** v1.1의 네 template을 그대로 두고, 판독 후 번호판을 식별하지 못한 경우의 차량번호 슬롯 없는 네 template을 더했다(`docs/modules/evidence/decisions/safety-report-policy-v1.2.md`).
 
 - `plate_format_rules_kr_v1.json` — **번호판 형식 rule** `plate-format/kr-v1`(ADR-EVIDENCE-006, #487). `plate_format.py`의 `assess_plate_format()`이 이 파일만 읽는다. readout이 `OK`로 준 번호판 값이 알려진 profile로 설명되지 않거나 고시 밖 조합이면 값을 그대로 두고 `needs_review=true`로 조립한다. 거부·삭제하지 않고, 사용자 수정값에는 적용하지 않는다. 이 검사를 적용하는 조립 policy는 `policy/evidence-assembly-v2`다. 고시가 바뀌면 새 revision 파일을 추가한다.
 
-활성 requirement catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 현재 `requirement_rules_v6.json`이다. 출력 `policy_ref`는 이 파일에서 읽는다.
+활성 requirement catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 현재 `requirement_rules_v7.json`이다. 출력 `policy_ref`는 이 파일에서 읽는다.
 
 번호판 판독을 수행했지만 식별하지 못한 기록은 번호판 없는 신고문으로 `ReportPackage`(`report-package/v1.2`, `vehicle_number=null`)가 발행된다. 판독 결과 자체가 없는 기록(실행 실패)은 렌더 입력이 불완전해 Package가 없다. 두 경우를 가르는 판별은 `requirements.py`의 `_plate_readout_performed()` 한 곳이다(ADR-EVIDENCE-008 §6).
 

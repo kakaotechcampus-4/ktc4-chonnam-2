@@ -11,23 +11,23 @@
 | `datasets/` | 원본 미디어·frame sequence (A/B/C tier) | — | **원본 미디어는 커밋하지 않는다** (`.gitignore`). README와 목록 파일만 |
 | `manifests/` | 정답지(GT)·manifest 버전·초기 12개 테스트 케이스 | — | 커밋 |
 | `runners/` | dataset + 구현 이름표(`--impl`) | **immutable prediction** | 커밋 (코드) |
-| `predictions/` | runner 출력 | scorer 입력 | 커밋 (JSON). 유료 API 결과라 다시 만들지 않는다 |
+| `predictions/` | runner 출력 | scorer 입력 | 커밋 (JSON). 유료 API 결과라 다시 만들지 않는다. 단 AI-Hub 실험 원본(`aihub_*.json`)은 너무 커서 커밋하지 않고(`.gitignore`) 채점 결과만 `results/`에 둔다 |
 | `scorers/` | prediction + GT version + metric version | metrics | 커밋 (코드) |
-| `locked_test/` | 사전 고정 실제 장시간 영상 평가셋 목록 | 최종 성능 주장 | 개봉 규칙은 미결(§10-3) |
+| `locked_test/` | (쓰지 않음) | — | 2026-10-26에 잠근 평가셋을 쓰지 않기로 했다. 모든 수치는 보유 데이터로 잰 「개발 중 반복 측정」이다(`docs/modules/eval/initial-evaluation-plan.md` §3) |
 | `results/` | scorer 출력 | 집계 JSON | **커밋** — 「Eval result: JSON + git」(§10-2). MLflow는 보조 |
 
 **Runner / Scorer를 분리한다**(§9-2). GT나 metric 정의가 바뀌어도 prediction을 다시 만들지 않는다.
 
 ## 호출 규칙
 
-- `eval → { search, readout, recording }`의 **public capability만** 부른다 (§6-1). 프롬프트 파일·파서를 import하지 않는다.
+- `eval → { search, readout, recording }`의 **public capability만** 부른다 (§6-1). 프롬프트 파일·파서를 import하지 않는다. 예외: `runners/impls/search_pipeline.py`(S1~S3 시점 비교)와 `tools/evaluate_aihub_*`는 시점별 설정을 바꿔 끼우려고 Search의 설정·프롬프트·provider를 직접 import한다.
 - `case`·`evidence`·`web`을 모른다. 최종 source 선택 규칙은 `evidence`의 unit test가 검증한다 (§9-3).
 - A tier(candidate 없는 frame sequence)는 `search.verify_visual(input_ref)`를 직접 부른다 (§4-모듈7 ④). `eval_mode` 분기를 만들지 않는다.
 - 비용은 **runtime(source-video-hour) / eval(clip + processed_duration_sec)**을 섞지 않는다 (§4-모듈7 ⑤).
 
 ## 첫 산출물 (`docs/management/ownership.md` §3 김대원 ⑤)
 
-`python -m eval.run --impl <이름표>` 한 줄로 도는 상태 → 정답지 10~20건 → 항상 정답/항상 오답 가짜 구현으로 지표 검증 → 4종별 점수 + Classification 지표.
+`python -m eval.run --impl <이름표> --manifest <manifest> --stage <stage>`로 도는 상태 → 정답지 10~20건 → 항상 정답/항상 오답 가짜 구현으로 지표 검증 → 4종별 점수 + Classification 지표.
 
 ## 지금 도는 것 (v1 harness)
 
@@ -41,7 +41,7 @@ python -m eval.run --impl fake:always_correct --manifest b_youtube --stage candi
 python -m eval.score --prediction demo_correct
 ```
 
-`--stage` 는 `candidate`(B tier · `b_youtube`) · `classification`(A tier · `a_aihub`, AB tier · `ab_mixed`) · `plate`(MOCK tier · `mock_pack`) 세 가지다. `--impl` 이름표는 `runners/registry.py` 가 소유한다.
+`--impl`·`--manifest`·`--stage`는 모두 필수다. `--stage` 는 `candidate`(B tier · `b_youtube`) · `classification`(A tier · `a_aihub`, AB tier · `ab_mixed`) · `plate`(MOCK tier · `mock_pack`, 번호판 crop) · `persistence`(차량 검출 지속성) 네 가지다(`run.py`). `--impl` 이름표는 `runners/registry.py` 가 소유한다.
 
 `ab_mixed` manifest 는 A tier 시퀀스 120개와 B tier negative 클립 30개를 이어 붙인 것이다. **5×5 confusion 의 `NONE` 행·열은 이 manifest 로만 채워진다** — AI-Hub 시퀀스는 전부 4종 중 하나여서 「아무 위반도 아닌 것」이 없기 때문이다. `python -m eval.tools.build_ab_mixed` 로 재생성하며 뽑은 클립은 `meta.coverage.sampling`(rule_version·seed)에 기록된다. 항목마다 `source_tier` 가 있다 — A 는 AI-Hub 원본 프레임, B 는 YouTube 재인코딩 영상이라 해상도·압축 특성이 다르다.
 
@@ -60,9 +60,9 @@ uv run python -m eval.tools.evaluate_aihub_best100 run --set all --run-id <다�
 uv run python -m eval.score --prediction <다른_run_id>
 ```
 
-`build`는 manifest가 이미 있으면 덮어쓰지 않는다. `run`도 prediction을 덮어쓰지 않는다. 실제 실행은 현재 Search S3 (`gemini-4-argon`, coarse 2 fps)의 공개 `search_candidates`를 각 영상 전체에 적용하고 **최상위 후보의 위반 유형**을 영상 단위 예측으로 쓴다. 후보가 없거나 유형이 없으면 `NONE`이다. 따라서 이 수치는 **Search의 후보 찾기까지 포함한 영상 단위 유형 적중률**이며 독립 분류기 정확도가 아니다. 위반 시점·정상 영상·대상 bbox 정답은 없어서 해당 지표는 내지 않는다. 유료 호출 전에 원천 파일의 SHA-256을 manifest와 대조한다.
+`build`는 manifest가 이미 있으면 덮어쓰지 않는다. `run`도 prediction을 덮어쓰지 않는다. 실제 실행은 Search S3 시점(`gemini-4-argon`, coarse 2 fps — S1~S3 정의는 [10/28 실험 기록](../docs/modules/eval/experiments/2026-10-28-search-points-pipeline.md))의 공개 `search_candidates`를 각 영상 전체에 적용하고 **최상위 후보의 위반 유형**을 영상 단위 예측으로 쓴다. 후보가 없거나 유형이 없으면 `NONE`이다. 따라서 이 수치는 **Search의 후보 찾기까지 포함한 영상 단위 유형 적중률**이며 독립 분류기 정확도가 아니다. 위반 시점·정상 영상·대상 bbox 정답은 없어서 해당 지표는 내지 않는다. 유료 호출 전에 원천 파일의 SHA-256을 manifest와 대조한다.
 
-같은 AI-Hub 영상 8개를 검토된 C tier 2 정상 블박 8개 사이에 삽입한 개발용 진단도 있다. `uv run python -m eval.tools.evaluate_aihub_mixed build` 후 `uv run python -m eval.tools.evaluate_aihub_mixed run --run-id <새_run_id>`로 후보를 평가하고, `--fine`을 붙인 **별도 새 run ID**로 Fine까지 평가한다. 생성된 MP4는 `eval/datasets/aihub_mixed_pilot/`에만 남고, manifest `aihub_mixed_pilot_mp2`는 삽입 시작·끝과 실제 인코딩 길이·해시를 기록한다. 산출물과 결과 해석은 [10/30 실험 기록](../docs/modules/eval/experiments/2026-10-30-aihub-best100-video-and-mixed.md)을 본다. 이 점수는 합성 영상 진단이며 `locked_test` 실제 장시간 블박 평가를 대체하지 않는다.
+같은 AI-Hub 영상 8개를 검토된 C tier 2 정상 블박 8개 사이에 삽입한 개발용 진단도 있다. `uv run python -m eval.tools.evaluate_aihub_mixed build` 후 `uv run python -m eval.tools.evaluate_aihub_mixed run --run-id <새_run_id>`로 후보를 평가하고, `--fine`을 붙인 **별도 새 run ID**로 Fine까지 평가한다. 생성된 MP4는 `eval/datasets/aihub_mixed_pilot/`에만 남고, manifest `aihub_mixed_pilot_mp2`는 삽입 시작·끝과 실제 인코딩 길이·해시를 기록한다. 산출물과 결과 해석은 [10/30 실험 기록](../docs/modules/eval/experiments/2026-10-30-aihub-best100-video-and-mixed.md)을 본다. 이 점수는 합성 영상 진단이며 실제 장시간 블박 성능으로 일반화하지 않는다.
 
 확장 진단 `aihub_mixed_100_v1`은 서로 다른 정상 블박 100개와 AI-Hub 원본 100개(4종별 25개)를 사용한다. 삽입 100개와 대조 100개, 총 200개를 `uv run python -m eval.tools.build_aihub_mixed_100`으로 만들고 `uv run python -m eval.tools.evaluate_aihub_mixed run --dataset aihub_mixed_100_v1 --fine --run-id <새_run_id>`로 평가한다. 영상은 로컬 `eval/datasets/aihub_mixed_100_v1/`에만 남고, manifest·결과는 위 실험 기록에 연결했다.
 
@@ -72,7 +72,7 @@ uv run python -m eval.score --prediction <다른_run_id>
 
 ### Gemini Coarse 공식 평가
 
-`search:gemini-coarse-p3`는 제품과 같은 `daesingo.search.search_candidates(scope)` 공개 경계를 사용해 `b_youtube` 123클립의 candidate stage를 실행한다. 개인 회귀 영상은 이 manifest나 GT에 추가하지 않는다.
+`search:gemini-coarse-p3`는 제품과 같은 `daesingo.search.search_candidates(scope)` 공개 경계를 사용해 `b_youtube` 123클립의 candidate stage를 실행한다. 같은 사전 검사(`gemini_preflight.py`)는 `b_youtube_m4` · `ctier2` · `ctier3`도 받으며, `search:s1`~`s3`(Coarse → Fine 전체 경로)도 이 검사를 쓴다. 개인 회귀 영상은 이 manifest나 GT에 추가하지 않는다.
 
 모든 설정은 저장소 루트의 `.env` 에서만 읽는다 (shell 환경변수는 쓰지 않는다). `.env.example` 을 `.env` 로 복사해 채운다.
 
@@ -84,6 +84,8 @@ uv sync --extra test --extra eval-gemini
 GEMINI_API_KEY=...
 DAESINGO_EVAL_DATA_ROOT=/absolute/data/root
 # 선택: 프록시 override. 미설정 시 지정 프록시가 기본값이다.
+# search:gemini-coarse-p3에만 적용된다. search:s1~s3와 evaluate_aihub_* 도구는
+# 시점별 프록시 주소를 코드에 고정해 쓴다(search_pipeline.py POINTS).
 # DAESINGO_GEMINI_BASE_URL=https://mlapi.run/<tenant>/v1
 ```
 ```bash
@@ -99,7 +101,7 @@ uv run python -m eval.score --prediction <run_id>
 
 평가는 담당자 로컬에서 돈다 — 데이터·`GEMINI_API_KEY`·프록시 접근은 각자의 로컬 `.env` 에 있다. 모든 Gemini 호출은 프록시 base URL(Bearer 인증, `GEMINI_API_KEY`)을 경유한다. 운영 baseline과 프록시 규칙은 `docs/modules/search/decisions/gemini-3.8-proxy-baseline-2026-09-18.md`.
 
-prediction의 `facts`에는 모델, `coarse-p3` 버전과 SHA-256 fingerprint, 설정 버전과 fingerprint, SDK 버전, 처리 영상 길이, clip 목록, 토큰·비용 기록이 남는다. 최초 실제 실행 결과가 baseline이며 특정 Recall 값은 실행 전 인수 조건이 아니다.
+prediction의 `facts`에는 모델, Coarse 프롬프트 버전(실행 시점의 `COARSE_PROMPT.version` — 11/7 #609 이후 `coarse-p3+coarse-brief-v1`)과 SHA-256 fingerprint, 설정 버전과 fingerprint, SDK 버전, 처리 영상 길이, clip 목록, 토큰·비용 기록이 남는다. 최초 실제 실행 결과가 baseline이며 특정 Recall 값은 실행 전 인수 조건이 아니다.
 
 | 폴더 | 무엇이 들어 있나 |
 | --- | --- |

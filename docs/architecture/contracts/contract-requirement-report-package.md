@@ -429,7 +429,9 @@ AND deterministic package assembly 성공
 
 ## 8.3 신고문은 deterministic template 기반
 
-`report.title` / `report.description`은 confirmed Evidence와 고정 template를 이용해 결정론적으로 생성한다.
+`report.title` / `report.description`은 EvidenceRecord와 고정 template를 이용해 결정론적으로 생성한다. [#597 B안](../../modules/evidence/decisions/observed-report-draft.md)부터 Fine이 관찰한 구체적 유형은 상황 응답이 없어도 특정형 template을 선택할 수 있다.
+
+Case는 Evidence의 `render_report_draft(evidence_record)`로 자산 준비 중에도 같은 렌더러에서 제목과 본문을 얻을 수 있다. `ReportPackage.report`는 §8.1 요건을 충족한 묶음의 최종 신고문이며 template ref를 함께 가진다.
 
 `report.template_ref`를 반드시 보존한다.
 

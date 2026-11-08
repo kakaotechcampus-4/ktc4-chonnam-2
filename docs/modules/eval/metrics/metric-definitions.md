@@ -1,7 +1,8 @@
 # 평가지표 정의 — 확정본
 
 > **Owner:** 김대원 (`eval`) · **최종 갱신:** 2026-09-20 · **대상 코드:** `eval/scorers/*.py`
-> **버전:** candidate `s5` · classification `cl3` · plate `p2` · cost `c3` · normalizer `n3`
+> **버전:** candidate `s5` · classification `cl3` · plate `p2` · cost `c3` · pipeline `pl1` · persistence `t1` · normalizer `n4`
+> **2026-11-08 보충:** pipeline(`pl1`, 10/28)과 persistence(`t1`)는 이 문서의 9/20 확정 이후 추가된 채점기다. 정의는 §6-2 · §6-3에 짧게 적고, 상세 규칙은 각 파일의 docstring이 소유한다.
 
 ---
 
@@ -32,11 +33,12 @@
 | Candidate | `recall_at` 1/3/10 · **`localization_recall_at`** · **`type_accuracy_given_localized`** · `onset_error_sec` · `containment_rate` · `fp_per_clip` · `by_type` | **확정 · 구현** | 예 (B tier) |
 | Classification | `recall_macro` · `precision_macro` · `recall_by_label` · 5×5 `confusion` · `target_correctness` | **확정 · 구현** | 예. `NONE` 행·열은 `ab_mixed` manifest 에서만 채워진다 |
 | ~~Classification `by_condition`~~ | ~~촬영조건별 정확도~~ | **철회 (`cl2`)** | 아니오 — 근거는 §4-4 |
-| Plate | `exact_accuracy` · `wrong_accept_rate` · `abstention_recall` · **`readable_abstention_rate`** · **`abstain_reasons`** | **확정 · 구현** | mock tier 만. 실데이터는 C tier 확보 전까지 `null` |
+| Plate | `exact_accuracy` · `wrong_accept_rate` · `abstention_recall` · **`readable_abstention_rate`** · **`abstain_reasons`** | **확정 · 구현** | 예 — mock tier와 AI-Hub 번호판 crop(`private_aihub172_plate`, 비공개 root) |
 | Cost | `cost_per_case` · `cost_per_source_video_hour` · `total` · **`latency_ms`** · **`latency_per_source_video_hour`** | **확정 · 구현** | 예 (`UsageRecord` 가 있을 때) |
-| Fine | Recall · Precision · Hard-negative FPR | 확정 · **미구현** | 아니오 |
+| Fine · 최종 (`pl1`) | Fine 판정 분포 · `fine_confirm_rate` · `fine_reject_rate` · 최종 `recall` · `fp_per_negative_clip` | **구현 (10/28)** | 예 — prediction에 Fine 판정(`verification`)이 있을 때. §6-2 |
+| Persistence (`t1`) | `detected_ratio` · `longest_run` · `gaps` · `frame_recall` | **구현** | 예 — 차량 박스 정답지가 있을 때(`private_aihub172_track1`). §6-3 |
 | Timestamp | source agreement · offset error · overlay validation · UNKNOWN/CONFLICT rate | 확정 · **미구현** | 아니오 |
-| E2E | Final Event Recall@3 · 사용자 검토 후보 수 | 확정 · **미구현** | 아니오 |
+| E2E | Final Event Recall@3 · 사용자 검토 후보 수 | 확정 · 일부 구현 | 상위 3개 후보에 Fine을 돌린 `pl1` 최종 `recall`로 근사한다. 제품 흐름(사용자가 고른 후보에만 Fine) 그대로의 E2E는 아니다 |
 | Product | 사용자 직접 작업시간 · 준비 완료율 · handoff 행동 | 확정 · **코드 채점 아님** | 별도 사용자 테스트 |
 
 「확정 · 미구현」은 지표 이름과 배치가 §9-3 에서 정해졌지만 scorer 가 없다는 뜻이다.
@@ -401,6 +403,22 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 ---
 
+## 6-2. Pipeline — `eval/scorers/pipeline.py` (`pl1`)
+
+Coarse 후보 지표(§3)는 그대로 두고, Fine 판정이 붙은 후보로 두 가지를 더 잰다. prediction에 Fine 판정이 하나도 없으면 돌지 않는다.
+
+- **Fine 판정 분포:** 상위 k개 후보를 §3의 배정 규칙(±2.0초)으로 정답 사건에 1:1로 붙인다. 사건에 붙은 후보(참 후보)와 위반 없는 클립의 후보(거짓 후보)가 각각 `OBSERVED`·`UNCERTAIN`·`NOT_OBSERVED`·판정 없음 중 무엇을 받았는지 센다. `fine_confirm_rate` = 참 후보 중 `OBSERVED` 비율, `fine_reject_rate` = 거짓 후보 중 `NOT_OBSERVED` 비율.
+- **최종 결과(`final`):** Fine을 통과한 후보만 남겨 다시 배정한다. 통과 기준은 `observed`(`OBSERVED`만)와 `not_rejected`(`NOT_OBSERVED`가 아닌 것 — 제품은 `UNCERTAIN`을 사용자 확인으로 넘긴다) 두 가지다. 각각 `recall`·`hits`·`fp`·`fp_per_negative_clip`을 낸다.
+- Fine을 돌리지 않았거나 실패한 후보(판정 없음)는 통과로 치지 않는다.
+
+## 6-3. Persistence — `eval/scorers/persistence.py` (`t1`)
+
+대상 차량이 영상 안에서 얼마나 끊기지 않고 검출되는지 잰다. 정의는 readout의 `track1-vehicle-2026-09-19` 실험과 같다.
+
+- 매칭은 검출과 정답 박스의 IoU 0.5 이상(신뢰도 순 greedy). 정답 차량이 하나라도 매칭되면 그 프레임은 「검출됐다」.
+- `longest_run`은 최장 연속 검출, `gaps`는 첫 검출과 마지막 검출 사이에서 끊긴 횟수다. 화면에 들어오기 전·나간 뒤의 미검출은 끊김이 아니다.
+- 라벨 프레임이 연속이 아니면 끊김도 라벨 프레임 기준이다(`SPARSE_FRAMES`). 라벨이 전수가 아니어서 오검출(FP)은 세지 않는다(`NO_FP`).
+
 ## 7. 전 단계 공통 규율
 
 1. **데이터가 없는 지표는 `0` 이 아니라 `null` + 사유 문자열.** 0으로 적으면 「측정했고 나빴다」로 오독된다.
@@ -451,9 +469,9 @@ attempt(`run_ref = null`, `RUN_NOT_PRODUCED`)가 통째로 빠져 **비용이 �
 
 | 필드 | 무엇이 바뀌면 올라가나 | 현재 |
 | --- | --- | --- |
-| `scorer_version` | 지표 계산 규칙 | candidate `s5` · classification `cl3` · plate `p2` · cost `c3` |
-| `gt_version` | 정답지 내용 | B tier `g3` · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt` |
-| `normalizer_version` | impl 출력 → scorer 입력 변환 | `n3` |
+| `scorer_version` | 지표 계산 규칙 | candidate `s5` · classification `cl3` · plate `p2` · cost `c3` · persistence `t1`. pipeline은 `meta.pipeline_scorer_version`(`pl1`)에 따로 실린다 |
+| `gt_version` | 정답지 내용 | B tier `g3`(`b_youtube`) · `g4`(`b_youtube_m4`) · A tier `g1` · mock `mp1` · 정답지 없으면 `nogt`. 그 밖의 manifest는 각 `gt/*.json`의 값 |
+| `normalizer_version` | impl 출력 → scorer 입력 변환 | `n4`(10/28 Fine 판정 보존) |
 | `manifest_version` · `clip_rule_version` | 데이터셋 구성·클립 분할 규칙 | 정답지 `meta` |
 | `contract_version` | 계약 | 다르면 채점 거부 |
 | `code_commit` | — | **이 실행이 딛고 선 트리**(자기를 담은 커밋의 부모). 틀린 값이 아니다(F9) |

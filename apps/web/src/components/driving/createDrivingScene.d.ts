@@ -1,7 +1,7 @@
 export interface DrivingScene {
   dispose(): void
-  /** Suspend rendering and simulation without changing the user's pause or gear selection. */
+  /** Suspend the embedded game when returning to the thumbnail or leaving the viewport. */
   setActive(active: boolean): void
 }
-/** Mount the local Three.js scene; dispose releases all resources. */
-export function createDrivingScene(root: HTMLDivElement, onUnavailable: () => void): DrivingScene
+/** Load the local game document after opt-in; dispose releases its resources. */
+export function createDrivingScene(root: HTMLDivElement, onUnavailable: () => void, onReady?: () => void, sessionKey?: string): DrivingScene

@@ -1,4 +1,5 @@
-"""Non-canonical stream provenance for the Monday Real E2E boundary.
+"""Non-canonical stream provenance for the real end-to-end Fine path
+(Case -> Search -> Recording).
 
 The public CandidateEvent and VisualVerificationResult serializations remain
 unchanged.  This module carries the one VIDEO stream used by a Search
@@ -57,7 +58,7 @@ def select_single_video_stream(
 ) -> SelectedVideoStream:
     """Select exactly one explicit VIDEO stream or fail visibly.
 
-    Monday's baseline deliberately has no default/front/rear policy.  Multiple
+    The current implementation deliberately has no default/front/rear policy.  Multiple
     VIDEO streams therefore require a future selector decision rather than an
     arbitrary first-element choice.
     """

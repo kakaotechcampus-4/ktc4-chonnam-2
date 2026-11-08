@@ -23,7 +23,7 @@ _CHUNK = 64 * 1024  # 64 KiB read chunks
 
 
 # ---------------------------------------------------------------------------
-# ffprobe JSON model (replaces all manual dict-traversal helpers)
+# ffprobe JSON model
 # ---------------------------------------------------------------------------
 
 
@@ -374,7 +374,7 @@ class MediaPreparer:
 
 
 # ---------------------------------------------------------------------------
-# Internal helpers called from prepare()
+# Internal helpers called from _prepare_coarse() / _prepare_fine()
 # ---------------------------------------------------------------------------
 
 

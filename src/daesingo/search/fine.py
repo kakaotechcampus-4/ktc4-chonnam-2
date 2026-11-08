@@ -42,7 +42,7 @@ _LEGACY_EVENT_NAMES = {"LANE_CHANGE": VisualEventType.SOLID_LINE_LANE_CHANGE}
 # (`contract-source-asset-media-stream.md` §5.3). Fine 입력은 clip 한 덩어리라
 # 모델에게 준 frame inventory가 없고, 따라서 모델이 답할 수 있는 ref도 없다 —
 # 실제로 Gemini는 이 칸에 `"00:03"` 같은 타임스탬프를 넣어 돌려줬다(이슈 #135).
-# 타임스탬프를 `fr_...`로 합성하는 길은 막혀 있다: `contract-visual-evidence.md` §4
+# 타임스탬프를 `fr_...`로 합성하는 길은 막혀 있다: `contract-visual-evidence.md` §5
 # "위치는 ID에 인코딩하지 않는다", `module-architecture.md` "Consumer가 여러 값을
 # 이어 붙여 ref를 합성하는 것도 금지다". 그래서 wire schema에서 이 칸을 빼 애초에
 # 묻지 않고, 공개 계약의 `evidence_refs`는 발급받은 ref가 생길 때까지 비워 둔다.

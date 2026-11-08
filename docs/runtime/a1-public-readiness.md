@@ -1,5 +1,33 @@
 # A-1 server integration and release gate
 
+## Elice 지원 모드 — 2026-11-08 정책 변경 (운영 미적용)
+
+이 절은 아래 과거 snapshot과 후속 문서의 원화 예약 필수 문구보다 우선한다.
+과거 문구는 기존 `krw` 모드의 계약으로 보존한다.
+
+보호 policy의 `funding_mode`는 기본 `krw`이며 기존 양수 원화 상한·호출별 예약을 그대로 요구한다.
+지원 서비스용 `elice_supported`를 명시하면 **체험별·KST 일일·공개 기간 누적 원화 상한을 강제하지 않는다**.
+이는 지원이 무제한이거나 추가 청구가 없다는 확인이 아니다. 과거 승인된 일20,000원·누적100,000원을
+이 모드에서 코드가 차단한다고 안내하면 안 된다. 원화 보호로 복귀하려면 실제 상한 근거를 갖춘 `krw` policy를
+닫힌 상태에서 검증·활성화해야 하며, 기존 예약·비용·사용량 원장을 초기화하지 않는다.
+
+지원 policy에는 비어 있지 않은 `support_ref`와 `supported_calls`의 정확한 operation/provider_label 쌍이 필요하다.
+operation은 HINT_EXTRACT/SEARCH_COARSE/SEARCH_FINE, label은 실제 모델의 `elice:<model>`이다.
+원화 상한·bounds는 함께 입력하지 않는다. 0원·가짜 단가·임의 예약액으로 채우지 않는다.
+Worker는 실제 bootstrap의 Search/Intent 설정이 mlapi.run 및 해당 모델인지 매 호출 전에 확인한다.
+이름표만 Elice인 다른 endpoint나 미등록 쌍, 필수 설정 누락은 호출을 거부한다.
+
+기존 RUNNING claim/owner/lease/취소·CLOSED·긴급 중단·원본 binding·만료·공유 admission 검사는 우회하지 않는다.
+새 지원 호출은 원화 예약 행을 만들지 않으며, Usage STARTED와 관측·토큰·실패·재시작 정산은 계속 기록한다.
+기존 원화 예약의 identity/금액/정산은 보존한다. 과거 예약의 실제 관측액 초과 시 중단 경로도 유지한다.
+입력·횟수·동시성·시간·재시도·저장공간·무료 작업 별도 제한은 변경하지 않는다.
+현재 Search 설정에 명시적 output/thinking 토큰 hard cap이 없다는 사실을 상한 보장으로 바꾸지 않는다.
+운영의 모델·상한·support_ref·승인된 반복/동시성은 최종 policy/설정/이미지에 결속해야 한다.
+
+이 수정은 schema/image 게시·운영 적용·실제 provider 호출·공개 개방을 실행하지 않는다.
+새 MySQL supported_funding(usage/cancel_db/cancel_signal/restart)은 canonical → strict JSON/JUnit → 실제 보고서 변조의
+필수 목록에 포함하며 로컬 미실행을 기존 CI 성공으로 대체하지 않는다.
+
 2026-11-08 리뷰 후속의 일반/긴급 중단, 무료 원장, 새 PM 승인과 남은 gate는
 [팀 리뷰 후속](a1-review-followup.md)을 따른다. 아래 미확정·head7 검증 기록은 당시 snapshot으로 보존한다.
 

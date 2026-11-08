@@ -8,7 +8,7 @@
 
 **Architecture Contract:** v4 §5-1 ⑪ `CaseView` · ⑫ `JobRecord`
 
-**Contract Version:** `job-record/v1` · `case-view/v1.12`
+**Contract Version:** `job-record/v1` · `case-view/v1.13`
 
 > **v1.10 로컬 구현 — 장면 찾기 세부 진행.** 선택 필드 `scene_search: {job_id, phase, search_started_at}`를 추가한다. `phase`는 `PREPARING | SEARCHING | ORGANIZING`, `search_started_at`은 최초 탐색 시작 ISO8601 시각 또는 `null`이다. 같은 job의 자동 재시도에는 단계와 최초 시각을 유지하고, 새 사용자 탐색에는 초기화한다. 완료·실패·중단 판단은 기존 `progress`와 `notices`가 우선한다. 구버전 응답처럼 이 필드가 없으면 web은 세부 진행률을 추정하지 않는다. 아래 v1.9 전체 예시에 이 선택 필드를 더한 호환 확장이다.
 
@@ -117,6 +117,8 @@ case가 발주한 작업(Job Intent) 1건을 append-only로 기록해, 부분 �
 - 실행 상태(status/attempt/cost/produced/failure_kind) — 별도 `JobExecution` 계약 범위
 - 재시도 성공 보장
 - heartbeat/lease/retry/backoff/DB 구조 등 Runtime 내부 구현 세부
+
+**#597 통합 계약 경계.** 이 문서의 상황 응답 선행 발주 및 대기 notice 규칙은 기존 CaseView 버전 기준이다. [#616](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/616) 통합에서 Case가 조립된 EvidenceRecord 기준으로 발주·대기를 구분하고, [Evidence 초안 API](../../modules/evidence/decisions/observed-report-draft.md)를 호출해 최상위 `report_draft: {title, description} | null`을 투영한다. 응답이 없으면 기존처럼 `NOT_ASKED`를 투영한다. CaseView 스키마·버전과 소비자 fixture 개정은 Case/Web 통합에서 반영한다.
 
 ### 4. 조사에서 확인된 제약
 
@@ -296,6 +298,7 @@ json
 | candidates[].at_provenance_label_key | string \| null | Y | `at_provenance` raw 값을 보고 case가 고르는 표시용 키. `stale_revision_label_key`와 같은 원칙 — raw가 authoritative, 이 키는 순수 파생값. 매핑 안 되는 raw는 `null` | **신규(v1.4, 2026-09-14)** — 이슈 #39 Required-3 후속, PR 리뷰 코멘트 Q-3, 유소연·신유민 합의. 매핑표는 §7 |
 | package.report_field_states | object<string, {info_state, source_label_key}> | Y(키, **5개 전부 항상 존재** — §10 불변조건 13) | `report_fields`와 나란히 필드별 정보 상태를 제공. 매핑표·값 공간은 §7 | **신규(v1.3)** — 신유민 PR #28 요청, `CONTRACT_CONFLICTS.md` 불명확 항목 10 종결 |
 | package.plate_image_ref | string \| null | Y(`package`가 non-null이면 키) | 번호판 이미지(PNG)의 derived asset ref. `ReportPackage.assets.plate_image_ref.ref`를 그대로 옮긴다. evidence는 PLATE_IMAGE가 `AVAILABLE`일 때만 이 키를 싣으므로, 없으면(번호판을 못 읽음 · 생성 실패 · 생성 중) `null`이다. web은 `artifact_ref`처럼 `GET /cases/{case_id}/assets/{plate_image_ref}`로 받고, `null`이면 다운로드 버튼을 보이지 않는다 | **신규(v1.11, #569)** — 김대원(web) 요청 · 유소연 결정 |
+| report_draft | `{ title: string, description: string }` \| null | Y(키 항상 존재) | **신규(v1.13, #597 B안).** 신고서 초안. 현재 선택의 조립된 EvidenceRecord를 evidence `render_report_draft()`에 넘긴 결과를 그대로 옮긴다 — case는 문장을 만들지 않는다. 조립 전(상황 응답 대기 부분 투영 · 비조립)이거나 렌더할 수 없으면(유형 · 응답 조합, 발생시각 없음, 번호판 값과 판독 결과 모두 없음, 본문 길이 초과) `null`. 최종 신고문은 `package.report`이며, 초안이 있다고 `READY`가 되지 않는다. 영상 생성 중에도 결과 화면에 보이기 위한 값이다 | **확정** (김준영 #597 2026-11-07 · 유소연 구현) |
 | package.report | `{ title: string, description: string }` | Y(`package`가 non-null이면) | 최종 신고문. `ReportPackage.report.title` · `description`을 그대로 옮긴다 — 둘 다 non-null, `description`은 줄바꿈을 포함한 평문. `report.template_ref`는 내리지 않는다. 최상위 `description`(같은 v1.7 신규, #259 — 사용자 입력 원문)과 다른 값 | **신규(v1.7, #274)** |
 | manifest_summary.ok_file_count / failed_file_count / duration_sec | int/int/number | Y | 파일 등록 성공·실패 수, 전체 구간 길이. count/duration은 항상 제공하고 정상 영상이 없으면 range=null. **`duration_sec`(v1.9, #184)은 `timeline_duration_ms / 1000`과 같은 값이다** — 분석 시작 전에는 `0`(파일 길이를 더하지 않는다 — 전방 · 후방이 같은 시간대를 찍으면 합이 틀린다) | 확정 · v1.9 값 출처 |
 | timeline_duration_ms | int \| null | Y(키) | **신규(v1.9, #184).** case 타임라인 전체 길이(ms). recording 정의(0부터 `source_placements[].timeline_end_sec` 최댓값까지, 원본 사이 빈 구간 포함 — #184 recording 답변 2026-10-24)로 만든 timeline port 값을 case가 계산하지 않고 옮긴다. 후보 `marker_ms`와 같은 좌표(현재 timeline revision, 시작 0)라 web은 `stale_revision=false` 후보의 `marker_ms`를 이 길이로 나눠 마커를 놓는다. 분석 시작 전 · 첫 탐색 범위를 만들기 전(단서 구조화 대기)에는 `null` — web은 시간축을 그리지 않는다. 값은 첫 탐색 범위의 `end_ms`와 같다(ms 내림, #423) | 신규(v1.9) — 유소연 결정(#184 2026-10-05) · 신유민 이름 제안 · 정철원 정의 |
@@ -541,3 +544,7 @@ Case domain의 자동 발주 판단과 #616의 EvidenceRecord/report_draft 판�
 `candidates[].video_preview`는 `{status, clip_ref}`다. status는 `NOT_REQUESTED | PREPARING | READY | FAILED | UNAVAILABLE`, clip_ref는 READY일 때만 IncidentClip ref다. 이전 응답은 이 필드가 없을 수 있으며 Web은 재생 기능을 추정하지 않는다.
 
 열린 JobRecord.kind에 `CANDIDATE_VIDEO_PREVIEW`, label_key에 `job.candidate_video_preview`를 등재한다. `running_jobs`에 포함되어 polling하지만 신고자료 진행·재선택 제한의 관찰 job에는 포함되지 않는다. 미리보기 요청은 Fine·판독·export·선택을 변경하지 않는다. rank/세대/구간·재사용·실패 정책의 정본은 `docs/modules/case/decisions/candidate-video-preview.md`다.
+
+## v1.13 신고서 초안 (2026-11-07, #597 B안)
+
+최상위 `report_draft: {title, description} | null`을 더한다(§6 행). Fine `OBSERVED`면 신고 상황 응답 없이(`NOT_ASKED`) EvidenceRecord가 조립되고, evidence가 그 Record로 초안을 렌더링한다(`docs/modules/evidence/decisions/observed-report-draft.md`). 같은 판본에서 case는 신고용 영상 · 번호판 이미지 자동 발주 조건을 「상황 응답 완료」에서 「EvidenceRecord 조립됨(`evidence.record_id`)」으로 바꾸고, `case.situation_response_pending`은 조립 전 부분 투영(`record_id` null)에만 붙인다. 정본은 `docs/modules/case/decisions/observed-skips-situation-response.md`다. 이전 응답에는 `report_draft` 키가 없을 수 있다.

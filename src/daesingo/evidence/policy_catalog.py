@@ -12,7 +12,8 @@ from .errors import PolicyConfigurationError
 
 Contract = dict[str, Any]
 _POLICY_DIR = Path(__file__).parent
-_ACTIVE_REQUIREMENT_CATALOG_FILE = "requirement_rules_v6.json"
+_ACTIVE_REQUIREMENT_CATALOG_VERSION = 7
+_ACTIVE_REQUIREMENT_CATALOG_FILE = f"requirement_rules_v{_ACTIVE_REQUIREMENT_CATALOG_VERSION}.json"
 _CATEGORIES = {"EVIDENCE", "TIME", "VEHICLE", "LOCATION", "ASSET", "DEADLINE", "REPORT_CONTENT"}
 _OUTCOMES = {"PASS", "WARN", "BLOCK", "UNKNOWN"}
 
@@ -183,6 +184,40 @@ def validate_requirement_catalog(value: Contract) -> Contract:
             ):
                 _fail(f"{scope} requirement catalog outcomes are invalid")
         all_codes.extend(codes)
+    if policy_ref == "policy/requirement-rules-v7":
+        if value.get("supersedes_policy_ref") != "policy/requirement-rules-v6" or not value.get("decision_ref"):
+            _fail("requirement catalog v7 must record its predecessor and decision")
+        final_rules = {rule["code"]: rule for rule in scopes["FINAL_PACKAGE"]["always"]}
+        situation = final_rules.get("package.evidence.situation_response", {})
+        if situation.get("outcomes") != {
+            "CONFIRMED": "PASS", "CORRECTED": "PASS", "USER_UNSURE": "WARN",
+            "USER_UNSURE_with_specific_type": "WARN", "OBSERVED_without_response": "PASS",
+            "NOT_ASKED_or_absent": "UNKNOWN",
+        }:
+            _fail("requirement catalog v7 situation outcomes are invalid")
+        specific = _REPORT_TEMPLATES_V1_1["specific_template_ref"]
+        generic = _REPORT_TEMPLATES_V1_1["generic_template_ref"]
+        if situation.get("template_selection") != {
+            "CONFIRMED": specific, "CORRECTED": specific, "USER_UNSURE": generic,
+            "USER_UNSURE_with_specific_type": None, "OBSERVED_without_response": specific,
+            "NOT_ASKED_or_absent": None,
+        }:
+            _fail("requirement catalog v7 situation templates are invalid")
+        content = final_rules.get("package.report.content_length", {})
+        required_by_template = content.get("render_required_inputs_by_template")
+        expected = {}
+        for mode, has_location in (("with_location", True), ("without_location", False)):
+            common = {"occurred_at", "violation_expression", "report_template"}
+            if has_location:
+                common.add("package_display_location")
+            expected[mode] = common | {"vehicle_number"}
+            expected[mode + "_without_plate"] = common | {"plate_readout_performed"}
+        if not isinstance(required_by_template, dict) or set(required_by_template) != set(expected):
+            _fail("requirement catalog v7 content inputs are invalid")
+        for mode, inputs in required_by_template.items():
+            if (not isinstance(inputs, list) or any(not isinstance(item, str) for item in inputs)
+                    or len(inputs) != len(expected[mode]) or set(inputs) != expected[mode]):
+                _fail("requirement catalog v7 content inputs are invalid")
     conditional = scopes["FINAL_PACKAGE"].get("conditional")
     if not isinstance(conditional, list) or len(conditional) != 1:
         _fail("time display catalog branch must occur exactly once")
@@ -278,7 +313,10 @@ def load_deadline_policy() -> Contract:
 
 
 def load_requirement_catalog() -> Contract:
-    return validate_requirement_catalog(_read_json(_ACTIVE_REQUIREMENT_CATALOG_FILE))
+    catalog = _read_json(_ACTIVE_REQUIREMENT_CATALOG_FILE)
+    if catalog.get("policy_ref") != f"policy/requirement-rules-v{_ACTIVE_REQUIREMENT_CATALOG_VERSION}":
+        _fail("active requirement catalog policy_ref does not match its revision")
+    return validate_requirement_catalog(catalog)
 
 
 def load_report_policy() -> Contract:

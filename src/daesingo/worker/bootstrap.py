@@ -5,10 +5,12 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TextIO
+from urllib.parse import urlsplit
 
 from pydantic import SecretStr
 
 from daesingo.common.bootstrap import ModuleFactory, Startup, bootstrap_service
+from daesingo.common.public_runtime.policy import PublicDenied
 from daesingo.search.config import GeminiSearchConfig
 from daesingo.search.intent import intent_config_from_dotenv
 from daesingo.recording.factory import RECORDING_KEYS, RecordingSettings
@@ -18,6 +20,21 @@ from daesingo.recording.factory import RECORDING_KEYS, RecordingSettings
 class SearchSettings:
     api_key: SecretStr = field(repr=False)
     config: GeminiSearchConfig = field(repr=False)
+
+
+def require_supported_elice(modules: Mapping[str, object], snapshot) -> None:
+    """A legacy `elice:` label alone does not prove the actual provider endpoint."""
+    operation = snapshot["operation"]
+    if operation == "HINT_EXTRACT":
+        config = modules.get("intent")
+    elif operation in ("SEARCH_COARSE", "SEARCH_FINE"):
+        search = modules.get("search")
+        config = search.config if isinstance(search, SearchSettings) else None
+    else:
+        raise PublicDenied("UNSUPPORTED")
+    if (not isinstance(config, GeminiSearchConfig) or urlsplit(config.base_url).hostname != "mlapi.run"
+            or snapshot["provider_label"] != f"elice:{config.model}"):
+        raise PublicDenied("UNSUPPORTED")
 
 
 def _search_config(values: Mapping[str, str]) -> SearchSettings:

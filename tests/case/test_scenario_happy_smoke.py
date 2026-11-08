@@ -167,8 +167,8 @@ def test_happy_path_before_situation_response_has_no_package():
     )
     case.select_candidate("candidate_h001")
 
-    # 실제 진입점(`build_view_from_adapter()`)처럼 파생 notice까지 붙인다 — 응답 전이라
-    # `case.situation_response_pending`, 검색어가 없어 `evidence.location_search_keyword_missing`.
+    # 실제 진입점(`build_view_from_adapter()`)처럼 파생 notice까지 붙인다 — 검색어가 없어
+    # `evidence.location_search_keyword_missing`. 응답 대기 notice는 #597 B안에서 조립된 evidence에 붙지 않는다.
     view = service.derive_notices(
         build_case_view(
             case,
@@ -183,6 +183,7 @@ def test_happy_path_before_situation_response_has_no_package():
     assert package_reports[0]["overall"] == "UNKNOWN"
     assert view["package"] is None
     assert view["candidates"][0]["situation_confirmation"] == "NOT_ASKED"
+    assert "case.situation_response_pending" not in {n["code"] for n in view["notices"]}
     assert {k: v for k, v in view.items() if k not in ("contract", "contract_version")} == {
         k: v for k, v in before.items() if k not in ("contract", "contract_version")
     }
