@@ -17,6 +17,7 @@ from a1_support import policy_values, supported_policy_values
 from daesingo.common.bootstrap import Startup
 from daesingo.common.config import RuntimeConfig
 from daesingo.common.jobs.execution import ExecutionContext
+from daesingo.common.jobs.produced import produced_objects
 from daesingo.common.jobs.repository import claim_one, enqueue
 from daesingo.common.jobs.schema import job_execution
 from daesingo.common.logging import configure_logging
@@ -89,6 +90,8 @@ def test_real_local_ocr_usage_survives_t1_reconciliation_and_restart(public_db, 
     context = replace(context, usage_sink=worker.usage_sink_factory(context))
     terminal = worker.dispatch(context)
     assert terminal.status == "SUCCEEDED" and len(inferences) == 7
+    readout_object, = terminal.objects
+    assert readout_object.kind == "readout_run"
     interrupted = []
     if restart:
         def interrupt_after_t1(*args, **kwargs):
@@ -113,7 +116,15 @@ def test_real_local_ocr_usage_survives_t1_reconciliation_and_restart(public_db, 
         assert row["outcome"] == "SUCCEEDED" and row["provider_label"] == "ocr-local"
         assert row["operation"] == ("READOUT_PLATE" if kind == "PLATE_READ" else "READOUT_OVERLAY_TIME")
         assert row["amount"] == final["amount"] == 0
-        assert final["run_ref"] == terminal.produced[0].ref
+        assert final["run_ref"] == readout_object.ref
+        assert conn.scalar(sa.select(job_execution.c.produced).where(
+            job_execution.c.execution_id == claim.execution_id)) == [
+                {"kind": "readout_run", "ref": readout_object.ref}]
+        stored = conn.execute(sa.select(produced_objects).where(
+            produced_objects.c.execution_id == claim.execution_id)).mappings().one()
+        assert stored["case_id"] == claim.case_id and stored["job_kind"] == kind
+        assert stored["kind"] == readout_object.kind and stored["ref"] == final["run_ref"]
+        assert stored["payload"] == readout_object.payload
         assert conn.scalar(sa.select(sa.func.count()).select_from(t.admissions)) == 0
         assert conn.scalar(sa.select(sa.func.sum(t.local_admissions.c.job_count))) == 1
         assert conn.scalar(sa.select(sa.func.count()).select_from(t.reservations)) == 0
@@ -193,6 +204,7 @@ def _retry_failed_plate_scenario(engine, tmp_path):
     from tests.case.test_command import _store_with_selected_case, _NoPackageAdapter, MOCK_ROOT
     _, case = _store_with_selected_case()
     cid = case.case_id
+    trace_id = "test-ocr"
     prior = case.job_records[-1]
     pinned = {"candidate_id": "cand_a", "generation_job_id": case.job_records[0]["job_id"],
               "incident_clip_ref": "same-successful-clip"}
@@ -220,12 +232,12 @@ def _retry_failed_plate_scenario(engine, tmp_path):
         return datetime.now(timezone.utc).replace(tzinfo=None)
     def queue(conn, records):
         if conn.dialect.name == "mysql":
-            return enqueue(conn, records, "TEST_ONLY_OCR_RETRY")
+            return enqueue(conn, records, trace_id)
         identities = []
         for r in records:
             identity = "exec_" + r["job_id"]
             conn.execute(job_execution.insert().values(execution_id=identity, job_id=r["job_id"], case_id=cid,
-                kind=r["kind"], status="QUEUED", attempt=1, produced=[], trace_id="test-ocr",
+                kind=r["kind"], status="QUEUED", attempt=1, produced=[], trace_id=trace_id,
                 queued_at=stamp(), available_at=stamp()))
             identities.append(identity)
         return identities
@@ -281,8 +293,10 @@ def _retry_failed_plate_scenario(engine, tmp_path):
         def deliver():
             with engine.begin() as conn:
                 public.locked(conn)
+                assert conn.scalar(sa.select(job_execution.c.trace_id).where(
+                    job_execution.c.execution_id == identity)) == trace_id
                 if conn.dialect.name == "mysql":
-                    return reflect_terminal(conn, incoming, reflector, "test-ocr")
+                    return reflect_terminal(conn, incoming, reflector, trace_id)
                 result = reflector.reflect(conn, incoming)
                 assert result.jobs == ()
                 conn.execute(job_execution.update().where(job_execution.c.execution_id == identity)
