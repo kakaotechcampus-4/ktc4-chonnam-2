@@ -501,6 +501,47 @@ def test_clip_failure_shows_notice_and_no_running_readouts():
     assert {s["step"]: s["state"] for s in view["progress"]}.get("overlay_time_read") != "RUNNING"
 
 
+ALL_STEPS = ["file_intake", "coarse_search", "candidate_review", "plate_read", "overlay_time_read",
+             "evidence_assembly", "requirement_check", "package_assembly"]
+
+
+def _steps(store: CaseStore, case_id: str) -> list[str]:
+    return [s["step"] for s in service.get_view(case_id, store=store)["progress"]]
+
+
+def test_progress_keeps_eight_steps_while_preparing():
+    # 준비 중(Fine · clip · 판독)에는 package까지 이어질 수 있다 — 8단계를 유지하고 조립 이후는 PENDING이다(#665).
+    # 예전에는 이 구간이 5단계라 진행 화면 목록이 8 → 5 → 8로 바뀌었다.
+    store, case_id, _, _ = _after_coarse()
+    assert _steps(store, case_id) == ALL_STEPS
+
+    _reflect(store, case_id, _latest(store, case_id, "FINE_VERIFY"), _fine("OBSERVED"))
+    _reflect(store, case_id, _latest(store, case_id, "INCIDENT_CLIP_BUILD"), {"incident_clip_ref": "clip_1"})
+    progress = {s["step"]: s["state"] for s in service.get_view(case_id, store=store)["progress"]}
+    assert list(progress) == ALL_STEPS
+    assert [progress[s] for s in ALL_STEPS[5:]] == ["PENDING", "PENDING", "PENDING"]
+
+
+def test_clip_failure_progress_drops_steps_after_candidate_review():
+    # clip 준비가 실패하면 판독~package를 시작하지 않는다 — Fine 음성 · 실행 실패와 같은 3단계다(#665).
+    # web은 이때 진행 화면이 아니라 실패 화면을 그린다.
+    store, case_id = _clip_failed()
+
+    assert _steps(store, case_id) == ALL_STEPS[:3]
+
+
+def test_reprepare_after_clip_failure_returns_to_eight_steps():
+    # 같은 후보로 다시 준비하면 새 clip이 「가장 나중 실행」이다 — 진행 화면에 다시 8단계가 보인다(#665).
+    store, case_id, _, _ = _after_coarse()
+    _complete_chain(store, case_id, clip="FAILED")
+    _select_other(store, case_id, "cand_2")
+    _complete_chain(store, case_id, verification="NOT_OBSERVED")
+
+    _select_other(store, case_id, "cand_1")
+
+    assert _steps(store, case_id) == ALL_STEPS
+
+
 def test_clip_success_has_no_clip_failed_notice():
     store, case_id, _, _, _ = _after_fine("OBSERVED")
     _reflect(store, case_id, _latest(store, case_id, "INCIDENT_CLIP_BUILD"), {"incident_clip_ref": "clip_1"})

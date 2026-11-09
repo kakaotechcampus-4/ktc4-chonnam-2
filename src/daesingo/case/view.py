@@ -160,21 +160,17 @@ def _build_progress(
             {"step": "candidate_review", "state": "DONE"},
         ]
 
-    # ⚠️ EVIDENCE_REVIEW인데 evidence가 끝내 조립되지 못한 채(예: 번호판 판독이 인프라
-    # 오류로 실패·취소를 거듭함) 머물러 있으면, plate_read/overlay_time_read는 각 Job의
-    # 실행 상태(JobExecution.status projection)로 독립적으로 보여주고, 그 뒤 단계
-    # (evidence_assembly~package_assembly)는 계산할 신뢰 가능한 신호 자체가 없으므로
-    # 목록에서 아예 뺀다(CANDIDATE_REVIEW-빈 배열과 같은 원칙). `scenario_infra_failure_001`
-    # 4개 revision 전부(plate_read가 RUNNING/FAILED/PARTIAL을 오가는 동안 overlay_time_read는
-    # 독립적으로 DONE일 수 있다는 것까지) 이 분기로 확인됨(2026-09-14).
-    # evidence가 없는 이유를 Fine 판정이 알려 주면 그것을 먼저 본다(PR #224 리뷰). 판정이 없으면
-    # 아래 「조립 전」 분기 그대로다.
+    # EVIDENCE_REVIEW에서 evidence가 아직 없을 때. 이유를 Fine 판정·실행 상태가 알려 주면 그것을 먼저 본다(PR #224 리뷰).
     # - 음성 결과(`NOT_ASSEMBLED`)는 IncidentClip~package를 시작하지 않는다(#168 [A]) — 뒤 단계는
     #   이 case 생애주기에서 일어날 계획이 없어 B절 §7 step 집합 규칙 3(`candidates=[]`와 같은 취급)으로 뺀다.
-    #   빼지 않으면 판독 실행 상태가 보고되지 않아 RUNNING으로 보인다. Fine **실행 실패**(`search.visual_verify_failed`)도
-    #   판정 없이 같은 이유로 뒤 단계를 시작하지 않아 같은 3단계다.
+    #   빼지 않으면 판독 실행 상태가 보고되지 않아 RUNNING으로 보인다. Fine **실행 실패**(`search.visual_verify_failed`)와
+    #   현재 선택 후보의 **clip 준비 실패**(`recording.incident_clip_build_failed`, #297 후속 — 판독이 발주되지 않는다,
+    #   `incident-clip-observation-input.md` §4-4)도 같은 이유로 뒤 단계를 시작하지 않아 같은 3단계다(#665).
+    #   셋 다 web이 진행 화면이 아니라 결과·실패 화면을 그리므로 단계가 줄어드는 것이 진행 목록에 보이지 않는다.
+    #   같은 후보로 다시 준비하면 새 Fine·clip이 「가장 나중 실행」이 되어 이 분기를 벗어나 8단계로 돌아온다.
     # - 상황 응답 대기(`AWAIT_SITUATION_RESPONSE`)는 관찰(OCR·시간 source)을 마쳤고 조립만 응답을
     #   기다린다(#165). 응답 뒤 package까지 이어지므로 같은 규칙 1대로 8단계를 싣고, 조립 이후는 PENDING이다.
+    # - 그 밖(Fine·clip·판독이 진행 중)은 package까지 이어질 수 있으므로 규칙 1대로 8단계다(#665).
     if (
         case.stage == "EVIDENCE_REVIEW"
         and evidence_record is None
@@ -201,16 +197,18 @@ def _build_progress(
             {"step": "package_assembly", "state": "PENDING"},
         ]
 
-    # clip 준비가 실패하면 판독은 발주되지 않는다(`incident-clip-observation-input.md` §4-4) — 보고가 없다고 RUNNING으로 보이지 않게 PENDING이다(#297 후속).
+    # clip 준비 실패 — 위 음성 결과·Fine 실행 실패와 같은 3단계다(우선순위는 상황 응답 대기 뒤, 예전 자리 그대로).
     if case.stage == "EVIDENCE_REVIEW" and evidence_record is None and selected_clip_failed(case):
         return [
             {"step": "file_intake", "state": "DONE"},
             {"step": "coarse_search", "state": "DONE"},
             {"step": "candidate_review", "state": "DONE"},
-            {"step": "plate_read", "state": "PENDING"},
-            {"step": "overlay_time_read", "state": "PENDING"},
         ]
 
+    # 조립 전 — plate_read/overlay_time_read는 각 Job의 실행 상태(JobExecution.status projection)로 독립적으로 보이고
+    # (`scenario_infra_failure_001` 4개 revision: plate_read가 RUNNING/FAILED/PARTIAL을 오가는 동안 overlay_time_read는
+    # DONE일 수 있다), 그 뒤 단계는 아직 도달하지 않았으므로 PENDING이다. 예전에는 뒤 3단계를 빼 진행 화면 목록이
+    # 8 → 5 → 8로 바뀌었다(#665).
     if case.stage == "EVIDENCE_REVIEW" and evidence_record is None:
         return [
             {"step": "file_intake", "state": "DONE"},
@@ -218,6 +216,9 @@ def _build_progress(
             {"step": "candidate_review", "state": "DONE"},
             {"step": "plate_read", "state": _job_execution_status_to_progress_state(plate_read_status)},
             {"step": "overlay_time_read", "state": _job_execution_status_to_progress_state(overlay_time_read_status)},
+            {"step": "evidence_assembly", "state": "PENDING"},
+            {"step": "requirement_check", "state": "PENDING"},
+            {"step": "package_assembly", "state": "PENDING"},
         ]
 
     # ⚠️ READY인데 evidence_record가 없으면(Fine이 NOT_ASSEMBLED로 분류해 IncidentClip~
