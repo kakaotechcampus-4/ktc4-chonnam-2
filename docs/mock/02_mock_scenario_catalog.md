@@ -143,7 +143,7 @@
 
 **검증 Contract**: `JobRecord`·`JobExecution`(STALE→FAILED 재시도)·`ReadoutRun`(`outcome=FAILED`, `failure.kind=INFRA`)·`UsageRecord`·`CaseView`(RUNNING→FAILED, blocking notice)·`FrameRef`/`RecordingTimeline`(thumb_ref 자원용 최소 구성).
 
-**의도적으로 만들지 않은 것**: `search`·`evidence` 모듈 전체(`modules_intentionally_absent`로 명시). candidate 탐색·선정은 이 시나리오의 검증 대상이 아니며, `PLATE_READ`가 인프라 단계에서 실패해 evidence assembly 자체가 시작되지 않는다. `SpanResolution.FAILED`, `EvidenceRecord` 관련 fixture도 이 시나리오에는 없다.
+**의도적으로 만들지 않은 것**: `search` 모듈 전체(`modules_intentionally_absent`로 명시). candidate 탐색·선정은 이 시나리오의 검증 대상이 아니다. `evidence` artifact도 없다 — 4개 revision 모두 조립 전(`evidence=null`) 스냅샷이라 만들 `EvidenceRecord`가 없다. `SpanResolution.FAILED`, `EvidenceRecord` 관련 fixture도 이 시나리오에는 없다. *(2026-11-09, #665: 예전에는 `evidence`도 absent로 선언하고 「evidence assembly 자체가 시작되지 않는다」고 적었으나, 이 case는 판독 뒤 package까지 이어질 수 있어 계약 B§7 step 집합 규칙 1 대상이다 — absent 선언을 빼고 `progress[]`를 8단계(조립 이후 `PENDING`)로 고쳤다.)*
 
 > **2026-09-10 v3 추가 (이슈 #26 B-readout-3·4).** ① attempt 1(STALE)에도 0원 `UsageRecord`를 추가했다 — 실패·재시도분이 비용 분모에서 조용히 빠지는 것을 막기 위한 mock pack 전체 컨벤션(이슈 #22 B-4, `docs/modules/case/decisions/eval-round2-ground-truth-and-usage.md`). 이 fixture가 「1 execution : `ReadoutRun` 1건」 불변조건의 STALE 예외(신유민·유소연 제안, `contract-job-record-case-view.md`·`contract-job-execution.md`에 등재)의 최초 반례이기도 하다. ② 같은 시나리오에 `OVERLAY_TIME_READ` run을 새로 추가해 `observation.status=UNKNOWN`·`reason.code=readout.overlay.presence_undetermined`인 "화면 시각 확인 불가" 갈래를 처음으로 만들었다(신유민이 이슈 #16에서 요청했던 것). `recording/scenario_infra_failure_001.json`에 그동안 없던 `IncidentClip`(`clip_x001`)도 이때 추가했다(정철원 확인 대기, provisional).
 >
