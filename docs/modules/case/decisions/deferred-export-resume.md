@@ -16,7 +16,7 @@
    - 현재 선택 후보와 현재 내보내기 요청 기준이다. 후보가 바뀌었으면 이전 후보의 보류분이 아니라 지금 후보 것을 발주한다.
    - 같은 입력은 fingerprint로 건너뛴다. 다시 불러도 중복 발주가 없다.
    - 자동 발주이므로 `case_rev`를 올리지 않는다(반영 경로와 같음). 바뀐 것이 없으면 저장하지 않는다.
-3. **재시도는 `LOCAL_CONCURRENT` 보류에만 한다.** `LOCAL_LIMIT` · `JOBS_STOPPED` · `STOPPED` 등은 일시적인 자리 부족이 아니다. 지금처럼 안내와 수동 버튼을 남긴다.
+3. **재시도는 `LOCAL_CONCURRENT` 보류에만 한다.** 먼저 잠금 없이 보류 상태를 읽고, 보류가 있을 때만 재시도 transaction을 연다. 대부분의 반영은 보류가 없으므로 전역 control 행 잠금을 한 번 더 잡지 않는다(transaction 안에서 잠근 뒤 다시 확인한다). `LOCAL_LIMIT` · `JOBS_STOPPED` · `STOPPED` 등은 일시적인 자리 부족이 아니다. 지금처럼 안내와 수동 버튼을 남긴다.
 4. **admission은 기존 `admit_local`을 그대로 쓴다.** 요청 키는 `auto-export-resume:<execution_id>`다. 성공하면 `admit_local`이 `local_work_state`를 지워 보류 안내가 사라진다. 다시 거절되면 아무것도 바꾸지 않는다(보류 안내 · 수동 버튼 유지).
 5. **재시도 실패는 반영 결과를 바꾸지 않는다.** T2는 이미 커밋됐다. 실패는 `runtime.reflect.resume_failed`(status `FAILED`, 예외 클래스 이름만) 로그로 남기고, 로그 기록 실패도 반영 결과에 영향을 주지 않는다. 사용자에게는 이전과 같은 보류 안내와 수동 버튼이 남는다(@flosure23 #681 리뷰).
 

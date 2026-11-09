@@ -236,7 +236,11 @@ def compose_worker(
                 enqueue(conn, [{"job_id": j.job_id, "case_id": j.case_id, "kind": j.kind} for j in jobs],
                         context.trace_id)
         try:
-            run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger)
+            # Most reflections defer nothing: skip the locking transaction then.
+            with engine.connect() as conn:
+                pending = guarded_reflector.capacity_deferred(conn, context.case_id)
+            if pending:
+                run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger)
         except Exception as error:
             # Class name only, inside the caller's correlation context; a broken
             # sink must not reach the already committed reflection either.
