@@ -1,7 +1,9 @@
 # intake overlay 존재 탐지 — 방향 확정, 세부 미결
 
+> **상태 (2026-11-09):** 미구현. `src/`에 업로드 직후 overlay 존재 탐지 코드가 없다.
+
 > **Owner:** 신유민 (`readout`) · 방향 확인 완료
-> **이 문서는 미결 기록이다.** 아래 「미결」은 실제 블랙박스 샘플로 검증한 뒤 **Owner가 Technical Spec에서 확정한다.** 지금 채우지 않는다.
+> **이 문서는 미결 기록이다.** 아래 「미결」은 실제 블랙박스 샘플로 검증한 뒤 **Owner가 Technical Spec에서 확정한다.** 지금 채우지 않는다. readout Technical Spec은 아직 없다.
 > 관련: `architecture/module-architecture.md` §7-1(Happy Path) · §7-2 · `product/core-user-flow.md` §5
 
 ## 확정된 것 — 방향
@@ -13,6 +15,8 @@
 **왜 필요한가:** 화면(`core-user-flow.md` §5)이 업로드 직후에 「이 영상에 화면 시각이 찍혀 있는지」를 알려준다. GPS 없음을 마지막 handoff에서 처음 알게 하지 말라는 원칙과 같은 이유다 — 시각도 마지막에 알게 하면 안 된다.
 
 ## 미결 — Technical Spec에서 확정
+
+readout Technical Spec은 아직 없다(2026-11-09).
 
 | # | 항목 | 왜 지금 못 정하나 |
 | --- | --- | --- |

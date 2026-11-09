@@ -73,12 +73,13 @@ const PLATE_FORMAT = /^([가-힣]{2})?\d{2,3}[가-힣]\d{4}$/
 
 // 03_Sub_Plate_Check — 번호판을 읽은 장면과 번호판 확대를 나란히 두고, 여기서 번호를 고친다.
 // 장면은 번호판을 읽은 frame(evidence.plate_preview_ref)이다. preview_ref는 사건 대표 썸네일이라 쓰지 않는다(#47 · #446).
-// 값이 없으면(null) 자리만 둔다. 번호판 확대는 자를 위치(bbox)가 CaseView에 없어 아직 자리만 둔다.
+// 값이 없으면(null) 자리만 둔다. 번호판 확대는 신고자료의 번호판 이미지(`package.plate_image_ref`)를 보여 준다.
+// 그 이미지가 없으면(시연 · package 전) 자리만 둔다.
 // 수정은 읽은 값을 채운 채 열어 틀린 글자만 고치게 한다.
 //   저장 — 고친 값이 사건의 번호판이 된다(사용자 확인됨). 결과·자세히 보기를 오가도 유지된다.
 //   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
 // aiValue는 번호판 판독이 읽은 값이다. 사용자가 고친 값과 다르면 함께 보여 무엇을 바꿨는지 알 수 있게 한다.
-// 시연은 화면 안에서만 반영하고, `?api`는 `MANUAL_PLATE_INPUT` command로 보낸다(#449).
+// 시연은 화면 안에서만 반영하고, 실제 흐름(ApiFlow)은 `MANUAL_PLATE_INPUT` command로 보낸다(#449).
 // `onEdit`이 없으면 수정 버튼을 두지 않는다.
 export function PlateCheck(props: {
   view: CaseView

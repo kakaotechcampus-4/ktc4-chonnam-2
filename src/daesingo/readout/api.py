@@ -1,9 +1,10 @@
 """readout 공개 함수 2개 — `read_plate` · `read_overlay_time`.
 
 다른 모듈은 이 두 함수만 부른다. 반환은 v4 §4-모듈3 ③ 그대로 **둘**이다.
+v4는 `docs/architecture/module-architecture.md`(모듈 구조 설계 v4)다.
 
-    read_plate(request, target_hint=None, *, run_id=None)  -> ReadoutRun, PlateReadout | None
-    read_overlay_time(request, *, run_id=None)             -> ReadoutRun, OverlayTimeReadout | None
+    read_plate(request, target_hint=None, provider=None, *, run_id=None)  -> ReadoutRun, PlateReadout | None
+    read_overlay_time(request, provider=None, *, run_id=None)             -> ReadoutRun, OverlayTimeReadout | None
 
 `span`이 아니라 `request`인 이유 — v4가 적은 `span`은 `plate-readout/v1.2`에서 `input_ref.span_ref`가
 삭제되면서 사라졌다. 사건 구간의 canonical reference는 `incident_clip_ref` 하나이고
@@ -80,7 +81,7 @@ OBSERVATION_VERSION = "observation/v1"
 MODULE = "readout"
 
 # ── 판정 임계값 ──────────────────────────────────────────────
-# 전부 잠정이다. 실측 뒤 readout Technical Spec에서 확정한다
+# 전부 잠정이다. 실측 뒤 readout Technical Spec에서 확정한다(readout Technical Spec은 아직 없다)
 # (decisions/overlay-presence-detection.md 미결 #3·#4와 같은 성격).
 
 PLATE_ACCEPT_CONFIDENCE = 0.50
@@ -164,7 +165,10 @@ TZ_OFFSET = re.compile(r"(?:[+-]\d{2}:\d{2}|Z)")
 
 @dataclass
 class TargetHint:
-    """optional이다. 없어도 실행하고, 자체 association을 시도한다(v4 §4-모듈3 ③)."""
+    """optional이다. 없어도 실행하고, 자체 association을 시도한다(v4 §4-모듈3 ③).
+
+    v4는 `docs/architecture/module-architecture.md`(모듈 구조 설계 v4)다.
+    """
     track_ref: Optional[str] = None
     frame_ref: Optional[str] = None
     bbox_xywh: Optional[list] = None
@@ -287,7 +291,8 @@ def _registered_failure(error: providers.ProviderError) -> Failure:
 
     이 계약의 Producer는 readout이다 — provider가 등재되지 않은 값이나 층위가 다른 kind를
     error 채널로 올려도 그것을 그대로 `ReadoutRun.failure`에 실으면 미등재 값을 우리가
-    발행하는 것이 된다(Merge 중단 기준 1). 그런 응답 자체가 파이프라인 오류이므로
+    발행하는 것이 된다(Merge 중단 기준 1 「미등재 값 사용」 — `docs/modules/readout/experiments/
+    merge-evidence-2026-09-14/README.md` 「Merge 중단 기준과의 대응」). 그런 응답 자체가 파이프라인 오류이므로
     `INFRA`/`READOUT_PIPELINE_ERROR`로 닫는다 — 예외로 되돌리지는 않는다.
     """
     if error.kind == RUN_FAILURE_KIND and error.code in registry.FAILURE_CODES:

@@ -2,7 +2,7 @@
 
 값 자체를 여기서 정하지 않는다. 원문은 아래 두 문서가 소유하고 이 파일은 옮겨 적은 것이다.
   - docs/modules/readout/decisions/failure-taxonomy.md
-      failure.kind 5 · failure.code 3 · abstain_reason 4 · overlay reason.code 3
+      failure.kind 5 · failure.code 3 · abstain_reason 5 · overlay reason.code 3
   - docs/architecture/contracts/contract-plate-overlay-readout.md
       §3 source_profile 2 · §5 observation.status · target_association.status 5
 

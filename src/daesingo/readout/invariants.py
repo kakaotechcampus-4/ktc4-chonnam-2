@@ -2,7 +2,9 @@
 
 라운드트립(contracts.py)은 필드가 제자리에 있는지만 본다. 여기는 **값 사이의 관계**를 본다 —
 abstain인데 확정값이 함께 나오는지, 완전 실패인데 결과 객체가 생겼는지 같은 것들이다.
-체크리스트의 Merge 중단 기준 4개가 전부 여기에 들어 있다.
+체크리스트의 Merge 중단 기준 4개가 전부 여기에 들어 있다. Merge 중단 기준은 merge 전에 막아야 할
+출력 4가지다(`docs/modules/readout/experiments/merge-evidence-2026-09-14/README.md`
+「Merge 중단 기준과의 대응」).
 
 규칙 원문의 소유자:
   - contract-readout-run.md §4            R1 · R2

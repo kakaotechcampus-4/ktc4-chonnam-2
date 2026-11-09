@@ -1,4 +1,6 @@
-"""OCR provider 경계 — **실제 OCR이 들어올 자리는 이 파일 하나다.**
+"""OCR provider 경계 — provider가 지켜야 할 인터페이스(`OcrProvider`)가 여기 있다.
+
+운영 OCR 구현은 `paddle_provider.py`의 `PaddleOcrProvider`(PaddleOCR)다.
 
 공개 함수(`api.py`)는 판정을 전부 직접 한다 — association 반영·consensus·abstain·overlay 4갈래·
 validation·run 조립. provider가 하는 일은 그 앞단, 즉 **프레임을 떠서 픽셀을 글자로 바꾸는 것**뿐이다.
@@ -6,8 +8,9 @@ validation·run 조립. provider가 하는 일은 그 앞단, 즉 **프레임을
 
 ## 교체 지점
 
-`OcrProvider`를 상속해 두 메서드를 채우고 공개 함수에 `provider=`로 넘긴다. 지금 기본값인
-`FixtureOcrProvider`는 Mock Pack v5 fixture를 그대로 되읽는 Stub이고, 판정 로직을 태우기 위한
+`OcrProvider`를 상속해 두 메서드를 채우고 공개 함수에 `provider=`로 넘긴다. `provider=`를 넘기지
+않을 때의 기본값인 `FixtureOcrProvider`는 Mock Pack v5 fixture(`data/mock/readout/`의 공용 Mock
+fixture)를 그대로 되읽는 테스트용 Stub이고, 판정 로직을 태우기 위한
 입력 공급자일 뿐이다 — 계약 객체를 만들지 않는다(만들면 파이프라인이 검사되지 않는다).
 
 ## provider가 **모르는** 것
@@ -161,7 +164,12 @@ class IncidentClipFrames:
 
 
 class RecordingOcrProvider(OcrProvider):
-    """Recording frame access와 실제 OCR callable을 잇는 Real E2E adapter."""
+    """Recording frame access와 실제 OCR callable을 잇는 adapter.
+
+    Real E2E는 recording → search → readout → evidence를 실제 공개 함수로 잇는 경로다
+    (`case/real_e2e.py`). 다만 그 경로는 지금 `PaddleOcrProvider`를 쓰고, 이 클래스는
+    `tests/readout/test_recording_provider.py`에서만 쓴다.
+    """
 
     label = "recording-ocr"
 
@@ -203,7 +211,7 @@ def _presence_of(overlay) -> str:
 
 
 class FixtureOcrProvider(OcrProvider):
-    """Mock Pack v5 fixture를 provider 출력으로 되읽는 Stub.
+    """Mock Pack v5 fixture(`data/mock/readout/`)를 provider 출력으로 되읽는 Stub.
 
     `(incident_clip_ref, source_profile)`로 대본을 찾고, 같은 키로 여러 번 부르면 fixture에 있는
     순서대로 다음 대본을 준다 — 재판독이 앞 실행과 다른 결과를 내는 상황이 fixture에 그렇게 들어
@@ -313,7 +321,9 @@ _DEFAULT_PROVIDER = None
 
 
 def default_provider() -> OcrProvider:
-    """1차 Mock 통합의 기본 provider. 실제 OCR이 생기면 여기가 바뀐다.
+    """`provider=`를 넘기지 않을 때의 기본 provider — 테스트·fixture용 `FixtureOcrProvider`다.
+
+    운영 경로는 `PaddleOcrProvider`를 명시적으로 넘기므로 여기를 거치지 않는다.
 
     **한 인스턴스를 돌려쓴다.** 호출마다 새로 만들면 위 대본 진행이 매번 처음으로 돌아가
     `provider=`를 넘기지 않은 호출자에게는 재판독 대본이 영영 보이지 않는다 — `clip_x001`의

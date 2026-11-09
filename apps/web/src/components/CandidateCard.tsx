@@ -7,8 +7,8 @@ import '../styles/candidates.css'
 
 // 시각 출처는 `at_provenance_label_key`로만 고른다(case-view/v1.4 §7, PR #46
 // Q-3). raw `at_provenance`는 authoritative지만 web이 해석하지 않으므로 화면에
-// 내보내지 않는다. v5 fixture는 아직 키를 안 내려서 지금은 전부 fallback
-// 문구가 뜬다 — 키가 들어오면 문구가 자동으로 바뀐다.
+// 내보내지 않는다. 키가 없으면 fallback 문구가 뜬다. 지금 mock fixture
+// (`data/mock/case/*.json`) 대부분은 키를 내린다.
 //
 // 번호는 case가 준 `rank`다(#122). web이 순위를 계산하지 않는다. mock fixture처럼
 // `rank`가 없으면 case가 준 배열 순서(`ordinal`, 1부터)를 그대로 쓴다.

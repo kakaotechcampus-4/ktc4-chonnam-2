@@ -17,13 +17,13 @@ import { FrameSlot } from '../components/FrameSlot'
 import { CandidateVideo, type CandidatePlayback } from '../components/CandidateVideo'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
 
-// 03_Main_Result — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
+// 03_Main_Result(Figma 결과 화면 프레임) — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
 // (유형 → 동영상 → 위치 선택 → 제목 → 신고 내용 → 차량 번호 → 발생 일자 → 발생 시간), 마지막에 복사와 이동.
 // 값과 상태는 계약 대응표 그대로다(case-view §report_fields ↔ evidence.*_display) — package가 있으면
 // report_fields·report_field_states를, 없으면(판독 실패 등) 같은 출처인 evidence.*_display를 읽는다.
 // 복사·이동은 package가 있을 때만 연다(COPY_FIELDS·OPEN_DESTINATION).
 // 제출 단계로의 연결은 READY(= PACKAGE_READY)이고 blocking notice가 없을 때만 연다(#171 C, #172).
-// 안전신문고는 새 창으로 연다 — 이 화면을 옆에 두고 보며 직접 제출한다(§21). 자료를 보내거나 자동으로
+// 안전신문고는 새 창으로 연다 — 이 화면을 옆에 두고 보며 직접 제출한다(`docs/product/core-user-flow.md` §21). 자료를 보내거나 자동으로
 // 채우지 않는다. 대신고에는 접수 버튼이 없다.
 // 첫 화면이 아니라 「자동차·교통 위반 신고」 양식으로 바로 연다 — 사용자가 메뉴를 다시 찾지 않게 한다.
 const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/#safereport/safereport3'
@@ -94,7 +94,7 @@ export function ResultScreen(props: {
   onCandidates: () => void
   onPlate: () => void
   onDetails: () => void
-  /** 발생 시각 직접 입력 화면을 연다(`?api`, #449). 없으면(시연) 입구를 두지 않는다 */
+  /** 발생 시각 직접 입력 화면을 연다(실제 흐름(ApiFlow), #449). 없으면 입구를 두지 않는다 */
   onTime?: () => void
   onAction: (noticeCode: string, action: Action) => void
   /** 지금 연결된 notice 동작인가 — 아니면 버튼을 사용 불가로 두고 이유를 적는다 */
@@ -239,7 +239,7 @@ export function ResultScreen(props: {
       setDownloading(false)
     }
   }
-  // 붙여넣을 것(§21: 제목·차량번호·신고 내용) 중 지금 값이 있는 것만, 칸 이름을 붙여 복사한다.
+  // 붙여넣을 것(core-user-flow §21: 제목·차량번호·신고 내용) 중 지금 값이 있는 것만, 칸 이름을 붙여 복사한다.
   const pasteText = [
     ['제목', report?.title],
     ['차량 번호', plate?.value],
