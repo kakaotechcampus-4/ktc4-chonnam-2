@@ -68,8 +68,11 @@ export function createDrivingScene(root, onUnavailable, onReady = () => {}, sess
       disposed = true
       events.abort()
       observer?.disconnect()
-      if (session && game) session.state = game.snapshot()
-      game?.dispose()
+      // 게임 정리 실패가 분석 화면을 깨뜨리지 않게 한다 — 이어하기 상태만 잃는다
+      try {
+        if (session && game) session.state = game.snapshot()
+        game?.dispose()
+      } catch {}
       game = null
       if (
         document.fullscreenElement &&

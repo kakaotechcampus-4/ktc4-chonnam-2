@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, Film } from 'lucide-react'
 import { PREVIEW_UNAVAILABLE } from '../../contracts/labels.flow'
 import type { DrivingScene } from './createDrivingScene.js'
@@ -37,7 +37,9 @@ export function DrivingPreview({ active, onBack, sessionKey }: { active: boolean
     if (active) back.current?.focus({ preventScroll: true })
   }, [active])
 
-  useEffect(() => {
+  // layout cleanup은 DOM을 떼기 전에 돈다 — useEffect면 게임 iframe이 이미 떨어져 snapshot이 throw하고
+  // 화면이 바뀌는 순간(진행 → 증거) 앱 전체가 하얗게 됐다.
+  useLayoutEffect(() => {
     let cancelled = false
     // Mounted only after the user chooses the game; returning to preview keeps its state.
     import('./createDrivingScene.js').then(({ createDrivingScene }) => {
