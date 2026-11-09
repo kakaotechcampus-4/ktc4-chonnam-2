@@ -122,7 +122,7 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
       {deletion === 'DELETING' ? '삭제 다시 확인' : '체험 데이터 삭제'}
     </button>
     {/* 색·글꼴 변수는 .rs 안에만 있다 — 결과 화면 밖에서 그려지므로 rs를 함께 단다 */}
-    <dialog ref={deleteDialog} className="rs rs-consent"aria-labelledby={deleteTitle} aria-describedby={`${deleteTitle}-description`}>
+    <dialog ref={deleteDialog} className="rs rs-consent" aria-labelledby={deleteTitle} aria-describedby={`${deleteTitle}-description`}>
       <h2 id={deleteTitle}>체험 데이터를 삭제할까요?</h2>
       <p id={`${deleteTitle}-description`}>삭제하면 분석 결과와 신고자료를 다시 볼 수 없어요</p>
       <div className="rs-consent-actions">
