@@ -63,6 +63,38 @@ class PublicResultReflector(_PublicJobAdmission):
         # Refusal leaves T1/usage intact and T2 unapplied on every delivery path.
         return result
 
+    def resume_deferred_exports(self, conn, case_id, execution_id):
+        """#674: retry exports deferred for capacity, in a transaction AFTER that T2 committed.
+
+        While a terminal is being reflected its own job still holds the case's
+        local slots, so the automatic exports issued by the last OCR are always
+        deferred. Only LOCAL_CONCURRENT is transient; limits and stops keep
+        their notice and manual action. A successful admission clears the
+        deferral (`admit_local`). Returns the admitted records for enqueue.
+        """
+        if not self.tagged(conn, case_id):
+            return ()
+        pending = conn.scalar(select(schema.cases.c.local_work_state).where(schema.cases.c.case_id == case_id))
+        capable = getattr(self.inner, 'resume_auto_exports', None)
+        if not pending or pending.get('reason') != 'LOCAL_CONCURRENT' or not callable(capable):
+            return ()
+        admitted = []
+        def automatic(records):
+            if not records or any(r['case_id'] != case_id or r['kind'] not in
+                    {'REPORT_VIDEO_EXPORT', 'PLATE_IMAGE_EXPORT'} for r in records):
+                raise ValueError('invalid automatic exports')
+            try:
+                with conn.begin_nested():
+                    self.admit(conn, case_id, 'auto-export-resume:' + execution_id, records)
+            except PublicDenied:
+                return False
+            admitted.extend({k: r[k] for k in ('job_id', 'case_id', 'kind')} for r in records)
+            return True
+        jobs = tuple(capable(conn, case_id, admit_auto_exports=automatic))
+        if [{"job_id": j.job_id, "case_id": j.case_id, "kind": j.kind} for j in jobs] != admitted:
+            raise ValueError('resumed exports were not admitted')
+        return jobs
+
 
 class PublicExhaustionReceiver(_PublicJobAdmission):
     def receive(self, conn, notice):

@@ -16,7 +16,7 @@ from daesingo.common.db.transactions import run_worker_transaction
 from daesingo.common.jobs.execution import ExecutionContext, HandlerResult, validated_terminal
 from daesingo.common.jobs.cancel import CancelledExecution
 from daesingo.common.jobs.heartbeat import Heartbeat, LeaseConnection
-from daesingo.common.jobs.repository import claim_one, finish
+from daesingo.common.jobs.repository import claim_one, enqueue, finish
 from daesingo.common.jobs.produced import prepare_objects, append_objects, verify_objects
 from daesingo.common.jobs.schema import job_execution
 from daesingo.common.jobs.sweep import SweepService, sweep_once
@@ -220,7 +220,24 @@ def compose_worker(
             )
             # A recovered/completed receipt is ALREADY_APPLIED, so no double count.
             observe_reflection(incoming, result, startup.logger)
+            if result.status == "APPLIED":
+                resume_deferred_exports(context)
             return result
+
+    def resume_deferred_exports(context: ExecutionContext):
+        # #674: only now does the applied terminal stop holding its case's local
+        # slots. Best effort: T2 is durable, and a failure leaves the visible
+        # deferral notice with its manual action exactly as before.
+        assert guarded_reflector is not None
+        def operation(conn):
+            jobs = guarded_reflector.resume_deferred_exports(conn, context.case_id, context.execution_id)
+            if jobs:
+                enqueue(conn, [{"job_id": j.job_id, "case_id": j.case_id, "kind": j.kind} for j in jobs],
+                        context.trace_id)
+        try:
+            run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger)
+        except Exception:
+            pass
 
     cleanup = configured_cleanup(startup.config, startup.logger)
     media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'),
