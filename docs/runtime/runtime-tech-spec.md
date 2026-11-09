@@ -258,7 +258,8 @@ Worker가 backoff 동안 `sleep()`으로 실행 슬롯을 붙잡지 않는다.
 retry 필요 (§6.2 — STALE)
 → 한 transaction 안에서
    ├─ 이전 attempt terminal 기록 (RUNNING→STALE)
-   └─ 다음 attempt INSERT (QUEUED, attempt+1, available_at = 지금 + backoff)
+   └─ 다음 attempt INSERT (QUEUED, attempt+1, queued_at = 이전 시도의 ended_at)
+      └─ available_at = queued_at + backoff
 → commit
 → available_at 전에는 claim되지 않음
 ```
@@ -289,7 +290,7 @@ SUCCEEDED인데 case가 현재 context에 유효하지 않다고 판단 (중단�
 
 ### 7.2 Lease · Heartbeat · Recovery
 
-시각 ordering은 [#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934)에 따라 [JobExecution Contract §5.1](../architecture/contracts/contract-job-execution.md#51-durable-timestamp-ordering)과 [Baseline B-L2/B-L6](./provisional-baseline-v0.1.md#23-heartbeat--lease--stale--sweep--d)이 정한다. terminal 공통 하한과 heartbeat/lease non-regression은 같은 row의 최종 conditional UPDATE에서 계산한다. schema·ownership·idempotency 모델은 바꾸지 않는다.
+시각 ordering은 [#370 Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/370#issuecomment-6227886934)에 따라 [JobExecution Contract §5.1](../architecture/contracts/contract-job-execution.md#51-durable-timestamp-ordering)과 [Baseline B-L2/B-L6](./provisional-baseline-v0.1.md#23-lease--heartbeat--stale--c)이 정한다. terminal 공통 하한과 heartbeat/lease non-regression은 같은 row의 최종 conditional UPDATE에서 계산한다. schema·ownership·idempotency 모델은 바꾸지 않는다.
 
 lease 구조는 확정이다(RD-01h, [#250](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/250), 2026-10-04).
 
