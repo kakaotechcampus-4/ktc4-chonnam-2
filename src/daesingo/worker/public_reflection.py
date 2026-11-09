@@ -63,6 +63,16 @@ class PublicResultReflector(_PublicJobAdmission):
         # Refusal leaves T1/usage intact and T2 unapplied on every delivery path.
         return result
 
+    @staticmethod
+    def capacity_deferred(conn, case_id):
+        """Nonlocking read: does this case hold a LOCAL_CONCURRENT export deferral?
+
+        Lets the caller skip the resume transaction (and its control-row lock)
+        for the common case; `resume_deferred_exports` rechecks under the lock.
+        """
+        pending = conn.scalar(select(schema.cases.c.local_work_state).where(schema.cases.c.case_id == case_id))
+        return bool(pending) and pending.get('reason') == 'LOCAL_CONCURRENT'
+
     def resume_deferred_exports(self, conn, case_id, execution_id):
         """#674: retry exports deferred for capacity, in a transaction AFTER that T2 committed.
 
@@ -74,9 +84,8 @@ class PublicResultReflector(_PublicJobAdmission):
         """
         if not self.tagged(conn, case_id):
             return ()
-        pending = conn.scalar(select(schema.cases.c.local_work_state).where(schema.cases.c.case_id == case_id))
         capable = getattr(self.inner, 'resume_auto_exports', None)
-        if not pending or pending.get('reason') != 'LOCAL_CONCURRENT' or not callable(capable):
+        if not self.capacity_deferred(conn, case_id) or not callable(capable):
             return ()
         admitted: list[dict[str, str]] = []
         def automatic(records):

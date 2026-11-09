@@ -139,6 +139,28 @@ def test_direct_reflection_resumes_in_a_separate_transaction_after_commit(public
         assert seen == ['reflect', 'commit'] and enqueued == []
 
 
+@pytest.mark.parametrize('reason', [None, 'LOCAL_LIMIT'])
+def test_applied_reflection_without_capacity_deferral_opens_no_extra_transaction(public, tmp_path, monkeypatch, reason):  # noqa: F811 (fixture)
+    """Most reflections defer nothing: no second transaction, so no extra global control lock."""
+    engine, store = public
+    deferred_case(public, tmp_path, reason=reason, busy=False)
+    transactions = []
+    original = composition.run_worker_transaction
+    def counted(engine, operation, **kw):
+        transactions.append(operation)
+        return original(engine, operation, **kw)
+    def resume_auto_exports(conn, case_id, *, admit_auto_exports):
+        raise AssertionError('Case must not be asked')
+    inner = SimpleNamespace(reflect=lambda conn, incoming: ReflectionResult('APPLIED'),
+                            resume_auto_exports=resume_auto_exports)
+    monkeypatch.setattr(composition, 'reflect_terminal', lambda conn, incoming, reflector, trace: reflector.reflect(conn, incoming))
+    monkeypatch.setattr(composition, 'run_worker_transaction', counted)
+    loop = compose(public, tmp_path, monkeypatch, inner)
+    assert loop.reflect(ExecutionContext('exec_last_ocr', 'ocr', 'case_1', 'PLATE_READ', 1, 'trace'),
+                        HandlerResult()).status == 'APPLIED'
+    assert len(transactions) == 1  # the T2 only
+
+
 @pytest.mark.parametrize('sink', ['ok', 'broken'])
 def test_resume_failure_is_logged_and_never_turns_a_committed_reflection_into_a_failure(public, tmp_path, monkeypatch, sink):  # noqa: F811 (fixture)
     from io import StringIO
