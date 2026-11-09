@@ -33,6 +33,12 @@ it('결과 화면은 보류 안내를 카드에 한 번만, 영상 상태에 맞
   // 영상이 없으면 영상이 보류됐다고 말하고 다음 행동을 알린다
   const none = { ...view, package: { ...view.package, artifact_ref: null } }
   expect(deferredWork(none, false)?.text).toBe('다른 작업이 진행 중이라 신고용 영상을 만들지 않았어요. 작업이 끝나면 「신고용 영상 만들기」를 눌러 주세요.')
+  // 영상·이미지 작업이 진행 중이면 무엇이 보류됐는지 모른다 — 「만들지 않았어요」로 진행 중인 작업을 가리지 않는다
+  const neutral = '다른 작업이 진행 중이라 영상·이미지를 새로 만들지 않았어요. 진행 중인 작업이 끝나면 다시 확인해 주세요.'
+  for (const kind of ['REPORT_VIDEO_EXPORT', 'PLATE_IMAGE_EXPORT']) {
+    const running = { ...view, running_jobs: [{ job_id: 'j1', kind, status: 'RUNNING', label_key: null }] } as unknown as typeof view
+    expect(deferredWork(running, false)).toEqual({ text: neutral, tone: 'review' })
+  }
 })
 
 it('null 샘플 항목을 invalid response로 반환한다', async () => {

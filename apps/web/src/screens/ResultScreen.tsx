@@ -100,10 +100,13 @@ export function deferredWork(view: CaseView, hasPlateImage: boolean): { text: st
   if (!n) return null
   const why = DEFERRED_WHY[n.message_key]
   if (!why) return { text: noticeMessage(n.message_key), tone: 'review' }
-  switch (reportVideoState(view)) {
+  const video = reportVideoState(view)
+  // 영상·이미지 작업이 진행 중이면 보류된 것이 진행 중인 작업과 별개인지 알 수 없다 — 사유만 중립적으로 말한다
+  if (video === 'preparing' || view.running_jobs.some((j) => j.kind === 'PLATE_IMAGE_EXPORT'))
+    return { text: `${why} 영상·이미지를 새로 만들지 않았어요. 진행 중인 작업이 끝나면 다시 확인해 주세요.`, tone: 'review' }
+  switch (video) {
     case 'ready':
     case 'held':
-    case 'preparing':
       return hasPlateImage ? null : { text: PLATE_HELD, tone: 'info' }
     case 'none': {
       const next = n.message_key === 'notice.public_local_local_concurrent'

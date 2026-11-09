@@ -179,7 +179,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
       <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page" ref={mainRef}>
         {/* 결과 화면은 신고자료 카드에서 영상 상태와 함께 안내한다 — 같은 안내를 두 번 띄우지 않는다(#676) */}
-        {deferredWork && !(isValidElement(page) && page.type === ResultScreen) &&<p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
+        {deferredWork && !(isValidElement(page) && page.type === ResultScreen) && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
         {banner && !state.viewUnavailable && state.error?.code !== 'public.bundle_mismatch' && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
