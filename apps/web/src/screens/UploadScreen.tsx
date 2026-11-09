@@ -11,7 +11,7 @@ import rearBlur from '../assets/car/wheel-rear-blur.webp'
 import { Puffs, SpeedLines, burst, seeded, type Puff, type Speed } from '../components/CarFx'
 import { videoTime, videoTimeText, type VideoTime } from '../state/videoTime'
 
-const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
+const EXAMPLE = '2시쯤 상무중앙로에서 어떤 차가 실선을 넘어 제 앞으로 끼어들었어요.'
 // 원본 보관 안내 — 공유된 보관 정책(원본 최대 24시간)만 적는다. 공개 한도는 확정 전이라 숫자를 적지 않고,
 // 너무 긴 영상은 서버 안내(notice.analysis_range_too_long)가 알린다. 실제 삭제 확인은 공개 게이트(#606 철원 님 답)
 const LIMIT_TEXT = '올린 영상은 최대 24시간 보관해요.'

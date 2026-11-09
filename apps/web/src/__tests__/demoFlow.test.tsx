@@ -227,7 +227,7 @@ it('Tab은 예시를 채우지 않고, 「예시 문장 넣기」가 채운 뒤 
   expect(box.value).toBe('')
   expect(document.getElementById(box.getAttribute('aria-describedby')!)!.textContent).toContain('비워 두셔도')
   fireEvent.click(getByText('예시 문장 넣기'))
-  expect(box.value).toContain('흰색 SUV')
+  expect(box.value).toContain('상무중앙로')
   expect(document.activeElement).toBe(box)
   expect(queryByText('예시 문장 넣기')).toBeNull()
   wait()
