@@ -3,6 +3,7 @@ import { createPublicSamplesApi, type OfficialSample, type PublicSamplesApi } fr
 import type { CaseView } from '../contracts/caseView'
 import { forgetCase, rememberCase } from '../state/lastCase'
 import { ApiFlow } from './ApiFlow'
+import { AppHeader } from '../components/AppHeader'
 import { errorMessage } from '../contracts/labels'
 
 function message(code: string) {
@@ -109,6 +110,7 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
       } else setError(message('web.invalid_response'))
     })
   }
+  const home = () => location.assign(location.pathname)
   const ready = !!view && view.manifest_summary.ok_file_count > 0
   const uploadFlow = props.upload && !deletion
   const deleteButton = caseId && deletion !== 'DELETED' && <>
@@ -135,11 +137,32 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
   return <>
     {uploadFlow ? <ApiFlow api={uploadApi} caseId={props.caseId} remembered={props.remembered}
       uploadBundle={client.uploadBundle} onCase={setCaseId} caseActions={deleteButton} /> : view && view.stage !== 'INTAKE' && !deletion ? <ApiFlow api={client.cases} caseId={caseId}
-      intake={<p role="status">체험 진행 정보를 확인하고 있어요.</p>} /> : <main className="web-main rs-page">
+      intake={<p role="status">체험 진행 정보를 확인하고 있어요.</p>} /> : deletion ? <>
+      {/* #678 삭제 화면은 등록 방식과 무관하다 — 샘플 입구 안내 대신 결과 없음·실패와 같은 상태 화면 틀을 쓴다 */}
+      <AppHeader onNewReport={home} />
+      <main className="web-main rs-page">
+        <div className="rs rs-screen state-page">
+          <p className="state-context">체험 데이터</p>
+          <section className="state-card">
+            {deletion === 'DELETED' ? <>
+              <h1 className="state-head">삭제했어요</h1>
+              {/* 공식 샘플 원본은 다른 체험과 함께 쓰여 지우지 않는다 — 「올린 영상」을 지웠다고 쓰지 않는다 */}
+              <p className="state-body" role="status">이 체험의 분석 결과와 신고자료를 서버에서 지웠어요. 이미 내려받은 파일은 이 기기에 그대로 있어요.</p>
+              <div className="state-actions"><button type="button" className="rs-btn pri" onClick={home}>처음으로</button></div>
+            </> : <>
+              <h1 className="state-head">삭제하고 있어요</h1>
+              {/* 서버 정리 작업이 DELETING 케이스를 주기적으로 마저 지운다(public_retention.scan) */}
+              <p className="state-body" role="status">창을 닫아도 서버에서 이어서 지워요. 끝났는지 지금 다시 확인할 수도 있어요.</p>
+              {error && <p className="state-body" role="alert">{error}</p>}
+              <div className="state-actions"><button type="button" className="rs-btn pri" disabled={busy} onClick={() => { if (!pending.current) void remove() }}>삭제 다시 확인</button></div>
+            </>}
+          </section>
+        </div>
+      </main>
+    </> : <main className="web-main rs-page">
       <h1>공식 샘플로 체험하기</h1>
       <p>공식 샘플만 이용할 수 있어요. 직접 영상 업로드는 지원하지 않아요.</p>
-      {deletion === 'DELETED' ? <><p role="status">삭제했어요.</p>
-        {props.upload && <a href="/">처음으로</a>}</> : deletion === 'DELETING' ? <p role="status">삭제 중이에요. 완료 여부를 다시 확인할 수 있어요.</p> : ready && view ? <>
+      {ready && view ? <>
         <p>서버에 등록된 영상 {view.manifest_summary.ok_file_count}개를 준비했어요.</p>
         <label>찾을 장면 설명<textarea value={description} onChange={e => setDescription(e.target.value)} disabled={busy} /></label>
         <button type="button" className="rs-btn pri" disabled={busy || !description.trim()} onClick={() => void start()}>분석 시작</button>
@@ -155,7 +178,7 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
         <button type="button" className="rs-btn pri" disabled={busy || !selected} onClick={() => void prepare()}>샘플 준비</button>
       </>}
     </main>}
-    {(error || (!uploadFlow && deleteButton)) && <div className="web-main">
+    {!deletion && (error || (!uploadFlow && deleteButton)) && <div className="web-main">
       {error && <p role="alert">{error}</p>}
       {!uploadFlow && deleteButton && <div className="rs-case-actions">{deleteButton}</div>}
     </div>}
