@@ -28,7 +28,7 @@ it('결과 화면은 보류 안내를 카드에 한 번만, 영상 상태에 맞
   const view = { ...happy, case_id: 'owned', notices, package: { ...happy.package!, plate_image_ref: null } }
   const client = createPublicSamplesApi({ fetch: vi.fn(async () => new Response(JSON.stringify(view), { status: 200 })) })
   render(<ApiFlow api={client.cases} caseId="owned" />)
-  expect(await screen.findAllByText(/신고용 영상은 준비됐어요\. 번호판 이미지는 다른 작업이 진행 중이라/)).toHaveLength(1)
+  expect(await screen.findAllByText('번호판 이미지는 만들지 않았어요. 없어도 신고자료는 완성돼요.')).toHaveLength(1)
   expect(screen.queryByText(/영상 생성은 요청하지 않았어요/)).toBeNull()
   // 영상이 없으면 영상이 보류됐다고 말하고 다음 행동을 알린다
   const none = { ...view, package: { ...view.package, artifact_ref: null } }

@@ -92,20 +92,19 @@ const DEFERRED_WHY: Record<string, string> = {
   'notice.public_local_input': '영상 생성에 필요한 입력을 확인할 수 없어',
   'notice.public_local_unconfigured': '체험 설정을 확인할 수 없어',
 }
-const PLATE_OPTIONAL = '번호판 이미지 없이도 신고자료는 완성돼요.'
+// 영상 상태는 영상 칸이 이미 보인다 — 보류된 번호판 이미지와 신고에 지장 없음만 말한다
+const PLATE_HELD = '번호판 이미지는 만들지 않았어요. 없어도 신고자료는 완성돼요.'
 
 export function deferredWork(view: CaseView, hasPlateImage: boolean): { text: string; tone: 'review' | 'info' } | null {
   const n = view.notices.find((x) => x.code === DEFERRED_WORK)
   if (!n) return null
   const why = DEFERRED_WHY[n.message_key]
   if (!why) return { text: noticeMessage(n.message_key), tone: 'review' }
-  const plate = `번호판 이미지는 ${why} 만들지 않았어요. ${PLATE_OPTIONAL}`
   switch (reportVideoState(view)) {
     case 'ready':
     case 'held':
-      return hasPlateImage ? null : { text: `신고용 영상은 준비됐어요. ${plate}`, tone: 'info' }
     case 'preparing':
-      return { text: `신고용 영상을 만들고 있어요. ${plate}`, tone: 'info' }
+      return hasPlateImage ? null : { text: PLATE_HELD, tone: 'info' }
     case 'none': {
       const next = n.message_key === 'notice.public_local_local_concurrent'
         ? ` 작업이 끝나면 「${ACTION_LABELS.GENERATE_REPORT_VIDEO}」를 눌러 주세요.` : ''
