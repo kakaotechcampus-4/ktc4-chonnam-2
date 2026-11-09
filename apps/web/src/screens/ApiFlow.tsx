@@ -105,6 +105,11 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   // 돌아올 때는 제자리다
   const kind = analysing ? selectScreen(view).kind : 'UPLOAD'
   const lastKind = useRef(kind)
+  // 진행 화면 대표 영상 자리에 대신 보일 장면 — 후보가 비워져도(설명 고쳐 다시 찾기) 이 case의 마지막 장면을 쓴다.
+  // 결과 화면에서 바로 설명을 고치면 진행 화면을 거치지 않으므로, 어느 화면이든 view가 올 때마다 기억한다
+  const lastThumb = useRef<{ caseId: string; src: string } | null>(null)
+  const thumbNow = view && (view.candidates.find((c) => c.selected)?.thumb_ref ?? view.evidence?.preview_ref)
+  if (view && thumbNow && frameSrc) lastThumb.current = { caseId: view.case_id, src: frameSrc(thumbNow) }
   const [arriving, setArriving] = useState(false)
   useEffect(() => {
     if (lastKind.current === 'PROGRESS' && RESULT_KINDS.has(kind)) setArriving(true)
@@ -279,10 +284,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             onStop={view.stage === 'SEARCHING' ? () => run({ kind: 'STOP_ANALYSIS', payload: {} }) : undefined}
             // 결과 화면에서 다시 준비하거나 창을 닫았다 오면 브라우저에 원본이 없다 — 고른 후보의 장면 이미지로 대신한다.
             // 후보 썸네일이 없으면 근거 장면(evidence.preview_ref)을 쓴다 — 결과 화면 포스터·후보 카드와 같은 순서(#634 리뷰)
-            fallbackSrc={(() => {
-              const thumb = view.candidates.find((c) => c.selected)?.thumb_ref ?? view.evidence?.preview_ref
-              return thumb && frameSrc ? frameSrc(thumb) : null
-            })()}
+            // 설명을 고쳐 다시 찾으면 후보가 비워진다 — 그동안은 이 case에서 마지막으로 보인 장면을 그대로 둔다
+            fallbackSrc={lastThumb.current?.caseId === view.case_id ? lastThumb.current.src : null}
           />
         )
       case 'STOPPED':

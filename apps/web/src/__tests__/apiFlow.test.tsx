@@ -740,3 +740,18 @@ it('「이 상황으로 고치기」를 누르면 「본문과 제목이 수정�
     vi.useRealTimers()
   }
 })
+
+it('결과 화면에서 바로 설명을 고쳐 다시 찾아도, 원본이 없는 대표 영상 자리는 보던 장면을 둔다', async () => {
+  const first = SNAPSHOTS.flatMap((s) => s.view.candidates)[0]
+  const v = notObserved([{ ...first, selected: true, thumb_ref: 'fr_thumb' }])
+  const { m, api } = setup({ get: v })
+  ;(api as { frameUrl: (c: string, r: string) => string }).frameUrl = (_c, r) => `/frames/${r}`
+  // 다시 찾기로 후보 · evidence가 비워진 view(같은 case)
+  m.sendCommand.mockResolvedValue(ok({ ...SEARCHING, case_id: v.case_id, case_rev: v.case_rev + 1, candidates: [], evidence: null }, 202))
+  const { container, findByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+  // 다른 후보가 없으면 결과 화면에 설명 입력이 바로 열려 있다
+  fireEvent.click(await findByText('고친 내용으로 찾기'))
+  await findByText('분석 중단')
+  expect(container.querySelector('.flow-thumb img')?.getAttribute('src')).toBe('/frames/fr_thumb')
+  expect(queryByText('미리보기를 표시할 수 없어요')).toBeNull()
+})
