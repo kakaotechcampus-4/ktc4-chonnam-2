@@ -80,6 +80,45 @@ function tone(n: Notice): 'fail' | 'review' | 'info' {
   return n.severity === 'ERROR' ? 'fail' : n.severity === 'WARN' ? 'review' : 'info'
 }
 
+// Runtime 보류 안내는 사유만 싣고 무엇이 보류됐는지는 싣지 않는다 — 신고용 영상 상태로 가른다(#676).
+// 결과 화면에서는 OCR 완료 반영으로도 뜨므로 「수정 내용은 저장했어요」로 시작하지 않는다
+const DEFERRED_WORK = 'public.local_work_not_queued'
+const DEFERRED_WHY: Record<string, string> = {
+  'notice.public_local_local_concurrent': '다른 작업이 진행 중이라',
+  'notice.public_local_local_limit': '체험 이용 한도에 도달해',
+  'notice.public_local_local_unconfigured': '영상 생성 이용 기준을 준비 중이라',
+  'notice.public_local_stopped': '체험 설정을 확인해야 해서',
+  'notice.public_local_jobs_stopped': '긴급 중단 중이라',
+  'notice.public_local_input': '영상 생성에 필요한 입력을 확인할 수 없어',
+  'notice.public_local_unconfigured': '체험 설정을 확인할 수 없어',
+}
+// 영상 상태는 영상 칸이 이미 보인다 — 보류된 번호판 이미지와 신고에 지장 없음만 말한다
+const PLATE_HELD = '번호판 이미지는 만들지 않았어요. 없어도 신고자료는 완성돼요.'
+
+export function deferredWork(view: CaseView, hasPlateImage: boolean): { text: string; tone: 'review' | 'info' } | null {
+  const n = view.notices.find((x) => x.code === DEFERRED_WORK)
+  if (!n) return null
+  const why = DEFERRED_WHY[n.message_key]
+  if (!why) return { text: noticeMessage(n.message_key), tone: 'review' }
+  const video = reportVideoState(view)
+  // 영상·이미지 작업이 진행 중이면 보류된 것이 진행 중인 작업과 별개인지 알 수 없다 — 사유만 중립적으로 말한다
+  if (video === 'preparing' || view.running_jobs.some((j) => j.kind === 'PLATE_IMAGE_EXPORT'))
+    return { text: `${why} 영상·이미지를 새로 만들지 않았어요. 진행 중인 작업이 끝나면 다시 확인해 주세요.`, tone: 'review' }
+  switch (video) {
+    case 'ready':
+    case 'held':
+      return hasPlateImage ? null : { text: PLATE_HELD, tone: 'info' }
+    case 'none': {
+      const next = n.message_key === 'notice.public_local_local_concurrent'
+        ? ` 작업이 끝나면 「${ACTION_LABELS.GENERATE_REPORT_VIDEO}」를 눌러 주세요.` : ''
+      return { text: `${why} 신고용 영상을 만들지 않았어요.${next}`, tone: 'review' }
+    }
+    // 실패 안내가 따로 뜬다 — 보류된 것이 영상인지 번호판 이미지인지 알 수 없어 덧붙이지 않는다
+    case 'failed':
+      return null
+  }
+}
+
 export function withLocation(description: string, before: string | null | undefined, after: string | undefined): string {
   if (after === undefined || !before) return description
   return description.includes(before) ? description.split(before).join(after) : `${description}\n위치: ${after}`
@@ -193,7 +232,8 @@ export function ResultScreen(props: {
   // 검색어를 못 만들었다는 안내는 위치 칸에 붙는 말이라 위 목록이 아니라 검색어 자리에 둔다
   // (버튼 없는 INFO라 옮겨도 잃는 것이 없다). 위치 칸이 없으면 위 목록에 남긴다.
   const keywordMissing = hasForm ? view.notices.find((n) => n.code === KEYWORD_MISSING) : undefined
-  const headNotices = keywordMissing ? view.notices.filter((n) => n !== keywordMissing) : view.notices
+  const deferred = deferredWork(view, !!props.plateImageHref)
+  const headNotices = view.notices.filter((n) => n !== keywordMissing && (n.code !== DEFERRED_WORK || deferred))
 
   const counts = new Map<InfoState, number>()
   for (const s of Object.values(pkg?.report_field_states ?? {})) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
@@ -329,12 +369,13 @@ export function ResultScreen(props: {
         {headNotices.length > 0 && (
           <ul className="res-notices">
             {headNotices.map((n) => {
-              const t = tone(n)
+              const shown = n.code === DEFERRED_WORK && deferred ? deferred : { text: noticeMessage(n.message_key), tone: tone(n) }
+              const t = shown.tone
               const Icon = t === 'info' ? Info : CircleAlert
               return (
                 <li key={n.code} className={`res-notice is-${t}`}>
                   <Icon size={18} strokeWidth={1.8} aria-hidden />
-                  <span className="res-notice-text">{noticeMessage(n.message_key)}</span>
+                  <span className="res-notice-text">{shown.text}</span>
                   {/* notice가 실은 actions[]만 버튼으로 연다 — 계약 밖 버튼은 만들지 않는다.
                       연결되지 않은 동작은 눌러도 아무 일이 없게 두지 않고, 사용 불가와 이유를 보인다 */}
                   {n.actions.filter(isAction).map((a) =>

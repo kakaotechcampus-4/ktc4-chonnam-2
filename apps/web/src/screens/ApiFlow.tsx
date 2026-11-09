@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
+import { isValidElement, useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import { createApi, type Api, type Command } from '../api/client'
 import { AppHeader } from '../components/AppHeader'
 import { isAction, type Action, type CaseView } from '../contracts/caseView'
@@ -172,12 +172,14 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   const deferredWork = view?.notices.find(n => n.code === 'public.local_work_not_queued')
   // 지워진 기억 case는 새 신고로 넘어가는 중이다 — 그 사이 「찾을 수 없어요」가 깜빡이지 않게 머리줄만 둔다
   if (gone && props.remembered) return <AppHeader onNewReport={newReport} />
+  const page = state.viewUnavailable ? null : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)
 
   return (
     <>
       <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page" ref={mainRef}>
-        {deferredWork && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
+        {/* 결과 화면은 신고자료 카드에서 영상 상태와 함께 안내한다 — 같은 안내를 두 번 띄우지 않는다(#676) */}
+        {deferredWork && !(isValidElement(page) && page.type === ResultScreen) && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
         {banner && !state.viewUnavailable && state.error?.code !== 'public.bundle_mismatch' && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
@@ -224,7 +226,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
               )}
             </section>
           </div>
-        ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
+        ) : page}
         {props.caseActions && (analysing || state.viewUnavailable || props.intake) &&
           <div className="rs-case-actions">{props.caseActions}</div>}
       </main>
