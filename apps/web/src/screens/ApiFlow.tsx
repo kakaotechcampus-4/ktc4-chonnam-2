@@ -38,6 +38,10 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_PLATE_IMAGE',
 ])
 
+// 상황을 고쳐 다시 조립되면 제목·신고 내용이 새 유형으로 바뀐다 — 화면 아래에 잠깐 띄운다
+const CORRECTED_TOAST = '제목과 본문을 수정했어요'
+const CORRECTED_TOAST_MS = 3000
+
 export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api)
@@ -52,6 +56,22 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [unsupported, setUnsupported] = useState(false)
+  // 상황 고치기를 보낸 때의 case_rev. 고친 유형으로 다시 조립된 view가 오면 제목·신고 내용이 바뀌었다고 잠깐 알린다
+  const [correctingFrom, setCorrectingFrom] = useState<number | null>(null)
+  const [correctedToast, setCorrectedToast] = useState<number | null>(null)
+  useEffect(() => {
+    if (correctingFrom === null || !view || view.case_rev <= correctingFrom) return
+    const corrected = view.candidates.find((c) => c.selected)?.situation_confirmation === 'CORRECTED'
+    const busy = view.running_jobs.some((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW')
+    if (!corrected || busy || !view.evidence?.record_id) return
+    setCorrectingFrom(null)
+    setCorrectedToast(Date.now())
+  }, [correctingFrom, view])
+  useEffect(() => {
+    if (correctedToast === null) return
+    const t = setTimeout(() => setCorrectedToast(null), CORRECTED_TOAST_MS)
+    return () => clearTimeout(t)
+  }, [correctedToast])
 
   // 주소(또는 이 브라우저가 기억한) case id로 이어간다. 새로 만든 case는 주소와 브라우저에 남겨
   // 새로고침하거나 창을 닫았다 와도 이어진다. 경과 시간은 이어받은 시점부터 다시 센다 — CaseView에 시작 시각이 없다.
@@ -209,6 +229,9 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
           </div>
         ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
       </main>
+      <p className="rs-float-toast" role="status" aria-live="polite">
+        {correctedToast !== null && <span key={correctedToast}>{CORRECTED_TOAST}</span>}
+      </p>
     </>
   )
 
@@ -337,7 +360,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             onEdit={(key, value) => setEdited({ key: draftKey, edits: { ...edits, [key]: value } })}
             onRespond={respond}
             onReviewed={() => run({ kind: 'MARK_REVIEWED', payload: {} })}
-            onCorrect={(type) => run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: type } })}
+            onCorrect={(type) => {
+              setCorrectingFrom(view.case_rev)
+              run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: type } })
+            }}
             onAction={onAction}
             canRun={canRun}
             arriving={arriving}

@@ -826,6 +826,8 @@ body:has(.res-bgcar.is-arriving) { overflow-x: clip; }
 /* 복사 결과 — 버튼 아래 여백에 잠깐 뜬다(자리를 차지하지 않음) */
 .res-toast { position: absolute; right: 32px; bottom: 6px; margin: 0; font-size: 14px; }
 .res-toast span { font-weight: 600; color: var(--rs-ink); animation: rs-fade-in .2s var(--rs-ease) both; }
+.rs-float-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); margin: 0; z-index: 50; pointer-events: none; }
+.rs-float-toast span { display: block; padding: 10px 18px; border-radius: 999px; background: var(--rs-ink); color: #fff; font-size: 14px; font-weight: 600; animation: rs-fade-in .2s var(--rs-ease) both; }
 
 /* ── 하위 화면 공통 ── */
 .rs.sub { width: 100%; max-width: 1120px; margin: 0 auto; padding: 40px 0 24px; display: flex; flex-direction: column; gap: 32px; }
