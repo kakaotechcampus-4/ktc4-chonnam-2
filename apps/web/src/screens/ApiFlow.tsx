@@ -219,7 +219,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
           </div>
         ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
       </main>
-      <p className="rs-float-toast" role="status" aria-live="polite">
+      {/* 색·글꼴 변수는 .rs 안에만 있다 — main 밖이라 rs를 함께 단다 */}
+      <p className="rs rs-float-toast" role="status" aria-live="polite">
         {correctedToast !== null && <span key={correctedToast}>{CORRECTED_TOAST}</span>}
       </p>
     </>
