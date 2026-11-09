@@ -13,9 +13,12 @@ from a1_support import policy_values, sqlite_engine
 from daesingo.api.app import create_app
 from daesingo.api.composition import ApiComposition
 from daesingo.case.store import CaseStore
+from daesingo.common.jobs.execution import HandlerResult
+from daesingo.common.jobs.reflection import ReflectionInput, ReflectionResult, RuntimeJobRecord
 from daesingo.common.public_runtime import schema
 from daesingo.common.public_runtime.policy import PublicDenied, PublicPolicy
 from daesingo.common.public_runtime.repository import PublicStore
+from daesingo.worker.public_reflection import PublicResultReflector
 
 
 @pytest.fixture
@@ -64,10 +67,12 @@ def session(client):
 
 
 @pytest.mark.parametrize("a1_app", [{
-    "input_mode": "upload_bundle", "session_create_daily": 5, "session_analysis_daily": 5,
-    "session_daily": 6, "global_concurrent": 1,
+    "input_mode": "upload_bundle", "session_create_daily": 50, "session_analysis_daily": 5,
+    "session_daily": 6, "ip_daily": 100, "global_concurrent": 1,
+    "upload_case_attempts": 3, "case_repeats": 1,
+    "local_work": {"case_jobs": 12, "ip_daily_jobs": 40, "global_concurrent": 2},
 }], indirect=True)
-def test_public_case_and_combined_analysis_daily_limits_reset_at_kst_midnight(a1_app, monkeypatch):
+def test_upload_case_and_search_limits_reset_at_kst_midnight(a1_app, monkeypatch):
     app, engine, store = a1_app
     public = app.state.composition.public
     before_midnight = datetime(2026, 11, 9, 14, 59, 59)
@@ -81,41 +86,77 @@ def test_public_case_and_combined_analysis_daily_limits_reset_at_kst_midnight(a1
     headers = {"Origin": "https://testserver"}
     with TestClient(app, base_url="https://testserver") as client:
         session(client)
-        created = [client.post("/cases", headers=headers) for _ in range(5)]
-        assert [response.status_code for response in created] == [201] * 5
-        sixth = client.post("/cases", headers=headers)
-        assert sixth.status_code == 429 and sixth.json()["error"]["code"] == "public.limit"
-        first, second = [response.json()["case_id"] for response in created[:2]]
+        created = [client.post("/cases", headers=headers) for _ in range(50)]
+        assert [response.status_code for response in created] == [201] * 50
+        over_case_limit = client.post("/cases", headers=headers)
+        assert over_case_limit.status_code == 429 and over_case_limit.json()["error"]["code"] == "public.limit"
+        cid, other, third = [response.json()["case_id"] for response in created[:3]]
 
         with engine.begin() as conn:
-            for cid in (first, second):
-                store.bind_sample(conn, cid, "test-only", [{"source_asset_ref": "source-" + cid,
-                    "sha256": "a" * 64, "byte_size": 10, "duration_ms": 1000}])
+            owner = conn.scalar(select(schema.cases.c.session_hash).where(schema.cases.c.case_id == cid))
+            for target in (cid, other):
+                for attempt in range(3):
+                    token = f"prep-{target}-{attempt}"
+                    assert store.begin_preparation(conn, target, owner, None, token)
+                    store.finish_preparation(conn, token)
+                if target == cid:
+                    with pytest.raises(PublicDenied) as prep_denied:
+                        store.begin_preparation(conn, cid, owner, None, "over-case-prep")
+                    assert prep_denied.value.code == "LIMIT"
+            with pytest.raises(PublicDenied) as prep_denied:
+                store.begin_preparation(conn, third, owner, None, "over-daily-prep")
+            assert prep_denied.value.code == "LIMIT"
+            assert conn.scalars(select(schema.admissions.c.initial)).all() == []
+            store.bind_sample(conn, cid, "test-only", [{"source_asset_ref": "source-" + cid,
+                "sha256": "a" * 64, "byte_size": 10, "duration_ms": 1000}])
 
         retry = {"kind": "RUN_NOTICE_ACTION", "payload": {
             "notice_code": "search.candidate_search_failed", "action": "RETRY_SEARCH"}}
         start = {"kind": "START_ANALYSIS", "payload": {"description": "Test"}}
         edit = {"kind": "EDIT_HINT", "payload": {"description": "Updated test"}}
 
-        def admit(cid, revision, command):
+        def admit(revision, command, job_kind="COARSE_SEARCH"):
             payload = {"case_id": cid, "expected_case_rev": revision, **command}
-            job = {"kind": "COARSE_SEARCH", "job_id": f"test-{revision}", "case_id": cid}
+            records = [] if job_kind is None else [
+                {"kind": job_kind, "job_id": f"test-{revision}", "case_id": cid}]
             with engine.begin() as conn:
-                public.admit_result(conn, payload, SimpleNamespace(appended_job_records=[job]))
+                public.admit_result(conn, payload, SimpleNamespace(appended_job_records=records))
 
-        for revision, (cid, command) in enumerate(
-                [(first, start), (first, edit), (first, retry), (second, start), (second, edit)], 1):
-            admit(cid, revision, command)
+        admit(1, start, "HINT_EXTRACT")
+        followups = {"HINT_EXTRACT": "COARSE_SEARCH", "COARSE_SEARCH": "FINE_VERIFY"}
+        reflector = PublicResultReflector(SimpleNamespace(reflect=lambda conn, item: ReflectionResult(
+            "APPLIED", jobs=(RuntimeJobRecord("child-" + item.kind, cid, followups[item.kind]),))), store)
+        for kind, child in followups.items():
+            with engine.begin() as conn:
+                incoming = ReflectionInput("execution-" + kind, "parent-" + kind, cid, kind, 1,
+                                           HandlerResult(status="SUCCEEDED"))
+                assert reflector.reflect(conn, incoming).jobs[0].kind == child
+                assert conn.scalars(select(schema.admissions.c.initial)).all() == [True]
+                assert store.active_count(conn) == 1
+
+        for revision, command in enumerate((edit, retry, edit, retry), 2):
+            admit(revision, command)
         with pytest.raises(PublicDenied) as denied:
-            admit(second, 6, retry)
+            admit(6, retry)
         assert denied.value.code == "LIMIT" and denied.value.status == 429
+
+        # Reads and jobless correction bypass admission. Local jobs use their own ledger.
+        assert client.get(f"/cases/{cid}/view").status_code == 200
+        monkeypatch.setattr(ApiComposition, "load_asset", lambda *_: (b"fixture", "video/mp4"))
+        assert client.get(f"/cases/{cid}/assets/fixture").status_code == 200
+        correction = {"kind": "EDIT_EVENT_TIME", "payload": {"value": None}}
+        admit(7, correction, None)
+        admit(8, correction, "REPORT_VIDEO_EXPORT")
+        admit(9, {"kind": "REQUEST_CANDIDATE_VIDEO_PREVIEW", "payload": {"candidate_id": "test"}},
+              "CANDIDATE_VIDEO_PREVIEW")
         with engine.connect() as conn:
             assert conn.scalars(select(schema.admissions.c.initial)
-                                .order_by(schema.admissions.c.initial)).all() == [False] * 3 + [True] * 2
+                                .order_by(schema.admissions.c.initial)).all() == [False] * 4 + [True]
+            assert len(conn.scalars(select(schema.local_admissions.c.job_ids)).all()) == 2
 
         clock = before_midnight + timedelta(seconds=1)
         assert client.post("/cases", headers=headers).status_code == 201
-        admit(second, 6, retry)
+        admit(6, retry)
 
 
 def test_missing_approval_serves_health_but_refuses_analysis_and_raw_upload(api_startup):

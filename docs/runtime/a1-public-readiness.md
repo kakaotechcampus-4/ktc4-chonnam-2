@@ -99,6 +99,27 @@ candidate video preview는 비활성 상태다. 실제 전체 DB/media 복원, o
 `browser-entry-proof.json`, `open2-result.private.json`, `post-open-result.private.json`.
 공개 전환 당시에는 이 인계 문서를 로컬에만 준비했다. 이후 문서 전용 커밋으로 제출하며, 실행 코드나 배포 이미지를 변경하지 않는다.
 
+## 차기 공개 업로드 정책 — #664 검수안
+
+[리뷰](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/664#issuecomment-6737379827)에 따른 `upload_bundle` 모드의 설정 제안이다.
+
+| 항목 | 설정 및 제안값 |
+| --- | --- |
+| 새 체험 생성 | `session_create_daily=50`, 세션별 KST 하루 |
+| 탐색 | `session_analysis_daily=5`, 세션별 KST 하루. 최초 분석·단서 수정 후 재분석·다시 찾기를 합산 |
+| 업로드 준비 | `upload_case_attempts=3`은 체험별 총 시도, `session_daily=6`은 세션별 KST 하루 시도 |
+| 공유 IP | `ip_daily=100` 제안. 세션 발급·체험 생성·업로드 준비·탐색을 범주별로 집계 |
+| 동시 실행 | `session_concurrent=1`, `global_concurrent=1`, 무료 작업 전역 2 |
+
+업로드 모드는 동일 체험의 탐색에도 세션 일일 한도를 적용한다. `case_repeats`는 기존 서버 샘플 모드에서 사용한다.
+한 사용자 요청에서 이어지는 Coarse·Fine은 동일한 탐색 admission을 사용한다.
+결과 조회, 후보 영상 미리보기, 신고자료 수정과 다운로드는 탐색 횟수에서 제외한다.
+다른 후보를 선택해 새 AI 검증을 발주하는 경우 해당 요청은 탐색으로 집계한다.
+프록시에서 IP를 공유하는 경우를 고려해 100회를 제안하며, 무료 작업의 별도 한도는 기존 정책을 적용한다.
+
+**KST 일 20,000원과 공개 기간 누적 100,000원은 운영 목표값이다.**
+`elice_supported`에서는 이 금액을 기준으로 자동 차단하지 않는다. 사용량과 기존 비용 원장은 계속 보존한다.
+
 ## Elice 지원 모드 — 2026-11-08 정책 변경 (당시 운영 미적용 이력)
 
 이 절은 아래 과거 snapshot과 후속 문서의 원화 예약 필수 문구보다 우선한다.

@@ -224,8 +224,12 @@ class PublicStore:
         stamp = now(conn)
         def count(*conditions):
             return conn.execute(sa.select(sa.func.count()).select_from(t.preparations).where(*conditions)).scalar_one()
+        case_attempts = (self.policy.upload_case_attempts if self.policy.input_mode == "upload_bundle"
+                         else self.policy.case_repeats + 1)
+        if case_attempts is None:
+            raise PublicDenied()
         if (row["source_expires_at"] <= stamp
-                or count(t.preparations.c.case_id == case_id) >= self.policy.case_repeats + 1
+                or count(t.preparations.c.case_id == case_id) >= case_attempts
                 or count(t.preparations.c.ip_hash == row["ip_hash"],
                          t.preparations.c.created_at >= day_start(stamp)) >= self.policy.ip_daily
                 or count(t.preparations.c.session_hash == owner,
@@ -305,7 +309,7 @@ class PublicStore:
         )
         if (count(t.admissions.c.ip_hash == row["ip_hash"], t.admissions.c.created_at >= day_start(stamp)) >= self.policy.ip_daily
                 or daily_exceeded
-                or (not initial and count(t.admissions.c.case_id == case_id,
+                or (self.policy.input_mode == "server_sample" and not initial and count(t.admissions.c.case_id == case_id,
                     t.admissions.c.initial.is_(False)) >= self.policy.case_repeats)):
             raise PublicDenied("LIMIT")
         preparing = conn.execute(sa.select(sa.func.count()).select_from(t.preparations).where(

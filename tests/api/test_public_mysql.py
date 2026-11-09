@@ -293,7 +293,7 @@ def test_default_api_same_transaction_rolls_back_admission_case_and_queue(public
 
 @pytest.mark.mysql_check("public_a1", "api_atomicity")
 @pytest.mark.parametrize("public_api", [{"input_mode": "upload_bundle", "session_create_daily": 3,
-    "session_analysis_daily": 3, "case_repeats": 3, "session_daily": 6}], indirect=True)
+    "session_analysis_daily": 3, "upload_case_attempts": 4, "session_daily": 6}], indirect=True)
 def test_bundle_upload_rejects_before_probe_and_rolls_back_all_rows(public_api, monkeypatch):
     from daesingo.api.composition import case_api
     from daesingo.recording.mysql_repository import entries

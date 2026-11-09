@@ -79,6 +79,7 @@ class PublicPolicy(BaseModel):
     input_mode: Literal["server_sample", "upload_bundle"] = "server_sample"
     session_create_daily: Positive | None = None
     session_analysis_daily: Positive | None = None
+    upload_case_attempts: Positive | None = None
     previous_manifest_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")] | None = None
     candidate_previews: bool = False
     case_budget_micros: Positive | None = None
@@ -107,9 +108,11 @@ class PublicPolicy(BaseModel):
     @model_validator(mode="after")
     def funding_contract(self) -> Self:
         if self.input_mode == "upload_bundle":
-            if self.session_create_daily is None or self.session_analysis_daily is None:
-                raise ValueError("explicit bundle experience and analysis limits required")
+            if (self.session_create_daily is None or self.session_analysis_daily is None
+                    or self.upload_case_attempts is None):
+                raise ValueError("explicit bundle experience, analysis and upload limits required")
         elif (self.session_create_daily is not None or self.session_analysis_daily is not None
+              or self.upload_case_attempts is not None
               or self.previous_manifest_sha256 is not None or self.candidate_previews):
             raise ValueError("bundle settings require upload_bundle input mode")
         if self.candidate_previews and self.local_work is None:
@@ -156,7 +159,7 @@ class PublicPolicy(BaseModel):
     def fingerprint(self):
         data = self.model_dump(mode="json")
         if self.input_mode == "server_sample":
-            for key in ("input_mode", "session_create_daily", "session_analysis_daily",
+            for key in ("input_mode", "session_create_daily", "session_analysis_daily", "upload_case_attempts",
                         "previous_manifest_sha256", "candidate_previews"):
                 del data[key]
         if self.funding_mode == "krw":
