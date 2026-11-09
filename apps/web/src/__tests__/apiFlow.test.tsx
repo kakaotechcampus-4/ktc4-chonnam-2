@@ -718,3 +718,25 @@ it('동의 창을 닫으면 포커스가 「파일 선택」으로 돌아온다'
   fireEvent.click(getByText('취소'))
   expect(document.activeElement?.textContent).toBe('파일 선택')
 })
+
+it('「이 상황으로 고치기」를 누르면 「본문과 제목이 수정되었어요」를 잠깐 띄운다', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  try {
+    const READY = SNAPSHOTS.find((s) => s.scenarioId === 'scenario_happy_001' && s.view.stage === 'READY' && s.view.package !== null)!.view
+    const typed: CaseView = { ...READY, evidence: { ...READY.evidence!, case_type_display: { ...READY.evidence!.case_type_display, code: 'SIGNAL' } } }
+    const { m, api } = setup({ get: typed })
+    m.sendCommand.mockReturnValue(new Promise(() => {})) // 응답 전에도 누른 즉시 뜬다
+    const { container, findByRole, getByLabelText, getByRole } = render(<ApiFlow api={api} caseId="c1" />)
+    fireEvent.click(await findByRole('button', { name: /다른 상황이었어요/ }))
+    expect(container.querySelector('.rs-float-toast')?.textContent).toBe('')
+    fireEvent.click(getByLabelText('중앙선을 넘었어요'))
+    fireEvent.click(getByRole('button', { name: '이 상황으로 고치기' }))
+    expect(container.querySelector('.rs-float-toast')?.textContent).toBe('본문과 제목이 수정되었어요')
+    expect(m.sendCommand).toHaveBeenCalledWith('c1', typed.case_rev, { kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: 'CENTER_LINE_CROSSING' } })
+    await act(async () => { await vi.advanceTimersByTimeAsync(3100) })
+    expect(container.querySelector('.rs-float-toast')?.textContent).toBe('')
+  } finally {
+    cleanup()
+    vi.useRealTimers()
+  }
+})
