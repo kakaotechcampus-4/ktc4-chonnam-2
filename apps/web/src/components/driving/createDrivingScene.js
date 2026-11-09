@@ -68,9 +68,14 @@ export function createDrivingScene(root, onUnavailable, onReady = () => {}, sess
       disposed = true
       events.abort()
       observer?.disconnect()
-      // 게임 정리 실패가 분석 화면을 깨뜨리지 않게 한다 — 이어하기 상태만 잃는다
+      // 게임 정리 실패가 분석 화면을 깨뜨리지 않게 한다. 저장에 실패하면 지난 상태로 되돌아가지 않게 비우고, 해제는 따로 한다
+      if (session && game)
+        try {
+          session.state = game.snapshot()
+        } catch {
+          session.state = null
+        }
       try {
-        if (session && game) session.state = game.snapshot()
         game?.dispose()
       } catch {}
       game = null
