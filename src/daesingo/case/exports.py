@@ -9,6 +9,8 @@ from daesingo.case import jobs
 from daesingo.recording.exports import export_fingerprint
 
 EXPORT_KINDS = frozenset({"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"})
+# READY에 필요 없는 export — 자리가 모자라면 먼저 뺀다(#675).
+OPTIONAL_EXPORT_KINDS = frozenset({"PLATE_IMAGE_EXPORT"})
 
 
 def build_export_requests(clip_ref, plate_readout, time_resolution, max_byte_size):
@@ -23,7 +25,31 @@ def build_export_requests(clip_ref, plate_readout, time_resolution, max_byte_siz
     return result
 
 
-def issue_missing_exports(case, adapter, view):
+def gate_auto_exports(case, adapter, view, admit, *, since):
+    """빠진 export를 복사본에 발주하고 `admit`이 `job_records[since:]`를 받아들인 case를 돌려준다(#675).
+
+    번호판 이미지는 READY 조건이 아니다(Package에 있을 때만 싣는다). 신고영상과 함께 거절되면 번호판
+    이미지를 빼고 한 번 더 묻는다 — 자리가 하나뿐이어도 필수 신고영상은 발주된다. 신고영상까지
+    거절되면 선택 항목에 자리를 쓰지 않는다. 받아들여진 것이 없으면 원래 `case`를 그대로 돌려준다.
+
+    거절된 admission은 호출자 savepoint로 되돌아가 흔적이 없으므로 같은 admission 키로 다시 물어도 된다.
+    `since`는 admission이 함께 볼 범위다 — 반영 경로는 이번 export만, command는 이번 command의 job 전체."""
+    for skip in (frozenset(), OPTIONAL_EXPORT_KINDS):
+        candidate = copy.deepcopy(case)
+        before = len(candidate.job_records)
+        issue_missing_exports(candidate, adapter, view, skip=skip)
+        fresh = candidate.job_records[before:]
+        if not fresh:
+            break
+        if admit(copy.deepcopy(candidate.job_records[since:])):
+            return candidate
+        if not any(r["kind"] in OPTIONAL_EXPORT_KINDS for r in fresh):
+            break
+    return case
+
+
+def issue_missing_exports(case, adapter, view, *, skip=frozenset()):
+    """`skip`의 kind는 이번에 발주하지 않는다(`gate_auto_exports`가 선택 항목을 뺄 때)."""
     from daesingo.case.service import report_video_missing
     if adapter is None or not hasattr(adapter, "get_export_requests"):
         return
@@ -41,6 +67,8 @@ def issue_missing_exports(case, adapter, view):
     for kind, request in adapter.get_export_requests().items():
         if kind not in EXPORT_KINDS:
             raise ValueError("unsupported export request")
+        if kind in skip:
+            continue
         if kind == "REPORT_VIDEO_EXPORT" and not report_video_missing(view):
             continue
         fingerprint = export_fingerprint({"kind": kind, "input": request})

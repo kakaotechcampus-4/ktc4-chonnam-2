@@ -166,17 +166,17 @@ def _auto_export_gate(case: CaseAggregate, store: CaseStore,
                       admit_auto_exports: Callable[[list[dict[str, Any]]], bool] | None) -> CaseAggregate:
     """`EVIDENCE_REVIEW` case에 빠진 자동 내보내기를 발주하고 READY gate를 다시 본다.
 
-    admission이 거절하면 이번 자동 발주 효과만 버린다 — 이미 정산한 T2는 되돌리지 않는다."""
-    from daesingo.case.exports import issue_missing_exports
+    admission이 거절하면 이번 자동 발주 효과만 버린다 — 이미 정산한 T2는 되돌리지 않는다. 신고영상 · 번호판
+    이미지가 함께 거절되면 신고영상만 다시 묻는다(`exports.gate_auto_exports`, #675)."""
+    from daesingo.case import exports
     from daesingo.case.service import build_view_from_adapter
     adapter = store.adapter_for(case)
     if adapter is not None and hasattr(adapter, "get_export_requests"):
-        candidate = copy.deepcopy(case) if admit_auto_exports is not None else case
-        before_exports = len(candidate.job_records)
-        issue_missing_exports(candidate, adapter, build_view_from_adapter(case, adapter, executions=store.read_executions(case)))
-        fresh = candidate.job_records[before_exports:]
-        if not fresh or admit_auto_exports is None or admit_auto_exports(copy.deepcopy(fresh)):
-            case = candidate
+        view = build_view_from_adapter(case, adapter, executions=store.read_executions(case))
+        if admit_auto_exports is None:
+            exports.issue_missing_exports(case, adapter, view)
+        else:
+            case = exports.gate_auto_exports(case, adapter, view, admit_auto_exports, since=len(case.job_records))
     mark_ready_if_package_ready(case, adapter)
     return case
 
