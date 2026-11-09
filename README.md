@@ -6,6 +6,12 @@
 
 목표는 신고할 마음이 없던 사람을 유도하는 게 아니라, **이미 생긴 신고 의향이 준비 과정의 마찰 때문에 사라지지 않게 하는 것**이다.
 
+## 공개 체험
+
+[공식 샘플 체험 열기](https://daesingo-ktc4.duckdns.org/?sample). 로그인 없이 공식 영상 10개로 구성된 10분 묶음을 분석할 수 있다. 공개 체험에서는 임의 영상 업로드를 차단하고, 생성한 결과는 해당 브라우저 세션에서만 조회하고 내려받을 수 있다.
+
+2026-11-09 운영 기록 기준 배포 커밋은 `91e41a15de0fe1c1879b76026ee454cb809be08f`다. 제한 체험에서는 기존 탐색 결과를 이어받아 번호판 판독, 신고자료 준비, 영상 다운로드·재생, 데이터 삭제까지 확인했다. 공개 전환 후에는 새 익명 브라우저에서 체험 진입을 확인했다. 같은 배포의 재기동 복구는 검증했으며 전체 DB·미디어 복원은 미검증이다. [공개 운영 검수와 복구 범위](docs/runtime/a1-public-readiness.md#제한적-외부-공개-운영-인계--2026-11-09-kst)
+
 > **현재 Runtime 실행환경 (2026-10-30 갱신):** 로컬 Compose는 API·Worker·migration·MySQL을 구성한다. 기본 Worker는 Search·Recording·production PaddleOCR·export를 조립하며, Analysis/Incident encoding 설정에 따라 등록 가능한 handler가 달라진다. 실제 env·버전·cache·실행 순서와 미결 항목은 [Runtime/Ops·Recording 실행환경](docs/runtime/local-runtime-environment.md), 검증 이력과 남은 위험은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
 
 ## 무엇을 하고, 무엇을 하지 않는가
@@ -65,14 +71,14 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | 경로 | 내용 |
 | --- | --- |
 | `apps/prototype/` | 흐름 프로토타입 (React 19 + Vite 6, 목데이터). **제품 코드 아님** |
-| `apps/web/` | 실제 웹 앱(React 19 · Vite 6). `/`는 실제 API 흐름 — 업로드 → 장면 찾기 → 후보 확인 → 번호판 · 발생 시각 확인 · 입력 → 신고자료 복사 · 다운로드. `/?demo`는 목데이터 시연. 테스트는 web을 바꾸는 PR마다 CI가 실행(Owner: 신유민) — 자세한 현황은 `apps/web/README.md` |
+| `apps/web/` | 실제 웹 앱(React 19 · Vite 6). `/`는 기존 API 흐름, `/?sample`은 공식 샘플로 실제 분석하는 공개 체험, `/?demo`는 목데이터 시연이다. Web 변경 PR의 CI와 실행 방법은 [웹 앱 README](apps/web/README.md)를 확인한다. |
 | `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있다. `api`는 설정·로그 bootstrap, app factory·envelope·health·단일 process 실행, Case 생성·조회·command/enqueue·중단 배선, 원본 upload·저장 FrameRef·DerivedAsset HTTP와 분석 시작 timeline을 구현했다. `worker`는 claim/dispatch·T1/T2·heartbeat/cancel·STALE/retry·T2 재전달과 기본 Search handler/reader 조립을 구현했다(명시적 media profile 등 세부 조건·미결은 각 README와 RT-10(b) 기록 참조) |
 | `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
 | `data/` | 테스트 · 데모용 고정 데이터 — `mock/`(모듈별 계약 fixture · 시나리오), `real/`(실제 영상 E2E 산출 JSON) |
 | `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
 | `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
 | `Dockerfile` · `compose.yaml` · `docker/` | RT-13(a) local api/worker/migrate/mysql 구성·실행 어댑터. 설정과 전용 smoke는 [RT-13(a) Notes](docs/runtime/rt13a-docker-compose.md) 참조 |
-| `deploy/` | RT-14 수동 OIDC/ECR/SSM·rollback, release-bound Web·Caddy·외부 smoke 도구. Gate 승인 후 구현이며 실제 공개 배포 acceptance는 pending; [실행·복구 계약](docs/runtime/rt14-public-deployment.md) |
+| `deploy/` | RT-14 수동 배포·복구 도구. GitHub Actions에서 OIDC로 AWS에 인증하고 ECR 이미지와 SSM을 사용한다. 배포 버전에 연결된 Web·Caddy와 외부 기본 동작을 확인한다. [실행·복구 계약](docs/runtime/rt14-public-deployment.md) |
 | `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 수집하며, CI는 비-MySQL 회귀와 실제 MySQL·report gate를 분리한다 ([실행 구조](docs/runtime/ci-test-partitions.md)) |
 | `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
 | `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |
@@ -157,7 +163,7 @@ MySQL integration은 `DAESINGO_MYSQL_URL`로 지정한 폐기 가능한 MySQL 8.
 
 Migration은 `uv run python -m daesingo.common.db.migrate --database-url-stdin`으로 실행한다. 호출자가 URL 한 개를 비대화형 stdin에 명시적으로 전달하며 credential을 argv·로그에 넣지 않는다. runner는 URL 환경변수·`.env`·RuntimeConfig를 읽지 않는다. 소스 checkout의 env를 frozen registry `case → runtime → recording` 순서로 `head`까지 적용하며, 새 env는 registry와 필수 테스트에 등록해야 한다. 기존 MySQL gate는 RT-02(a)·Case 실행 목록과 migration·Recording 필수 check를 함께 검사한다.
 
-Migration은 단일 실행 전제다. process 내부 중복 호출만 거부하며 cross-process 동시 실행 안전성을 보장하지 않는다. 첫 실패에서 중단하고 retry·stamp·downgrade·resume/startup migration은 제공하지 않는다. MySQL DDL의 부분 적용은 전체 rollback되지 않으므로 실패 후 상태 검사·복구가 필요하다. 현재 Runtime head는 `runtime_0004`이며 `job_execution`·`usage_inflight`·`usage_record`와 tracker의 관계 의도·복구/늦은 관측 표식을 갖는다. RT-07(a)의 Final append는 caller transaction에 참여하고, RT-07(b)는 execution별 UsageSink begin/finish와 원자적 explicit finalize를 연결한다. RT-07(c)는 terminal produced 기반 reconciliation·명시적 DIRECT_NO_RUN·P-7 늦은 관측·Final usage_refs projection을 연결한다. 실제 Search adapter와 배포 실행 시점·URL 출처·배포 artifact 배치는 후속 범위다. 실제 구현·검증 상태는 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
+Migration은 단일 실행 전제다. process 내부 중복 호출만 거부하며 cross-process 동시 실행 안전성을 보장하지 않는다. 첫 실패에서 중단하고 retry·stamp·downgrade·resume/startup migration은 제공하지 않는다. MySQL DDL의 부분 적용은 전체 rollback되지 않으므로 실패 후 상태 검사·복구가 필요하다. 공개 배포 `91e41a15`의 스키마는 Case `case_0001`, Recording `recording_0002`, Runtime `runtime_0008`이다. 작업 실행과 사용량 기록의 구현·검증 이력은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
 
 API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127.0.0.1 --port 8000`으로 실행한다. RT-01 파일 설정을 소비하며 현재 HTTP surface는 `GET /health/live`·`GET /health/ready`·`POST /cases`·`GET /cases/{case_id}/view`·`POST /cases/{case_id}/commands`·`POST /cases/{case_id}/sources`·`GET /cases/{case_id}/frames/{frame_ref}`다. 일반 오류 envelope와 기본 framework 오류 차단, 전용 ready DB 연결, metadata-only mount 검사, command 저장과 enqueue·cancel의 원자적 commit, streaming upload와 commit 후 응답을 제공한다. 지원 CLI가 upload timeout 연결 종료용 API 내부 HTTP protocol을 선택한다. FrameRef는 짧은 소유 확인·저장 이미지 조회 후 Connection을 반환하고 bytes를 전송한다. DerivedAsset HTTP route·분석 시작 timeline dependency는 후속 범위다. MySQL gate는 API health의 정상·pool 고갈·연결 단절·실제 서버 중지·RO mount·실제 API process 증거도 요구한다. 실제 서버 중지 검사는 suite DB와 분리된 Docker 테스트 서버(Linux CI) 또는 WSL 서버(Windows)를 사용하며, RO mount는 private namespace에서 만들고 정리한다.
 
