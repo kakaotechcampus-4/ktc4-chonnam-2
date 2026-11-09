@@ -11,11 +11,11 @@ function message(code: string) {
 }
 
 /** A-1 intake only; existing CaseView-driven results/downloads remain in ApiFlow. */
-export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?: string | null; remembered?: boolean }) {
+export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?: string | null; remembered?: boolean; upload?: boolean }) {
   const [client] = useState(() => props.client ?? createPublicSamplesApi())
   const [samples, setSamples] = useState<OfficialSample[] | null>(null)
   const [selected, select] = useState('')
-  const [caseId, setCaseId] = useState(props.caseId ?? null)
+  const [caseId, setCaseId] = useState(props.upload ? null : props.caseId ?? null)
   const [view, setView] = useState<CaseView | null>(null)
   const [description, setDescription] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -24,8 +24,16 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
   const pending = useRef(false)
   const deleteDialog = useRef<HTMLDialogElement>(null)
   const deleteTitle = useId()
+  const [uploadApi] = useState(() => ({
+    ...client.cases,
+    async createCase() {
+      const session = await client.ensureSession()
+      return session.ok ? client.cases.createCase() : session
+    },
+  }))
 
   useEffect(() => {
+    if (props.upload) return
     let active = true
     void client.listSamples().then(result => {
       if (!active) return
@@ -40,7 +48,7 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
       } else setError(message(result.error.code))
     })
     return () => { active = false }
-  }, [client, props.caseId, props.remembered])
+  }, [client, props.caseId, props.remembered, props.upload])
 
   function retain(id: string) {
     setCaseId(id); rememberCase(id)
@@ -124,11 +132,13 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
     </dialog>
   </>
   return <>
-    {view && view.stage !== 'INTAKE' && !deletion ? <ApiFlow api={client.cases} caseId={caseId}
+    {props.upload && !deletion ? <ApiFlow api={uploadApi} caseId={props.caseId} remembered={props.remembered}
+      uploadBundle={client.uploadBundle} onCase={setCaseId} /> : view && view.stage !== 'INTAKE' && !deletion ? <ApiFlow api={client.cases} caseId={caseId}
       intake={<p role="status">체험 진행 정보를 확인하고 있어요.</p>} /> : <main className="web-main rs-page">
       <h1>공식 샘플로 체험하기</h1>
       <p>공식 샘플만 이용할 수 있어요. 직접 영상 업로드는 지원하지 않아요.</p>
-      {deletion === 'DELETED' ? <p role="status">삭제했어요.</p> : deletion === 'DELETING' ? <p role="status">삭제 중이에요. 완료 여부를 다시 확인할 수 있어요.</p> : ready && view ? <>
+      {deletion === 'DELETED' ? <><p role="status">삭제했어요.</p>
+        {props.upload && <a href="/">처음으로</a>}</> : deletion === 'DELETING' ? <p role="status">삭제 중이에요. 완료 여부를 다시 확인할 수 있어요.</p> : ready && view ? <>
         <p>서버에 등록된 영상 {view.manifest_summary.ok_file_count}개를 준비했어요.</p>
         <label>찾을 장면 설명<textarea value={description} onChange={e => setDescription(e.target.value)} disabled={busy} /></label>
         <button type="button" className="rs-btn pri" disabled={busy || !description.trim()} onClick={() => void start()}>분석 시작</button>

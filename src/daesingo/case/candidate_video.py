@@ -4,6 +4,7 @@ rank 1~3의 현재 세대 후보만 대상이다. 상태는 JobRecord · 고정 
 (`NOT_REQUESTED` · `PREPARING` · `READY` · `FAILED` · `UNAVAILABLE`). 결정은
 `docs/modules/case/decisions/candidate-video-preview.md`.
 """
+from contextvars import ContextVar
 from typing import Final, Literal, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -19,6 +20,11 @@ MAX_PREVIEW_RANK: Final = 3
 # (bb29d750 = 고정 최종 배포 후보 커밋. 이 중간 호환 release에서는 신규 발주를 끈다 —
 #  `docs/runtime/rt14-preview-bridge.md`)
 PREVIEW_REQUESTS_ENABLED: Final = False
+public_preview_requests: ContextVar[bool] = ContextVar("public_preview_requests", default=False)
+
+
+def _requests_enabled():
+    return PREVIEW_REQUESTS_ENABLED or public_preview_requests.get()
 
 
 class PreviewRequestsDisabled(ValueError):
@@ -58,13 +64,13 @@ def preview_state(case: CaseAggregate, candidate: Candidate) -> PreviewState:
         if outcome.get("status") == "SUCCEEDED":
             return {"status": "READY", "clip_ref": outcome["incident_clip_ref"]}
         return {"status": "FAILED", "clip_ref": None}
-    return {"status": "NOT_REQUESTED" if PREVIEW_REQUESTS_ENABLED else "UNAVAILABLE", "clip_ref": None}
+    return {"status": "NOT_REQUESTED" if _requests_enabled() else "UNAVAILABLE", "clip_ref": None}
 
 
 def request_preview(case: CaseAggregate, candidate: Candidate) -> None:
     if preview_state(case, candidate)["status"] in {"PREPARING", "READY"}:
         return
-    if not PREVIEW_REQUESTS_ENABLED:
+    if not _requests_enabled():
         raise PreviewRequestsDisabled("preview issuance disabled in compatibility release")
     span = candidate.span
     if span is None:

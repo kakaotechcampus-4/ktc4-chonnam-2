@@ -80,6 +80,14 @@ def test_catalog_selects_only_safe_presentation_fields(a1_app):
         assert all(x not in text for x in ("authorization_ref", "sha256", "part.mp4", "samples_root"))
 
 
+def test_intake_mode_remains_available_when_catalog_is_unavailable(a1_app):
+    app, _, _ = a1_app
+    app.state.composition.public.catalog = None
+    with TestClient(app, base_url="https://testserver") as client:
+        assert client.get("/public/samples").status_code == 503
+        assert client.get("/public/intake-mode").json() == {"upload_enabled": False}
+
+
 def test_closed_gate_does_not_hide_jobless_domain_validation_or_owner_view(a1_app):
     app, engine, store = a1_app
     with TestClient(app, base_url="https://testserver") as client:

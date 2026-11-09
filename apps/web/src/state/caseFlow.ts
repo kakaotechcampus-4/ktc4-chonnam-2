@@ -4,7 +4,7 @@
 // 계약이 web에 맡긴 것뿐이다 — 파일별 업로드 결과(CaseView에 파일별 목록이 없다, §5.2)와 마지막 오류.
 // React와 무관하게 만들어 둔다 — 훅(`useCaseFlow`)은 이 store를 구독만 한다.
 
-import type { Api, ApiError, Command } from '../api/client'
+import type { Api, ApiError, ApiResult, Command } from '../api/client'
 import type { CaseView } from '../contracts/caseView'
 
 export interface UploadItem {
@@ -31,6 +31,7 @@ export interface FlowState {
 export interface FlowOptions {
   /** 진행 갱신 간격. web 구현값이다(§4) — web 리서치 문서는 2~3초를 권한다. */
   pollMs?: number
+  uploadBundle?: (caseId: string, files: File[]) => Promise<ApiResult<{ case_view: CaseView }>>
 }
 
 const INITIAL: FlowState = { caseId: null, view: null, uploads: [], error: null, viewUnavailable: false, busy: false }
@@ -41,7 +42,7 @@ const INITIAL: FlowState = { caseId: null, view: null, uploads: [], error: null,
  */
 const unknownOutcome = (status: number) => status === 0 || (status >= 500 && status !== 503)
 
-export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
+export function createCaseFlow(api: Api, { pollMs = 2000, uploadBundle }: FlowOptions = {}) {
   let state = INITIAL
   let active = false
   let commands = 0 // command를 보낸 횟수 — 읽기가 나간 뒤 command가 나갔는지 알아본다
@@ -136,11 +137,12 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
    */
   async function addFiles(files: File[]) {
     if (state.busy || files.length === 0) return
-    const offset = state.uploads.length
+    if (uploadBundle && ((state.view?.manifest_summary.ok_file_count ?? 0) > 0 || state.viewUnavailable)) return
+    const offset = uploadBundle ? 0 : state.uploads.length
     set({
       busy: true,
       error: null,
-      uploads: [...state.uploads, ...files.map((file) => ({ name: file.name, file, status: 'WAITING' as const, error: null }))],
+      uploads: [...state.uploads.slice(0, offset), ...files.map((file) => ({ name: file.name, file, status: 'WAITING' as const, error: null }))],
     })
     let caseId = state.caseId
     if (!caseId) {
@@ -149,6 +151,25 @@ export function createCaseFlow(api: Api, { pollMs = 2000 }: FlowOptions = {}) {
       if (!created.ok) return set({ busy: false, uploads: state.uploads.slice(0, offset), error: created.error })
       caseId = created.data.case_id
       set({ caseId, view: created.data.case_view })
+    }
+    if (uploadBundle) {
+      const result = await uploadBundle(caseId, files)
+      if (state.caseId !== caseId) return
+      let registered = result.ok ? result.data.case_view : null
+      if (!result.ok && (unknownOutcome(result.status) || (result.status >= 200 && result.status < 300))) {
+        const check = await api.getView(caseId)
+        if (state.caseId !== caseId) return
+        if (check.ok && check.data.manifest_summary.ok_file_count === files.length) registered = check.data
+        if (!check.ok) {
+          set({ viewUnavailable: true })
+          schedule()
+        }
+      }
+      if (registered) adopt(registered)
+      set({ busy: false, error: registered || result.ok ? null : result.error,
+        uploads: state.uploads.map(item => ({ ...item, status: registered ? 'DONE' : 'FAILED',
+          error: registered || result.ok ? null : result.error.code })) })
+      return
     }
     for (let i = 0; i < files.length; i++) await upload(caseId, offset + i, files[i])
     if (state.caseId === caseId) set({ busy: false })

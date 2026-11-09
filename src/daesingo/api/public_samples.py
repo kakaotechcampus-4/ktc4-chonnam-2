@@ -73,7 +73,7 @@ def copy_verified_sample(sample, media_root):
                                 raise SampleRejected("INTEGRITY_MISMATCH")
                             stamp = target.stat()
                             results.append(replace(source, path=target, mtime_ns=stamp.st_mtime_ns,
-                                                   original_filename=source.path.name))
+                                                   original_filename=source.original_filename or source.path.name))
                         except BaseException:
                             # This exact O_EXCL file has not been offered to any DB.
                             with destination.child(name, delete=True) as created:

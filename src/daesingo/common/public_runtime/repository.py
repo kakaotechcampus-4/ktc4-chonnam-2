@@ -178,8 +178,13 @@ class PublicStore:
         stamp = now(conn)
         count = conn.execute(sa.select(sa.func.count()).select_from(t.cases).where(
             t.cases.c.session_hash == owner, t.cases.c.created_at >= day_start(stamp))).scalar_one()
-        if count >= self.policy.session_daily:
+        if count >= (self.policy.session_create_daily or self.policy.session_daily):
             raise PublicDenied("LIMIT")
+        if self.policy.input_mode == "upload_bundle":
+            ip_count = conn.scalar(sa.select(sa.func.count()).select_from(t.cases).where(
+                t.cases.c.ip_hash == session["ip_hash"], t.cases.c.created_at >= day_start(stamp)))
+            if ip_count >= self.policy.ip_daily:
+                raise PublicDenied("LIMIT")
         conn.execute(t.cases.insert().values(case_id=case_id, session_hash=owner, ip_hash=session["ip_hash"],
             state="ACTIVE", created_at=stamp, expires_at=stamp + timedelta(seconds=self.policy.case_ttl_sec),
             source_expires_at=stamp + timedelta(seconds=self.policy.source_ttl_sec), sources=[], temp_token=uuid4().hex))
@@ -213,7 +218,7 @@ class PublicStore:
         self.accepting(conn)
         row = self.require_owner(conn, case_id, owner)
         if row["sources"]:
-            if row["sample_id"] != sample_id or row["manifest_hash"] != bytes.fromhex(self.policy.manifest_sha256):
+            if sample_id is None or row["sample_id"] != sample_id or row["manifest_hash"] != bytes.fromhex(self.policy.manifest_sha256):
                 raise PublicDenied("INPUT")
             return False
         stamp = now(conn)
@@ -251,9 +256,12 @@ class PublicStore:
                 raise PublicDenied("NOT_FOUND")
             return None
         self.local_accepting(conn) if local else self.accepting(conn)
+        approved_hashes = {bytes.fromhex(self.policy.manifest_sha256)}
+        if self.policy.previous_manifest_sha256 is not None:
+            approved_hashes.add(bytes.fromhex(self.policy.previous_manifest_sha256))
         if (row["state"] != "ACTIVE" or row["expires_at"] <= now(conn)
                 or row["source_expires_at"] <= now(conn) or not row["sources"]
-                or row["manifest_hash"] != bytes.fromhex(self.policy.manifest_sha256)):
+                or row["manifest_hash"] not in approved_hashes):
             raise PublicDenied("INPUT")
         return row
 
@@ -288,9 +296,15 @@ class PublicStore:
         stamp = now(conn)
         def count(*conditions):
             return conn.execute(sa.select(sa.func.count()).select_from(t.admissions).where(*conditions)).scalar_one()
+        session_conditions = (t.admissions.c.session_hash == row["session_hash"],
+                              t.admissions.c.created_at >= day_start(stamp))
+        daily_exceeded = (
+            count(*session_conditions) >= self.policy.session_analysis_daily
+            if self.policy.session_analysis_daily is not None else
+            initial and count(*session_conditions, t.admissions.c.initial.is_(True)) >= self.policy.session_daily
+        )
         if (count(t.admissions.c.ip_hash == row["ip_hash"], t.admissions.c.created_at >= day_start(stamp)) >= self.policy.ip_daily
-                or (initial and count(t.admissions.c.session_hash == row["session_hash"],
-                    t.admissions.c.initial.is_(True), t.admissions.c.created_at >= day_start(stamp)) >= self.policy.session_daily)
+                or daily_exceeded
                 or (not initial and count(t.admissions.c.case_id == case_id,
                     t.admissions.c.initial.is_(False)) >= self.policy.case_repeats)):
             raise PublicDenied("LIMIT")

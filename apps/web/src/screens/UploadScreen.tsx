@@ -147,6 +147,9 @@ export function UploadScreen(props: {
   failReason?: string
   /** 올리기 전에 개인정보·외부 처리 안내 동의를 받는다. ApiFlow가 신고(case)마다 첫 업로드에만 켠다 */
   consent?: boolean
+  officialBundle?: boolean
+  registeredCount?: number
+  selectionDisabled?: boolean
 }): JSX.Element {
   const situationId = useId()
   // 동의를 기다리는 파일 — 동의하기 전에는 onFiles(서버 업로드)를 부르지 않는다
@@ -178,8 +181,9 @@ export function UploadScreen(props: {
   }, [])
   const input = useRef<HTMLInputElement>(null)
   const pickButton = useRef<HTMLButtonElement>(null)
-  const choose = () => input.current?.click()
+  const choose = () => { if (!props.selectionDisabled) input.current?.click() }
   const pick = (files: FileList | null) => {
+    if (props.selectionDisabled) return
     if (!files?.length) return
     // 올리는 중에 고른 파일은 받지 않으므로 동의도 묻지 않는다(#606 리뷰)
     if (props.consent) {
@@ -272,7 +276,7 @@ export function UploadScreen(props: {
   const spinning = phase === 'wheel'
   const fx = props.departing ? departFx(width) : null
 
-  const okCount = props.files.filter((f) => !props.skipped.includes(f.name)).length
+  const okCount = props.registeredCount ?? props.files.filter((f) => !props.skipped.includes(f.name)).length
   const title = state === 'done' ? `업로드 완료 · 영상 ${okCount}개` : DROP_TEXT[state]
   const canClickArea = state === 'idle' || state === 'fail'
   const names = props.files.map((f) => f.name).join(', ')
@@ -394,7 +398,9 @@ export function UploadScreen(props: {
                 </b>
                 {state === 'idle' && (
                   <span className="rs-drop-note">
-                    여러 파일도 한 번에 올릴 수 있어요. {LIMIT_TEXT}
+                    {props.officialBundle
+                      ? '노션에서 받은 공식 3분 또는 10분 ZIP을 풀고, 한 묶음의 MP4를 모두 골라 주세요.'
+                      : `여러 파일도 한 번에 올릴 수 있어요. ${LIMIT_TEXT}`}
                   </span>
                 )}
                 {state === 'uploading' && (
@@ -405,11 +411,11 @@ export function UploadScreen(props: {
                 )}
                 {/* 원인은 서버가 알려 준 것만 쓴다 — 화면이 형식·손상·네트워크를 짐작하지 않는다(#224 recording 리뷰) */}
                 {state === 'fail' && (
-                  <span className="rs-drop-note">{props.failReason ?? '파일을 올리지 못했어요. 다시 골라 주세요.'}</span>
+                  <span className="rs-drop-note" role={props.officialBundle ? 'alert' : undefined}>{props.failReason ?? '파일을 올리지 못했어요. 다시 골라 주세요.'}</span>
                 )}
               </div>
             )}
-            <button
+            {!props.selectionDisabled && <button
               ref={pickButton}
               type="button"
               // 고르기 전·실패 때는 주 동작, 고른 뒤에는 「영상에서 찾아보기」가 주 동작이라 보조로 낮춘다.
@@ -420,12 +426,13 @@ export function UploadScreen(props: {
               }}
             >
               {state === 'idle' ? '파일 선택' : '다시 선택'}
-            </button>
+            </button>}
           </div>
           <input
             ref={input}
             type="file"
-            accept="video/*"
+            accept={props.officialBundle ? '.mp4' : 'video/*'}
+            disabled={props.selectionDisabled}
             multiple
             hidden
             onChange={(e) => {
@@ -515,7 +522,7 @@ export function UploadScreen(props: {
               <li>영상에는 번호판 · 얼굴 · 위치 같은 개인정보가 담길 수 있어요.</li>
               <li>장면을 찾기 위해 영상 일부가 외부 AI 서비스로 전송돼요.</li>
               <li>올린 영상은 최대 24시간, 분석 결과와 신고자료는 최대 7일 보관해요.</li>
-              <li>직접 찍었거나 올릴 권한이 있는 영상만 올려 주세요.</li>
+              <li>{props.officialBundle ? '노션에서 받은 공식 샘플만 등록할 수 있어요.' : '직접 찍었거나 올릴 권한이 있는 영상만 올려 주세요.'}</li>
               <li>대신고는 신고를 대신 접수하거나 위반을 확정하지 않아요.</li>
             </ul>
             <div className="rs-consent-actions">

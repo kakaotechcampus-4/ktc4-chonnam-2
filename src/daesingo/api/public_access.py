@@ -7,17 +7,20 @@ from pathlib import Path
 import re
 import secrets
 from time import monotonic
+from uuid import uuid4
 
 from fastapi import APIRouter, Request
 from starlette.responses import JSONResponse
 
 from daesingo.common.db.transactions import run_api_transaction
+from daesingo.common.db.errors import CommitOutcomeUnknown
 from daesingo.common.public_runtime.policy import PublicDenied, load_policy
 from daesingo.common.public_runtime.repository import PublicStore
 from daesingo.common.public_runtime import schema as public_schema
+from daesingo.case.candidate_video import public_preview_requests
 from sqlalchemy import select
 from .official_samples import OfficialSamples, SampleRejected, source_duration_ms
-from .upload import _storage_call
+from .upload import _storage_call, staged_bundle
 from daesingo.common.public_runtime.work import local_only
 
 COOKIE = "__Host-daesingo_a1"
@@ -175,9 +178,11 @@ class PublicHTTPMiddleware:
             return await self.app(scope, receive, send)
         token = None
         guard = None
+        preview_token = None
         guard_entered = [False]
         body_deadline = monotonic() + 15
         body_complete = False
+        bundle_upload = scope["method"] == "POST" and re.fullmatch(r"/cases/[^/]+/official-uploads", path)
         try:
             if scope["method"] == "POST" and re.fullmatch(r"/cases/[^/]+/sources", path):
                 raise PublicDenied("UPLOAD_DISABLED")
@@ -203,7 +208,7 @@ class PublicHTTPMiddleware:
                     await _storage_call(enter_guard)
             async def bounded_receive():
                 nonlocal body_complete
-                if body_complete:
+                if body_complete or bundle_upload:
                     return await receive()
                 remaining = body_deadline - monotonic()
                 if remaining <= 0:
@@ -220,6 +225,8 @@ class PublicHTTPMiddleware:
                     headers = [(k, v) for k, v in message.get("headers", []) if k.lower() != b"cache-control"]
                     message = {**message, "headers": [*headers, (b"cache-control", b"private, no-store"), (b"vary", b"Cookie")]}
                 await send(message)
+            if token is not None and public.policy is not None and public.policy.candidate_previews:
+                preview_token = public_preview_requests.set(True)
             task = asyncio.create_task(self.app(scope, bounded_receive, private_send))
             try:
                 await asyncio.shield(task)
@@ -239,6 +246,8 @@ class PublicHTTPMiddleware:
         except PublicDenied as error:
             await denied(error)(scope, receive, send)
         finally:
+            if preview_token is not None:
+                public_preview_requests.reset(preview_token)
             if guard is not None and guard_entered[0]:
                 await _storage_call(guard.__exit__, None, None, None)
             if token is not None:
@@ -256,6 +265,12 @@ def public_router(composition):
         public.ready()
         return JSONResponse({"samples": public.catalog.list_samples()}, headers={"Cache-Control": "no-store"})
 
+    @router.get("/public/intake-mode")
+    def intake_mode():
+        public.configured()
+        return JSONResponse({"upload_enabled": public.policy.input_mode == "upload_bundle"},
+                            headers={"Cache-Control": "no-store"})
+
     @router.post("/public/session")
     def session(request: Request):
         value = public.issue_session(request)
@@ -266,6 +281,9 @@ def public_router(composition):
 
     @router.post("/cases/{case_id}/official-samples")
     async def official_sample(case_id: str, request: Request):
+        public.ready()
+        if public.policy.input_mode != "server_sample":
+            raise PublicDenied("UPLOAD_DISABLED")
         raw = bytearray()
         async for chunk in request.stream():
             if len(raw) + len(chunk) > 4096:
@@ -282,6 +300,43 @@ def public_router(composition):
         except SampleRejected:
             raise PublicDenied("INPUT") from None
         return JSONResponse(result, status_code=201, headers={"Cache-Control": "private, no-store"})
+
+    @router.post("/cases/{case_id}/official-uploads")
+    async def official_upload(case_id: str, request: Request):
+        public.ready()
+        if public.policy.input_mode != "upload_bundle":
+            raise PublicDenied("UPLOAD_DISABLED")
+        token = uuid4().hex
+        try:
+            await _storage_call(public.transaction, lambda conn: public.store.begin_preparation(
+                conn, case_id, public.owner(), None, token))
+        except CommitOutcomeUnknown:
+            # Reception has not started. The known token is safe to release
+            # even if the begin transaction actually committed.
+            await _storage_call(public.transaction, lambda conn: public.store.finish_preparation(conn, token))
+            raise
+        finish_needed = True
+        try:
+            async with staged_bundle(request, composition, max_files=public.catalog.max_file_count,
+                                     max_input_bytes=public.policy.max_input_bytes) as paths:
+                try:
+                    sample = await _storage_call(public.catalog.verify_uploads, paths)
+                except SampleRejected:
+                    raise PublicDenied("BUNDLE_MISMATCH") from None
+                await _storage_call(composition._commit_official_sample, case_id, sample, token)
+                finish_needed = False
+        except CommitOutcomeUnknown:
+            finish_needed = False
+            raise
+        finally:
+            if finish_needed:
+                await _storage_call(public.transaction, lambda conn: public.store.finish_preparation(conn, token))
+        try:
+            view = await _storage_call(composition.get_view, case_id)
+        except Exception:
+            raise RuntimeError("bundle response unavailable after commit") from None
+        return JSONResponse({"case_id": case_id, "case_view": view}, status_code=201,
+                            headers={"Cache-Control": "private, no-store"})
 
     @router.delete("/cases/{case_id}")
     async def delete_case(case_id: str):

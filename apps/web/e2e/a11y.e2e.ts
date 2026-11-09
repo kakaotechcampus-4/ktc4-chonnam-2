@@ -111,6 +111,7 @@ test('체험 삭제는 키보드 확인을 거치고 취소·삭제202·완료�
   let deleted = 0
   const happy = JSON.parse(readFileSync(new URL('../../../data/mock/case/scenario_happy_001.json', import.meta.url), 'utf8'))
   const view = { ...happy.case_views[0], case_id: 'owned', stage: 'INTAKE', running_jobs: [] }
+  await page.route('**/public/intake-mode', route => route.fulfill({ json: { upload_enabled: false } }))
   await page.route('**/public/samples', route => route.fulfill({ json: { samples: [] } }))
   await page.route('**/cases/owned/view', route => route.fulfill({ json: view }))
   await page.route('**/cases/owned', route => {

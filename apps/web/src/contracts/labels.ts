@@ -172,6 +172,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'public.budget': '새 분석의 비용 한도에 도달했어요. 분석을 자동으로 다시 요청하지 않아요.',
   'public.concurrent': '진행 중인 작업이 있어요. 끝난 뒤 다시 확인해 주세요.',
   'public.input': '선택한 샘플을 준비할 수 없어요. 샘플을 다시 확인해 주세요.',
+  'public.bundle_mismatch': '공식 샘플 묶음과 일치하지 않아요. 같은 ZIP의 MP4를 빠짐없이 한 번씩 골라 주세요.',
   'public.local_limit': '영상 만들기·미리보기 이용 한도에 도달했어요. 새 생성 요청을 자동으로 보내지 않아요.',
   'public.local_concurrent': '영상 만들기·미리보기 작업이 진행 중이에요. 끝난 뒤 다시 확인해 주세요.',
   'public.local_unconfigured': '영상 만들기·미리보기 이용 기준을 준비 중이에요. 기존 결과를 확인해 주세요.',
