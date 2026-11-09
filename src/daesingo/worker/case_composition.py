@@ -31,15 +31,23 @@ class StoredCaseReflector:
         return self._reflect(conn, incoming, admit_auto_exports=admit_auto_exports,
                              on_auto_exports_deferred=on_auto_exports_deferred)
 
+    def resume_auto_exports(self, conn, case_id, *, admit_auto_exports):
+        # #674: the caller runs this in its own transaction after a T2 commit.
+        return self._with_reflector(conn, lambda reflector: reflector.resume_auto_exports(
+            conn, case_id, admit_auto_exports=admit_auto_exports))
+
     def _reflect(self, conn, incoming, **admission):
-        root = self.storage_root if self.storage_root is not None else self.startup.config.media_root
         # The caller owns T2/receipt/enqueue and the Connection. No STALE policy
         # or exhaustion policy is introduced by this T2 adapter.
+        return self._with_reflector(conn, lambda reflector: reflector.reflect(conn, incoming, **admission))
+
+    def _with_reflector(self, conn, use):
+        root = self.storage_root if self.storage_root is not None else self.startup.config.media_root
         with RecordingService(ConnectionRecordingRepository(conn, storage_root=root)) as recording:
             reflector = CaseReflector(reader=self.reader,
                 timelines=RecordingSequentialTimelineSource(recording),
                 store_factory=lambda connection: stored_case_store(connection, storage_root=root, reader=self.reader))
-            return reflector.reflect(conn, incoming, **admission)
+            return use(reflector)
 
 
 class StoredCaseExhaustionReceiver:

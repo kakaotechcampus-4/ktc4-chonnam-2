@@ -4,6 +4,7 @@ from collections.abc import Callable, Sequence
 from contextlib import contextmanager, ExitStack
 from functools import partial
 from threading import Event
+import logging
 import time
 from uuid import uuid4
 
@@ -16,7 +17,7 @@ from daesingo.common.db.transactions import run_worker_transaction
 from daesingo.common.jobs.execution import ExecutionContext, HandlerResult, validated_terminal
 from daesingo.common.jobs.cancel import CancelledExecution
 from daesingo.common.jobs.heartbeat import Heartbeat, LeaseConnection
-from daesingo.common.jobs.repository import claim_one, finish
+from daesingo.common.jobs.repository import claim_one, enqueue, finish
 from daesingo.common.jobs.produced import prepare_objects, append_objects, verify_objects
 from daesingo.common.jobs.schema import job_execution
 from daesingo.common.jobs.sweep import SweepService, sweep_once
@@ -24,7 +25,7 @@ from daesingo.common.jobs.worker_loop import WorkerLoop, TerminalCommit
 from daesingo.common.jobs.reflection import ReflectionInput, ResultReflector, reflect_terminal
 from daesingo.common.jobs.redelivery import observe_reflection, redeliver_once
 from daesingo.common.jobs.exhaustion import ExhaustionReceiver, redeliver_exhaustion_once
-from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
+from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation, safe_error_type
 from daesingo.worker.registry import KindRegistry
 from daesingo.common.usage.sink import DurableUsageSink
 from daesingo.common.usage.reconciliation import reconcile_once
@@ -220,7 +221,34 @@ def compose_worker(
             )
             # A recovered/completed receipt is ALREADY_APPLIED, so no double count.
             observe_reflection(incoming, result, startup.logger)
+            if result.status == "APPLIED":
+                resume_deferred_exports(context)
             return result
+
+    def resume_deferred_exports(context: ExecutionContext):
+        # #674: only now does the applied terminal stop holding its case's local
+        # slots. Best effort: T2 is durable, and a failure leaves the visible
+        # deferral notice with its manual action exactly as before.
+        assert guarded_reflector is not None
+        def operation(conn):
+            jobs = guarded_reflector.resume_deferred_exports(conn, context.case_id, context.execution_id)
+            if jobs:
+                enqueue(conn, [{"job_id": j.job_id, "case_id": j.case_id, "kind": j.kind} for j in jobs],
+                        context.trace_id)
+        try:
+            # Most reflections defer nothing: skip the locking transaction then.
+            with engine.connect() as conn:
+                pending = guarded_reflector.capacity_deferred(conn, context.case_id)
+            if pending:
+                run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger)
+        except Exception as error:
+            # Class name only, inside the caller's correlation context; a broken
+            # sink must not reach the already committed reflection either.
+            try:
+                log_event_best_effort(startup.logger, "runtime.reflect.resume_failed", level=logging.ERROR,
+                                      status="FAILED", **safe_error_type(error))
+            except Exception:
+                pass
 
     cleanup = configured_cleanup(startup.config, startup.logger)
     media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'),
