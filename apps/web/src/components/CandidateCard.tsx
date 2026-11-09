@@ -38,7 +38,8 @@ export function CandidateCard(props: {
   const c = props.candidate
   const stale = staleLabel(c.stale_revision_label_key)
   return (
-    <div className={`cand${c.selected ? ' sel' : ''}`}>
+    // 시간축 번호를 누르면 이 카드로 초점이 온다(CandidateAxis) — data-candidate-id로 찾고, 초점만 받도록 tabIndex -1
+    <div className={`cand${c.selected ? ' sel' : ''}`} data-candidate-id={c.candidate_id} tabIndex={-1}>
       {props.preview ? <div className="cand-th">{props.preview}</div> : <FrameSlot className="cand-th" src={props.src ?? null} alt={`${c.rank ?? props.ordinal}번 후보 장면`}>
         <ThumbPlaceholder pending={props.pending} />
       </FrameSlot>}
