@@ -110,6 +110,7 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
     })
   }
   const ready = !!view && view.manifest_summary.ok_file_count > 0
+  const uploadFlow = props.upload && !deletion
   const deleteButton = caseId && deletion !== 'DELETED' && <>
     <button type="button" className="rs-btn sec" disabled={busy} onClick={() => {
       if (pending.current) return
@@ -132,8 +133,8 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
     </dialog>
   </>
   return <>
-    {props.upload && !deletion ? <ApiFlow api={uploadApi} caseId={props.caseId} remembered={props.remembered}
-      uploadBundle={client.uploadBundle} onCase={setCaseId} /> : view && view.stage !== 'INTAKE' && !deletion ? <ApiFlow api={client.cases} caseId={caseId}
+    {uploadFlow ? <ApiFlow api={uploadApi} caseId={props.caseId} remembered={props.remembered}
+      uploadBundle={client.uploadBundle} onCase={setCaseId} caseActions={deleteButton} /> : view && view.stage !== 'INTAKE' && !deletion ? <ApiFlow api={client.cases} caseId={caseId}
       intake={<p role="status">체험 진행 정보를 확인하고 있어요.</p>} /> : <main className="web-main rs-page">
       <h1>공식 샘플로 체험하기</h1>
       <p>공식 샘플만 이용할 수 있어요. 직접 영상 업로드는 지원하지 않아요.</p>
@@ -154,6 +155,9 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
         <button type="button" className="rs-btn pri" disabled={busy || !selected} onClick={() => void prepare()}>샘플 준비</button>
       </>}
     </main>}
-    <div className="web-main">{error && <p role="alert">{error}</p>}{deleteButton}</div>
+    {(error || (!uploadFlow && deleteButton)) && <div className="web-main">
+      {error && <p role="alert">{error}</p>}
+      {!uploadFlow && deleteButton && <div className="rs-case-actions">{deleteButton}</div>}
+    </div>}
   </>
 }

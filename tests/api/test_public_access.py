@@ -1,27 +1,30 @@
 """Actual API middleware with synthetic policy/shared DB; no paid provider."""
 from dataclasses import replace
+from datetime import datetime, timedelta
 import hashlib
 import json
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 import pytest
+from sqlalchemy import select
 
 from a1_support import policy_values, sqlite_engine
 from daesingo.api.app import create_app
 from daesingo.api.composition import ApiComposition
 from daesingo.case.store import CaseStore
 from daesingo.common.public_runtime import schema
-from daesingo.common.public_runtime.policy import PublicPolicy
+from daesingo.common.public_runtime.policy import PublicDenied, PublicPolicy
 from daesingo.common.public_runtime.repository import PublicStore
 
 
 @pytest.fixture
-def a1_app(api_startup, tmp_path, monkeypatch):
+def a1_app(api_startup, tmp_path, monkeypatch, request):
     engine = sqlite_engine(tmp_path / "public.sqlite")
     schema.metadata.create_all(engine)
     with engine.begin() as conn:
         conn.execute(schema.control.insert().values(id=1, accepting=False, policy_hash=None))
-    values = policy_values(tmp_path)
+    values = policy_values(tmp_path, **getattr(request, "param", {}))
     root = tmp_path / "official"
     root.mkdir()
     (root / "part.mp4").write_bytes(b"synthetic!")
@@ -58,6 +61,61 @@ def session(client):
     assert response.status_code == 201
     cookie = response.headers["set-cookie"]
     assert "Secure" in cookie and "HttpOnly" in cookie and "SameSite=strict" in cookie
+
+
+@pytest.mark.parametrize("a1_app", [{
+    "input_mode": "upload_bundle", "session_create_daily": 5, "session_analysis_daily": 5,
+    "session_daily": 6, "global_concurrent": 1,
+}], indirect=True)
+def test_public_case_and_combined_analysis_daily_limits_reset_at_kst_midnight(a1_app, monkeypatch):
+    app, engine, store = a1_app
+    public = app.state.composition.public
+    before_midnight = datetime(2026, 11, 9, 14, 59, 59)
+    clock = before_midnight
+    monkeypatch.setattr("daesingo.common.public_runtime.repository.now", lambda conn: clock)
+    with engine.begin() as conn:
+        # This admission-only fixture has no queued/running work or provider usage.
+        conn.exec_driver_sql("CREATE TABLE job_execution (case_id TEXT, status TEXT, case_applied_at DATETIME)")
+        conn.exec_driver_sql("CREATE TABLE usage_inflight (case_id TEXT, observed_at DATETIME)")
+
+    headers = {"Origin": "https://testserver"}
+    with TestClient(app, base_url="https://testserver") as client:
+        session(client)
+        created = [client.post("/cases", headers=headers) for _ in range(5)]
+        assert [response.status_code for response in created] == [201] * 5
+        sixth = client.post("/cases", headers=headers)
+        assert sixth.status_code == 429 and sixth.json()["error"]["code"] == "public.limit"
+        first, second = [response.json()["case_id"] for response in created[:2]]
+
+        with engine.begin() as conn:
+            for cid in (first, second):
+                store.bind_sample(conn, cid, "test-only", [{"source_asset_ref": "source-" + cid,
+                    "sha256": "a" * 64, "byte_size": 10, "duration_ms": 1000}])
+
+        retry = {"kind": "RUN_NOTICE_ACTION", "payload": {
+            "notice_code": "search.candidate_search_failed", "action": "RETRY_SEARCH"}}
+        start = {"kind": "START_ANALYSIS", "payload": {"description": "Test"}}
+        edit = {"kind": "EDIT_HINT", "payload": {"description": "Updated test"}}
+
+        def admit(cid, revision, command):
+            payload = {"case_id": cid, "expected_case_rev": revision, **command}
+            job = {"kind": "COARSE_SEARCH", "job_id": f"test-{revision}", "case_id": cid}
+            with engine.begin() as conn:
+                public.admit_result(conn, payload, SimpleNamespace(appended_job_records=[job]))
+
+        for revision, (cid, command) in enumerate(
+                [(first, start), (first, edit), (first, retry), (second, start), (second, edit)], 1):
+            admit(cid, revision, command)
+        with pytest.raises(PublicDenied) as denied:
+            admit(second, 6, retry)
+        assert denied.value.code == "LIMIT" and denied.value.status == 429
+        with engine.connect() as conn:
+            assert conn.scalars(select(schema.admissions.c.initial)
+                                .order_by(schema.admissions.c.initial)).all() == [False] * 3 + [True] * 2
+
+        clock = before_midnight + timedelta(seconds=1)
+        assert client.post("/cases", headers=headers).status_code == 201
+        admit(second, 6, retry)
 
 
 def test_missing_approval_serves_health_but_refuses_analysis_and_raw_upload(api_startup):

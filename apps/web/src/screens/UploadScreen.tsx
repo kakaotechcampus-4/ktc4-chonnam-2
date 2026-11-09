@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type JSX, type ReactNode } from 'react'
 import { ChevronDown, CircleAlert } from 'lucide-react'
 import carSide from '../assets/car/car-side.webp'
 import carDoorOpen from '../assets/car/car-door-open.webp'
@@ -150,6 +150,7 @@ export function UploadScreen(props: {
   officialBundle?: boolean
   registeredCount?: number
   selectionDisabled?: boolean
+  cardActions?: ReactNode
 }): JSX.Element {
   const situationId = useId()
   // 동의를 기다리는 파일 — 동의하기 전에는 onFiles(서버 업로드)를 부르지 않는다
@@ -466,6 +467,7 @@ export function UploadScreen(props: {
             {fx && <SpeedLines items={fx.lines} />}
           </div>
         )}
+        {props.cardActions && <div className="rs-case-actions">{props.cardActions}</div>}
         {state === 'done' && props.skipped.length > 0 && (
           <p className="skip-list">
             올리지 못했거나 열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')}. 나머지

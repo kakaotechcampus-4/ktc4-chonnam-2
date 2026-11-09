@@ -85,6 +85,8 @@ body:has(.rs-page) { background: #fff; }
 .rs-btn.pri:hover { background: #424245; }
 .rs-btn.sec { background: #fff; color: var(--rs-ink); border-color: var(--rs-line); }
 .rs-btn.sec:hover { border-color: var(--rs-ink); }
+.rs-case-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.rs-case-actions > .rs-btn { width: auto; padding-inline: 12px; font-size: 13px; }
 /* 복사 — 누르면 더 깊게 눌리고, 성공하면 버튼이 검정으로 채워지며 튀어 오르고 체크가 그려진다 */
 .rs-btn.rs-copy { gap: 6px; }
 .rs-btn.rs-copy:active:not(:disabled) { transform: scale(.92); }

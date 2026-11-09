@@ -40,7 +40,7 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
 ])
 
 export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode;
-  uploadBundle?: FlowOptions['uploadBundle']; onCase?: (id: string) => void }): JSX.Element {
+  uploadBundle?: FlowOptions['uploadBundle']; onCase?: (id: string) => void; caseActions?: ReactNode }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api, { uploadBundle: props.uploadBundle })
   const { view } = state
@@ -210,6 +210,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             </section>
           </div>
         ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
+        {props.caseActions && (analysing || state.viewUnavailable || props.intake) &&
+          <div className="rs-case-actions">{props.caseActions}</div>}
       </main>
     </>
   )
@@ -237,6 +239,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
         registeredCount={props.uploadBundle ? already : undefined}
         officialBundle={!!props.uploadBundle}
         selectionDisabled={!!props.uploadBundle && (state.busy || already > 0)}
+        cardActions={props.caseActions}
         // 같은 신고에서는 한 번만 묻는다 — case가 생기면 동의를 받은 뒤다. 새 신고(caseId 없음)는 다시 묻는다
         consent={!state.caseId}
         situation={situation}
