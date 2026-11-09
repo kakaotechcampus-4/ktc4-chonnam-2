@@ -406,6 +406,8 @@ describe('#597 — 응답 없이 초안 · 번호판 장면 · 최종 검토 기
     const onCorrect = vi.fn()
     const r = render(<ResultScreen view={withType('SIGNAL', 'NOT_ASKED')} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onCorrect={onCorrect} />)
     fireEvent.click(r.getByRole('button', { name: /다른 상황이었어요/ }))
+    // 고르기 전에 무엇이 바뀌는지 밝힌다
+    expect(r.getByText('고르시면 AI가 판별한 유형 대신 고른 상황으로 신고자료를 다시 준비해요.')).toBeTruthy()
     expect(r.queryByLabelText('신호를 지키지 않고 지나갔어요')).toBeNull()
     expect(r.getByRole('button', { name: '이 상황으로 고치기' }).hasAttribute('disabled')).toBe(true)
     fireEvent.click(r.getByLabelText('중앙선을 넘었어요'))
@@ -414,6 +416,16 @@ describe('#597 — 응답 없이 초안 · 번호판 장면 · 최종 검토 기
     // 폼이 닫히면 초점은 「다른 상황이었어요」로 돌아오고, 보낸 것을 알린다
     expect(document.activeElement).toBe(r.getByRole('button', { name: /다른 상황이었어요/ }))
     expect(r.getByText('고친 상황으로 다시 준비하고 있어요.').getAttribute('role')).toBe('status')
+  })
+
+  it('사용자가 고친 유형은 AI 판별이 아니라고 유형 아래에 밝힌다', () => {
+    const corrected = withType('SIGNAL', 'NOT_ASKED')
+    const view = { ...corrected, candidates: corrected.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: 'CORRECTED' as const } : c)) }
+    const r = render(<ResultScreen view={view} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onCorrect={noop} />)
+    expect(r.getByText('사용자가 고침 — AI 판별이 아니라 직접 고르신 상황으로 준비한 신고자료예요.')).toBeTruthy()
+    cleanup()
+    const notCorrected = render(<ResultScreen view={withType('SIGNAL', 'NOT_ASKED')} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onCorrect={noop} />)
+    expect(notCorrected.queryByText(/사용자가 고침 —/)).toBeNull()
   })
 
   it('「잘 모르겠어요」로 남긴 판별 유형은 다시 확인하거나 고칠 수 있다 — 유형이 없으면(UNCERTAIN) 고치기를 두지 않는다', () => {
