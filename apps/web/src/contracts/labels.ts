@@ -170,7 +170,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   'public.unconfigured': '지금은 체험을 열지 않았어요. 운영 준비가 끝난 뒤 다시 확인해 주세요.',
   'public.limit': '체험 이용 한도에 도달했어요. 요청을 자동으로 다시 보내지 않아요.',
   'public.budget': '새 분석의 비용 한도에 도달했어요. 분석을 자동으로 다시 요청하지 않아요.',
-  'public.concurrent': '진행 중인 작업이 있어요. 끝난 뒤 다시 확인해 주세요.',
+  // 전체·세션 슬롯 초과와 샘플·업로드 준비가 겹칠 때 모두 이 코드다(public_runtime/repository.py) — 분석만 가리키지 않는다
+  'public.concurrent': '다른 요청이 진행 중이라 지금은 받을 수 없어요. 잠시 뒤 다시 시도해 주세요.',
   'public.input': '선택한 샘플을 준비할 수 없어요. 샘플을 다시 확인해 주세요.',
   'public.bundle_mismatch': '공식 샘플 묶음과 일치하지 않아요. 같은 ZIP에서 원하는 MP4를 중복 없이 골라 주세요.',
   'public.local_limit': '영상 만들기·미리보기 이용 한도에 도달했어요. 새 생성 요청을 자동으로 보내지 않아요.',

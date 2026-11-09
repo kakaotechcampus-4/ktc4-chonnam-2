@@ -62,6 +62,8 @@ export const PREVIEW_UNAVAILABLE = '미리보기를 표시할 수 없어요'
 export const SITUATION_HEADING = '적어 주신 상황'
 
 export const SCENE_SEARCH_MESSAGES = {
+  // 상황 설명 읽기·장면 찾기 job이 아직 Worker에 잡히지 않음 — 앞선 분석을 기다리거나 막 발주된 직후(#677)
+  QUEUED: '분석 차례를 기다리고 있어요',
   PREPARING: '영상을 준비하고 있어요',
   SEARCHING: '말씀하신 상황을 찾고 있어요',
   ORGANIZING: '찾은 장면을 정리하고 있어요',

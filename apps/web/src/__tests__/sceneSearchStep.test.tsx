@@ -41,6 +41,18 @@ it('준비는 회전 표시, 탐색·정리는 고정된 원형 단계, 완료�
   expect(r.getByRole('status').textContent).toBe('장면 찾기를 마쳤어요')
 })
 
+it('탐색 앞 job이 모두 Worker 대기면 「분석 차례」, 하나라도 잡히면 준비 문구로 돌아간다(#677)', () => {
+  const pending = (kind: string, status: 'PENDING' | 'RUNNING' = 'PENDING') => ({ job_id: kind, kind, status, label_key: 'job.generic_processing' })
+  const queued = { ...view('PREPARING'), running_jobs: [pending('HINT_EXTRACT'), pending('COARSE_SEARCH')] }
+  const r = render(panel(queued, start + 500_000))
+  expect(r.getByRole('status').textContent).toBe('분석 차례를 기다리고 있어요')
+  r.rerender(panel({ ...queued, running_jobs: [pending('HINT_EXTRACT', 'RUNNING'), pending('COARSE_SEARCH')] }, start + 500_000))
+  expect(r.getByRole('status').textContent).toBe('영상을 준비하고 있어요')
+  // 탐색이 시작된 뒤에는 job 상태와 상관없이 단계 문구를 쓴다
+  r.rerender(panel({ ...view(), running_jobs: [pending('COARSE_SEARCH')] }, start))
+  expect(r.getByRole('status').textContent).toBe('말씀하신 상황을 찾고 있어요')
+})
+
 it('이전 서버는 단계를 지어내지 않고 기존 진행 상태를 표시한다', () => {
   const r = render(panel({ ...view(), scene_search: undefined }, start + 500_000))
   expect(r.getByRole('status').textContent).toBe('장면을 찾고 있어요')
