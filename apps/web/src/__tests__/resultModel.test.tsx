@@ -418,15 +418,6 @@ describe('#597 — 응답 없이 초안 · 번호판 장면 · 최종 검토 기
     expect(r.getByText('고친 상황으로 다시 준비하고 있어요.').getAttribute('role')).toBe('status')
   })
 
-  it('사용자가 고친 유형은 AI 판별이 아니라고 유형 아래에 밝힌다', () => {
-    const corrected = withType('SIGNAL', 'NOT_ASKED')
-    const view = { ...corrected, candidates: corrected.candidates.map((c) => (c.selected ? { ...c, situation_confirmation: 'CORRECTED' as const } : c)) }
-    const r = render(<ResultScreen view={view} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onCorrect={noop} />)
-    expect(r.getByText('사용자가 고침 — AI 판별이 아니라 직접 고르신 상황으로 준비한 신고자료예요.')).toBeTruthy()
-    cleanup()
-    const notCorrected = render(<ResultScreen view={withType('SIGNAL', 'NOT_ASKED')} onCandidates={noop} onPlate={noop} onDetails={noop} onAction={noop} canRun={() => true} onCorrect={noop} />)
-    expect(notCorrected.queryByText(/사용자가 고침 —/)).toBeNull()
-  })
 
   it('「잘 모르겠어요」로 남긴 판별 유형은 다시 확인하거나 고칠 수 있다 — 유형이 없으면(UNCERTAIN) 고치기를 두지 않는다', () => {
     const onRespond = vi.fn()

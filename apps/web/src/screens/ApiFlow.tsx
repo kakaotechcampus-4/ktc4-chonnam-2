@@ -38,8 +38,8 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_PLATE_IMAGE',
 ])
 
-// 상황을 고쳐 다시 조립되면 제목·신고 내용이 새 유형으로 바뀐다 — 화면 아래에 잠깐 띄운다
-const CORRECTED_TOAST = '제목과 본문을 수정했어요'
+// 상황을 고치면 제목·신고 내용이 새 유형으로 바뀐다 — 「이 상황으로 고치기」를 누르면 화면 아래에 잠깐 띄운다
+const CORRECTED_TOAST = '본문과 제목이 수정되었어요'
 const CORRECTED_TOAST_MS = 3000
 
 export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode }): JSX.Element {
@@ -56,17 +56,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [unsupported, setUnsupported] = useState(false)
-  // 상황 고치기를 보낸 때의 case_rev. 고친 유형으로 다시 조립된 view가 오면 제목·신고 내용이 바뀌었다고 잠깐 알린다
-  const [correctingFrom, setCorrectingFrom] = useState<number | null>(null)
   const [correctedToast, setCorrectedToast] = useState<number | null>(null)
-  useEffect(() => {
-    if (correctingFrom === null || !view || view.case_rev <= correctingFrom) return
-    const corrected = view.candidates.find((c) => c.selected)?.situation_confirmation === 'CORRECTED'
-    const busy = view.running_jobs.some((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW')
-    if (!corrected || busy || !view.evidence?.record_id) return
-    setCorrectingFrom(null)
-    setCorrectedToast(Date.now())
-  }, [correctingFrom, view])
   useEffect(() => {
     if (correctedToast === null) return
     const t = setTimeout(() => setCorrectedToast(null), CORRECTED_TOAST_MS)
@@ -361,7 +351,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             onRespond={respond}
             onReviewed={() => run({ kind: 'MARK_REVIEWED', payload: {} })}
             onCorrect={(type) => {
-              setCorrectingFrom(view.case_rev)
+              setCorrectedToast(Date.now())
               run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: type } })
             }}
             onAction={onAction}
