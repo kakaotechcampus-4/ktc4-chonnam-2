@@ -7,6 +7,7 @@ import { ACTION_LABELS, errorMessage, noticeMessage } from '../contracts/labels'
 import { forgetCase, rememberCase, rememberedCase } from '../state/lastCase'
 import { selectScreen } from '../state/selectScreen'
 import { useCaseFlow } from '../state/useCaseFlow'
+import type { FlowOptions } from '../state/caseFlow'
 import { FailedScreen } from './FailedScreen'
 import { FlowScreen } from './FlowScreen'
 import { NoResultScreen } from './NoResultScreen'
@@ -42,9 +43,10 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
 const CORRECTED_TOAST = '본문과 제목이 수정되었어요'
 const CORRECTED_TOAST_MS = 3000
 
-export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode }): JSX.Element {
+export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode;
+  uploadBundle?: FlowOptions['uploadBundle']; onCase?: (id: string) => void; caseActions?: ReactNode }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
-  const { state, addFiles, send, resume } = useCaseFlow(api)
+  const { state, addFiles, send, resume } = useCaseFlow(api, { uploadBundle: props.uploadBundle })
   const { view } = state
   const cid = state.caseId
   const frameSrc = cid ? (ref: string) => api.frameUrl(cid, ref) : undefined
@@ -78,8 +80,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   // 서버가 돌려준 case만 기억한다 — 없는 case 주소를 열어도 기억해 둔 내 case를 덮지 않는다
   const seen = view?.case_id
   useEffect(() => {
-    if (seen) rememberCase(seen)
-  }, [seen])
+    if (seen) { rememberCase(seen); props.onCase?.(seen) }
+  }, [seen, props.onCase])
   // 기억한 case가 서버에 없으면(보관 기간이 지나 지워짐 등) 잊는다. 주소 없이 이어받던 중이면 새 신고로 시작한다 —
   // 사용자가 연 적 없는 「찾을 수 없어요」를 보이지 않는다.
   const gone = state.error?.code === 'http.not_found'
@@ -176,7 +178,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
       <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page" ref={mainRef}>
         {deferredWork && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
-        {banner && !state.viewUnavailable && (
+        {banner && !state.viewUnavailable && state.error?.code !== 'public.bundle_mismatch' && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
           <div className="rs rs-banner" role="alert">
             <CircleAlert size={18} strokeWidth={1.8} aria-hidden />
@@ -223,6 +225,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             </section>
           </div>
         ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
+        {props.caseActions && (analysing || state.viewUnavailable || props.intake) &&
+          <div className="rs-case-actions">{props.caseActions}</div>}
       </main>
       {/* 색·글꼴 변수는 .rs 안에만 있다 — main 밖이라 rs를 함께 단다 */}
       <p className="rs rs-float-toast" role="status" aria-live="polite">
@@ -237,12 +241,13 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     const uploads = state.uploads
     // 이어받은 case에는 이번 화면에서 올린 기록이 없다 — 서버에 이미 있는 영상은 개수로 보인다(이름은 오지 않는다).
     // `ok_file_count`만 본다. `failed_file_count`는 화면 판단에 쓰지 않는다(http-api §5.2).
-    const already = uploads.length === 0 ? (view?.manifest_summary.ok_file_count ?? 0) : 0
+    const already = props.uploadBundle || uploads.length === 0 ? (view?.manifest_summary.ok_file_count ?? 0) : 0
     const uploading = uploads.some((u) => u.status === 'WAITING' || u.status === 'UPLOADING')
     const anyDone = already > 0 || uploads.some((u) => u.status === 'DONE')
     const uploadState: UploadState = uploading ? 'uploading' : anyDone ? 'done' : uploads.length > 0 ? 'fail' : 'idle'
-    const files = already > 0 ? [{ name: `이미 올린 영상 ${already}개` }] : uploads
-    const skipped = uploads.filter((u) => u.status === 'FAILED').map((u) => u.name)
+    const files = !props.uploadBundle && already > 0 ? [{ name: `이미 올린 영상 ${already}개` }]
+      : already > 0 && !uploads.some(u => u.status === 'DONE') ? [] : uploads
+    const skipped = props.uploadBundle ? [] : uploads.filter((u) => u.status === 'FAILED').map((u) => u.name)
     const failCode = uploads.find((u) => u.error)?.error
     return (
       <UploadScreen
@@ -250,6 +255,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
         files={files}
         skipped={skipped}
         failReason={failCode ? errorMessage(failCode) : undefined}
+        registeredCount={props.uploadBundle ? already : undefined}
+        officialBundle={!!props.uploadBundle}
+        selectionDisabled={!!props.uploadBundle && (state.busy || already > 0)}
+        cardActions={props.caseActions}
         // 같은 신고에서는 한 번만 묻는다 — case가 생기면 동의를 받은 뒤다. 새 신고(caseId 없음)는 다시 묻는다
         consent={!state.caseId}
         situation={situation}

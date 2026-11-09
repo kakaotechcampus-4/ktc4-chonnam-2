@@ -107,11 +107,11 @@ test('파일을 고르기 전 「영상에서 찾아보기」는 못 누르는 �
   await expect(search).toHaveAccessibleDescription(/.+/)
 })
 
-test('체험 삭제는 키보드 확인을 거치고 취소·삭제202·완료를 구분한다', async ({ page }) => {
+test('업로드 카드 아래의 체험 삭제는 키보드 확인을 거치고 취소·삭제202·완료를 구분한다', async ({ page }) => {
   let deleted = 0
   const happy = JSON.parse(readFileSync(new URL('../../../data/mock/case/scenario_happy_001.json', import.meta.url), 'utf8'))
   const view = { ...happy.case_views[0], case_id: 'owned', stage: 'INTAKE', running_jobs: [] }
-  await page.route('**/public/samples', route => route.fulfill({ json: { samples: [] } }))
+  await page.route('**/public/intake-mode', route => route.fulfill({ json: { upload_enabled: true } }))
   await page.route('**/cases/owned/view', route => route.fulfill({ json: view }))
   await page.route('**/cases/owned', route => {
     expect(route.request().method()).toBe('DELETE')
@@ -119,8 +119,17 @@ test('체험 삭제는 키보드 확인을 거치고 취소·삭제202·완료�
     return route.fulfill({ status: deleted === 1 ? 202 : 200,
       json: { state: deleted === 1 ? 'DELETING' : 'DELETED' } })
   })
-  await page.goto('/?sample&case=owned')
+  await page.goto('/?case=owned')
   const remove = page.getByRole('button', { name: '체험 데이터 삭제' })
+  await expect(page.locator('.g-drop').getByRole('button', { name: '체험 데이터 삭제' })).toBeVisible()
+  const layout = await remove.evaluate(button => {
+    const card = button.closest('.g-drop')!.querySelector('.rs-drop')!.getBoundingClientRect()
+    const control = button.getBoundingClientRect()
+    return { gap: control.top - card.bottom, buttonWidth: control.width, cardWidth: card.width }
+  })
+  expect(layout.gap).toBeGreaterThanOrEqual(0)
+  expect(layout.gap).toBeLessThanOrEqual(16)
+  expect(layout.buttonWidth).toBeLessThan(layout.cardWidth / 2)
   await tabTo(page, remove)
   await page.keyboard.press('Enter')
   const dialog = page.getByRole('dialog', { name: '체험 데이터를 삭제할까요?' })

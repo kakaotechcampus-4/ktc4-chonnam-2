@@ -4,7 +4,7 @@ The caller supplies the approved manifest pin, protected root and byte budget.
 No HTTP route or environment switch activates this component. Session ownership,
 durable paid-call admission and retention must be bound before public use.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import Decimal, ROUND_CEILING
 import hashlib
 import json
@@ -158,6 +158,51 @@ class OfficialSamples:
 
     def contains(self, sample_id):
         return isinstance(sample_id, str) and sample_id in self._samples
+
+    @property
+    def max_file_count(self):
+        return max(len(sample.files) for sample in self._samples.values())
+
+    def match_uploads(self, paths):
+        """Match a nonempty selection from one bundle in manifest order."""
+        if not 0 < len(paths) <= self.max_file_count:
+            raise SampleRejected("NOT_APPROVED")
+        sizes = {spec.byte_size for sample in self._samples.values() for spec in sample.files}
+        uploaded = {}
+        total = 0
+        for path in paths:
+            with path.open("rb") as reader:
+                size = path.stat().st_size
+                total += size
+                if size not in sizes or total > self._max_total_bytes:
+                    raise SampleRejected("NOT_APPROVED")
+                key = (size, hashlib.file_digest(reader, "sha256").hexdigest())
+            if key in uploaded:
+                raise SampleRejected("NOT_APPROVED")
+            uploaded[key] = path
+        matches = []
+        for sample in self._samples.values():
+            keys = [(spec.byte_size, spec.sha256) for spec in sample.files]
+            allowed = set(keys)
+            if len(allowed) == len(keys) and uploaded.keys() <= allowed:
+                matches.append((sample.sample_id, tuple((uploaded[key], spec)
+                    for key, spec in zip(keys, sample.files, strict=True) if key in uploaded)))
+        if len(matches) != 1:
+            raise SampleRejected("NOT_APPROVED")
+        return matches[0]
+
+    def verify_uploads(self, paths):
+        sample_id, ordered = self.match_uploads(paths)
+        probe = FfprobeMediaProbe(input_format="mov")
+        sources = []
+        for path, spec in ordered:
+            source = probe.probe(path)
+            if (source.byte_size != spec.byte_size or source.sha256 != spec.sha256
+                    or source_duration_ms(source) != spec.duration_ms):
+                raise SampleRejected("INTEGRITY_MISMATCH")
+            sources.append(replace(source, original_filename=spec.name))
+        return VerifiedSample(sample_id, sum(spec.duration_ms for _, spec in ordered),
+                              sum(spec.byte_size for _, spec in ordered), tuple(sources))
 
     def verify(self, sample_id: str, *, probe: MediaProbe | None = None) -> VerifiedSample:
         """Recheck actual bytes and duration before registration/conversion/AI.

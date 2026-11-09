@@ -44,6 +44,20 @@ const uploaded = (count: number, okCount = count) =>
   ok({ case_id: 'c1', source_asset_ref: 'sa', case_view: view({ manifest_summary: manifest(count, okCount) }) }, 201)
 
 describe('영상 올리기', () => {
+  it('공식 묶음 성공 응답을 읽지 못하면 Case를 조회하고 업로드를 반복하지 않는다', async () => {
+    const uploadBundle = vi.fn().mockResolvedValue(bad(201, 'web.invalid_response'))
+    const { m, flow } = setup({ uploadBundle })
+    created(m)
+    m.getView.mockResolvedValue(ok(view({ manifest_summary: manifest(3) })))
+    const files = [file('a.mp4'), file('b.mp4'), file('c.mp4')]
+    await flow.addFiles(files)
+    expect(uploadBundle).toHaveBeenCalledExactlyOnceWith('c1', files)
+    expect(m.getView).toHaveBeenCalledExactlyOnceWith('c1')
+    expect(m.uploadSource).not.toHaveBeenCalled()
+    expect(m.sendCommand).not.toHaveBeenCalled()
+    expect(flow.getState().uploads.map(item => item.status)).toEqual(['DONE', 'DONE', 'DONE'])
+  })
+
   it('영상을 하나씩 순서대로 올리고 분석은 시작하지 않는다(§5.2)', async () => {
     const { m, flow } = setup()
     created(m)

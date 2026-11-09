@@ -62,8 +62,9 @@ def main(argv=None):
             catalog = OfficialSamples.from_manifest(raw,
                 expected_sha256=policy.manifest_sha256, root=Path(policy.samples_root),
                 max_total_bytes=policy.max_input_bytes)
-            for item in catalog.list_samples():
-                catalog.verify(item["sample_id"])
+            if policy.input_mode == "server_sample":
+                for item in catalog.list_samples():
+                    catalog.verify(item["sample_id"])
         engine = create_api_engine(startup.config.db)
         print(json.dumps(control(engine, policy, args.action, verify_catalog=verify_catalog)))
         return 0

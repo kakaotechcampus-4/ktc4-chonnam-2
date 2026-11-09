@@ -1,0 +1,99 @@
+{
+  "schema": "official-samples/v1",
+  "samples": [
+    {
+      "sample_id": "synthetic-3min-full3",
+      "label": "합성 주행 샘플 · 3분",
+      "example_hint": "",
+      "authorization_ref": "2026-11-09 사용자 제공 공식 ZIP · 공개 체험 합의",
+      "files": [
+        {
+          "name": "20261102_140000_F.mp4",
+          "sha256": "3f38201ec9b11f5309349ceb534ffff99bda1a7b9297e3707f9f29a50071f162",
+          "byte_size": 14949392,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140100_F.mp4",
+          "sha256": "2700bbee6b02dd42d26759496e364437cc8a154d7b817c74c04ccb5eaf1f5e74",
+          "byte_size": 18915360,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140200_F.mp4",
+          "sha256": "796eeef4802c53f5b8f43c47ddab89ee12519c92c35cc5ab432405deed2307e6",
+          "byte_size": 13320620,
+          "duration_ms": 60000
+        }
+      ]
+    },
+    {
+      "sample_id": "synthetic-v3-1min-full10",
+      "label": "합성 주행 샘플 · 10분",
+      "example_hint": "",
+      "authorization_ref": "2026-11-09 사용자 제공 공식 ZIP · 공개 체험 합의",
+      "files": [
+        {
+          "name": "20261102_140000_F.mp4",
+          "sha256": "073b55ab558b6536de4d4bbc7a197bbec38087a965d32205d1e4517c3982bf49",
+          "byte_size": 33467172,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140100_F.mp4",
+          "sha256": "42805b2968a0bd5aaeba6cfe48caae134446feb0b44ea08eb558ded0d1538a3f",
+          "byte_size": 23026891,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140200_F.mp4",
+          "sha256": "cdd026835166cdc58642c87e833ce6d988340119694ccc5315b3aa08fad78e2c",
+          "byte_size": 27971585,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140300_F.mp4",
+          "sha256": "d43a2d1f46f95b247d3408aad8725ecc9e34f9f987eb09f0a1f293f2ae16c743",
+          "byte_size": 23562630,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140400_F.mp4",
+          "sha256": "9d7689eeb9d5fcdb1d134d05766c4e69515e8a817f5c950b1aa1f7c0440c0bb7",
+          "byte_size": 23438379,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140500_F.mp4",
+          "sha256": "d66e762d280dfd3d70fa2cac82103c6a11c220856c944ee295cd0cc7d00a2059",
+          "byte_size": 31752451,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140600_F.mp4",
+          "sha256": "c44fdf906abbe6daf1385a8351b3100e4e653aa7a2be0145554dc525945d58c7",
+          "byte_size": 16241606,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140700_F.mp4",
+          "sha256": "9b41cb0724fc8140f861a46e4bdfd8c8d8c03c90c063cf40f858348958adab29",
+          "byte_size": 28830544,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140800_F.mp4",
+          "sha256": "d8fe1e85c3bdfdbc19f9fe54e38e14181c4c65b6b02b4bdc478bb570ee75356f",
+          "byte_size": 24214519,
+          "duration_ms": 60000
+        },
+        {
+          "name": "20261102_140900_F.mp4",
+          "sha256": "c128471dfc32f2961f840e24d2c53bcc2b0bcb905309c628d3a654ed6b4b022c",
+          "byte_size": 12323356,
+          "duration_ms": 60000
+        }
+      ]
+    }
+  ]
+}

@@ -32,6 +32,16 @@ def test_direct_request_cannot_issue_or_bump_in_bridge():
     assert case == before
 
 
+def test_public_preview_request_scope_enables_only_the_active_request():
+    store, cid, _, _ = _after_coarse()
+    token = candidate_video.public_preview_requests.set(True)
+    try:
+        assert request(store, cid, "cand_2").appended_job_records[0]["kind"] == "CANDIDATE_VIDEO_PREVIEW"
+    finally:
+        candidate_video.public_preview_requests.reset(token)
+    assert not request(store, cid, "cand_1").appended_job_records
+
+
 @pytest.mark.parametrize('status', ['PENDING', 'SUCCEEDED', 'FAILED'])
 def test_bridge_reads_existing_final_preview_without_creating_new_jobs(monkeypatch, status):
     store, cid, _, _ = _after_coarse()
