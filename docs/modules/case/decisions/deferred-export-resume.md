@@ -1,6 +1,6 @@
 # 보류된 자동 내보내기는 반영 커밋 직후 한 번 더 발주한다 (#674 B안)
 
-> **상태: 결정 · 구현(이 PR) · Runtime 리뷰 대기** · 2026-11-09 · 담당 유소연(`case`, 발주) · 연결부 리뷰 @cheol1203(JobExecution) · @flosure23(Runtime 정책) · 관련 [#674](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/674), #351, #664, `report-video-export.md`, `result-reflection.md`
+> **상태: 결정 · 구현([#681](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/681)) · Runtime 리뷰 반영** · 2026-11-09 (11-10 리뷰 반영) · 담당 유소연(`case`, 발주) · 연결부 리뷰 @cheol1203(JobExecution) · @flosure23(Runtime 정책) · 관련 [#674](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/674), #351, #664, `report-video-export.md`, `result-reflection.md`
 
 ## 1. 문제
 
@@ -18,13 +18,14 @@
    - 자동 발주이므로 `case_rev`를 올리지 않는다(반영 경로와 같음). 바뀐 것이 없으면 저장하지 않는다.
 3. **재시도는 `LOCAL_CONCURRENT` 보류에만 한다.** `LOCAL_LIMIT` · `JOBS_STOPPED` · `STOPPED` 등은 일시적인 자리 부족이 아니다. 지금처럼 안내와 수동 버튼을 남긴다.
 4. **admission은 기존 `admit_local`을 그대로 쓴다.** 요청 키는 `auto-export-resume:<execution_id>`다. 성공하면 `admit_local`이 `local_work_state`를 지워 보류 안내가 사라진다. 다시 거절되면 아무것도 바꾸지 않는다(보류 안내 · 수동 버튼 유지).
-5. **재시도 실패는 반영 결과를 바꾸지 않는다.** T2는 이미 커밋됐다. 예외는 삼키고, 사용자에게는 이전과 같은 보류 안내와 수동 버튼이 남는다.
+5. **재시도 실패는 반영 결과를 바꾸지 않는다.** T2는 이미 커밋됐다. 실패는 `runtime.reflect.resume_failed`(status `FAILED`, 예외 클래스 이름만) 로그로 남기고, 로그 기록 실패도 반영 결과에 영향을 주지 않는다. 사용자에게는 이전과 같은 보류 안내와 수동 버튼이 남는다(@flosure23 #681 리뷰).
 
 ## 3. 알려진 한계
 
+두 한계 모두 이번 배포의 차단 조건이 아니다. 수동 생성 경로가 유지되는 전제다(@flosure23 #681 리뷰). 이 둘은 #674에 남긴다(@cheol1203 #681 리뷰).
+
 - **다른 케이스가 슬롯을 차지한 경우:** 커밋 직후에도 자리가 없으면 다시 보류된다. 그 케이스에서 다음 반영이 일어나지 않으면 수동 버튼이 필요하다. 이번 이슈의 실제 원인(자기 점유)은 아니라서 이번 범위에서 다루지 않는다.
 - **재전달 경로:** `common/jobs/redelivery.py`의 재전달 반영에는 연결하지 않았다. 재전달은 Worker 장애 복구 경로라 드물다. Runtime 공통 코드에 hook을 추가하는 일이라 Runtime 담당과 따로 정한다.
-- **관측:** 재시도 실패를 로그로 남기지 않는다. 로그 이벤트를 추가하려면 Runtime 소유인 `common/logging/catalog.py`를 바꿔야 한다. `[미결 유지]` — Runtime 담당 판단.
 
 ## 4. 고르지 않은 것
 

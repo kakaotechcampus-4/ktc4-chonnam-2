@@ -78,7 +78,7 @@ class PublicResultReflector(_PublicJobAdmission):
         capable = getattr(self.inner, 'resume_auto_exports', None)
         if not pending or pending.get('reason') != 'LOCAL_CONCURRENT' or not callable(capable):
             return ()
-        admitted = []
+        admitted: list[dict[str, str]] = []
         def automatic(records):
             if not records or any(r['case_id'] != case_id or r['kind'] not in
                     {'REPORT_VIDEO_EXPORT', 'PLATE_IMAGE_EXPORT'} for r in records):

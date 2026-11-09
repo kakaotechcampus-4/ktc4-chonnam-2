@@ -97,7 +97,7 @@ def test_still_occupied_slots_keep_the_deferral_without_partial_effects(public, 
     assert state(engine) == {'case_rev': 7, 'reason': 'LOCAL_CONCURRENT'}
 
 
-def compose(db, tmp_path, monkeypatch, inner):
+def compose(db, tmp_path, monkeypatch, inner, stream=None):
     engine, store = db
     values = policy_values(tmp_path, local_work={'case_jobs': 1000, 'ip_daily_jobs': 1000, 'global_concurrent': 2})
     policy_file = tmp_path / 'policy.private.json'
@@ -108,7 +108,7 @@ def compose(db, tmp_path, monkeypatch, inner):
         'DAESINGO_RUNTIME_MEDIA_ROOT': str(tmp_path / 'media'), 'DAESINGO_RUNTIME_WORKER_TEMP_ROOT': str(tmp_path / 'temp'),
         'DAESINGO_RUNTIME_PUBLIC_POLICY_FILE': str(policy_file)})
     return composition.compose_worker(engine=engine, startup=Startup(config, MappingProxyType({}),
-        configure_logging('worker'), '1' * 40), registry=KindRegistry({}), stop=Event(), reflector=inner)
+        configure_logging('worker', stream=stream), '1' * 40), registry=KindRegistry({}), stop=Event(), reflector=inner)
 
 
 @pytest.mark.parametrize('status', ['APPLIED', 'ALREADY_APPLIED', 'NOT_APPLIED'])
@@ -139,21 +139,39 @@ def test_direct_reflection_resumes_in_a_separate_transaction_after_commit(public
         assert seen == ['reflect', 'commit'] and enqueued == []
 
 
-def test_resume_failure_never_turns_a_committed_reflection_into_a_failure(public, tmp_path, monkeypatch):  # noqa: F811 (fixture)
+@pytest.mark.parametrize('sink', ['ok', 'broken'])
+def test_resume_failure_is_logged_and_never_turns_a_committed_reflection_into_a_failure(public, tmp_path, monkeypatch, sink):  # noqa: F811 (fixture)
+    from io import StringIO
+    from daesingo.common.logging import catalog
     engine, store = public
     deferred_case(public, tmp_path, reason='LOCAL_CONCURRENT', busy=False)
     def resume_auto_exports(conn, case_id, *, admit_auto_exports):
-        raise RuntimeError('TEST_ONLY_RESUME_FAILURE')
+        raise RuntimeError('TEST_ONLY_PRIVATE_RESUME_FAILURE')
     inner = SimpleNamespace(reflect=lambda conn, incoming: ReflectionResult('APPLIED'),
                             resume_auto_exports=resume_auto_exports)
     monkeypatch.setattr(composition, 'reflect_terminal', lambda conn, incoming, reflector, trace: reflector.reflect(conn, incoming))
     monkeypatch.setattr(composition, 'run_worker_transaction',
         lambda engine, operation, **kw: _once(engine, operation))
-    loop = compose(public, tmp_path, monkeypatch, inner)
+    if sink == 'broken':
+        def broken(*a, **kw):
+            raise RuntimeError('TEST_ONLY_LOG_SINK_FAILURE')
+        monkeypatch.setattr(composition, 'log_event_best_effort', broken)
+    output = StringIO()
+    loop = compose(public, tmp_path, monkeypatch, inner, stream=output)
     assert loop.reflect(ExecutionContext('exec_last_ocr', 'ocr', 'case_1', 'PLATE_READ', 1, 'trace'),
                         HandlerResult()).status == 'APPLIED'
     # The deferral (and its notice/manual action) remains for the user.
     assert state(engine) == {'case_rev': 7, 'reason': 'LOCAL_CONCURRENT'}
+    events = [json.loads(line) for line in output.getvalue().splitlines()]
+    failed = [e for e in events if e['event'] == 'runtime.reflect.resume_failed']
+    assert 'PRIVATE' not in output.getvalue()
+    if sink == 'ok':
+        assert len(failed) == 1
+        catalog.validate_event(failed[0])
+        assert failed[0]['status'] == 'FAILED' and failed[0]['error_type'] == 'RuntimeError'
+        assert failed[0]['case_id'] == 'case_1' and failed[0]['execution_id'] == 'exec_last_ocr'
+    else:
+        assert failed == []
 
 
 def _once(engine, operation):

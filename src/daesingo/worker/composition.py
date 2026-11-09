@@ -4,6 +4,7 @@ from collections.abc import Callable, Sequence
 from contextlib import contextmanager, ExitStack
 from functools import partial
 from threading import Event
+import logging
 import time
 from uuid import uuid4
 
@@ -24,7 +25,7 @@ from daesingo.common.jobs.worker_loop import WorkerLoop, TerminalCommit
 from daesingo.common.jobs.reflection import ReflectionInput, ResultReflector, reflect_terminal
 from daesingo.common.jobs.redelivery import observe_reflection, redeliver_once
 from daesingo.common.jobs.exhaustion import ExhaustionReceiver, redeliver_exhaustion_once
-from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation
+from daesingo.common.logging import bind_context, log_event_best_effort, safe_correlation, safe_error_type
 from daesingo.worker.registry import KindRegistry
 from daesingo.common.usage.sink import DurableUsageSink
 from daesingo.common.usage.reconciliation import reconcile_once
@@ -236,8 +237,14 @@ def compose_worker(
                         context.trace_id)
         try:
             run_worker_transaction(engine, operation, sleep=sleep, logger=startup.logger)
-        except Exception:
-            pass
+        except Exception as error:
+            # Class name only, inside the caller's correlation context; a broken
+            # sink must not reach the already committed reflection either.
+            try:
+                log_event_best_effort(startup.logger, "runtime.reflect.resume_failed", level=logging.ERROR,
+                                      status="FAILED", **safe_error_type(error))
+            except Exception:
+                pass
 
     cleanup = configured_cleanup(startup.config, startup.logger)
     media = MediaRoot(next(s for s in cleanup.scanners if s.kind == 'temp'),
