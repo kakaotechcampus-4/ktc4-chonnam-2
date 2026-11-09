@@ -25,21 +25,23 @@ media 처리의 성공 판정은 최소한 입력 SHA-256·크기·mtime 불변,
 
 [HTTP Contract](../../architecture/contracts/contract-http-api.md)는 PR #265에서
 `http-api/v1` · `Final — Accepted`로 확정됐다. 계약 확정은 endpoint 구현·운영 검증 완료를 뜻하지 않는다.
-아래 재등록의 `VERIFIED`는 로컬 공개 경로에 한정하며, 실제 HTTP upload endpoint와 staging/publish는 아직 미구현이다.
+현재 `POST /cases/{case_id}/sources`는 파일을 staging에 받은 뒤 관리 경로에 발행하고 등록한다.
+아래 상태는 연결된 테스트와 기록의 입력 범위에 한정한다. [업로드 구현과 검증](../../runtime/rt11a-source-upload.md) ·
+[업로드 MySQL 테스트](../../../tests/api/test_sources_mysql.py)
 
 | Edge case | 현재 동작·판정 | 상태 | 다음 증거 |
 | --- | --- | --- | --- |
 | 경로가 없거나 일반 파일이 아님 | 로컬 등록을 실패시키고 SourceAsset을 만들지 않는다. | `VERIFIED` | 기존 등록 회귀 유지 |
 | 등록 중 원본 크기·mtime·hash 변경 | 변경을 감지해 실패하고 등록 결과를 남기지 않는다. | `VERIFIED` | 대용량 파일에서도 전후 snapshot 확인 |
-| 0-byte·비영상·확장자만 영상인 파일 | 확장자가 아니라 media probe 결과로 판단해야 한다. 현재 ffprobe 실패는 손상/비영상과 도구의 일시 장애를 모두 `TEMPORARY_FAILURE`로 낼 수 있다. | `PENDING` | `422 source_rejected`와 `503 dependency_unavailable` taxonomy 분리 |
-| 파일명에 한글·공백·특수문자·매우 긴 이름 | 로컬 등록 path의 basename을 시간 후보 입력으로 사용한다. Final HTTP Contract는 사용자 파일명을 Recording 입력으로 넘기되 저장 경로로 쓰지 않도록 정한다. 해당 HTTP 경로는 미구현이다. | `NOT_TESTED` | path traversal·Unicode·길이 제한 테스트 |
-| 같은 파일 재등록·재업로드 | 로컬 등록은 성공 호출마다 새 SourceAsset ref를 발급하며 내용 기반 dedupe는 없다. Final HTTP Contract도 같은 파일 재업로드를 새 SourceAsset으로 정하지만 HTTP 경로는 미구현이다. | `VERIFIED` | HTTP 재업로드의 계약 준수 검증은 `NOT_TESTED` |
-| 여러 파일 중 일부 업로드 실패 | Final HTTP Contract는 `1 request = 1 file`, 파일별 독립 성공·실패와 실패 파일만 재업로드를 정한다. Web은 요청 파일명과 실패 응답을 짝지어 표시한다. 실제 HTTP endpoint는 미구현이다. | `NOT_TESTED` | 계약에 따른 파일별 성공·실패·재업로드 실연동 검증 |
+| 0-byte·비영상·확장자만 영상인 파일 | HTTP는 `UNSUPPORTED_MEDIA`를 `422 http.source_rejected`, `TEMPORARY_FAILURE`를 `503 http.dependency_unavailable`로 반환한다. Recording은 probe 결과로 두 실패를 구분한다. | `VERIFIED` | 구조화된 probe 결과와 HTTP 오류 매핑 테스트 |
+| 파일명에 한글·공백·특수문자·매우 긴 이름 | API는 사용자 파일명을 저장 경로와 분리해 Recording에 전달한다. | `VERIFIED` / `NOT_TESTED` | Unicode·경로형 파일명은 MySQL 테스트가 다룬다. 매우 긴 파일명 경계는 미확인이다. |
+| 같은 파일 재등록·재업로드 | 성공한 등록마다 새 `SourceAsset` 참조를 발급한다. | `VERIFIED` | 로컬 등록 및 HTTP 반복 업로드 테스트 |
+| 여러 파일 중 일부 업로드 실패 | API는 요청당 파일 1개를 처리한다. | `NOT_TESTED` | 여러 파일에서 일부만 실패한 뒤 해당 파일만 재업로드하는 전체 흐름 검증 |
 | `failed_file_count`의 영속 의미 | 무엇을 세거나 실패 이력을 영속할지는 미결이다. MVP Web은 화면 판단에 이 값을 쓰지 않으며 새로고침 뒤 실패 목록 복원은 범위 밖이다. | `PENDING` | Final HTTP Contract §5.2·§9.2의 후속 결정 |
-| 업로드 중 연결 종료·프로세스 종료 | 실제 HTTP upload/staging 구현이 아직 없다. | `NOT_TESTED` | staging 잔여, publish 전후 crash, 재시도 실험 |
-| 디스크 부족·권한 오류·읽기 전용 mount | 로컬 capability의 파일 접근 실패는 처리하지만 실제 공유 저장소 운영 경로는 없다. | `NOT_TESTED` | API/Worker 공유 mount에서 ENOSPC·권한 실패 주입 |
+| 업로드 중 연결 종료·프로세스 종료 | 수신 중 연결 종료·제한 시간 초과는 등록 행과 최종 파일을 남기지 않는지 검사한다. | `VERIFIED` | [프로세스 종료와 정리 검증](../../runtime/rt11a-source-upload.md)에서 별도 조건을 확인한다. |
+| 디스크 부족·권한 오류·읽기 전용 mount | API와 Worker는 Compose에서 미디어 볼륨을 공유한다. 업로드 저장 실패는 실패 주입 테스트로 다룬다. | `NOT_TESTED` | 실제 공유 볼륨의 ENOSPC·권한 실패 주입 |
 | 단일 파일 최대 4GB | 현재 코드·CI·Benchmark에서 검증하지 않았다. | `NOT_TESTED` | 4GB 근처 실제/합성 파일의 upload·probe·disk peak·timeout 측정 |
-| 60분 분할 원본 전체를 1분 안에 업로드 | HTTP upload 자체가 없어 속도 목표를 검증하지 않았다. | `NOT_TESTED` | 파일 수·총 bytes·network·fsync·publish 시간을 단계별 측정 |
+| 60분 분할 원본 전체를 1분 안에 업로드 | 이 속도 목표는 미검증이다. | `NOT_TESTED` | 파일 수·총 bytes·network·fsync·publish 시간을 단계별 측정 |
 
 ## 3. 컨테이너·codec·stream
 
@@ -87,15 +89,15 @@ media 처리의 성공 판정은 최소한 입력 SHA-256·크기·mtime 불변,
 | 요청 범위가 stream 끝을 넘음 | usable 부분과 missing range를 분리해 `PARTIAL`, 전부 밖이면 `FAILED`로 반환한다. | `VERIFIED` | `local-span-resolution.md` |
 | 요청 구간에 frame 없음 | `FRAME_NOT_FOUND` 또는 `UNSUPPORTED_MEDIA`로 실패하고 가짜 frame을 만들지 않는다. | `VERIFIED` | frame/materialization 실패 테스트 |
 | 원본이 등록 후 변경·소실 | fingerprint 불일치 또는 접근 실패를 감지해 새로운 `resolve_frame`·frame 추출·materialization을 거부한다. 이미 발행한 결과까지 자동 무효화하지 않는다. | `VERIFIED` | AssetFacts·Frame·materialization 회귀 |
-| 이미 발행한 Frame·AnalysisSource bytes 조회 | 서비스 메모리에 보관된 Frame bytes와 AnalysisSource bytes는 원본 변경·소실 뒤에도 계속 조회할 수 있다. 새 생성 거부와 기존 bytes 조회는 별개다. | `VERIFIED` | `test_changed_source_rejected_but_published_bytes_stable`, 독립 BytesIO를 반환하는 `open_analysis_source` |
+| 이미 발행한 Frame·AnalysisSource bytes 조회 | 로컬 경로에서 이미 저장한 bytes는 원본 변경·소실 뒤에도 조회할 수 있다. 메모리의 AnalysisSource는 독립 `BytesIO`로 연다. | `VERIFIED` | `test_changed_source_rejected_but_published_bytes_stable` |
 | ffmpeg timeout·비정상 종료 | machine-readable 실패를 반환하고 임시 작업공간을 정리한다. | `VERIFIED` | timeout·실패 주입 테스트 |
 | AVI 정상 frame 뒤 후행 H.264 오류 packet | 실제 7개 AVI에서 반복 관찰했다. 모든 AVI/H.264 오류에 대한 일반 복구를 뜻하지 않으며 B4·후방 stream은 계속 거부한다. | `OBSERVED` | PR #256 실제 입력 기록 |
 | Search용 AnalysisSource의 제한적 best-effort | 병합된 PR #256은 strict 실패 뒤 입증된 AVI/H.264 후행 패턴에서만 재시도한다. 출력은 frame 수·PTS·duration과 전체 strict decode를 검증한다. IncidentClip은 단일·다중 span 및 중첩 호출에서도 strict를 유지한다. | `VERIFIED` | [제한 조건](multi-span-analysis-source.md), `test_analysis_tail_policy.py` |
 | frame coverage gap·역전·중복 | 양자화로 입증된 제한적 예외 외에는 거부한다. | `VERIFIED` | MKV·AVI 실패 회귀 |
 | 출력 bytes와 metadata 불일치 | 출력 ffprobe·frame 수·PTS·duration·크기를 다시 검사하고 요청 범위로 보정하지 않는다. | `VERIFIED` | AnalysisSource/IncidentClip 테스트 |
 | 긴 입력·다수 materialization의 메모리 사용 | 파생 bytes를 서비스 메모리에 보관하므로 증가 가능성이 있으나 peak memory를 측정하지 않았다. | `NOT_TESTED` | 60분·동시 요청 RSS/temporary disk benchmark |
-| 로컬 AnalysisSource·IncidentClip의 `close()` 뒤 재조회 | 현재 로컬 materialization은 서비스 수명 안의 메모리 보관이다. `close()`로 보관된 bytes를 해제한 뒤 해당 ref 조회는 unavailable이다. 이미 열린 독립 stream은 호출자가 닫는다. | `VERIFIED` | AnalysisSource·IncidentClip 수명 회귀 |
-| 서비스 재시작 뒤 영속 조회 | Frame·AnalysisSource 등 결과의 재시작 뒤 영속 조회는 현재 메모리 조회와 별개인 Runtime/persistence 과제다. | `PENDING` | persistent repository·restart 통합 테스트 |
+| 메모리 경로의 `close()` 뒤 재조회 | 메모리만 쓰는 AnalysisSource·IncidentClip은 `close()` 뒤 다시 열 수 없다. 이미 연 독립 스트림은 호출자가 닫는다. | `VERIFIED` | AnalysisSource·IncidentClip 수명 회귀 |
+| 새 서비스에서 영속 조회 | MySQL에 커밋한 분석용·사건 영상과 저장된 프레임은 새 서비스에서 복원할 수 있다. | `VERIFIED` | [영속 미디어의 새 연결 테스트](../../../tests/recording/test_durable_facts_mysql.py) · [프레임 복원 경계](rec1c-ownership-reads.md) |
 | 같은 요청의 중복 실행 | 일부 identity/ref 재사용은 있으나 process 간 동시 요청 중복 방지는 없다. | `NOT_TESTED` | 동시 실행·lock·idempotency 실험 |
 
 ## 6. 시각·GPS·외부 의존성
@@ -111,7 +113,7 @@ media 처리의 성공 판정은 최소한 입력 SHA-256·크기·mtime 불변,
 | non-OK GPS의 Kakao 호출 | 병합된 PR #272는 검증된 non-OK GPS를 SKIPPED로 반환하고 네트워크를 호출하지 않는다. | `VERIFIED` | `test_kakao_geocoder.py`의 무네트워크 자동 테스트 |
 | reverse geocoder 인증·quota·timeout·빈 결과 | Kakao adapter는 오류를 분류하고 원래 GPS를 변경하거나 가짜 주소를 만들지 않는다. JSON/schema 오류와 빈 documents도 별도로 처리한다. | `VERIFIED` | [Kakao adapter](kakao-geocoder.md), fake HTTPS connection 자동 테스트 |
 | Kakao adapter의 로그·repr 노출 방지 | 합성 키·좌표·주소·예외 메시지가 로그·repr·실패 결과에 노출되지 않음을 자동 테스트로 확인했다. 운영 배선 전체의 보증은 아니다. | `VERIFIED` | `test_kakao_geocoder.py`의 privacy·close·RecursionError 회귀 |
-| 실제 Kakao 키 실호출 | 실제 키 등록·API 호출은 수행하지 않았다. Mock/fake HTTPS 검증을 실호출 성공으로 해석하지 않는다. | `NOT_TESTED` | 실제 키 opt-in 호출·배포 Secret 주입 검증 |
+| 실제 Kakao 키 실호출 | 2026-11-01 운영자 기록은 Mock GPS 좌표로 실제 Kakao API 응답을 확인했다. | `VERIFIED` | [실호출 기록](kakao-geocoder.md#2026-11-01--운영자-실제-api-호출-확인). 실제 블랙박스 GPS와 배포 설정 주입은 이 시험에서 미검증이다. |
 | Case/Evidence/Web의 실제 GPS·주소 배선 | adapter는 내부 provider이며 composition root 및 Case/Evidence/Web 표시 주소 선택·실연동은 후속 합의·구현 대상이다. | `PENDING` | Consumer 배선 합의 및 실연동 검증 |
 | 정밀 좌표·주소·API key 로그 노출 | 로그·리포트에 남기지 않아야 한다. | `PENDING` | 실제 composition root와 운영 로그 검증 |
 

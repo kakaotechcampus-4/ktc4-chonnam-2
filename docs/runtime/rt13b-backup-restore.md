@@ -171,19 +171,35 @@ Linux host 조건을 따른다. shell에는 기존 세 파일의 경로만 설�
 private 디렉터리는 repo/build context 밖에 0700으로 준비한다. 아래 변수는 실행자가
 준비한 project 이름/디렉터리다. artifact 파일명에 사용자 정보·원본명을 넣지 않는다.
 
-```sh
-docker compose --project-name "$PROJECT" stop api worker migrate
-python "$VERIFIED_HOST_TOOL" backup --project "$PROJECT" --directory "$PRIVATE_DIRECTORY" --source-root "$VERIFIED_RELEASE_SOURCE" --compose-file "$VERIFIED_COMPOSE_FILE"
+아래 Bash 예제는 Compose와 백업 도구에 같은 프로젝트 이름과 파일 목록을 전달한다.
+overlay가 있으면 `compose_files`에 적용 순서대로 추가한다.
+
+```bash
+compose_files=("$VERIFIED_COMPOSE_FILE")
+# compose_files+=("$VERIFIED_OVERLAY_FILE")
+compose_args=()
+backup_args=()
+for file in "${compose_files[@]}"; do
+  compose_args+=(--file "$file")
+  backup_args+=(--compose-file "$file")
+done
+
+docker compose --project-name "$PROJECT" "${compose_args[@]}" stop api worker migrate &&
+  python "$VERIFIED_HOST_TOOL" backup --project "$PROJECT" --directory "$PRIVATE_DIRECTORY" \
+    --source-root "$VERIFIED_RELEASE_SOURCE" "${backup_args[@]}"
 ```
 
 restore 대상은 별도로 준비한 **빈 disposable DB**여야 한다. 일반 예시에 기존
 volume/DB 삭제 명령을 넣지 않는다. 기존 media volume을 유지하고 복구 대상에
-같은 UID/GID/path로 마운트한다. overlay가 있으면 같은 `--compose-file` 목록을
-순서대로 전달한다. 성공 확인 전 startup/수동 repair를 실행하지 않는다.
+같은 UID/GID/path로 마운트한다. 복원 단계의 `PROJECT`는 빈 DB를 준비한 대상 프로젝트를 가리킨다.
+정지, 복원, 재기동에 이 이름과 대상에 맞춰 위에서 만든 파일 목록을 함께 사용한다.
+복원이 성공한 뒤 API와 Worker를 기동한다.
 
-```sh
-python "$VERIFIED_HOST_TOOL" restore --project "$PROJECT" --directory "$PRIVATE_DIRECTORY" --source-root "$VERIFIED_RELEASE_SOURCE" --compose-file "$VERIFIED_COMPOSE_FILE"
-docker compose --project-name "$PROJECT" up -d api worker
+```bash
+docker compose --project-name "$PROJECT" "${compose_args[@]}" stop api worker migrate &&
+  python "$VERIFIED_HOST_TOOL" restore --project "$PROJECT" --directory "$PRIVATE_DIRECTORY" \
+    --source-root "$VERIFIED_RELEASE_SOURCE" "${backup_args[@]}" &&
+  docker compose --project-name "$PROJECT" "${compose_args[@]}" up -d api worker
 ```
 
 출력은 값/path/SQL 대신 고정 판정뿐이다. dump/credential을 `cat`하거나 Git에

@@ -1,19 +1,16 @@
 # Runtime Deployment Runbook
 
-**Status:** Working — deployment execution checklist  
+**상태:** 배포·복구 체크리스트
+
 **Owner:** common/runtime — 김준영  
 **Ops policy:** [Runtime Ops Spec](./ops-spec.md)
 
-**2026-10-30 RT-14 준비 구현:** 아래 기존 acceptance 기준과 함께
-[RT-14 실행 절차](./rt14-deployment.md)를 사용한다. 새 도구의 정확한 입력·명령·실패
-복구 경계는 그 문서에 있다. **IN_PROGRESS · Refs #450 · Related #287, #460, #452**.
-과거 OIDC/publish와 최신 댓글의 EC2 pull/preflight 근거는 Ops 및 후속 Notes에서 구분한다. 실제 공개 배포/rollback acceptance는 아직 완료되지 않았다. 정책은 2026-10-30 RT-14 Decision Gate에서 승인했고(#450), Gate별 상태와
-승인값은 [RT-14 배포 설계](./rt14-deployment-design.md) §1이다.
+실행 입력과 호스트 단계는 [RT-14 실행 절차](./rt14-deployment.md), 공개 경로와 장애 대응은
+[공개 배포·복구 절차](rt14-public-deployment.md)를 따른다. 실제 검증 범위는
+[공개 운영 인계](a1-public-readiness.md#제한적-외부-공개-운영-인계--2026-11-09-kst)에 있다.
 
-> 이 문서는 배포 담당자의 기억에 의존하지 않고 같은 절차를 반복·검증·복구할 수 있도록 하는 실행 체크리스트다. 현재 deployment stack의 exact command가 아직 구현되지 않은 항목은 임의로 채우지 않으며, 실제 Docker/Compose/OIDC/SSM 구현 PR에서 명령을 확정한다.
-
-2026-10-31 승인 후 구현의 정확한 복구·ingress·외부 smoke checklist는
-[공개 배포·복구 절차](rt14-public-deployment.md)를 따른다. SG 개방 전 별도 hardening P0가 필요하다.
+2026-10-30 준비 단계의 승인과 검토 항목은 [RT-14 배포 설계](./rt14-deployment-design.md) §1에 있다.
+2026-10-31 후속 구현은 공개 배포·복구 절차에 기록했다. 관련 이슈는 #450, #287, #460, #452다.
 
 ## 1. 배포 완료의 정의
 
@@ -27,8 +24,7 @@
 - `/health/live`가 정상
 - `/health/ready`가 정상
 - 외부 공개 endpoint가 있으면 최소 smoke test가 정상
-- 직전 known-good revision을 식별할 수 있음
-- 실패 시 rollback 절차를 실행할 수 있음
+- 기존 릴리스가 있으면 현재 스키마가 허용하는 rollback 대상과 복구 절차를 확인함
 
 ## 2. 배포 전
 
@@ -68,7 +64,7 @@ Runtime correctness는 wall-clock 단조 증가를 가정하지 않는다. [#370
 
 ## 3. 배포
 
-현재 목표 경로:
+배포 실행 경로는 다음과 같다.
 
 ```text
 GitHub Actions
@@ -79,13 +75,9 @@ GitHub Actions
 → Docker Compose
 ```
 
-구현 시 이 절에 다음 exact command를 기록한다.
-
-- artifact/image 전달 방식
-- SSM Run Command
-- Docker Compose pull/build/update command
-- migration command가 있다면 실행 순서 — api · worker 시작 전 단일 단계이며 app startup에서 돌리지 않는다([Tech Spec](./runtime-tech-spec.md) §4.4)
-- old container 정리 방식
+이미지 게시와 배포는 각각 `publish`, `deploy` 작업으로 실행한다. 입력과 SSM 명령은
+[CI 게시와 SSM 실행](rt14-deployment.md#5-ci-publish와-ssm-실행)을 참고한다.
+호스트 컨트롤러가 이미지 검사, 단일 migration, API·Worker 기동과 검증을 순서대로 실행한다.
 
 ### 원칙
 
@@ -120,7 +112,7 @@ GitHub Actions
 - [ ] Web origin의 API 경로 응답 — same-origin 공개 모델의 후보 확인 항목은 [RT-14 배포 설계](./rt14-deployment-design.md) §10.2
 - [ ] 새 revision 반영 확인
 
-exact smoke endpoint는 API composition root가 구현될 때 고정한다.
+`deploy`와 `rollback` 작업은 SSM 성공 후 [외부 smoke 검사](../../deploy/public_smoke.py)를 실행한다.
 
 ### Log / Correlation
 
@@ -130,12 +122,13 @@ exact smoke endpoint는 API composition root가 구현될 때 고정한다.
 
 ## 5. 실패 시 Rollback
 
-배포 직후 health/readiness/smoke test가 실패하고 즉시 수정하는 것보다 서비스 복구가 우선이면 rollback한다.
+서비스 복구가 우선이면 별도 `rollback` 작업을 사용한다. 컨트롤러는 현재 스키마 기록의
+`rollback_targets`에 있고, 호스트가 기록한 현재 또는 이전 릴리스와 정확히 일치하는 대상을 허용한다.
 
 ```text
 새 revision 검증 실패
-→ 직전 known-good revision 선택
-→ 동일 deployment path로 재배포
+→ 현재 스키마가 승인한 대상의 revision·이미지·설정 ID 확인
+→ 별도 rollback 작업 실행
 → /health/live
 → /health/ready
 → external smoke test
@@ -144,16 +137,21 @@ exact smoke endpoint는 API composition root가 구현될 때 고정한다.
 
 ### Rollback 전 확인
 
-- [ ] 직전 known-good commit/image 확인
-- [ ] DB migration이 새 revision과 함께 적용됐는가
-- [ ] 이전 code가 현재 DB schema와 호환되는가
-- [ ] managed asset/storage 변경이 rollback을 막지 않는가
+- [ ] 대상이 현재 또는 이전 릴리스의 정확한 기록과 일치하는가
+- [ ] 현재 스키마 기록이 해당 revision을 승인하는가
+- [ ] 중단된 migration이나 릴리스 전환 기록을 먼저 조사해야 하는가
+- [ ] 대상 릴리스가 현재 저장 데이터와 작업을 읽을 수 있는가
 
 ### 주의
 
 DB schema/data migration처럼 단순 code rollback으로 되돌릴 수 없는 변경은 자동 rollback 대상으로 가정하지 않는다. 해당 배포는 사전에 backward-compatible migration 또는 별도 restore 절차가 있어야 한다.
 
-RT-14 준비 구현은 자동 rollback을 하지 않는다. host 내부 검증에 실패한 release는 host `current`로 승격되지 않고, operator가 rollback을 명시적으로 실행한다. 공개 배포의 외부 smoke는 host `current` 갱신 뒤 workflow에서 돌며, 실패해도 자동으로 되돌리지 않는다([RT-14 배포 설계](./rt14-deployment-design.md) §10.2). 후보 명령과 현재 동작의 경계는 [RT-14 실행 절차](./rt14-deployment.md) §7이다.
+외부 smoke는 호스트의 `current` 갱신 뒤에 실행한다. 실패하면 운영자가 상태를 확인하고 복구 작업을 선택한다.
+중단된 전환의 처리와 rollback 명령은 [실패·취소·rollback 절차](rt14-deployment.md#7-실패취소rollback부분-ddl)를 따른다.
+
+공개 운영 인계에서는 `rollback`으로 승인된 **동일 SHA의 현재 릴리스를 재기동**했다.
+당시 스키마 기록이 허용한 대상도 그 SHA 하나였다. 해당 배포의 **전체 DB·미디어 복원은 미검증**이다.
+[공개 운영 인계](a1-public-readiness.md#제한적-외부-공개-운영-인계--2026-11-09-kst)를 참고한다.
 
 ## 6. 장애 원인 축소 순서
 
@@ -190,7 +188,7 @@ known_good_revision
 
 저장 위치와 자동화 방식은 deployment workflow 구현 시 결정한다.
 
-## 8. 아직 닫지 않은 항목
+## 8. 준비 단계에서 추적한 항목
 
 2026-10-30: 아래 항목 대부분은 RT-14 준비 구현에 후보 명령이 있다([RT-14 실행 절차](./rt14-deployment.md)). Gate 승인과 실제 실행 증거 전까지 닫지 않는다. Gate별 상태는 [RT-14 배포 설계](./rt14-deployment-design.md) §1이다.
 
