@@ -176,6 +176,27 @@ it('진행 화면 대표 영상 자리는 원본이 없으면 고른 후보 썸�
   expect(await shown(null)).toBe('/frames/fr_evidence')
 })
 
+it('설명을 고쳐 다시 찾는 동안 원본이 없어도 대표 영상 자리는 이 case에서 보이던 장면을 둔다', async () => {
+  vi.useFakeTimers()
+  try {
+    const shownView = view({ case_rev: 5, stage: 'CANDIDATE_REVIEW', running_jobs: JOBS, candidates: [{ ...BASE.candidates[0], selected: true, thumb_ref: 'fr_thumb' }] })
+    const { m, api } = setup({ get: shownView })
+    ;(api as { frameUrl: (c: string, r: string) => string }).frameUrl = (_c, r) => `/frames/${r}`
+    // 다시 찾기로 후보가 비워진 view(같은 case)
+    m.getView.mockResolvedValueOnce(ok(shownView)).mockResolvedValue(ok({ ...SEARCHING, case_rev: 6, case_id: shownView.case_id, candidates: [], evidence: null }))
+    const { container, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
+    await act(async () => {})
+    expect(container.querySelector('.flow-thumb img')?.getAttribute('src')).toBe('/frames/fr_thumb')
+    await act(async () => { await vi.advanceTimersByTimeAsync(2000) })
+    expect(queryByText('분석 중단')).toBeTruthy()
+    expect(container.querySelector('.flow-thumb img')?.getAttribute('src')).toBe('/frames/fr_thumb')
+    expect(queryByText('미리보기를 표시할 수 없어요')).toBeNull()
+  } finally {
+    cleanup()
+    vi.useRealTimers()
+  }
+})
+
 it('찾는 중이 아닐 때(SEARCHING이 아닐 때)는 중단 버튼을 두지 않는다', async () => {
   const { api } = setup({ get: view({ case_rev: 5, stage: 'CANDIDATE_REVIEW', running_jobs: JOBS, candidates: BASE.candidates }) })
   const { findByText, queryByText } = render(<ApiFlow api={api} caseId="c1" />)
