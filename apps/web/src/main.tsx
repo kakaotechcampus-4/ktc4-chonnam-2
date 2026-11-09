@@ -5,9 +5,12 @@ import './styles/global.css'
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './styles/refresh.css'
 import { App } from './App'
+import { AppErrorBoundary } from './components/AppErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <AppErrorBoundary>
+      <App />
+    </AppErrorBoundary>
   </StrictMode>,
 )
