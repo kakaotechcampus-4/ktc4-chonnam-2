@@ -4,6 +4,7 @@ import '../styles/candidates.css'
 
 // 후보 비교 시간축(core-user-flow §8-2, PROTOTYPE-SPEC §6 SearchAxis). 막대 아래 번호 원이
 // 후보 위치를 가리키고, 번호는 카드 번호와 같다(CandidateCard — case의 `rank`, 없으면 배열 순서 + 1). 마커에는 시각을 쓰지 않는다 — 카드에서 읽는다.
+// 번호 원은 버튼이다 — 누르면 같은 화면의 그 후보 카드로 스크롤하고 초점을 옮긴다.
 // 위치는 `marker_ms / timeline_duration_ms` 그대로다. `marker_ms`가 없는 후보(stale)는 마커만 빠지고, 길이가 없거나 마커가 하나도 없으면 시간축을 그리지 않는다.
 const PIN = 28
 const GAP = 6
@@ -47,8 +48,16 @@ export function CandidateAxis(props: { view: CaseView }): JSX.Element | null {
   // 기준 후보는 채운 원으로만 보이므로 라벨에도 적는다(#509 #6)
   const label = pins.map((p) => `${p.n}번 ${clock(p.ms)}${p.selected ? ' (지금 기준)' : ''}`).join(', ')
   const [from, to] = axisEnds(props.view.manifest_summary.range, duration)
+  const focusCard = (id: string) => {
+    const scope = ref.current?.closest('section') ?? document
+    const card = [...scope.querySelectorAll<HTMLElement>('[data-candidate-id]')].find((el) => el.dataset.candidateId === id)
+    if (!card) return
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    card.scrollIntoView?.({ behavior: still ? 'auto' : 'smooth', block: 'nearest', inline: 'nearest' })
+    card.focus({ preventScroll: true })
+  }
   return (
-    <div className="cand-axis" ref={ref} role="img" aria-label={`시간축(${from}–${to})에서 후보 위치: ${label}`}>
+    <div className="cand-axis" ref={ref} role="group" aria-label={`시간축(${from}–${to})에서 후보 위치: ${label}`}>
       <div className="cand-axis-ends" aria-hidden>
         <span>{from}</span>
         <span>{to}</span>
@@ -56,14 +65,17 @@ export function CandidateAxis(props: { view: CaseView }): JSX.Element | null {
       <div className="cand-axis-bar" />
       <div className="cand-axis-pins" style={{ height: PIN + 14 + Math.max(...rows) * (PIN + GAP) }}>
         {pins.map((p, i) => (
-          <span
+          <button
+            type="button"
             key={p.id}
             className={`cand-axis-pin${p.selected ? ' sel' : ''}`}
             style={{ left: `${p.pct}%`, ['--row' as string]: rows[i] }}
+            aria-label={`${p.n}번 후보로 이동`}
+            onClick={() => focusCard(p.id)}
           >
-            <i />
-            <b>{p.n}</b>
-          </span>
+            <i aria-hidden />
+            <b aria-hidden>{p.n}</b>
+          </button>
         ))}
       </div>
     </div>

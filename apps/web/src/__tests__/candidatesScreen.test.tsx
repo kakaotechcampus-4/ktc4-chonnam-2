@@ -7,7 +7,7 @@
 // **테스트 전용**이며 `data/mock`에 사본을 만들지 않는다 — 화면이 CaseView를
 // 그대로 소비한다는 증빙 대상은 계속 저장소 원본 하나다(fixtures.ts 주석).
 
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Candidate, CaseView } from '../contracts/caseView'
 import { SNAPSHOTS } from '../contracts/fixtures'
@@ -308,6 +308,21 @@ describe('CandidateAxis — 후보 비교 시간축(§8-2, #436)', () => {
     ])
     // 기준 후보는 라벨에도 「지금 기준」으로 읽힌다(#509 #6)
     expect(container.querySelector('.cand-axis')!.getAttribute('aria-label')).toContain('3번 2분 30초, 1번 5분 0초 (지금 기준)')
+  })
+
+  it('번호를 누르면 그 후보 카드로 초점이 옮겨 간다', () => {
+    const v = {
+      ...view([
+        candidate({ candidate_id: 'a', selected: true, marker_ms: 300000 }),
+        candidate({ candidate_id: 'c', marker_ms: 150000 }),
+      ]),
+      timeline_duration_ms: 600000,
+    }
+    const { container, getByRole } = render(<CandidatesScreen view={v} />)
+    fireEvent.click(getByRole('button', { name: '2번 후보로 이동' }))
+    expect(document.activeElement).toBe(container.querySelector('[data-candidate-id="c"]'))
+    fireEvent.click(getByRole('button', { name: '1번 후보로 이동' }))
+    expect(document.activeElement).toBe(container.querySelector('[data-candidate-id="a"]'))
   })
 
   it('case가 rank를 주면 카드와 같은 rank로 번호를 단다', () => {

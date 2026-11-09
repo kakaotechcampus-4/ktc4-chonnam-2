@@ -156,7 +156,10 @@
 .cand-axis-ends { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--rs-sub, #6e6e73); }
 .cand-axis-bar { height: 8px; border-radius: 999px; background: var(--rs-line, #d2d2d7); }
 .cand-axis-pins { position: relative; }
-.cand-axis-pin { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.cand-axis-pin { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
+.cand-axis-pin:hover b { border-color: var(--rs-ink, #1d1d1f); }
+/* 번호로 옮겨 온 카드 — 마우스로 눌러도 어느 카드인지 보이게 초점 테두리를 둔다 */
+.cand:focus { outline: 2px solid var(--rs-ink, #1d1d1f); outline-offset: 3px; }
 .cand-axis-pin i { display: block; width: 2px; height: calc(8px + var(--row, 0) * 34px); background: var(--rs-line-strong, #86868b); }
 .cand-axis-pin b {
   width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center;
