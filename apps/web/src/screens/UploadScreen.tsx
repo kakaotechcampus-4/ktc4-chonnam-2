@@ -399,7 +399,7 @@ export function UploadScreen(props: {
                 {state === 'idle' && (
                   <span className="rs-drop-note">
                     {props.officialBundle
-                      ? '노션에서 받은 공식 3분 또는 10분 ZIP을 풀고, 한 묶음의 MP4를 모두 골라 주세요.'
+                      ? '노션에서 받은 공식 3분 또는 10분 ZIP을 풀어 주세요. 한 묶음에서 원하는 영상을 하나 이상 골라 주세요.'
                       : `여러 파일도 한 번에 올릴 수 있어요. ${LIMIT_TEXT}`}
                   </span>
                 )}

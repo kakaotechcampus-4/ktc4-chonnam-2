@@ -164,7 +164,7 @@ class OfficialSamples:
         return max(len(sample.files) for sample in self._samples.values())
 
     def match_uploads(self, paths):
-        """Match a complete set of staged bytes and return manifest order."""
+        """Match a nonempty selection from one bundle in manifest order."""
         if not 0 < len(paths) <= self.max_file_count:
             raise SampleRejected("NOT_APPROVED")
         sizes = {spec.byte_size for sample in self._samples.values() for spec in sample.files}
@@ -183,9 +183,10 @@ class OfficialSamples:
         matches = []
         for sample in self._samples.values():
             keys = [(spec.byte_size, spec.sha256) for spec in sample.files]
-            if len(keys) == len(uploaded) and set(keys) == uploaded.keys():
+            allowed = set(keys)
+            if len(allowed) == len(keys) and uploaded.keys() <= allowed:
                 matches.append((sample.sample_id, tuple((uploaded[key], spec)
-                    for key, spec in zip(keys, sample.files, strict=True))))
+                    for key, spec in zip(keys, sample.files, strict=True) if key in uploaded)))
         if len(matches) != 1:
             raise SampleRejected("NOT_APPROVED")
         return matches[0]

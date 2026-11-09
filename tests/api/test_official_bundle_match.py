@@ -6,7 +6,7 @@ import pytest
 from daesingo.api.official_samples import OfficialSamples, SampleRejected
 
 
-def test_exact_bundle_match_uses_content_and_manifest_order(tmp_path):
+def test_bundle_selection_uses_content_and_manifest_order(tmp_path):
     payloads = (b"first", b"second", b"different")
     paths = [tmp_path / str(i) for i in range(len(payloads))]
     for path, payload in zip(paths, payloads, strict=True):
@@ -27,6 +27,15 @@ def test_exact_bundle_match_uses_content_and_manifest_order(tmp_path):
     sample_id, ordered = catalog.match_uploads([paths[1], paths[0]])
     assert sample_id == "short"
     assert [path for path, _ in ordered] == paths[:2]
-    for invalid in ([paths[0]], [paths[0], paths[0]], [paths[0], paths[2]], paths):
+    sample_id, ordered = catalog.match_uploads([paths[0]])
+    assert sample_id == "short"
+    assert [path for path, _ in ordered] == paths[:1]
+    sample_id, ordered = catalog.match_uploads([paths[2]])
+    assert sample_id == "other"
+    assert [path for path, _ in ordered] == paths[2:]
+
+    modified = tmp_path / "modified.mp4"
+    modified.write_bytes(b"firST")
+    for invalid in ([], [paths[0], paths[0]], [paths[0], paths[2]], paths, [modified]):
         with pytest.raises(SampleRejected, match="not_approved"):
             catalog.match_uploads(invalid)
