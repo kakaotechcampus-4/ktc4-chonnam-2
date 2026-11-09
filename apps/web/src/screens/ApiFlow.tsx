@@ -38,6 +38,10 @@ const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_PLATE_IMAGE',
 ])
 
+// 상황을 고치면 제목·신고 내용이 새 유형으로 바뀐다 — 「이 상황으로 고치기」를 누르면 화면 아래에 잠깐 띄운다
+const CORRECTED_TOAST = '본문과 제목이 수정되었어요'
+const CORRECTED_TOAST_MS = 3000
+
 export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api)
@@ -52,6 +56,12 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   const { subs, open: openSub, back, closeAll } = useSubStack<Sub>()
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [unsupported, setUnsupported] = useState(false)
+  const [correctedToast, setCorrectedToast] = useState<number | null>(null)
+  useEffect(() => {
+    if (correctedToast === null) return
+    const t = setTimeout(() => setCorrectedToast(null), CORRECTED_TOAST_MS)
+    return () => clearTimeout(t)
+  }, [correctedToast])
 
   // 주소(또는 이 브라우저가 기억한) case id로 이어간다. 새로 만든 case는 주소와 브라우저에 남겨
   // 새로고침하거나 창을 닫았다 와도 이어진다. 경과 시간은 이어받은 시점부터 다시 센다 — CaseView에 시작 시각이 없다.
@@ -214,6 +224,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
           </div>
         ) : !view || view.stage === 'INTAKE' ? (props.intake ?? upload()) : analysis(view)}
       </main>
+      {/* 색·글꼴 변수는 .rs 안에만 있다 — main 밖이라 rs를 함께 단다 */}
+      <p className="rs rs-float-toast" role="status" aria-live="polite">
+        {correctedToast !== null && <span key={correctedToast}>{CORRECTED_TOAST}</span>}
+      </p>
     </>
   )
 
@@ -340,7 +354,10 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             onEdit={(key, value) => setEdited({ key: draftKey, edits: { ...edits, [key]: value } })}
             onRespond={respond}
             onReviewed={() => run({ kind: 'MARK_REVIEWED', payload: {} })}
-            onCorrect={(type) => run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: type } })}
+            onCorrect={(type) => {
+              setCorrectedToast(Date.now())
+              run({ kind: 'RECORD_SITUATION_RESPONSE', payload: { value: 'CORRECTED', visual_event_type: type } })
+            }}
             onAction={onAction}
             canRun={canRun}
             arriving={arriving}

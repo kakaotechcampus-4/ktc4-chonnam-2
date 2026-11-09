@@ -60,6 +60,8 @@ const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
 const PREPARING_TITLE = '신고자료를 준비하고 있어요.'
 // 번호판은 형식만 맞으면 「출처 확인됨」이다 — 대상 차량의 번호판인지는 사용자가 장면에서 본다(#597 코멘트)
 const PLATE_SCENE_CHECK = '신고할 차량의 번호판인지 확인해 주세요'
+// 상황 고치기는 판별 유형을 사용자의 선택으로 바꾸고 신고자료를 다시 준비한다(evidence 정책) — 고르기 전에 밝힌다
+const CORRECT_FORM_NOTE = '고르시면 AI가 판별한 유형 대신 고른 상황으로 신고자료를 다시 준비해요.'
 const UNSURE_AGAIN = '「잘 모르겠어요」로 남긴 상황이에요. 근거 장면을 보고 다시 골라 주세요.'
 
 /** 제목·신고 내용·위치를 이 화면에서만 고친 값. 이 칸들을 고치는 command가 아직 없다 */
@@ -842,6 +844,7 @@ function SituationFix(props: {
         >
           <fieldset>
             <legend>어떤 상황이었나요?</legend>
+            <p className="res-hint">{CORRECT_FORM_NOTE}</p>
             {choices.map((t) => (
               <label key={t}>
                 <input type="radio" name="situation" value={t} checked={picked === t} onChange={() => setPicked(t)} />
