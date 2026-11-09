@@ -139,10 +139,16 @@ def render_report(
             )
     else:
         title = event_policy(visual_event_type)["title"]
-        location_line = f"{display_time}경 {location_display}에서\n" if location_display is not None else f"{display_time}경 촬영된\n"
+        if visual_event_type == "MOTORCYCLE_HELMET_NON_USE":
+            # The policy expression already supplies the rider or passenger as the subject.
+            location_phrase = f"{location_display}에서 " if has_location else ""
+            plate_phrase = f"차량번호 {vehicle_number}의 " if has_plate else ""
+            opening = f"{display_time}경 {location_phrase}{plate_phrase}"
+        else:
+            location_line = f"{display_time}경 {location_display}에서\n" if has_location else f"{display_time}경 촬영된\n"
+            opening = f"{location_line}{vehicle}이\n"
         description = (
-            f"{location_line}{vehicle}이\n"
-            f"{violation_expression}{_POLICY['specific_description_tail']}{plate_line}"
+            f"{opening}{violation_expression}{_POLICY['specific_description_tail']}{plate_line}"
         )
 
     template_ref = report_template_ref(
