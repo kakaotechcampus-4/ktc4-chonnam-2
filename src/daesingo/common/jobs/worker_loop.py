@@ -1,4 +1,4 @@
-"""Single-execution scheduling; only short claim/T1 callbacks touch the DB."""
+"""Claim one execution at a time, record its result, then reflect it in Case."""
 
 from collections.abc import Callable
 from dataclasses import dataclass, replace
@@ -129,7 +129,7 @@ class WorkerLoop:
                                               status="FAILED", **safe_error_type(error))
                         result = runtime_failure("RUNTIME_HANDLER_ERROR")
                     # Preserve terminal facts across DB retries; every attempt,
-                    # including B-D8 retries, must still own this execution.
+                    # including full transaction retries, must still own this execution.
                     committed: bool | TerminalCommit = False
                     while not context.ownership.lost:
                         try:
@@ -170,14 +170,14 @@ class WorkerLoop:
                         try:
                             self.reflect(context, result)
                         except _DB_ERRORS as error:
-                            # RT-06 owns T2 redelivery. Back off before the next
+                            # The sweep redelivers unreflected results. Back off before the next
                             # claim, using the same interruptible idle boundary.
                             self._db_error(error)
                             log_event_best_effort(self.logger, "runtime.reflect.failed", level=logging.ERROR,
                                                   status="FAILED", **safe_error_type(error))
                             self.idle_wait(self.settings.error_backoff_sec)
                         except Exception as error:
-                            # T1 is durable. RT-06 owns redelivery, not this loop.
+                            # The result is committed. The sweep handles redelivery.
                             log_event_best_effort(self.logger, "runtime.reflect.failed", level=logging.ERROR,
                                                   status="FAILED", **safe_error_type(error))
                 else:

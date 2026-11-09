@@ -869,13 +869,13 @@ Status: DONE · Issue: #292 · Audit: A · 최종 PR 연결 문구: `Closes #292
 
 - 실제 MySQL의 400ms COMMIT 지연에서 terminal 약 **442ms**, checkpoint / 독립 ACK **421ms / 421ms**를 측정했다. 실제 row lock wait + 400ms 지연에서는 terminal 약 **486ms**, checkpoint / ACK **437ms / 437ms**였다. 400ms terminal logger 지연에서는 terminal 약 **26ms**, checkpoint / ACK **16ms / 16ms**였다.
 - cleanup·observer·logger 합계 600ms 지연으로 기록 함수가 약 625ms 걸려도 receipt의 ACK 종료 시각은 늘어나지 않았다. cleanup·observer·ACK clock에 DB 오류 타입을 주입해도 COMMIT은 한 번이었다. UPDATE 0행·late success·ownership 상실의 지표 미발행, unknown COMMIT 복구 성공 시 각 지표 1회, attempt마다 timestamp/sample 초기화와 기존 bool adapter 호환성을 확인했다.
-- 직접 probe 증거: [independent-probe.json](C:/Users/cheol/.codex/visualizations/2026/10/11/01a12ac2-823b-7ab2-80a5-3bc5e29c406b/rt05b-p2-review/independent-probe.json).
+- 직접 probe 증거: [independent-probe.json](C:/Users/cheol/.codex/visualizations/2026/10/11/01a12ac2-823b-7ab2-80a5-3bc5e29c406b/rt05b-p2-review/independent-probe.json). 작성 당시 로컬 경로다. 공유 사본은 미확인이다.
 
 **구현 단계 실행 결과 — 재리뷰에서는 보존 증거 대조**
 
 - 전체 pytest **3852 passed / 비-MySQL 26 skipped**는 구현 단계의 직접 실행 결과다. **재리뷰에서 전체 pytest를 다시 실행한 결과가 아니다.** 리뷰어는 보존 JSON/JUnit을 현재 gate로 대조하고 소스/테스트 13개 해시 일치를 확인했다.
 - targeted **1493 passed**, MySQL require **282 tests / 846 phases passed**, 전체 실행 MySQL **283 tests / 849 phases passed**도 구현 단계 보존 결과다. 재리뷰 직접 실행의 MySQL 13개와 구분하며 고유 test 수로 합산하지 않는다.
-- 증거 대조: [preserved-evidence.json](C:/Users/cheol/.codex/visualizations/2026/10/11/01a12ac2-823b-7ab2-80a5-3bc5e29c406b/rt05b-p2-review/preserved-evidence.json). 이번 Log 갱신에서는 코드·테스트를 수정하거나 재실행하지 않고 `git diff --check`만 확인한다.
+- 증거 대조: [preserved-evidence.json](C:/Users/cheol/.codex/visualizations/2026/10/11/01a12ac2-823b-7ab2-80a5-3bc5e29c406b/rt05b-p2-review/preserved-evidence.json). 이번 Log 갱신에서는 코드·테스트를 수정하거나 재실행하지 않고 `git diff --check`만 확인한다. 링크는 작성 당시 로컬 경로다. 공유 사본은 미확인이다.
 
 **두 지표의 최종 시간 의미**
 

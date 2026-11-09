@@ -24,7 +24,7 @@ with RecordingService(analysis_materializer=materializer) as recording:
 ```
 
 - `prepare_analysis_source(span, profile_ref, *, timeline_ref=None) -> AnalysisSource`
-- `open_analysis_source(ref) -> OpenedAnalysisSource(stream, content_type, byte_size)`
+- `open_analysis_source(analysis_source_ref) -> OpenedAnalysisSource(stream, content_type, byte_size)`
 - `RecordingService.close()`와 context manager는 실행별 메모리를 해제한다.
 
 실제 경로에는 timeline_ref가 필수다. AssetSpan에는 revision이 없으므로 원본 ref나 최신 Timeline에서
@@ -50,7 +50,9 @@ content_type/크기/hash/재사용 여부만 담는다. 영상 bytes·경로를 
 ### FFmpeg 실행 환경
 
 실행 전 `ffmpeg -version`과 `ffprobe -version`으로 실제 호출되는 바이너리 버전을 확인한다.
-대표 AVI의 AnalysisSource 생성은 FFmpeg/ffprobe 9.0.1에서 검증했다. PR #134 검토에서
+과거 로컬 실험에서는 대표 AVI의 AnalysisSource 생성을 FFmpeg/ffprobe 9.0.1에서 검증했다.
+현재 배포 이미지는 같은 빌드의 FFmpeg와 ffprobe 8.1을 요구한다.
+[배포 실행환경](../../runtime/local-runtime-environment.md#1-지원-범위와-버전)을 참고한다. PR #134 검토에서
 ffprobe 4.3.1의 frame `duration` 누락은 파싱할 수 있음이 확인됐지만, **FFmpeg 4.3.1의
 전체 materialization은 지원되지 않는다.** 인코딩 명령의 `-fps_mode passthrough` 옵션을
 인식하지 못해 실패한다. 파싱 단계 통과를 생성 경로 전체 통과로 해석하면 안 된다.
@@ -91,10 +93,11 @@ MP4 box를 읽어 moov가 mdat보다 앞에 있는지도 확인한다. 검증 �
 - 임시 MP4는 Recording이 생성한 TemporaryDirectory 안에만 쓴다. 성공 시 bytes를 메모리로 읽고 디렉터리를 즉시 제거한다.
   encoder 실패·검사 실패·timeout도 같은 정리 경로를 거친다. 사용자 원본에는 쓰지 않는다.
 - 원본 hash·크기·mtime을 변환 전후 비교한다. 참조가 변했거나 검사하지 못하면 성공을 발행하지 않는다.
-- 매 open은 독립 BytesIO를 반환한다. 위치 0부터 시작하며 .name 같은 파일 경로 속성도 없다.
-  공개 오류에는 argv·stderr·로컬 경로를 넣지 않는다. byte_size는 실제 bytes 길이다.
-- close는 메모리 cache를 비우며 이후 해당 ref의 open은 UNAVAILABLE이다. 이미 열린 독립 stream은 호출자가 닫는다.
-- 영속 cache·TTL·eviction·동시 요청 단일화·강제 프로세스 종료 후 고아 파일 회수는 구현하지 않는다.
+- 위 로컬 예제는 열 때마다 위치 0에서 시작하는 독립 `BytesIO`를 반환한다.
+  서비스의 `close()`가 메모리를 비운 뒤에는 이 예제에서 만든 참조로 다시 열면 `UNAVAILABLE`이다.
+  이미 연 스트림은 호출자가 닫는다. 공개 오류에는 argv·stderr·로컬 경로를 넣지 않는다.
+- MySQL에 커밋한 AnalysisSource는 새 서비스와 DB 연결에서도 같은 참조로 열 수 있다.
+  영속 경로에서는 저장소가 스트림을 열어 반환한다. [청크 저장 방식](chunked-prepared-media.md)을 참고한다.
 
 ## 한계와 검증
 

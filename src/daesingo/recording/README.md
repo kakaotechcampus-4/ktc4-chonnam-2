@@ -2,7 +2,7 @@
 
 **Owner:** 정철원 (`docs/management/ownership.md`) · **경계:** `docs/architecture/module-architecture.md` §4-모듈1 · **문서 작업공간:** `docs/modules/recording/`
 
-2026-10-31 P-6 구현 판단(#445): 공개
+2026-10-31 미등록 원본 파일 정리(P-6, #445) 구현 기록이다. 공개
 `RecordingService.read_publish_registration(locator)`와 `PublishRegistration`
 (`REGISTERED`/`UNREGISTERED`/`UNKNOWN`)을 추가한다. 입력은 관리 source의
 상대 locator `source/<lowercase UUID hex>`다. MySQL repository는 caller
@@ -22,7 +22,9 @@ Runtime의 별도 lease/identity 검사가 필요하다. schema·migration·제�
 
 ## 공개 경계
 
-다른 모듈은 `RecordingService`와 `load_recording_fixture()`만 사용한다. 저장소와 Stub 구현은 공개 경계가 아니다.
+기능 호출은 `RecordingService`를 사용한다. Mock 입력은 `load_recording_fixture()`로 읽는다.
+Runtime 조립부는 `RecordingFacts`, `ConnectionRecordingRepository`,
+`TransactionalRecordingRepository`도 사용한다. 저장소의 내부 구현은 Recording이 관리한다.
 
 - frame·사실: `resolve_frame()`, `read_frame()`, `lookup_asset_facts()`
 - 소유·형식·영속 bytes: `owns_frame()`, `owns_asset()`, `read_frame_image()`, `open_derived_asset()`
@@ -39,7 +41,7 @@ metadata를 복원한다. foreign/unknown은 소유 아님이며, 손상된 fore
 처리한다. caller Connection/transaction을 완료하지 않으며 schema·정규화·retention
 정책은 추가하지 않는다.
 
-Consumer 실행 예시는 `examples/recording_consumer.py`에 있다.
+호출 예시와 첫 테스트 명령은 [Recording 문서 안내](../../../docs/modules/recording/README.md)에 있다.
 
 실제 시각 관찰은 `observe_time_sources()`, `get_time_sources()`,
 `get_time_source_candidate()`를 사용한다. 명시적인 수동 확인 입력으로만
@@ -69,7 +71,9 @@ case 관계는 같은 caller transaction에 원자적으로 저장한다. legacy
 isom MP4 container를 식별한다. 지원 범위·오류·용량 한계와 검증 결과는
 [REC-1(c) 경계](../../../docs/modules/recording/rec1c-ownership-reads.md)를 따른다.
 
-1차 Mock E2E 공개 entry와 Contract 모델을 구현했다. 실제 ffmpeg, provider, storage와 DB Queue는 Tech Spec의 제외 범위대로 Stub 또는 in-memory 구현이며 후속 통합 대상이다.
+초기 [Mock E2E 명세](../../../docs/modules/recording/decisions/first-integration-tech-spec.md)는
+테스트 데이터와 메모리 저장소를 사용한 당시 범위를 설명한다. 현재 로컬 영상 처리는 FFmpeg를 사용하고,
+Runtime은 연결 어댑터를 통해 Recording 데이터를 MySQL에 저장하거나 읽는다.
 
 2026-10-26 RT-10(b) composition 후속: 공개 `get_source_asset`·`get_media_stream`·`get_analysis_source`·`get_time_source_candidates`·`list_case_asset_facts`와 Case port용 detached `RecordingFacts`를 추가했다. `ConnectionRecordingRepository`/`TransactionalRecordingRepository`는 Recording이 소유하는 caller-connection/short-transaction facade다. module factory의 명시적 profile mapping에서만 prepared model/body·관찰을 durable하게 보존하며 기존 default ephemeral 수명과 lookup 의미를 유지한다. AnalysisSource는 기존 공개 open으로 복원하고 새 clip byte API는 추가하지 않는다. 구현·설정·검증·pending 경계는 [RT-10(b) composition](../../../docs/runtime/rt10b-production-composition.md)을 따른다. IN_PROGRESS · Refs #297 (RT-10(b)).
 
