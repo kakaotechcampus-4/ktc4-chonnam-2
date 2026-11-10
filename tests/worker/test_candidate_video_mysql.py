@@ -134,10 +134,11 @@ def test_db01_cards_match_candidates_and_only_top_three_are_eligible(queue, tmp_
     case_id, *_ = prepare(queue, tmp_path, monkeypatch, frame_candidates=count)
     with _client(monkeypatch, tmp_path) as client:
         view = _view(client, case_id)
-    assert len(view["candidates"]) == count
+    shown = min(count, 3)  # Coarse caps candidates at 3 (#686), so rank 4/5 never reach the case.
+    assert len(view["candidates"]) == shown
     statuses = [c["video_preview"]["status"] for c in sorted(view["candidates"], key=lambda c: c["rank"])]
-    assert statuses == ["NOT_REQUESTED"] * min(count, 3) + ["UNAVAILABLE"] * max(count - 3, 0)
-    assert [c["rank"] for c in sorted(view["candidates"], key=lambda c: c["rank"])] == list(range(1, count + 1))
+    assert statuses == ["NOT_REQUESTED"] * shown
+    assert [c["rank"] for c in sorted(view["candidates"], key=lambda c: c["rank"])] == list(range(1, shown + 1))
 
 
 @pytest.mark.mysql_check("candidate_video", "end_to_end")
@@ -151,9 +152,9 @@ def test_db02_to_db07_request_build_reuse_and_report_untouched(queue, tmp_path, 
         by_rank = {c["rank"]: c for c in before["candidates"]}
         other_jobs = [(j["job_id"], j["status"]) for j in _jobs(queue) if j["kind"] != KIND]
 
-        # DB-03: rank 4/5 and unknown targets are refused without new jobs.
-        for target in (by_rank[4]["candidate_id"], by_rank[5]["candidate_id"], "unknown-candidate"):
-            assert _request(client, case_id, target).status_code >= 400
+        # DB-03: Coarse caps at 3 (#686), so rank 4/5 do not exist; unknown targets are refused without new jobs.
+        assert sorted(by_rank) == [1, 2, 3]
+        assert _request(client, case_id, "unknown-candidate").status_code >= 400
         assert _jobs(queue, KIND) == []
 
         # DB-02/DB-05: rank 2 and 3 each get exactly one preview job; repeating while PREPARING is a no-op (DB-04).
@@ -162,7 +163,7 @@ def test_db02_to_db07_request_build_reuse_and_report_untouched(queue, tmp_path, 
         jobs = _jobs(queue, KIND)
         assert len(jobs) == 2
         preparing = {c["rank"]: c["video_preview"]["status"] for c in _view(client, case_id)["candidates"]}
-        assert preparing == {1: "NOT_REQUESTED", 2: "PREPARING", 3: "PREPARING", 4: "UNAVAILABLE", 5: "UNAVAILABLE"}
+        assert preparing == {1: "NOT_REQUESTED", 2: "PREPARING", 3: "PREPARING"}
         with queue.begin() as conn:
             facade = stored_case_store(conn, storage_root=root)
             case = facade.get_case(case_id)
