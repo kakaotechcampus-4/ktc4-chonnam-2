@@ -2,12 +2,11 @@
 
 # 대신고 · Daesingo
 
-### 기억나는 장면을, 신고할 수 있는 자료로.
+![대신고 — 기억 속 한 장면이 더 안전한 길의 시작](docs/images/readme/cover.png)
 
-블랙박스 영상에서 교통위반 장면을 찾고<br>
-번호판·시각·증거 영상을 모아 신고자료를 준비하는 AI 서비스
+**블랙박스 속 장면을 찾고, 신고자료 준비까지.**
 
-[**서비스 체험하기 ↗**](https://daesingo-ktc4.duckdns.org/) · [**평가 결과**](#평가-결과) · [**개발 환경**](docs/getting-started.md) · [**문서 모음**](docs/README.md)
+[**서비스 체험하기 ↗**](https://daesingo-ktc4.duckdns.org/) · [**주요 기능**](#주요-기능) · [**아키텍처**](#아키텍처) · [**평가 결과**](#평가-결과) · [**개발 환경**](docs/getting-started.md)
 
 ![React](https://img.shields.io/badge/React_19-149ECA?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
@@ -16,65 +15,56 @@
 ![MySQL](https://img.shields.io/badge/MySQL_8.4-4479A1?style=flat-square&logo=mysql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 
-카카오테크 캠퍼스 4기 · 전남대학교 2팀
-
 </div>
-
----
-
-## 목차
-
-[서비스 소개](#서비스-소개) · [주요 기능](#주요-기능) · [공개 체험](#공개-체험) · [아키텍처](#아키텍처) · [기술 스택](#기술-스택) · [평가 결과](#평가-결과) · [빠른 시작](#빠른-시작) · [팀](#팀)
 
 ## 서비스 소개
 
-> “앞차가 실선을 넘어왔는데, 영상에서 그 장면을 다시 찾으려니 막막해요.”
+긴 영상을 뒤져 장면을 찾고, 자르고, 번호판을 읽고, 신고 내용을 정리하는 일.
+**대신고가 자료의 초안을 준비하면, 사용자는 확인·수정하고 직접 제출합니다.**
 
-위반을 목격한 뒤 신고하려면 긴 블랙박스 영상을 되돌려 보고, 차량 번호와 발생 시각을 확인하고, 증거 구간과 신고 내용을 직접 준비해야 합니다. **대신고는 신고 의향이 있는 운전자가 이 준비 과정을 끝낼 수 있도록 돕습니다.**
+![사용자가 직접 하던 자료 준비와 대신고 사용 흐름 비교](docs/images/readme/workflow.png)
 
-기억나는 시간·차량·상황·장소를 입력하면 AI가 단서를 정리해 장면을 탐색합니다. 사용자는 후보와 근거를 확인하고 필요한 정보를 보완한 뒤, 준비된 자료를 안전신문고에 직접 제출합니다.
-
-| 찾기 | 확인하기 | 준비하기 |
-| :--- | :--- | :--- |
-| 기억나는 단서로 영상 속 사건 후보 탐색 | 후보 영상·번호판·시각과 출처 확인 | 사건 전후 영상·이미지·신고 내용 준비 |
-
-**지원 유형:** 신호위반 · 중앙선 침범 · 진로변경(백색 실선 침범) · 이륜차 안전모 미착용
+지원 유형은 **신호위반 · 중앙선 침범 · 백색 실선 침범 · 이륜차 안전모 미착용**입니다.
+AI가 법적 위반 여부를 최종 확정하거나 신고를 자동 제출하지 않습니다.
 
 ## 주요 기능
 
-### 01. 영상과 기억나는 단서 입력
+### 01. 기억나는 장면부터
 
-블랙박스 파일을 올리고 기억나는 상황을 자연어로 적습니다. 시간·차량·상황 단서를 구조화하고 탐색 범위를 계산해, 사용자가 영상을 직접 훑는 작업을 줄입니다.
+영상을 올리고 기억나는 시간·차량·상황을 적으면 탐색 단서로 정리합니다.
 
-### 02. 사건 후보 탐색과 근거 확인
+![영상 업로드 후 기억나는 상황을 입력하는 화면](docs/images/readme/step-1-input.png)
 
-넓은 범위에서 사건 후보를 찾는 **1차 탐색(Coarse)**과 선택한 장면을 자세히 확인하는 **정밀 검증(Fine)**을 나눴습니다. 상위 후보를 카드와 영상으로 비교하고, 다른 후보를 선택하거나 단서를 고쳐 다시 탐색할 수 있습니다.
+### 02. 장면을 찾고, 필요한 도구를 연결
 
-### 03. 번호판·시각 확인과 사용자 보정
+후보 탐색부터 정밀 확인·번호판 판독·증거 정리까지 진행 상태를 보여줍니다.
 
-번호판이 잘 보이는 프레임을 골라 OCR을 수행합니다. 시각과 위치는 출처를 함께 표시하고, 불확실한 값은 사용자가 확인·수정할 수 있게 합니다. **읽지 못한 값을 임의로 채우지 않습니다.**
+![장면 찾기에서 번호판 판독으로 이어지는 분석 진행 화면](docs/images/readme/step-2-analysis.png)
 
-### 04. 신고자료 생성과 안전신문고 연결
+### 03. 확인하고, 필요한 것만 수정
 
-파일 경계에 걸친 사건도 전후 구간을 연결해 신고영상을 준비합니다. 신고 내용 복사, 영상·이미지 다운로드, 안전신문고 이동까지 이어집니다. **법적 위반 여부의 최종 판단과 실제 신고 제출은 사용자가 직접 합니다.**
+불확실한 값은 확인하도록 표시합니다. 내용을 보완하고 영상·이미지를 내려받아 안전신문고에서 직접 제출합니다.
 
-화면 흐름과 예외 처리는 [사용자 흐름](docs/product/core-user-flow.md), 지원 범위는 [제품 명세](docs/product/product-spec.md)에서 확인할 수 있습니다.
+![신고자료 확인과 위치 수정, 신고 내용 복사 및 안전신문고 이동 화면](docs/images/readme/step-3-report.png)
 
 ## 공개 체험
 
-**[대신고 열기](https://daesingo-ktc4.duckdns.org/)** · Desktop Web
+**[대신고 열기 ↗](https://daesingo-ktc4.duckdns.org/)** · Desktop Web · 로그인 없이 체험
 
-1. 별도로 제공받은 공식 3분 또는 10분 ZIP의 압축을 풉니다.
-2. 같은 묶음의 MP4를 하나 이상 올립니다. 합계 **10분까지** 분석할 수 있습니다.
-3. 상황을 입력하고 분석한 뒤, 후보와 신고자료를 확인합니다.
+제공받은 공식 3분·10분 ZIP을 풀고 같은 묶음의 MP4를 올려 주세요. 합계 **10분까지** 이용할 수 있습니다.
+공개 체험은 공식 샘플만 받으며, 결과는 시작한 브라우저에서 확인합니다. 체험 시작 24시간 후부터 자동 정리 대상이므로 필요한 자료는 미리 다운로드해 주세요.
 
-공개 체험은 공식 샘플의 파일 크기와 SHA-256을 확인하며, 임의 사용자 영상은 받지 않습니다. 로그인 없이 이용하고 체험을 시작한 브라우저 세션에서 결과를 조회·다운로드합니다. 체험 시작 24시간 후부터 자동 정리 대상이므로 필요한 결과는 미리 저장해 주세요.
-
-공식 10분 묶음의 업로드부터 신고영상 생성·다운로드까지 확인한 배포 기록은 [최종 AWS 공개 운영 인계](docs/runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)에 있습니다.
+[공개 운영 안내](docs/runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)
 
 ## 아키텍처
 
-**모듈형 모놀리스 + API·Worker 분리**로 구성했습니다. API는 사용자 요청과 결과 조회를 담당하고, 시간이 걸리는 영상 분석·OCR·파일 생성은 DB Queue를 통해 Worker가 실행합니다.
+![React Web, AWS EC2, FastAPI, MySQL과 Worker의 도메인 모듈 구성](docs/images/readme/architecture.png)
+
+**API는 요청과 조회, Worker는 영상 분석과 파일 생성**을 담당합니다. 작업은 MySQL 기반 DB Queue로 연결합니다.
+그림의 Eval은 개발용 평가 도구이며 **제품 Worker 안에서 실행되지 않습니다.** 카카오 지도는 키가 설정된 경우 사용하는 보조 기능입니다.
+
+<details>
+<summary><b>모듈별 역할과 설계 원칙</b></summary>
 
 | 계층 | 구성 | 역할 |
 | --- | --- | --- |
@@ -93,20 +83,27 @@
 
 [모듈 경계와 계약](docs/architecture/module-architecture.md) · [Runtime 설계](docs/runtime/runtime-tech-spec.md) · [논리 ERD](docs/architecture/erd-draft.md)
 
-## 기술 스택
+</details>
 
-| 영역 | 사용 기술 |
-| --- | --- |
-| Frontend | React 19 · TypeScript · Vite 6 · CSS · Vitest · Playwright |
-| Backend | Python 3.12+ · FastAPI · Pydantic · SQLAlchemy · Alembic |
-| AI·영상 | Gemini · PaddleOCR · OpenCV · FFmpeg / FFprobe |
-| 데이터·비동기 작업 | MySQL 8.4 · DB Queue |
-| 배포·운영 | AWS · Docker Compose · Caddy · GitHub Actions · ECR · SSM |
-| 검증 | pytest · Ruff · mypy · 모듈 경계 검사 |
+### 넓게 찾고, 선택한 후보를 자세히
+
+![전체 영상의 상위 후보를 찾는 Coarse와 선택한 후보를 정밀 검증하는 Fine의 흐름](docs/images/readme/coarse-fine.png)
+
+먼저 넓은 범위에서 후보를 찾고, 선택한 후보를 자세히 확인합니다. 다른 후보를 선택하면 해당 장면을 검증하고 이미 얻은 결과는 다시 사용합니다.
 
 ## 평가 결과
 
-장면 탐색과 번호판 판독을 나눠 평가했습니다. 아래는 **2026-11-01 결과 보고서의 실측값**입니다.
+**2026-11-01 평가 기록** · 실제 사건 탐색과 위반 유형 분류를 각각 평가했습니다.
+
+![초기 설정과 최종 설정의 사건 탐색 결과 및 AI-Hub 영상 유형 적중률](docs/images/readme/evaluation.png)
+
+사건 탐색은 위반 **16건 중 4건 → 10건**, 유형 분류는 AI-Hub 양성 영상 **400개 중 371개**입니다.
+설정 선택에 사용한 사건 10건이 포함된 개발 평가이며, 두 수치는 서로 다른 과제의 결과입니다.
+
+<details>
+<summary><b>평가 조건·번호판 결과·비용과 오탐 함께 보기</b></summary>
+
+![탐지 증가와 함께 늘어난 원본 영상 시간당 분석 비용 및 정상 영상의 오탐](docs/images/readme/evaluation-tradeoffs.png)
 
 | 평가 대상 | 데이터·조건 | 결과 |
 | --- | --- | --- |
@@ -118,18 +115,35 @@
 
 [평가 결과와 조건](docs/modules/eval/evaluation-results-2026-11-01.md) · [평가 실행 방법](eval/README.md) · [지표 정의](docs/modules/eval/metrics/metric-definitions.md)
 
+</details>
+
+## 기술 스택
+
+| 영역 | 사용 기술 |
+| --- | --- |
+| Frontend | React 19 · TypeScript · Vite 6 · CSS · Vitest · Playwright |
+| Backend | Python 3.12+ · FastAPI · Pydantic · SQLAlchemy · Alembic |
+| AI·영상 | Gemini · PaddleOCR · OpenCV · FFmpeg / FFprobe |
+| 데이터·비동기 작업 | MySQL 8.4 · DB Queue |
+| 배포·운영 | AWS · Docker Compose · Caddy · GitHub Actions · ECR · SSM |
+| 검증 | pytest · Ruff · mypy · 모듈 경계 검사 |
+
 <a id="실행"></a>
 
 ## 빠른 시작
 
-Node.js 20 이상, Python 3.12 이상을 사용합니다. npm workspace 의존성은 저장소 루트에서 설치합니다.
+Node.js 20 이상에서 저장소 루트에서 실행합니다.
 
 ```bash
 npm ci
 npm run dev:web
 ```
 
-Vite가 출력한 주소의 `/?demo`에서 API 없이 목데이터 화면 흐름을 확인할 수 있습니다. `/`의 실제 분석 흐름에는 API·Worker와 실행 환경 설정이 필요합니다.
+Vite 주소의 `/?demo`는 API 없는 목데이터 시연입니다. 실제 분석(`/`)은 API·Worker 설정이 필요합니다.
+[개발 환경과 실행](docs/getting-started.md) · [웹 앱 안내](apps/web/README.md) · [평가 실행](eval/README.md)
+
+<details>
+<summary><b>테스트·저장소 구조·배포 문서</b></summary>
 
 ```bash
 uv sync --locked --extra test --extra quality
@@ -164,6 +178,8 @@ GitHub Actions에서 Python 회귀·MySQL 통합·Runtime 품질 검사와 웹 �
 | CI 분할과 MySQL 검증 | [CI 실행 구조](docs/runtime/ci-test-partitions.md) |
 | 배포·복구·보관 정책 | [공개 배포](docs/runtime/rt14-public-deployment.md) · [운영 명세](docs/runtime/ops-spec.md) |
 | 설계·의사결정·모듈별 자료 | [문서 목차](docs/README.md) |
+
+</details>
 
 ## 팀
 
