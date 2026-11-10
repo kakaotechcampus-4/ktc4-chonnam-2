@@ -1,5 +1,28 @@
 # A-1 서버 연결과 공개 운영 검수
 
+## 2026-11-10 최종 AWS 공개 배포
+
+[공개 체험](https://daesingo-ktc4.duckdns.org/)의 배포 SHA는 `61d9b7ea3ed706fc90a995a1d1e1c8ba213eba6a`, 이미지 digest는 `sha256:2d6c61d1d51a6669d2794505e1793969fead3727853693edc36b851571e7c318`다. 공식 3분·10분 샘플 묶음 중 같은 묶음의 MP4를 올리는 방식이며, 건당 합계 상한은 10분이다.
+
+| 항목 | 적용값 |
+| --- | --- |
+| 입력·후보 미리보기 | `upload_bundle`, 미리보기 ON |
+| 전체 동시 접수·세션당 동시 접수·Worker | 5개·1개·1개 |
+| 체험당 로컬 작업·IP당 일일 로컬 작업·전역 동시 로컬 작업 | 100건·KST 하루 200건·12건 |
+| 세션당 탐색 | KST 하루 5회 |
+| 보관·정리 | 원본 24시간·체험 7일 설정. 먼저 만료되는 원본 기준으로 체험 시작 24시간 후부터 자동 정리 대상 |
+
+로컬 작업에는 번호판·시각 OCR, 후보 미리보기, 신고영상·번호판 이미지 생성이 포함된다. 로컬 작업 전역 한도는 발주·접수 기준이다.
+
+- 공식 10분 묶음 MP4 10개(600,000ms)를 업로드하고 실제 분석을 1건 실행했다. 1번 후보가 선택됐고, 수동 생성 클릭 없이 신고영상 `READY`, 복사 버튼 표시, UI 다운로드 및 16초 전체 디코딩을 확인했다.
+- #685의 삭제 버튼·확인창 제거와 소유 세션의 직접 `DELETE` 응답 `404`를 확인했다. 요청 뒤에도 체험과 등록 영상 10개가 유지됐다. 화면에는 체험 시작 24시간 후부터 자동 정리한다고 안내했다.
+- 후보 2개를 각각 재생·탐색했다. 다른 세션의 일반 영상 URL과 Range 요청은 모두 `404`였다.
+- 외부 공개 후 기본 주소와 공식 업로드 진입, readiness가 모두 `200`이었다. 새 Chrome에서 화면을 확인했다. 공개 전환 뒤 추가 업로드·분석은 0건이었다.
+
+같은 SHA의 controller 복구를 검증했다. 전체 DB·미디어 복원, 두 후보 영상의 동시 재생, [#677](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/677)의 5세션 시험은 별도 범위다. 최종 Docker 여유는 12,782,854,144B로 운영 예비 공간 기준을 충족했다. 공개 뒤 활성·미정산 작업과 dirty·lock은 없었다.
+
+[경계 검사](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42803053900) · [동일 SHA Python CI](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42803054151) · [이미지 게시](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42806554276) · [#675 종료 근거](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/675#issuecomment-6767244133)
+
 ## 2026-11-10 AWS 공개 운영 인계
 
 이미지 digest는 `sha256:5a841ee5d2a323c6461a4fd647492042c85730b907cb6a735015e62408ea0983`이며 스키마는 `case_0001 / recording_0002 / runtime_0008`이다.
@@ -23,7 +46,7 @@
 - 비공식 MP4는 `422`로 거부됐고 등록·분석은 0건이었다. 긴급 중단 뒤 기존 소유자의 조회는 `200`, 신규 미리보기는 `503`이었다.
 - 공개 전환 뒤 운영자 허용 목록 밖에서 기본 주소와 업로드 모드가 `200`으로 응답했다. 새 Chrome 세션에서 공식 MP4 선택과 동의 화면을 확인했다. 이 공개 확인 중 업로드·분석 요청은 0건이었다.
 
-동일 SHA의 보호된 복구 재기동을 검증했다. 전체 DB·미디어 복원은 미검증이다. #677의 AWS 5세션 시험은 별도 후속 검증이다. #685 이후의 새 배포 후보는 해당 이미지에서 보관 안내와 적용 정책을 다시 확인한다.
+동일 SHA의 보호된 복구 재기동을 검증했다. 전체 DB·미디어 복원은 미검증이다. #677의 AWS 5세션 시험은 별도 후속 검증이다. #685를 포함한 후속 공개 배포의 보관 안내와 적용 정책은 위 최종 배포 기록에 정리했다.
 
 [#675 로컬 작업 정책](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/675#issuecomment-6741710509) · [#677 전체 슬롯 정책](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/677#issuecomment-6743202435) · [동일 SHA Python CI](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42664541744) · [이미지 게시](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/actions/runs/42670795458)
 
@@ -228,7 +251,7 @@ localStorage Case ID는 권한이 아니다. 임의 X-Forwarded-For는 신뢰하
 - bounds: operation/provider_label별 유일한 양수 reserve_micros와 evidence_ref. 실제 입력/출력/모델/가격/환율/자동 retry를 포함한 호출별 상한 근거를 release에 결속해야 한다. 코드의 fixed ceiling 설정만으로 실제 단가 상한이 입증됐다고 보지 않는다.
 
 예약은 실제 시도마다 유지하고 실패·응답 유실·재시작을 이유로 환급하지 않는다.
-복구로 FINALIZED된 usage라도 실제 observed_at이 없으면 동시 admission을 유지하고 DELETE/TTL도 BUSY로 거부한다. job 종료/복구만으로 이전 HTTP의 반환을 추정하지 않는다.
+복구로 FINALIZED된 usage라도 실제 observed_at이 없으면 동시 admission을 유지하고 운영자 정리와 TTL 자동 정리도 작업 상태에 따라 보류한다. job 종료/복구만으로 이전 HTTP의 반환을 추정하지 않는다.
 KST 일일 한도는 당일 생성/정산 및 이전 미정산 예약을 모두 포함한다. 누적·Case 상한도 유지한다.
 실제 관측 금액이 예약을 초과하거나 정산 통화/값이 맞지 않으면 관측은 보존하고 gate를 닫는다.
 미승인 단가/operation/provider나 미확정 승인액은 호출 거부다. 일 2만원/누적 10만원을 승인값으로 사용하지 않는다.
