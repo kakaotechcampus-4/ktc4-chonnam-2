@@ -1,185 +1,185 @@
-<div align="center">
+# 대신고
 
-# 대신고 · Daesingo
+블랙박스 영상에서 교통위반 장면을 찾고, 번호판·시각·증거 영상을 모아 신고자료를 준비하는 서비스입니다.
 
-![대신고 — 기억 속 한 장면이 더 안전한 길의 시작](docs/images/readme/cover.png)
+- [서비스 체험](https://daesingo-ktc4.duckdns.org/)
+- [개발 환경과 실행](docs/getting-started.md)
+- [프로젝트 문서](docs/README.md)
 
-**블랙박스 속 장면을 찾고, 신고자료 준비까지.**
+> AI는 신고자료 준비를 돕습니다. 내용 확인과 안전신문고 최종 제출은 사용자가 직접 합니다.
 
-[**서비스 체험하기 ↗**](https://daesingo-ktc4.duckdns.org/) · [**주요 기능**](#주요-기능) · [**아키텍처**](#아키텍처) · [**평가 결과**](#평가-결과) · [**개발 환경**](docs/getting-started.md)
+<img src="docs/images/readme/cover.png" alt="대신고 — 기억 속 한 장면이 더 안전한 길의 시작" width="800">
 
-![React](https://img.shields.io/badge/React_19-149ECA?style=flat-square&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Python](https://img.shields.io/badge/Python_3.12+-3776AB?style=flat-square&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL_8.4-4479A1?style=flat-square&logo=mysql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+## 목차
 
-</div>
+1. [서비스 소개](#서비스-소개)
+2. [주요 기능](#주요-기능)
+3. [공개 체험](#공개-체험)
+4. [아키텍처](#아키텍처)
+5. [기술 스택](#기술-스택)
+6. [평가 결과](#평가-결과)
+7. [저장소 구조](#저장소-구조)
+8. [빠른 시작](#빠른-시작)
+9. [문서](#문서)
+10. [팀](#팀)
+
+---
 
 ## 서비스 소개
 
-긴 영상을 뒤져 장면을 찾고, 자르고, 번호판을 읽고, 신고 내용을 정리하는 일.
-**대신고가 자료의 초안을 준비하면, 사용자는 확인·수정하고 직접 제출합니다.**
+위반을 목격하고도 장면을 찾고, 영상을 자르고, 번호판과 시각을 확인하는 과정이 번거로워 신고를 포기하는 운전자를 돕습니다.
+기억나는 상황을 입력하면 대신고가 자료 초안을 준비하고, 사용자는 확인·수정한 뒤 직접 제출합니다.
 
-![사용자가 직접 하던 자료 준비와 대신고 사용 흐름 비교](docs/images/readme/workflow.png)
-
-지원 유형은 **신호위반 · 중앙선 침범 · 백색 실선 침범 · 이륜차 안전모 미착용**입니다.
-AI가 법적 위반 여부를 최종 확정하거나 신고를 자동 제출하지 않습니다.
-
-## 주요 기능
-
-### 01. 기억나는 장면부터
-
-영상을 올리고 기억나는 시간·차량·상황을 적으면 탐색 단서로 정리합니다.
-
-![영상 업로드 후 기억나는 상황을 입력하는 화면](docs/images/readme/step-1-input.png)
-
-### 02. 장면을 찾고, 필요한 도구를 연결
-
-후보 탐색부터 정밀 확인·번호판 판독·증거 정리까지 진행 상태를 보여줍니다.
-
-![장면 찾기에서 번호판 판독으로 이어지는 분석 진행 화면](docs/images/readme/step-2-analysis.png)
-
-### 03. 확인하고, 필요한 것만 수정
-
-불확실한 값은 확인하도록 표시합니다. 내용을 보완하고 영상·이미지를 내려받아 안전신문고에서 직접 제출합니다.
-
-![신고자료 확인과 위치 수정, 신고 내용 복사 및 안전신문고 이동 화면](docs/images/readme/step-3-report.png)
-
-## 공개 체험
-
-**[대신고 열기 ↗](https://daesingo-ktc4.duckdns.org/)** · Desktop Web · 로그인 없이 체험
-
-제공받은 공식 3분·10분 ZIP을 풀고 같은 묶음의 MP4를 올려 주세요. 합계 **10분까지** 이용할 수 있습니다.
-공개 체험은 공식 샘플만 받으며, 결과는 시작한 브라우저에서 확인합니다. 체험 시작 24시간 후부터 자동 정리 대상이므로 필요한 자료는 미리 다운로드해 주세요.
-
-[공개 운영 안내](docs/runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)
-
-## 아키텍처
-
-![React Web, AWS EC2, FastAPI, MySQL과 Worker의 도메인 모듈 구성](docs/images/readme/architecture.png)
-
-**API는 요청과 조회, Worker는 영상 분석과 파일 생성**을 담당합니다. 작업은 MySQL 기반 DB Queue로 연결합니다.
-그림의 Eval은 개발용 평가 도구이며 **제품 Worker 안에서 실행되지 않습니다.** 카카오 지도는 키가 설정된 경우 사용하는 보조 기능입니다.
+**지원 유형:** 신호위반 · 중앙선 침범 · 백색 실선 침범 · 이륜차 안전모 미착용
 
 <details>
-<summary><b>모듈별 역할과 설계 원칙</b></summary>
+<summary>대신고가 맡는 일</summary>
 
-| 계층 | 구성 | 역할 |
-| --- | --- | --- |
-| 화면 | React Web | 서버가 제공한 `CaseView`로 진행 상태와 결과 표시 |
-| 요청·진행 관리 | FastAPI · `case` | 명령 처리, 사용자 선택, 작업 요청, 부분 재실행 |
-| 분석·미디어 처리 | Worker · `search` · `readout` · `recording` | 장면 탐색, OCR, 프레임 추출, 영상 생성 |
-| 신고자료 구성 | `evidence` | 관찰 결과와 사용자 확인을 구분하고 신고요건·자료 구성 |
-| 저장·실행 기반 | MySQL 8.4 · DB Queue · media volume | 도메인 데이터, 작업 실행 상태, 원본·파생 파일 관리 |
-| 오프라인 평가 | `eval` | 예측 저장과 채점 분리, 동일 정답지로 설정 비교 |
+<table><tr><td>
 
-### 설계에서 중요하게 본 세 가지
+<img src="docs/images/readme/workflow.png" alt="자료 준비를 자동화하고 사용자 확인과 제출로 연결하는 흐름" width="800">
 
-- **관찰과 확정 분리:** AI가 관찰한 결과와 사용자가 확인한 값을 구분해, 불확실한 정보가 확정값으로 바뀌지 않도록 했습니다.
-- **수정한 부분부터 다시 실행:** 사용자 보정과 후보 변경을 `case`가 관리하고, 필요한 작업을 다시 요청합니다.
-- **제품과 평가 분리:** 제품 모듈은 평가 코드를 참조하지 않습니다. 저장한 예측 결과를 별도 채점기로 평가합니다.
-
-[모듈 경계와 계약](docs/architecture/module-architecture.md) · [Runtime 설계](docs/runtime/runtime-tech-spec.md) · [논리 ERD](docs/architecture/erd-draft.md)
+</td></tr></table>
 
 </details>
 
-### 넓게 찾고, 선택한 후보를 자세히
+## 주요 기능
 
-![전체 영상의 상위 후보를 찾는 Coarse와 선택한 후보를 정밀 검증하는 Fine의 흐름](docs/images/readme/coarse-fine.png)
+### 1. 영상과 상황 입력
 
-먼저 넓은 범위에서 후보를 찾고, 선택한 후보를 자세히 확인합니다. 다른 후보를 선택하면 해당 장면을 검증하고 이미 얻은 결과는 다시 사용합니다.
+블랙박스 영상을 올리고 기억나는 시간·차량·상황을 적습니다. 입력한 내용을 탐색 단서로 정리합니다.
 
-## 평가 결과
+<table><tr><td>
 
-**2026-11-01 평가 기록** · 실제 사건 탐색과 위반 유형 분류를 각각 평가했습니다.
+<img src="docs/images/readme/step-1-input.png" alt="영상 업로드와 상황 입력 화면" width="600">
 
-![초기 설정과 최종 설정의 사건 탐색 결과 및 AI-Hub 영상 유형 적중률](docs/images/readme/evaluation.png)
+</td></tr></table>
 
-사건 탐색은 위반 **16건 중 4건 → 10건**, 유형 분류는 AI-Hub 양성 영상 **400개 중 371개**입니다.
-설정 선택에 사용한 사건 10건이 포함된 개발 평가이며, 두 수치는 서로 다른 과제의 결과입니다.
+### 2. 분석 진행 확인
+
+장면 탐색 → 후보 확인 → 번호판·시각 판독 → 증거 정리 순서로 진행 상황을 보여줍니다.
+
+<table><tr><td>
+
+<img src="docs/images/readme/step-2-analysis.png" alt="장면 탐색과 번호판 판독 진행 화면" width="800">
+
+</td></tr></table>
+
+### 3. 신고자료 확인과 내보내기
+
+출처와 확인이 필요한 정보를 보여줍니다. 필요한 값을 수정하고 신고 내용 복사·영상 다운로드 후 안전신문고로 이동합니다.
+
+<table><tr><td>
+
+<img src="docs/images/readme/step-3-report.png" alt="신고자료 확인, 위치 수정, 내용 복사와 안전신문고 이동 화면" width="600">
+
+</td></tr></table>
+
+## 공개 체험
+
+- Desktop Web에서 로그인 없이 이용합니다.
+- 제공받은 공식 3분·10분 ZIP을 풀고, 같은 묶음의 MP4를 합계 **10분까지** 올립니다. 임의 사용자 영상은 받지 않습니다.
+- 결과는 체험을 시작한 브라우저에서 확인합니다. 시작 24시간 후부터 자동 정리 대상이므로 필요한 자료는 미리 다운로드합니다.
+
+---
+
+## 아키텍처
+
+<table><tr><td>
+
+<img src="docs/images/readme/architecture.png" alt="React Web, FastAPI, MySQL, Worker와 도메인 모듈 구성" width="900">
+
+</td></tr></table>
+
+- API는 요청·조회를, Worker는 영상 분석·파일 생성을 담당하며 MySQL 기반 DB Queue로 연결합니다.
+- `case`가 진행을 관리하고 `search`·`readout`의 관찰 결과를 `evidence`가 신고자료로 구성합니다.
+- Eval은 제품 런타임과 분리된 개발용 평가 도구입니다. 카카오 지도는 키 설정 시 사용하는 보조 기능입니다.
 
 <details>
-<summary><b>평가 조건·번호판 결과·비용과 오탐 함께 보기</b></summary>
+<summary>후보 탐색과 정밀 검증</summary>
 
-![탐지 증가와 함께 늘어난 원본 영상 시간당 분석 비용 및 정상 영상의 오탐](docs/images/readme/evaluation-tradeoffs.png)
+<table><tr><td>
 
-| 평가 대상 | 데이터·조건 | 결과 |
-| --- | --- | --- |
-| 영상의 위반 유형 찾기 | AI-Hub 양성 영상 400개, 최상위 후보 유형 일치 | **371/400 · 92.8%** |
-| 실제 영상에서 사건 찾고 확인하기 | 유튜브 179클립·위반 16건, 상위 3개·시점 ±2초·유형 일치·Fine 확인 | **10/16 · 62.5%**, 정상 클립당 최종 오탐 **0.35건** |
-| 번호판의 잘못된 확정 줄이기 | AI-Hub 번호판 crop 314장, O1 → O2 판독 규칙 비교 | **129건 → 32건**, 전체 정답률 **21.0% → 36.0%** |
+<img src="docs/images/readme/coarse-fine.png" alt="넓은 범위의 Coarse 탐색과 선택한 후보의 Fine 검증" width="800">
 
-유형 적중률은 양성 영상의 분류 결과이고, 번호판 수치는 잘라낸 이미지의 인식 결과입니다. 사건 탐색은 표본 16건으로 95% 신뢰구간이 약 39–82%이며, 설정 선택에 사용한 사건 10건이 포함된 개발 평가입니다. 번호판 O2는 10/22 규칙 기준입니다. 각 수치를 전체 제품의 일반화 성능으로 합산하지 않습니다.
+</td></tr></table>
 
-[평가 결과와 조건](docs/modules/eval/evaluation-results-2026-11-01.md) · [평가 실행 방법](eval/README.md) · [지표 정의](docs/modules/eval/metrics/metric-definitions.md)
+전체 범위에서 후보를 찾고 선택한 장면을 자세히 확인합니다. 다른 후보를 선택하면 해당 장면을 검증하며 기존 결과는 재사용합니다.
+
+[모듈 경계와 계약](docs/architecture/module-architecture.md) · [Runtime 설계](docs/runtime/runtime-tech-spec.md)
 
 </details>
 
 ## 기술 스택
 
-| 영역 | 사용 기술 |
+| 구분 | 주요 기술 |
 | --- | --- |
-| Frontend | React 19 · TypeScript · Vite 6 · CSS · Vitest · Playwright |
-| Backend | Python 3.12+ · FastAPI · Pydantic · SQLAlchemy · Alembic |
-| AI·영상 | Gemini · PaddleOCR · OpenCV · FFmpeg / FFprobe |
-| 데이터·비동기 작업 | MySQL 8.4 · DB Queue |
-| 배포·운영 | AWS · Docker Compose · Caddy · GitHub Actions · ECR · SSM |
-| 검증 | pytest · Ruff · mypy · 모듈 경계 검사 |
+| FE | ![React 19](https://img.shields.io/badge/React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) ![Vite 6](https://img.shields.io/badge/Vite%206-646CFF?style=for-the-badge&logo=vite&logoColor=white) ![CSS](https://img.shields.io/badge/CSS-663399?style=for-the-badge&logo=css&logoColor=white) |
+| BE | ![Python 3.12+](https://img.shields.io/badge/Python%203.12%2B-3776AB?style=for-the-badge&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white) ![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white) ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white) ![MySQL 8.4](https://img.shields.io/badge/MySQL%208.4-4479A1?style=for-the-badge&logo=mysql&logoColor=white) ![Alembic](https://img.shields.io/badge/Alembic-444444?style=for-the-badge) |
+| AI·영상 | ![Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white) ![PaddleOCR](https://img.shields.io/badge/PaddleOCR-0062B0?style=for-the-badge) ![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white) ![FFmpeg](https://img.shields.io/badge/FFmpeg-007808?style=for-the-badge&logo=ffmpeg&logoColor=white) |
+| 인프라 | ![AWS](https://img.shields.io/badge/AWS-FF9900?style=for-the-badge) ![Docker Compose](https://img.shields.io/badge/Docker%20Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white) ![Caddy](https://img.shields.io/badge/Caddy-1F88C0?style=for-the-badge) ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white) |
+| 테스트·품질 | ![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-D7FF64?style=for-the-badge&logo=ruff&logoColor=black) ![mypy](https://img.shields.io/badge/mypy-3776AB?style=for-the-badge) |
 
-<a id="실행"></a>
+## 평가 결과
 
-## 빠른 시작
+2026-11-01 평가 기록입니다. 사건 탐색과 영상 유형 분류, 번호판 판독을 각각 측정했습니다.
 
-Node.js 20 이상에서 저장소 루트에서 실행합니다.
+| 평가 | 데이터 | 결과 |
+| --- | --- | --- |
+| 사건 탐색·정밀 확인 | 유튜브 179클립, 위반 16건 | 4/16 → **10/16 (62.5%)** |
+| 영상 유형 분류 | AI-Hub 양성 영상 400개 | **371/400 (92.8%)** |
+| 번호판의 잘못된 확정 | AI-Hub 번호판 crop 314장, O1 → O2 | **129건 → 32건** |
 
-```bash
-npm ci
-npm run dev:web
-```
-
-Vite 주소의 `/?demo`는 API 없는 목데이터 시연입니다. 실제 분석(`/`)은 API·Worker 설정이 필요합니다.
-[개발 환경과 실행](docs/getting-started.md) · [웹 앱 안내](apps/web/README.md) · [평가 실행](eval/README.md)
+사건 탐색은 설정 선택에 사용한 사건 10건을 포함하는 개발 평가입니다(95% 신뢰구간 약 39–82%). 정상 클립당 최종 오탐은 0.35건입니다. 유형 분류는 양성 영상, 번호판은 crop 이미지·10/22 규칙 기준으로 전체 제품 성능과 구분합니다.
 
 <details>
-<summary><b>테스트·저장소 구조·배포 문서</b></summary>
+<summary>평가 그래프와 비용·오탐 비교</summary>
 
-```bash
-uv sync --locked --extra test --extra quality
-uv run pytest tests/eval -q
-npm run test:web
-npm run build --workspace=daesingo-web
-```
+<table><tr><td>
 
-API·Worker·MySQL 구성, OCR 모델, 환경변수, migration과 통합 테스트 실행은 [개발 환경과 실행](docs/getting-started.md)을 따릅니다.
+<img src="docs/images/readme/evaluation.png" alt="설정별 사건 탐색 결과와 영상 유형 적중률" width="800">
+
+</td></tr></table>
+
+<table><tr><td>
+
+<img src="docs/images/readme/evaluation-tradeoffs.png" alt="탐지 증가에 따른 비용과 오탐 변화" width="800">
+
+</td></tr></table>
+
+</details>
+
+[상세 결과·평가 조건](docs/modules/eval/evaluation-results-2026-11-01.md) · [지표 정의](docs/modules/eval/metrics/metric-definitions.md)
 
 ## 저장소 구조
 
 ```text
 apps/web/           실제 웹 앱
-apps/prototype/     목데이터 기반 초기 흐름 프로토타입
+apps/prototype/     초기 흐름 프로토타입
 src/daesingo/       API · Worker · 도메인 모듈
-eval/              데이터 목록 · 예측 · 채점 · 평가 결과
+eval/              예측 · 채점 · 평가 결과
 tests/             모듈별 테스트와 CI 실행 도구
-docs/              제품 · 아키텍처 · 모듈 · 운영 문서
-deploy/            배포와 복구 도구
-scripts/           경계 · 품질 · 보안 검사
+docs/              제품 · 아키텍처 · 운영 문서
+deploy/            배포·복구 도구
 ```
 
-## 배포와 검증
+<a id="실행"></a>
 
-GitHub Actions에서 Python 회귀·MySQL 통합·Runtime 품질 검사와 웹 테스트를 실행합니다. 배포는 OIDC 인증으로 AWS에 연결하고 ECR 이미지와 SSM을 사용합니다.
+## 빠른 시작
 
-| 확인할 내용 | 문서 |
+- [Web 실행](apps/web/README.md) — Node.js 20 이상. `/?demo`는 API 없는 목데이터 시연입니다.
+- [API·Worker 실행](docs/getting-started.md) — Python 3.12 이상. 실제 분석에 필요한 DB·모델·환경 설정을 포함합니다.
+- [평가 실행](eval/README.md) — 저장한 예측을 채점하고 결과를 비교합니다.
+
+## 문서
+
+| 문서 | 내용 |
 | --- | --- |
-| API·Worker 실행과 설정 | [API](src/daesingo/api/README.md) · [Worker](src/daesingo/worker/README.md) · [실행환경](docs/runtime/local-runtime-environment.md) |
-| 웹 화면·API 연결·테스트 | [Web README](apps/web/README.md) |
-| CI 분할과 MySQL 검증 | [CI 실행 구조](docs/runtime/ci-test-partitions.md) |
-| 배포·복구·보관 정책 | [공개 배포](docs/runtime/rt14-public-deployment.md) · [운영 명세](docs/runtime/ops-spec.md) |
-| 설계·의사결정·모듈별 자료 | [문서 목차](docs/README.md) |
-
-</details>
+| [제품 명세](docs/product/product-spec.md) · [사용자 흐름](docs/product/core-user-flow.md) | 지원 범위, 화면과 예외 처리 |
+| [아키텍처](docs/architecture/module-architecture.md) · [논리 ERD](docs/architecture/erd-draft.md) | 모듈 경계와 데이터 구조 |
+| [공개 운영 안내](docs/runtime/a1-public-readiness.md) · [배포·복구](docs/runtime/rt14-public-deployment.md) | AWS 운영, ECR·SSM 기반 배포 |
+| [CI 실행 구조](docs/runtime/ci-test-partitions.md) | Python 회귀·MySQL 통합·품질 검사 |
+| [전체 문서](docs/README.md) | 모듈별 설계와 의사결정 기록 |
 
 ## 팀
 
