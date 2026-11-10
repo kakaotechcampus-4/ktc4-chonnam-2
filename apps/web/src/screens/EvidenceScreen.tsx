@@ -6,8 +6,8 @@ import { Panel } from '../components/Panel'
 import { reviewReason } from '../contracts/labels'
 
 function locationClue(view: CaseView, evidence: EvidenceView): string | null {
-  // §3-3 UNKNOWN은 빈 칸이 아니다 — hints.location · coord · search_keyword를
-  // 단서로 함께 보여준다. 값을 이어 붙여 새 위치 문자열을 만들지는 않는다(§3-4).
+  // docs/modules/web/ux/value-state-display.md §3-3: UNKNOWN은 빈 칸이 아니다 — hints.location · coord · search_keyword를
+  // 단서로 함께 보여준다. 값을 이어 붙여 새 위치 문자열을 만들지는 않는다(같은 문서 §3-4).
   const parts: string[] = []
   if (view.hints.location) parts.push(`말한 위치: ${view.hints.location}`)
   const coord = evidence.location_display.coord
@@ -21,7 +21,7 @@ function locationClue(view: CaseView, evidence: EvidenceView): string | null {
 export function EvidenceScreen(props: { view: CaseView; hideOthers?: boolean }): JSX.Element {
   const evidence = props.view.evidence
   if (!evidence) return <Panel title="증거 정리 전">아직 표시할 값이 없습니다.</Panel>
-  // record_id=null은 상황 응답 대기 중의 부분 투영이다(v1.8, #239). 상황 종속 셋은 INFO_UNKNOWN으로 오지만
+  // record_id=null은 상황 응답 대기 중에 일부만 채운 CaseView다(case-view v1.8). 상황 종속 셋은 INFO_UNKNOWN으로 오지만
   // 모르는 게 아니라 응답 뒤에 정해진다.
   const partial = evidence.record_id === null
 
@@ -73,7 +73,7 @@ export function EvidenceScreen(props: { view: CaseView; hideOthers?: boolean }):
           />
         </div>
         {evidence.review_needed && (
-          // §3-6 요약 배지로만 쓴다 — 제출 게이트로 쓰지 않는다.
+          // value-state-display §3-6: 요약 배지로만 쓴다 — 제출 게이트로 쓰지 않는다.
           // 원인은 reason_code로 고르되 raw 코드를 화면에 내보내지 않는다.
           <div className="kv-src" style={{ marginTop: 10 }}>
             {reviewReason(evidence.reason_code)}

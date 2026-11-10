@@ -38,8 +38,6 @@
 | `exact_accuracy` | plate | ALPR 의 end-to-end recognition rate (Laroca+ 2021) | 직접 대응 |
 | `wrong_accept_rate` | plate | 생체인식의 False Accept Rate (ISO/IEC 19795-1) | 느슨한 유비 (**분모가 다르다**) |
 | `abstention_recall` | plate | reject option / selective classification (Chow 1970; Geifman & El-Yaniv 2017) | 느슨한 유비 |
-| CER (진단용, 미구현) | plate | ICDAR Robust Reading 의 normalized edit distance | 직접 대응 |
-| Hard-negative FPR (미구현, F4) | fine | hard example mining (Shrivastava+ 2016) | 느슨한 유비 |
 | `cost_per_case` / `cost_per_source_video_hour` | efficiency | — | **우리 정의** |
 | `coverage` · null 규율 | 전 단계 | 데이터셋·모델 문서화 규범 (Gebru+ 2021; Mitchell+ 2019) | 방법론 유비 |
 
@@ -200,16 +198,6 @@ Geifman & El-Yaniv, *Selective Classification for Deep Neural Networks*(NeurIPS 
 우리는 곡선이 아니라 **고정된 한 점**의 recall 을 낸다. 임계값 sweep 이 없기 때문이며,
 그래서 「기권을 늘려 wrong-accept 를 줄였다」와 「판독이 좋아졌다」를 지금 구분하지 못한다.
 C tier 확보 후 risk–coverage 곡선으로 확장할 여지가 있다.
-
-### 2-10. Hard-negative FPR (미구현, F4)
-
-**차용(느슨).** Shrivastava, Gupta, Girshick, *Training Region-based Object Detectors with
-Online Hard Example Mining*(CVPR 2016) 계열의 hard negative 개념 — 쉬운 음성이 압도적으로 많고
-어려운 음성이 소수라는 관찰.
-
-**차이.** 문헌은 이것을 **학습 기법**으로 쓴다. 우리는 **평가 분할**로 쓴다 — 실선 침범 ↔ 점선
-정상 변경처럼 사람도 헷갈리는 대조쌍을 따로 모아 그 위에서만 FPR 을 낸다.
-전체 FPR 은 쉬운 음성에 희석되어 이 모델의 실제 위험을 감춘다.
 
 ### 2-11. `cost_per_case` / `cost_per_source_video_hour` — 문헌 없음
 

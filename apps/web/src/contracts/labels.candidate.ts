@@ -1,9 +1,9 @@
-// 후보 화면 전용 문구 — `labels.ts`에 합치는 것은 web Owner가 한다.
+// 후보 화면 전용 문구. 화면 공통 문구는 `labels.ts`에 있다.
 //
 // 여기 있는 것은 계약의 `*_label_key`가 아니다. `CaseView.hints`의 필드 이름을
 // 화면 문구로 바꾸는 표이고, 키는 계약이 아니라 이 파일이 소유한다
 // (`SITUATION_LABELS`가 `labels.ts`에서 같은 취급을 받는 것과 같다 —
-// value-state-display.md §5-3).
+// docs/modules/web/ux/value-state-display.md §5-3).
 
 /** `CaseView.hints`의 네 필드 — 사용자가 말한 기억 단서 */
 export const HINT_LABELS = {

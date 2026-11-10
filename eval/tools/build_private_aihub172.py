@@ -5,7 +5,9 @@
 
 트랙② (기본) → `private_aihub172_plate` — 번호판 crop 인식.
 트랙② + `--exclude-plates-zip` → `private_aihub172_plate_m2` — 그 zip 의 라벨 번호와 겹치는
-표본을 뺀 셋. 다른 분할로 학습한 모델을 잴 때 쓴다(같은 차가 분할 사이에 있다, PR #215).
+표본을 뺀 셋. 다른 분할로 학습한 모델을 잴 때 쓴다
+(같은 번호판이 분할 사이에 있어 제외한다. 근거:
+docs/modules/eval/experiments/2026-09-28-readout-paddle-crop-baseline.md).
 트랙① → `private_aihub172_track1` — CCTV 프레임의 차량 검출 지속성. 아래 `build_track1`.
 
 입력은 `데이터셋 생성/scripts/aihub172.py sample` 의 산출물이다(manifest.json ·

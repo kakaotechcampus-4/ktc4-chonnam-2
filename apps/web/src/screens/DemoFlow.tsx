@@ -14,7 +14,8 @@ import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 import { useScreenFocus } from './screenFocus'
 import { useSubStack } from './subStack'
 
-// 시연용 흐름 — Figma 하단 작업 영역의 Main · Details · Failed 열(After 제외).
+// 시연용 흐름 — 팀 Figma(비공개) 하단 작업 영역의 Main · Details · Failed 열(After 제외).
+// 저장소 사본은 docs/design/wireframe/.
 // 화면은 사용자 행동(파일 선택·버튼)과 작업 상태 변화로만 넘어간다.
 // 진행 화면은 무엇이 실패하든 끝까지 흐르고, 결과는 마지막 화면에서 알린다.
 // 의도한 mock 시연이다(`?demo` · `?cases`). 업로드는 타이머로, 진행은 단계를 하나씩 넘기는
@@ -24,7 +25,7 @@ const STEP_MS = 1200
 const noop = () => {}
 
 // 스냅샷은 순번이 아니라 모양으로 고른다 — fixture에 스냅샷이 끼어들면 순번이 밀린다
-// (응답 전 스냅샷 추가, #177).
+// (예: 상황 응답 전 스냅샷이 추가됐을 때).
 function snapshot(scenarioId: string, pick: (view: CaseView) => boolean): CaseView {
   const found = SNAPSHOTS.find((s) => s.scenarioId === scenarioId && pick(s.view))
   if (!found) throw new Error(`fixture 없음: ${scenarioId}`)
@@ -66,8 +67,7 @@ const walk = (until: number, failedAt = -1) => [
   at(until, failedAt, true),
 ]
 
-// 아래 시연용 CaseView들은 fixture에 아직 없는 경우를 계약 모양대로 만든 것이다.
-// fixture가 생기면 snapshot()으로 바꾼다.
+// 아래 시연용 CaseView들은 fixture에 없는 경우를 계약 모양대로 만든 것이다. 시연에만 쓴다.
 //
 // fixture 후보가 1개뿐이라 「다른 후보」를 보이려고 두 개를 더 붙인다.
 const OTHER_CANDIDATES: Candidate[] = [
@@ -94,19 +94,19 @@ function withoutPlate(view: CaseView, notices: Notice[]): CaseView {
     },
   }
 }
-// 번호판 판독 실행 실패(#172 D) — blocking notice. 이 상태로는 제출 단계로 넘기지 않는다.
-// 실제 CaseView는 evidence만 있고 package가 없다(#224 case 확인).
+// 번호판 판독 실행 실패 — blocking notice. 이 상태로는 제출 단계로 넘기지 않는다.
+// 실제 CaseView는 evidence만 있고 package가 없다(case 구현에서 확인).
 const PLATE_FAILED_RESULT: CaseView = {
   ...withoutPlate(RESULT, [fixtureNotice('readout.plate_read_failed')]),
   package: null,
 }
-// 번호판을 읽었지만 확정하지 못함(#172 D-3) — 경고만 달고 제출은 막지 않는다.
+// 번호판을 읽었지만 확정하지 못함 — 경고만 달고 제출은 막지 않는다.
 // notice는 fixture 그대로(actions: MANUAL_PLATE_INPUT) — 실제 데이터에서 오는 버튼을 시연에서도 보인다.
 const PLATE_UNREAD_RESULT = withoutPlate(RESULT, [fixtureNotice('evidence.plate_abstained')])
-// 신고용 영상 미생성 — 아직 만들지 않아 GENERATE_REPORT_VIDEO 발주가 필요한 상태다. 묶음이
+// 신고용 영상 미생성 — 아직 만들지 않아 GENERATE_REPORT_VIDEO 작업 요청이 필요한 상태다. 묶음이
 // 완성되지 않아 READY가 아니다. export 실패(recording.report_video_export_failed)와 다르다 —
-// 그 notice는 message_key·actions 모양이 아직 없어 시연하지 않는다(#224 recording 리뷰).
-// fixture에서 꺼내지 않는다 — fixture는 case가 실제로 만드는 상태만 담아 이 notice가 빠질 수 있다(#355).
+// 그 notice는 message_key·actions 모양이 정해지지 않아 시연하지 않는다.
+// fixture에서 꺼내지 않는다 — fixture는 case가 실제로 만드는 상태만 담아 이 notice가 빠질 수 있다.
 const VIDEO_NOT_GENERATED_RESULT: CaseView = {
   ...RESULT,
   stage: 'EVIDENCE_REVIEW',
@@ -128,7 +128,7 @@ const TIME_REVIEW_RESULT: CaseView = {
   ...RESULT,
   notices: [fixtureNotice('evidence.time_needs_user_confirmation'), fixtureNotice('evidence.time_conflict_needs_notice')],
 }
-// 음성 결과(#168 [A]) — EVIDENCE_REVIEW + evidence=null + evidence.visual_event_not_observed.
+// 음성 결과(가장 유력한 후보에서 위반이 관찰되지 않음) — EVIDENCE_REVIEW + evidence=null + evidence.visual_event_not_observed.
 const NOT_OBSERVED: CaseView = {
   ...RESULT,
   stage: 'EVIDENCE_REVIEW',
@@ -138,7 +138,7 @@ const NOT_OBSERVED: CaseView = {
     { code: 'evidence.visual_event_not_observed', severity: 'INFO', blocking: false, message_key: 'notice.visual_event_not_observed', actions: [] },
   ],
 }
-// 탐색 실패(#197) — SEARCHING + coarse_search FAILED + search.candidate_search_failed.
+// 탐색 실패(시스템 실패, 「후보 없음」과 다르다) — SEARCHING + coarse_search FAILED + search.candidate_search_failed.
 const SEARCH_FAILED: CaseView = {
   ...at(COARSE, COARSE, true),
   notices: [
@@ -153,13 +153,13 @@ const SEARCH_FAILED: CaseView = {
 }
 
 // 다른 후보를 고른 뒤의 결과. 판독 결과 fixture는 1순위 후보(HAPPY) 것뿐이다.
-// 다른 후보는 이전 후보의 번호판·시각·장소·위반 내용·신고자료 묶음·영상을 옮기지 않는다(§8-1 「자동 이월
+// 다른 후보는 이전 후보의 번호판·시각·장소·위반 내용·신고자료 묶음·영상을 옮기지 않는다(core-user-flow §8-1 「자동 이월
 // 금지」, case-view 계약: 이전 선택 context의 evidence·package는 내리지 않음). 값이 없으니 모두 알 수 없음이고
 // 신고자료 묶음(package)도 없다 — 시연용 상태다. 사건 전체 값(기억 단서·파일 요약·후보 목록)은 그대로 둔다.
 const FIXTURE_CANDIDATE = HAPPY.candidates[0].candidate_id
 function resultFor(candidateId: string): CaseView {
   const candidates = RESULT.candidates.map((c) => ({ ...c, selected: c.candidate_id === candidateId }))
-  // 다시 고르면 case_rev가 오른다(SELECT_OTHER_CANDIDATE 성공 시 case_rev +1, contract-case-command §74)
+  // 다시 고르면 case_rev가 오른다(SELECT_OTHER_CANDIDATE 성공 시 case_rev +1, docs/modules/case/contracts/contract-case-command.md §5)
   const base = { ...RESULT, candidates, case_rev: RESULT.case_rev + 1 }
   if (candidateId === FIXTURE_CANDIDATE) return base
   const chosen = candidates.find((c) => c.selected)!
@@ -173,7 +173,7 @@ function resultFor(candidateId: string): CaseView {
     requirements_evidence: null,
     requirements_package: null,
     package: null,
-    // 초안은 선택 후보의 EvidenceRecord로만 만든다 — 다시 고른 직후에는 없다(#621 리뷰)
+    // 초안은 선택 후보의 EvidenceRecord로만 만든다 — 다시 고른 직후에는 없다
     report_draft: null,
     evidence: {
       ...RESULT.evidence!,
@@ -185,7 +185,7 @@ function resultFor(candidateId: string): CaseView {
       event_time_display: unknown,
       location_display: { ...unknown, coord: null, search_keyword: null },
       user_edited: false,
-      // 시연은 발급 frame이 없어 선택 후보의 thumb_ref를 쓴다(계약: 발급 전에는 thumb_ref, #446)
+      // 시연은 발급 frame이 없어 선택 후보의 thumb_ref를 쓴다(계약: 발급 전에는 thumb_ref)
       preview_ref: chosen.thumb_ref,
       review_needed: true,
       reason_code: 'evidence.multiple_fields_need_review',
@@ -193,7 +193,7 @@ function resultFor(candidateId: string): CaseView {
   }
 }
 
-// 사용자 중단(#342) — SEARCHING에 머물고 coarse_search는 PARTIAL, case.analysis_stopped가 붙는다.
+// 사용자 중단(STOP_ANALYSIS) — SEARCHING에 머물고 coarse_search는 PARTIAL, case.analysis_stopped가 붙는다.
 const STOPPED = at(COARSE, -1, true)
 const ANALYSIS_STOPPED: CaseView = {
   ...STOPPED,
@@ -215,9 +215,9 @@ const FULL_RUN: Run = { frames: walk(STEPS.length), end: 'result', view: RESULT 
 // 이미 끝난 단계는 완료로 두고 from 단계부터 다시 흐른다(core-user-flow §19·§23).
 const rerunFrom = (from: number, title: string, run = FULL_RUN): Run => ({ ...run, frames: run.frames.slice(from), title })
 
-// 신고 상황 응답 대기(#232) — 관찰(번호판·시각 판독)까지 끝나고 조립 이후는 응답을 기다린다.
-// evidence·package는 없고 case.situation_response_pending이 붙는다. 응답 전 부분 결과 범위는
-// #165 미결이라 채우지 않는다.
+// 신고 상황 응답 대기 — 관찰(번호판·시각 판독)까지 끝나고 조립 이후는 응답을 기다린다.
+// evidence·package는 없고 case.situation_response_pending이 붙는다. 응답 전에 어느 값까지 미리
+// 보일지(부분 결과 범위)는 미결이라 이 시연 스냅샷은 채우지 않는다.
 function awaiting(candidates: Candidate[]): CaseView {
   return {
     ...RESULT,
@@ -226,7 +226,9 @@ function awaiting(candidates: Candidate[]): CaseView {
     package: null,
     report_draft: null,
     candidates: candidates.map((c) => (c.selected ? { ...c, situation_confirmation: 'NOT_ASKED' } : c)),
-    // B안(#597)에서 응답 대기는 UNCERTAIN 부분 투영에만 생기고 mock fixture에는 없다 — notice를 직접 둔다(#621 리뷰)
+    // 유형이 판별되면 상황 응답 없이 초안을 보이기로 한 뒤(docs/modules/case/decisions/observed-skips-situation-response.md),
+    // 응답 대기는 정밀 확인(Fine)이 유형을 판단하지 못한 UNCERTAIN에서 응답 전 일부만 채운 CaseView(case-view v1.8)에만 생긴다.
+    // mock fixture에는 그 상태가 없어 notice를 직접 둔다
     notices: [{ code: 'case.situation_response_pending', severity: 'INFO', blocking: false, message_key: 'notice.situation_response_pending', actions: [] }],
   }
 }
@@ -264,13 +266,13 @@ const CASES: Record<string, DemoCase> = {
   notObserved: {
     label: '찾은 장면에서 위반 미관찰',
     upload: 'ok',
-    // 1순위 장면을 자세히 본 「후보 확인」에서 끝난다. 번호판·시각은 읽지 않는다(#168 [A], #171 B).
+    // 1순위 장면을 자세히 본 「후보 확인」에서 끝난다. 번호판·시각은 읽지 않는다.
     run: { frames: walk(STEPS.indexOf('candidate_review') + 1), end: 'notObserved', view: NOT_OBSERVED },
   },
   notFound: {
     label: '결과 없음(장면 0개)',
     upload: 'ok',
-    // 장면 찾기에서 후보 0개로 끝난다. 그 뒤 단계는 하지 않는다(#197).
+    // 장면 찾기에서 후보 0개로 끝난다. 그 뒤 단계는 하지 않는다.
     run: { frames: walk(COARSE + 1), end: 'notFound', view: NOT_FOUND },
   },
   searchFailed: {
@@ -296,14 +298,14 @@ type Main =
 type Sub = 'candidates' | 'plate' | 'plateEdit' | 'time' | 'details'
 // 시연에서 연결한 notice 동작. 나머지(시각 직접 입력·시각 확인하기·설명 고치기)는 시연에서 연결하지 않아
 // 사용 불가로 보인다. 실제 흐름(ApiFlow)은 시각 직접 입력 · 설명 고치기를 command로 보낸다
-// (case-command 계약 §12 · §13). 시각 확인하기(REVIEW_TIME)는 command가 없다(§12-5).
+// (docs/modules/case/contracts/contract-case-command.md §12 · §13). 시각 확인하기(REVIEW_TIME)는 command가 없다(§12-5).
 // 연결한 것도 실제 command(RUN_NOTICE_ACTION)를 보내지 않는다 — 시연용 재진행·화면 안 반영이다.
 const DEMO_ACTIONS = new Set<Action>(['RETRY_PLATE_READ', 'GENERATE_REPORT_VIDEO', 'RETRY_SEARCH', 'MANUAL_PLATE_INPUT'])
 const canRun = (a: Action) => DEMO_ACTIONS.has(a)
 
 // 사용자가 직접 입력한 번호판을 결과 CaseView에 얹는다.
 // 시연에서는 화면 안에서만 반영한다. 실제 흐름(ApiFlow)은 PlateCheck onEdit 자리에서
-// MANUAL_PLATE_INPUT command로 보낸다(#449).
+// MANUAL_PLATE_INPUT command로 보낸다.
 function withPlate(view: CaseView, plate: string | null): CaseView {
   if (!plate || !view.evidence) return view
   if (!view.package)
@@ -392,7 +394,7 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
     return () => clearTimeout(t)
   }, [main])
 
-  // 새 진행은 새 초안이다 — 직접 입력한 번호판도 넘기지 않는다(#173).
+  // 새 진행은 새 초안이다 — 직접 입력한 번호판도 넘기지 않는다(core-user-flow §8-1: 이전 값을 자동 이월하지 않는다).
   const start = (run: Run, expect: { caseRev: number; candidateId: string | null } = { caseRev: 0, candidateId: null }) => {
     expected.current = expect
     closeAll()
@@ -431,13 +433,13 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
     const y = subs.length < returnY.length ? returnY[returnY.length - 1] : 0
     if (subs.length < returnY.length) setReturnY((r) => r.slice(0, subs.length))
     if (window.scrollY !== y) window.scrollTo(0, y)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 화면이 바뀔 때만
+    // 의존성 배열에 screenKey만 둔다: 화면이 바뀔 때만 스크롤을 옮기고, 하위 화면 목록(subs) · 저장 위치(returnY)만 바뀔 때는 다시 돌지 않는다
   }, [screenKey])
   const mainRef = useRef<HTMLElement>(null)
   const rememberOpener = useScreenFocus(mainRef, screenKey, subs.length)
   // 고른 후보를 기준 후보로 바꿔 번호판부터 다시 준비하고, 새 후보에 대한 응답을 새로 받는다
   // (core-user-flow §8-1 — 이전 응답을 복사하지 않는다).
-  // API가 생기면 여기서 SELECT_OTHER_CANDIDATE { candidate_id } + expected_case_rev를 보낸다(#216).
+  // 시연(?demo)은 서버로 보내지 않는다. 실제 흐름(ApiFlow)은 SELECT_OTHER_CANDIDATE { candidate_id }를 보낸다.
   const reselect = (candidateId: string) => {
     const base = resultFor(candidateId)
     const view = { ...awaiting(base.candidates), case_rev: base.case_rev }
@@ -453,7 +455,7 @@ export function DemoFlow(props: { casePicker?: boolean }): JSX.Element {
     start({ ...rerunFrom(EVIDENCE, '신고자료를 준비하고 있어요'), view }, { caseRev: view.case_rev, candidateId })
   }
   // notice actions[] → 다시 하기. 실패한 단계부터 이어서 한다.
-  // API가 생기면 RUN_NOTICE_ACTION { notice_code, action }으로 보낸다 — 그래서 code도 받아 둔다.
+  // 시연은 command를 보내지 않는다. 실제 흐름(ApiFlow)은 RUN_NOTICE_ACTION { notice_code, action }을 보낸다 — 그래서 code도 받아 둔다.
   const onAction = (_noticeCode: string, a: Action) => {
     if (a === 'MANUAL_PLATE_INPUT') return open('plateEdit')
     if (a === 'RETRY_PLATE_READ') start(rerunFrom(PLATE, '번호판을 다시 읽고 있어요'))

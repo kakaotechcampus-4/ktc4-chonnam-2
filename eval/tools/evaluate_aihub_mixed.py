@@ -1,7 +1,8 @@
-"""Build and evaluate a small, explicitly synthetic AI-Hub-in-dashcam probe.
+"""Build the pilot and evaluate synthetic AI-Hub-in-dashcam datasets.
 
-Eight Validation videos (two per type) are inserted into reviewed negative C2
-clips at 20 seconds. A re-encoded background-only control is paired with each.
+The pilot inserts eight Validation videos into reviewed negative C2 clips.
+The run command also accepts the separate 100-pair dataset via --dataset.
+Each inserted clip has a re-encoded background-only control.
 """
 
 import argparse

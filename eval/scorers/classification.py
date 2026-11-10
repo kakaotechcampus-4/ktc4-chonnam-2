@@ -1,4 +1,4 @@
-"""Classification 단계 지표 (v4 §9-3).
+"""Classification 단계 지표 (docs/architecture/module-architecture.md §9-3).
 
 confusion matrix 는 4종 + NONE 의 5×5 다.
 
@@ -11,7 +11,8 @@ _TARGET_BBOX_IOU_THRESHOLD 이상이면 correct 다. bbox 한 픽셀 밀림까�
 
 **by_condition 은 `cl2` 에서 내렸다** (2026-09-20). AI-Hub 71555 의
 `DayNights` 는 한 클립 안에서 값이 갈리는 클립이 **97.54%**, `Weather` 는
-98.36% 다 (전수 5,619클립 — readout PR #93 `condition-label-audit.txt`).
+98.36% 다 (전수 5,619클립 —
+docs/modules/readout/experiments/track1-vehicle-2026-09-19/condition-label-audit.txt).
 대조군인 해상도는 0.00% 라 클립 묶음 오류가 아니라 라벨 자체가 무작위에
 가깝다. 게다가 `sample_aihub` 는 시퀀스의 조건을 **첫 프레임 라벨**에서
 가져오므로 동전 한 번 던진 값이다. `by_condition` 은 `day_night` 하나로만

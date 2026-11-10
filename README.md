@@ -75,7 +75,7 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 | `apps/prototype/` | 흐름 프로토타입 (React 19 + Vite 6, 목데이터). **제품 코드 아님** |
 | `apps/web/` | 실제 웹 앱(React 19 · Vite 6). 공식 공개 주소의 `/`와 기존 `/?sample` 링크는 같은 공개 체험에 연결된다. 개발 환경의 목데이터 시연은 `/?demo`를 사용한다. [웹 앱 실행·CI](apps/web/README.md) |
 | `src/daesingo/` | Python 모듈형 모놀리스. [API](src/daesingo/api/README.md)는 Case·업로드·자산 조회를 제공하고, [Worker](src/daesingo/worker/README.md)는 큐에서 분석·OCR·영상 및 이미지 생성 작업을 실행한다. |
-| `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
+| `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results`, 실제로 동작한다 |
 | `data/` | 테스트 · 데모용 고정 데이터 — `mock/`(모듈별 계약 fixture · 시나리오), `real/`(실제 영상 E2E 산출 JSON) |
 | `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
 | `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
@@ -176,7 +176,7 @@ API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127
 
 후보 비교 영상 미리보기는 현재 세대 rank 1~3을 대상으로 첫 요청 때 구간 MP4를 준비한다. 재생은 후보 선택과 분리되며 `GET /cases/{case_id}/candidate-videos/{clip_ref}`의 inline·Range 응답을 사용한다. 구현 범위·상태·검증 한계는 [후보 영상 미리보기 결정](docs/modules/case/decisions/candidate-video-preview.md)을 확인한다.
 
-실제 웹 앱의 화면 구조와 프로토타입과의 관계는 [웹 앱 README](apps/web/README.md)와 [Web 문서](docs/modules/web/)에서 확인한다.
+실제 웹 앱의 화면 구조, 프로토타입과의 관계, 공개 체험·목데이터 시연의 실행 범위와 검사는 [웹 앱 README](apps/web/README.md)와 [Web 문서](docs/modules/web/README.md)를 따른다.
 
 ## 라이선스
 

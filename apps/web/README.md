@@ -1,5 +1,37 @@
 # web — 브라우저 앱
 
+## 처음 실행과 검사
+
+저장소 루트에서 `npm ci` 후 `npm run dev:web`을 실행한다. `/`는 API 서버의 접수 설정으로 공개 체험 또는 내부 흐름을 선택한다. 이전 `?sample` 링크도 같은 진입을 사용한다. API 없이 화면을 확인할 때는 `?demo` 또는 `?dev`를 사용한다.
+
+```bash
+npm run test:web
+cd apps/web
+npx tsc -b
+cd ../..
+npm run build --workspace=daesingo-web
+npm run preview:web
+```
+
+`apps/web/package.json`에는 lint 명령이 없다. 빌드 명령에는 타입 검사(`tsc -b`)가 포함된다. [web-tests.yml](../../.github/workflows/web-tests.yml)이 타입 검사·Vitest·Playwright를 실행한다. E2E는 현재 `e2e/a11y.e2e.ts` **한 파일의 접근성·키보드 흐름**을 다룬다. 전체 API 연동 시나리오를 검증한 결과로 읽지 않는다. 로컬 E2E는 Chromium 설치 후 `npm run test:e2e --workspace=daesingo-web`로 실행한다.
+
+## 화면에서 나가는 결과
+
+사용자는 신고 문구를 복사하고 신고용 영상을 다운로드한 뒤 안전신문고로 이동한다. 신고 제출은 사용자가 안전신문고에서 직접 한다.
+
+## 폴더 지도
+
+| 경로 | 역할 |
+| --- | --- |
+| `src/screens/` | 업로드·진행·후보·결과와 하위 화면 |
+| `src/components/` | 화면 공용 UI |
+| `src/styles/` | 화면 스타일과 디자인 토큰 |
+| `src/contracts/` | CaseView 타입과 표시 문구 |
+| `src/api/`, `src/state/` | API 요청과 흐름 상태 |
+| `e2e/` | Playwright 검사 |
+
+화면 설계 문서는 [web 모듈 README](../../docs/modules/web/README.md)에 모았다.
+
 **Owner:** 신유민 (공동 개발: 김대원 — 후보 카드·타임라인·번호판 확대) · **경계:** `docs/architecture/module-architecture.md` §4-모듈6 · **문서 작업공간:** `docs/modules/web/`
 
 ## 지금 상태
@@ -20,9 +52,9 @@ React 19/Vite 6 제품 앱이다. 루트 npm workspace에서 설치·빌드·테
 
 | 주소 | 화면 |
 | --- | --- |
-| `/` | 실제 흐름(ApiFlow). 이 브라우저가 마지막으로 연 case가 있으면 이어 본다 |
-| `?case=<id>` | 그 case를 실제 흐름으로 이어 본다 |
-| `?sample` | 공식 샘플 체험(OfficialSampleEntry) |
+| `/` | 서버의 공개 접수 설정에 따라 공개 체험(OfficialSampleEntry) 또는 내부 흐름(ApiFlow)으로 진입한다. 마지막 case가 있으면 이어 본다 |
+| `?case=<id>` | 서버가 선택한 모드에서 해당 case를 이어 본다 |
+| `?sample` | 이전 링크 호환용. 쿼리를 지우고 `/`와 같은 진입을 사용한다 |
 | `?demo` | mock fixture 시연 흐름(DemoFlow) |
 | `?cases` | 시연에서 보여 줄 경우를 고르는 상자 |
 | `?dev` | 스냅샷을 하나씩 넘겨 보는 증빙 화면 |

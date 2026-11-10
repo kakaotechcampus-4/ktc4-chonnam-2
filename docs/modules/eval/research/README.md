@@ -1,6 +1,6 @@
 # eval/research
 
-외부 자료, 비교 조사, 기술 Spike를 둔다. 조사 결과 자체는 결정이 아니다.
+외부 자료, 비교 조사, 기술 Spike를 둔다. 조사 결과 자체는 결정이 아니다. 아래 초기 자료의 데이터 분할·실행 계획은 현재 평가에 적용하지 않는다. 현재 실행과 수치 해석은 [eval README](../../../../eval/README.md)와 [평가 결과](../evaluation-results-2026-11-01.md)를 따른다.
 
 - `architecture-input-memo.md` — v4 작성 근거가 된 Owner 자료조사 메모. §10에 2026-09-12 현행 대조 (결정 아님)
 - `version-fields-proposal.md` — 예측·결과 파일 version field 제안 원문과 구현 대조 (결정 아님)

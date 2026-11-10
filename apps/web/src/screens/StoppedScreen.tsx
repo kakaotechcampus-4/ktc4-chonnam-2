@@ -3,7 +3,7 @@ import { isAction, type Action, type CaseView } from '../contracts/caseView'
 import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
 import { HALTED_CODES } from '../state/selectScreen'
 
-// 탐색 기다리기가 멈춘 상태 — 사용자 중단(case.analysis_stopped, #342) 또는 case 대기 timeout(case.analysis_timed_out, #358).
+// 탐색 기다리기가 멈춘 상태 — 사용자 중단(case.analysis_stopped) 또는 case 대기 timeout(case.analysis_timed_out).
 // 실패가 아니다. 둘은 출구가 같고 제목 문구만 다르다.
 // 부분 후보는 남기지 않는다 — 다시 찾으면 영상 전체를 새로 본다(core-user-flow §7 현재 범위).
 // 다시 찾을 근거가 없으면 case가 버튼을 싣지 않는다(단서 정리 중 중단) — 그때는 처음부터 시작한다.

@@ -25,7 +25,6 @@
 
 ### 데이터 자산
 
-- 사전에 고정한 실제 장시간 영상 평가셋(locked real long-video eval)
 - 정답 사례(Positive)와 헷갈리기 쉬운 정상 사례(Hard-negative)
 - AI가 틀리거나 불확실했던 사례와, 사용자가 후보·시간·유형·번호판·위치 등을 직접 수정한 기록(failure / correction data)
 - 반복 가능한 평가 체계(evaluation harness)

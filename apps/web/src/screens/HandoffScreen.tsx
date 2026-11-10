@@ -5,14 +5,15 @@ import { OtherCandidates } from '../components/OtherCandidates'
 import { Panel } from '../components/Panel'
 import { readinessLabel, reportFieldLabel } from '../contracts/labels'
 
-// 신고자료 화면 — report_field_states를 직접 읽는다(value-state-display.md §5-1).
+// 신고자료 화면 — report_field_states를 직접 읽는다(docs/modules/web/ux/value-state-display.md §5-1).
+// 지금은 `?dev` 스냅샷 보기(CaseScreen)에서만 쓴다. 실제 흐름의 신고자료는 ResultScreen이 그린다.
 // unconfirmed_fields는 요약(「확인 필요 N건」)에만 쓰고 필드별 배지·출처는
 // report_field_states에서 가져온다. 두 값이 어긋나면 report_field_states가 authoritative.
 export function HandoffScreen(props: { view: CaseView }): JSX.Element {
   const pkg = props.view.package
   if (!pkg) return <Panel title="신고자료">아직 만들어지지 않았습니다.</Panel>
 
-  // §3-5 세 gate는 각각 구분해 표시한다. 등재값을 그대로 내보내지 않고 문구로 바꾼다 —
+  // value-state-display §3-5: 세 gate는 각각 구분해 표시한다. 등재값을 그대로 내보내지 않고 문구로 바꾼다 —
   // 「PASS」와 「완료」가 한 패널에 나란히 뜨면 같은 축의 값처럼 읽힌다.
   const gates = [
     ['신고요건', readinessLabel(props.view.requirements_evidence?.readiness)],
@@ -45,7 +46,7 @@ export function HandoffScreen(props: { view: CaseView }): JSX.Element {
       </Panel>
 
       <Panel title="제출 전 확인">
-        {/* §3-5 세 gate를 하나의 readiness로 합치지 않는다 */}
+        {/* value-state-display §3-5: 세 gate를 하나의 readiness로 합치지 않는다 */}
         <div className="kv kv-rows">
           {gates.map(([label, value]) => (
             <div className="kv-row" key={label}>
@@ -56,7 +57,7 @@ export function HandoffScreen(props: { view: CaseView }): JSX.Element {
             </div>
           ))}
         </div>
-        {/* §3-7 WARN이라고 경로를 막지 않는다 — 버튼은 capabilities가 켠다 */}
+        {/* value-state-display §3-7: WARN이라고 경로를 막지 않는다 — 버튼은 capabilities가 켠다 */}
         <div className="btnrow" style={{ marginTop: 12 }}>
           {pkg.capabilities.includes('DOWNLOAD_ASSETS') && (
             <button type="button" className="btn">
@@ -81,7 +82,7 @@ export function HandoffScreen(props: { view: CaseView }): JSX.Element {
         )}
       </Panel>
 
-      {/* READY에서도 다른 후보를 고를 수 있다(core-user-flow.md §8-1, #173 E-4) */}
+      {/* READY에서도 다른 후보를 고를 수 있다(core-user-flow.md §8-1) */}
       <OtherCandidates view={props.view} />
     </div>
   )
