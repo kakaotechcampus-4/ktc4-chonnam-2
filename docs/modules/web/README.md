@@ -4,6 +4,13 @@
 
 이 폴더는 `web` 모듈의 세부 문서 작업공간이다. authoritative 경계는 `docs/architecture/module-architecture.md`, 역할은 `docs/management/ownership.md`를 따른다.
 
+## 한눈에
+
+- **하는 일:** 영상 업로드 → 장면 찾기 진행 → 후보 확인 → 번호판·발생 시각 확인 → 신고 문구 복사와 신고용 영상 다운로드. 제출은 사용자가 안전신문고에서 직접 한다.
+- **입출력:** 입력은 HTTP API `/cases/*`가 주는 `CaseView`(`/public/*` 공식 샘플 포함), 출력은 사용자 화면과 `/commands` 요청이다.
+- **코드:** [`apps/web/`](../../../apps/web/) — 실행 방법과 URL 진입은 [`apps/web/README.md`](../../../apps/web/README.md)
+- **테스트:** 루트에서 `npm run test:web` (e2e는 `npm run test:e2e --workspace=daesingo-web`)
+
 ## 다루는 범위
 
 - 단계형 작업공간 화면 — `CaseView` 표현. 자연어 입력은 기억 단서 1곳(`core-user-flow.md` §2)
