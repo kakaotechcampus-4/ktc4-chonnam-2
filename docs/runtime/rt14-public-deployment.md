@@ -1,16 +1,15 @@
 # RT-14 공개 배포·복구 구현 / 운영 절차
 
-**IN_PROGRESS · Refs #450 · Related #287, #460, #452, #486 · 2026-10-31**
+**RT-14 구현·운영 절차 · [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450) 완료 · 관련 #287, #460, #452, #486 · 2026-10-31 작성**
+
+실제 공개 배포와 복구 검증 범위는 [최종 AWS 공개 배포](a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)를 참고한다.
 
 이 문서는 [Owner 승인](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450#issuecomment-6522291826)
 §3과 [후속 요청](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450#issuecomment-6522296524)의
 구현 절차다. 정책 SoT는 [승인 설계](rt14-deployment-design.md) §13.6·§16.1과
 [Ops Spec](ops-spec.md)다. Gate를 다시 미결로 열지 않는다.
 
-이번 작업은 코드·runbook·로컬 검증만 한다. AWS 조회/변경·배포·SG 개방·DDNS 등록·
-공개 인증서 발급·workflow dispatch를 실행하지 않았다. 실행 변수는 변경하지 않으며
-`RT14_EXECUTION_ENABLED=false` 유지가 작업 조건이다. **로컬 검증은 공개 배포 완료나
-RT-14 종료의 증거가 아니다.**
+**2026-10-31 작성 당시 검증 범위.** 코드·배포 절차와 로컬 검증을 다뤘다. 그 단계에서는 `RT14_EXECUTION_ENABLED=false`를 유지했고, AWS 조회·변경, 배포, 보안 그룹 개방, DDNS 등록, 공개 인증서 발급, 워크플로 실행은 하지 않았다.
 
 ## 1. 변경 구조와 승인 대응
 
@@ -52,7 +51,7 @@ artifact·도메인 권한·실제 SDK 로드 성공을 판정하지 않는다.
 
 ## 2. 운영자 입력과 host ingress 준비
 
-아래는 **향후 별도 운영 작업**이다. 실제 값은 비공개 운영 기록에서 공급한다.
+아래는 제한 검수 당시의 운영자 입력과 호스트 구성 절차다. 적용 시점의 값은 비공개 운영 기록에서 공급한다.
 
 | 입력 | 공급·보관 |
 | --- | --- |
