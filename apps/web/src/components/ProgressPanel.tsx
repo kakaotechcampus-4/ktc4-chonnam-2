@@ -10,6 +10,8 @@ import { HALTED_CODES } from '../state/selectScreen'
 // heading은 목록 제목 자리 — 진행 화면은 「진행 단계 · 전체 N단계」를 넣고, 나머지는 기존 제목이다.
 export function ProgressPanel(props: { view: CaseView; jobs: RunningJob[]; heading?: ReactNode; sceneNow?: number }): JSX.Element {
   const searching = props.jobs.some((job) => job.kind === 'COARSE_SEARCH' || job.kind === 'HINT_EXTRACT')
+  const searchJobs = props.view.running_jobs.filter((job) => job.kind === 'COARSE_SEARCH' || job.kind === 'HINT_EXTRACT')
+  const queued = searchJobs.length > 0 && searchJobs.every((job) => job.status === 'PENDING')
   const stopped = props.view.notices.some((n) => HALTED_CODES.has(n.code) ||
     (n.blocking && !(searching && n.code === 'search.candidate_search_failed')))
   return (
@@ -18,7 +20,7 @@ export function ProgressPanel(props: { view: CaseView; jobs: RunningJob[]; headi
       <ol className="timeline">
         {props.view.progress.map((p) => props.sceneNow !== undefined && p.step === 'coarse_search' && (p.state === 'RUNNING' || p.state === 'DONE') ? (
           <SceneSearchStep key={p.step} state={p.state} progress={props.view.scene_search} now={props.sceneNow}
-            active={p.state === 'RUNNING' && !stopped} />
+            active={p.state === 'RUNNING' && !stopped} queued={queued} />
         ) : (
           <li key={p.step} className={`tl-${p.state.toLowerCase()}`}>
             <span className="tl-label">{stepLabel(p.step)}</span>

@@ -2,11 +2,13 @@ import { Check } from 'lucide-react'
 import type { CaseView } from '../contracts/caseView'
 import { SCENE_SEARCH_DELAY_MS, SCENE_SEARCH_MESSAGES as COPY } from '../contracts/labels.flow'
 
-export function SceneSearchStep({ state, progress, now, active }: {
+export function SceneSearchStep({ state, progress, now, active, queued = false }: {
   state: 'RUNNING' | 'DONE'
   progress: CaseView['scene_search']
   now: number
   active: boolean
+  /** 탐색 앞 job이 모두 PENDING — 준비 단계일 때만 「분석 차례」 문구로 바꾼다 */
+  queued?: boolean
 }) {
   const done = state === 'DONE'
   const phase = progress?.phase
@@ -14,7 +16,7 @@ export function SceneSearchStep({ state, progress, now, active }: {
   const preparing = !done && completed === 0
   const startedAt = progress?.search_started_at ? Date.parse(progress.search_started_at) : NaN
   const delayed = active && phase === 'SEARCHING' && Number.isFinite(startedAt) && now - startedAt >= SCENE_SEARCH_DELAY_MS
-  const message = done ? COPY.DONE : delayed ? COPY.DELAYED : (phase && COPY[phase]) || COPY.UNKNOWN
+  const message = done ? COPY.DONE : delayed ? COPY.DELAYED : preparing && queued ? COPY.QUEUED : (phase && COPY[phase]) || COPY.UNKNOWN
 
   return (
     <li className={`tl-${state.toLowerCase()} scene-search-step${active ? ' is-active' : ''}${preparing ? ' is-preparing' : ''}`}>

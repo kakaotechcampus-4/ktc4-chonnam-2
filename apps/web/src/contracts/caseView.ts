@@ -105,15 +105,15 @@ export interface Candidate {
    * `case-view/v1.4` 신규(§7). raw `at_provenance`가 authoritative이고 이 키는
    * case가 골라 주는 표시용 파생값이다 — web은 raw를 해석하지 않고 이 키로만
    * 문구를 고른다. 매핑 안 되는 raw는 case가 `null`로 내린다(§10-14).
-   * 계약상 필드는 항상 존재하지만(Y) **v5 fixture는 아직 안 내린다** — 그래서
-   * `undefined`를 받을 수 있고, `null`과 같게 다룬다(둘 다 fallback 문구).
+   * 계약상 필드는 항상 존재하지만(Y) 이 키를 아직 내리지 않는 서버를 위해
+   * `undefined`도 받는다. `null`과 같게 다룬다(둘 다 fallback 문구).
    */
   at_provenance_label_key?: string | null
-  /** case가 매긴 후보 순위(1부터, #122; 계약상 int|null). 배열은 rank 오름차순. mock fixture는 아직 안 내린다. */
+  /** case가 매긴 후보 순위(1부터, #122; 계약상 int|null). 배열은 rank 오름차순. 이 키를 내리지 않는 서버도 있어 없을 수 있다. */
   rank?: number | null
   /**
    * 후보의 시간축 위치(ms, #184). `null`이면 마커를 그리지 않고 stale 배지만 둔다.
-   * mock fixture는 아직 안 내린다.
+   * 이 키를 내리지 않는 서버도 있어 없을 수 있다.
    */
   marker_ms?: number | null
   observed: string

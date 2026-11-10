@@ -43,6 +43,11 @@ EVENTS = MappingProxyType({
         'Initial T2 or redelivery candidate failure; T1 remains durable. '
         'Optional outermost class qualname only, ASCII [A-Za-z_][A-Za-z0-9_]{0,63}; omit invalid names',
         optional='error_type'),
+    'runtime.reflect.resume_failed': spec('status', 'FAILED',
+        'worker/composition.py:compose_worker.resume_deferred_exports',
+        'Post-T2 retry of capacity-deferred automatic exports failed (#674); T2 stays committed and the '
+        'deferral notice/manual action remain. Optional outermost class qualname only, same rule as runtime.reflect.failed',
+        optional='error_type'),
     'runtime.exhaustion.failed': spec('status', 'FAILED',
         'common/jobs/exhaustion.py:redeliver_exhaustion_once',
         'Candidate rolled back; no identifiers, payload or exception text'),
@@ -108,7 +113,8 @@ EVENTS = MappingProxyType({
 METRICS = MappingProxyType({
     **{name: MetricSpec((name,), value.meaning) for name,value in EVENTS.items()
        if (name.startswith('runtime.') and name not in (
-           'runtime.exhaustion.failed', 'runtime.execution.failed', 'runtime.reflect.failed'))
+           'runtime.exhaustion.failed', 'runtime.execution.failed', 'runtime.reflect.failed',
+           'runtime.reflect.resume_failed'))
        or name.startswith('api.frame.') or name.startswith('api.asset.')
        or (name.startswith('api.upload.') and name != 'api.upload.failed')},
     'api.view.request_rate': MetricSpec(('api.view.request_rate',), 'Count routed GET view attempts over operator-selected log interval'),

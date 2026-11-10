@@ -158,20 +158,50 @@ def _apply_observation(case: CaseAggregate, outcome: ExecutionOutcome, *, store,
     observation.record_outcome(case, outcome.job_id, status=outcome.status)
     # command 뒤와 같은 gate다(`command.execute_command`). 관찰 결과로 Package가 준비되면 여기서 READY가 된다.
     if case.stage == "EVIDENCE_REVIEW":
-        from daesingo.case.exports import issue_missing_exports
-        from daesingo.case.service import build_view_from_adapter
-        adapter = store.adapter_for(case)
-        if adapter is not None and hasattr(adapter, "get_export_requests"):
-            # Completion is already settled. Only speculative automatic export
-            # effects are discarded if admission refuses; never undo this T2.
-            candidate = copy.deepcopy(case) if admit_auto_exports is not None else case
-            before_exports = len(candidate.job_records)
-            issue_missing_exports(candidate, adapter, build_view_from_adapter(case, adapter, executions=store.read_executions(case)))
-            fresh = candidate.job_records[before_exports:]
-            if not fresh or admit_auto_exports is None or admit_auto_exports(copy.deepcopy(fresh)):
-                case = candidate
-        mark_ready_if_package_ready(case, adapter)
+        case = _auto_export_gate(case, store, admit_auto_exports)
     return case
+
+
+def _auto_export_gate(case: CaseAggregate, store: CaseStore,
+                      admit_auto_exports: Callable[[list[dict[str, Any]]], bool] | None) -> CaseAggregate:
+    """`EVIDENCE_REVIEW` case에 빠진 자동 내보내기를 발주하고 READY gate를 다시 본다.
+
+    admission이 거절하면 이번 자동 발주 효과만 버린다 — 이미 정산한 T2는 되돌리지 않는다. 신고영상 · 번호판
+    이미지가 함께 거절되면 신고영상만 다시 묻는다(`exports.gate_auto_exports`, #675)."""
+    from daesingo.case import exports
+    from daesingo.case.service import build_view_from_adapter
+    adapter = store.adapter_for(case)
+    if adapter is not None and hasattr(adapter, "get_export_requests"):
+        view = build_view_from_adapter(case, adapter, executions=store.read_executions(case))
+        if admit_auto_exports is None:
+            exports.issue_missing_exports(case, adapter, view)
+        else:
+            case = exports.gate_auto_exports(case, adapter, view, admit_auto_exports, since=len(case.job_records))
+    mark_ready_if_package_ready(case, adapter)
+    return case
+
+
+def resume_auto_exports(
+    case_id: str,
+    *,
+    store: CaseStore,
+    admit_auto_exports: Callable[[list[dict[str, Any]]], bool],
+) -> list[dict[str, Any]]:
+    """admission 보류로 빠진 자동 내보내기를 다시 발주한다(#674). 새로 발주한 JobRecord를 돌려준다.
+
+    반영 T2가 커밋된 뒤 별도 transaction에서 부른다 — 반영 중인 job이 자기 슬롯을 차지한 채 판정되던 보류가
+    여기서 풀린다. 발주 판단은 반영 · command와 같은 gate(`_auto_export_gate`)이고 현재 선택 후보 기준이다.
+    `EVIDENCE_REVIEW`가 아니면(후보 재선택 중 · 이미 READY) 아무것도 하지 않는다. 같은 입력은 fingerprint로
+    건너뛰므로 다시 불러도 중복 발주가 없다. 아무것도 바뀌지 않으면 저장하지 않는다(`case_rev` 유지)."""
+    case = store.load_for_update(case_id)
+    if case.stage != "EVIDENCE_REVIEW":
+        return []
+    before = copy.deepcopy(case)
+    case = _auto_export_gate(case, store, admit_auto_exports)
+    if case == before:
+        return []
+    store.save(case)
+    return copy.deepcopy(case.job_records[len(before.job_records):])
 
 
 def _apply_fine_verify(case: CaseAggregate, outcome: ExecutionOutcome, *, store, reader, timelines, budget, admit_auto_exports=None) -> CaseAggregate:

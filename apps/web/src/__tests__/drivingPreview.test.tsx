@@ -19,6 +19,16 @@ it('StrictMode와 부모 상태 갱신에서도 엔진은 한 번 만들고 화�
   r.unmount(); expect(dispose).toHaveBeenCalledTimes(1)
 })
 
+it('화면을 나갈 때 게임 iframe이 문서에 붙어 있는 동안 해제한다', async () => {
+  const r = render(<DrivingPreview active onBack={onBack} />)
+  await waitFor(() => expect(mount).toHaveBeenCalledOnce())
+  const root = mount.mock.calls[0][0] as HTMLElement
+  let connected: boolean | undefined
+  dispose.mockImplementation(() => { connected = root.isConnected })
+  r.unmount()
+  expect(connected).toBe(true)
+})
+
 it('지연 로딩 도중 분석이 끝나면 그래픽 엔진을 만들지 않는다', async () => {
   const r = render(<DrivingPreview active onBack={onBack} />); r.unmount()
   await act(async () => {})

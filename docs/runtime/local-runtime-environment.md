@@ -167,9 +167,9 @@ startup `process.started`만으로 모델 적용을 증명할 수 없다.
 | `DAESINGO_RUNTIME_API_FRAME_MAX_AGE_SEC` | API | `3600` | frame cache max-age |
 | `DAESINGO_RUNTIME_API_FRAME_CONCURRENCY` | API | `2` | frame 생성 동시성 |
 | `DAESINGO_RUNTIME_CLEANUP_TEMP_AGE_SEC` | API/Worker | `3600` | 오래된 소유 temp |
-| `DAESINGO_RUNTIME_CLEANUP_INTERVAL_SEC` | API/Worker | `3600` | cleanup 주기 |
+| `DAESINGO_RUNTIME_CLEANUP_INTERVAL_SEC` | API/Worker | `3600` | 설정 기본값. 공개 모드(`a1`) API의 실제 주기는 설정값과 `60`초 중 작은 값 |
 | `DAESINGO_RUNTIME_CLEANUP_STAGING_AGE_SEC` | API | `3600` | 오래된 upload staging; Worker는 소비 안 함 |
-| `DAESINGO_RUNTIME_CLEANUP_ORPHAN_AGE_SEC` | API config | `86400` | 현재 orphan publish 삭제 미구현; 설정 수용과 삭제 실행을 구분 |
+| `DAESINGO_RUNTIME_CLEANUP_ORPHAN_AGE_SEC` | API | `86400` | 발행됐지만 DB에 등록되지 않은 관리 원본을 정리할 때 쓰는 최소 경과 시간(초) |
 | `DAESINGO_RUNTIME_READY_DB_TIMEOUT_SEC` | API | `2` | readiness DB probe |
 | `DAESINGO_RUNTIME_READY_STORAGE_TIMEOUT_SEC` | API | `1` | readiness storage probe |
 
@@ -184,9 +184,9 @@ ready budget에는 별도 env key가 없다. Case는 별도 env/config 없음
 
 A-1의 전용 작업은 양 서비스가 같은 shared media의 `public-temp/a1-<DB token>`을 사용한다.
 기존 서비스별 temp 설정을 바꾸지 않고 Recording과 Search의 실제 temp context에 연결한다.
-공개 모드의 설정·권한·공유 admission·예산·TTL/삭제·head7 복구 조건은
-[A-1 서버 연결](a1-public-readiness.md)을 따른다. 기본 모드가 `a1`이므로 승인값 없이 분석을
-허용하지 않는다. 이 소스 변경을 운영 적용 완료로 해석하지 않는다.
+공개 모드의 설정·권한·작업 수락·예산·보관과 삭제는 [A-1 서버 연결](a1-public-readiness.md)을 참고한다.
+기본 모드 `a1`에서는 승인값이 있어야 분석을 허용한다. 운영 인계에 기록된 스키마는 `runtime_0008`이다.
+재기동 확인과 전체 복원의 검증 범위는 [최종 배포 복구 검증](a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)을 참고한다.
 
 Compose의 같은 named volume `/media`를 API/Worker가 공유한다. 이미지가 UID/GID
 `10001:10001`, mode `0750`으로 `/media`, `/media/api-temp`, `/media/worker-temp`를 준비한다.
@@ -194,7 +194,7 @@ Compose의 같은 named volume `/media`를 API/Worker가 공유한다. 이미지
 
 | 위치 | 용도·삭제 경계 |
 | --- | --- |
-| `/media/source` | durable publish 원본/asset. temp cleanup 대상으로 지정할 수 없음; retention/purge 아님 |
+| `/media/source` | 등록용 원본 발행 경로. 임시 파일 정리 대상에서 제외하며, 미등록 원본은 API가 별도로 확인 |
 | `/media/staging` | API streaming upload; API cleanup만 담당 |
 | `/media/api-temp` | API Frame/미디어 작업 temp; API cleanup |
 | `/media/worker-temp` | Worker AnalysisSource/IncidentClip/export 미디어 작업 temp; Worker cleanup |
@@ -202,9 +202,10 @@ Compose의 같은 named volume `/media`를 API/Worker가 공유한다. 이미지
 
 cleanup은 startup scan 후 완료 시점부터 interval을 기다린다. 허용된 소유 prefix/형식과
 age보다 오래된 항목만 대상으로 하고 활성 upload/reader/materializer는 filesystem lease로 보호한다.
-publish·원본·모델 cache·다른 서비스 temp를 임의로 지우지 않는다. orphan age가 설정돼도
-DB 등록 조회·orphan publish 삭제·제품 retention은 구현 완료가 아니다.
-자세한 lease/경로 pinning/종료 join은 [cleanup Notes](./rt12a-cleanup.md)와 현재
+API는 오래된 관리 원본의 DB 등록 상태를 조회한다. 등록되지 않았음이 확인되고 잠금과 파일 확인을 통과한
+파일만 삭제한다. 조회가 실패하거나 등록 여부를 모르면 파일을 보존한다.
+[미등록 원본 정리 조건](issue445-orphan-publish.md)을 참고한다.
+임시 파일 정리의 잠금, 경로 확인, 종료 처리는 [cleanup Notes](./rt12a-cleanup.md)와 현재
 `common/storage/cleanup.py`, `media.py`를 따른다. Native 경로는 배포자가 먼저 준비해야 하며
 Windows의 특수 Volume GUID 경로 대신 도구가 읽을 수 있는 일반 경로를 확인한다.
 

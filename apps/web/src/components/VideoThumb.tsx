@@ -61,7 +61,7 @@ export function VideoThumb(props: {
   useEffect(() => {
     const file = props.file
     if (!file) return
-    // AVI는 <video>가 열지 못하므로 첫 영상 조각을 직접 디코드한다(#595). 캡처 지점은 첫 키프레임(0초)이다.
+    // AVI는 <video>가 열지 못하므로 첫 영상 조각을 직접 디코드한다(블랙박스 AVI 대응). 캡처 지점은 첫 키프레임(0초)이다.
     if (/\.avi$/i.test(file.name) || file.type === 'video/avi' || file.type === 'video/x-msvideo') {
       let cancelled = false
       decodeAviFrame(file).then(

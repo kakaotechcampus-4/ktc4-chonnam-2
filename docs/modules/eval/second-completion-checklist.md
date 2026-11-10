@@ -106,7 +106,7 @@
 
 **판정 = `abstained` × GT `legibility` 교차표**
 
-| | GT READABLE | GT UNREADABLE |
+| 항목 | GT READABLE | GT UNREADABLE |
 | --- | --- | --- |
 | `abstained=false` | `exact_match`: `observation.value` == `true_text` | **`wrong_accept`** |
 | `abstained=true` | 놓친 판독 | **`abstention_recall` 적중** |
@@ -166,7 +166,6 @@ run_ref_reason:  null 22 · DIRECT_NO_RUN 2 · RUN_NOT_PRODUCED 2
 ## J. 외부 입력 대기 — 완료 정의에서 제외
 
 - [ ] `eval/manifests/b_youtube/clips.json`에 `source_url`·`license` 추가 — **`YT_0001` 원본 URL·라이선스 표기 필요**
-- [ ] 자료조사 6개 문서의 `[링크 필요]` 채우기 — AI-Hub 71555 상세/이용조건/일반 이용정책/구축 설명서, 제조사 매뉴얼 5종
 - [ ] `research/blackbox-storage-survey.md`는 **출처 0건이라 현재 인용 금지** 상태다
 
 ## K. v5 신규 검수 — 조치 없음 (확인 완료)

@@ -6,7 +6,7 @@ CleanupSettings 주기로 반복하며 종료 때 소유 thread를 join한다. u
 명시적 temp_root 주입·활성 보호용 factory이며 현재 기본 Recording에는
 materializer가 없다. [경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
 
-2026-10-31 P-6 후속(#445)은 별도 orphan lease를 수신 전부터 DB 등록의
+2026-10-31 미등록 원본 파일 정리(P-6, #445)는 별도 정리 잠금을 수신 전부터 DB 등록의
 commit/rollback·취소 정리까지 유지한다. lease 대기는 기존 upload deadline에
 포함한다. 오래된 source 후보가 있으면 startup/주기 scan도 Recording 공개
 capability를 통해 짧은 DB 조회를 수행하며, 실패 시 파일을 보존한다. 아래
@@ -17,10 +17,18 @@ DB connection을 보유하지 않는다. [구현·검증·제약](../../../docs/
 
 - 배포 단위 「API 1」. 긴 작업은 HTTP 요청 안에서 끝내지 않는다 — `case`가 만든 `JobRecord`를 queue에 넣고 `202 Accepted`를 반환한다.
 - 즉시 처리하는 것(§8-1): `CaseView` 조회 · hint 수정 · candidate 선택 · pure evidence recompute · requirement recompute · 상태 전이.
-- 인증은 MVP 최소 수준이며 방식은 미결(§1-7 A2).
+- A-1 공개 체험은 서버가 발급한 익명 세션 쿠키로 Case와 미디어의 소유권을 확인한다.
 - `web`이 읽는 상태는 `case.get_view()`를 노출하는 CaseView 하나다 (§4-모듈6 ③). 그 밖의 read는 CaseView가 가리키는 FrameRef · 신고용 artifact의 바이너리 조회뿐이다. HTTP surface 결정은 `docs/runtime/runtime-tech-spec.md` §13(RD-05, #247), 경로 · status · body는 HTTP API Contract `docs/architecture/contracts/contract-http-api.md`(`http-api/v1`, Final — Accepted)다. route 구현 전 선행 조건은 그 문서 §9.1이다.
 
-## 상태
+## 현재 작업 실행 연결
+
+`POST /cases/{case_id}/commands`는 Case 변경과 작업 등록 또는 중단 요청을 같은 DB 트랜잭션에서 처리한다.
+`START_ANALYSIS`에 필요한 시간축은 요청에 연결한 Recording 서비스에서 읽는다.
+처리기 실행과 결과 반영은 [Worker](../worker/README.md)가 맡는다.
+
+A-1의 `upload_bundle` 모드는 `POST /cases/{case_id}/official-uploads`에서 공식 묶음 하나에 속하는 MP4를 하나 이상 받는다. 파일 크기와 SHA-256으로 허용 목록을 확인하고 목록 순서대로 등록한다. `server_sample` 모드는 `POST /cases/{case_id}/official-samples`에서 서버에 준비된 샘플 ID를 받는다. [공개 체험 HTTP 계약](../../../docs/runtime/a1-public-readiness.md#http-연결-계약)을 참고한다.
+
+## 구현 이력
 
 RT-01의 `bootstrap.py`를 구현했다. `bootstrap(revision=...)`은 `DAESINGO_ENV_FILE`(미지정 시 cwd `.env`)을 명시적으로 읽고, 불변 API RuntimeConfig와 등록된 모듈 factory/validator를 검증한 뒤 JSON line `process.started`를 기록한다. 실패 시 설정 key 이름만 기록하고 `SystemExit(1)`로 종료한다. `revision`은 호출자가 전달하는 commit SHA 등 안전한 식별자다.
 
@@ -44,7 +52,7 @@ RT-02의 precommit DB 실패는 503, COMMIT 결과 불명은 500이며 자동 �
 
 RT-08(c)는 `POST /cases/{case_id}/commands`를 연결한다. `application/json`·UTF-8과 B-U2 실제 수신 byte 한도를 검사하고 JSON 값은 Case의 공개 `execute_command`에 그대로 전달한다. Case 저장과 이번 `appended_job_records` batch enqueue는 한 Connection/transaction이며 commit 후에만 응답한다. status는 append 목록과 Case 응답 표로 정하고 body는 고치지 않는다. 요청 trace를 enqueue에 이어 주며 URL·header·payload·예외 원문은 로그에 넣지 않는다. `Content-Length`가 없거나 실제보다 작아도 수신 한도를 적용한다. 수신은 async, 동기 DB 작업은 context를 보존하는 threadpool에서 수행한다(Plan P-9 대비 구현 상세).
 
-RT-08(d)는 Case의 `cancelled_job_ids`를 같은 Connection/transaction의 기존 Runtime `request_cancel`에 전달한다. Case가 먼저 잠기며, QUEUED는 같은 commit에서 CANCELLED, RUNNING은 최초 cancel marker만 기록한다. HTTP status와 body는 기존 append 목록·Case 응답 표 그대로다. 실패는 전체 rollback이고 API 재시도는 없으며, COMMIT 결과 불명은 기존 500이다. Worker의 협력적 checkpoint·ownership fence·늦은 결과 guard와 T2 redelivery 의미는 유지한다. `START_ANALYSIS`의 `CaseTimelineSource`와 실제 모듈 결과 adapter/reader 조립도 아직 없으며, 해당 dependency가 필요한 command의 동작 완료를 주장하지 않는다. 이 slice의 실제 발주 acceptance는 기존 `RUN_NOTICE_ACTION`과 영속 fixture Case로 검증한다. media HTTP는 RT-11, 실제 capability 조립은 해당 선행 Owner/후속 Task 범위다.
+RT-08(d)는 Case의 `cancelled_job_ids`를 같은 Connection/transaction의 기존 Runtime `request_cancel`에 전달한다. Case가 먼저 잠기며, QUEUED는 같은 commit에서 CANCELLED, RUNNING은 최초 cancel marker만 기록한다. HTTP status와 body는 기존 append 목록·Case 응답 표 그대로다. 실패는 전체 rollback이고 API 재시도는 없으며, COMMIT 결과 불명은 기존 500이다. Worker의 협력적 checkpoint·ownership fence·늦은 결과 guard와 T2 redelivery 의미는 유지한다. 당시 발주 검증은 `RUN_NOTICE_ACTION`과 영속 fixture Case를 사용했다. `START_ANALYSIS`의 시간축 조회와 실제 결과 조회는 아래 RT-10(b)에서 연결했다.
 
 실제 MySQL acceptance는 기존 disposable 8.4 harness에 참여한다. SHUTDOWN 검사는 suite DB와 분리된 두 번째 서버를 사용한다. Linux CI는 서비스가 준비한 mysql:8.4 image를 Docker로 재사용하고 sudo/unshare/mount로 private RO tmpfs를 생성·해제한다. Windows 로컬 acceptance는 WSL Ubuntu 및 `DAESINGO_MYSQL_TEST_BASEDIR`/`DAESINGO_MYSQL_TEST_LIBDIR`의 테스트 전용 Linux 바이너리/라이브러리 위치가 필요하다. fixture는 기능 부재를 skip으로 대체하지 않는다.
 

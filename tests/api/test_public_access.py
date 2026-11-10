@@ -1,27 +1,33 @@
 """Actual API middleware with synthetic policy/shared DB; no paid provider."""
 from dataclasses import replace
+from datetime import datetime, timedelta
 import hashlib
 import json
+from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 import pytest
+from sqlalchemy import select
 
 from a1_support import policy_values, sqlite_engine
 from daesingo.api.app import create_app
 from daesingo.api.composition import ApiComposition
 from daesingo.case.store import CaseStore
+from daesingo.common.jobs.execution import HandlerResult
+from daesingo.common.jobs.reflection import ReflectionInput, ReflectionResult, RuntimeJobRecord
 from daesingo.common.public_runtime import schema
-from daesingo.common.public_runtime.policy import PublicPolicy
+from daesingo.common.public_runtime.policy import PublicDenied, PublicPolicy
 from daesingo.common.public_runtime.repository import PublicStore
+from daesingo.worker.public_reflection import PublicResultReflector
 
 
 @pytest.fixture
-def a1_app(api_startup, tmp_path, monkeypatch):
+def a1_app(api_startup, tmp_path, monkeypatch, request):
     engine = sqlite_engine(tmp_path / "public.sqlite")
     schema.metadata.create_all(engine)
     with engine.begin() as conn:
         conn.execute(schema.control.insert().values(id=1, accepting=False, policy_hash=None))
-    values = policy_values(tmp_path)
+    values = policy_values(tmp_path, **getattr(request, "param", {}))
     root = tmp_path / "official"
     root.mkdir()
     (root / "part.mp4").write_bytes(b"synthetic!")
@@ -60,6 +66,99 @@ def session(client):
     assert "Secure" in cookie and "HttpOnly" in cookie and "SameSite=strict" in cookie
 
 
+@pytest.mark.parametrize("a1_app", [{
+    "input_mode": "upload_bundle", "session_create_daily": 50, "session_analysis_daily": 5,
+    "session_daily": 6, "ip_daily": 100, "global_concurrent": 1,
+    "upload_case_attempts": 3, "case_repeats": 1,
+    "local_work": {"case_jobs": 12, "ip_daily_jobs": 40, "global_concurrent": 2},
+}], indirect=True)
+def test_upload_case_and_search_limits_reset_at_kst_midnight(a1_app, monkeypatch):
+    app, engine, store = a1_app
+    public = app.state.composition.public
+    before_midnight = datetime(2026, 11, 9, 14, 59, 59)
+    clock = before_midnight
+    monkeypatch.setattr("daesingo.common.public_runtime.repository.now", lambda conn: clock)
+    with engine.begin() as conn:
+        # This admission-only fixture has no queued/running work or provider usage.
+        conn.exec_driver_sql("CREATE TABLE job_execution (case_id TEXT, status TEXT, case_applied_at DATETIME)")
+        conn.exec_driver_sql("CREATE TABLE usage_inflight (case_id TEXT, observed_at DATETIME)")
+
+    headers = {"Origin": "https://testserver"}
+    with TestClient(app, base_url="https://testserver") as client:
+        session(client)
+        created = [client.post("/cases", headers=headers) for _ in range(50)]
+        assert [response.status_code for response in created] == [201] * 50
+        over_case_limit = client.post("/cases", headers=headers)
+        assert over_case_limit.status_code == 429 and over_case_limit.json()["error"]["code"] == "public.limit"
+        cid, other, third = [response.json()["case_id"] for response in created[:3]]
+
+        with engine.begin() as conn:
+            owner = conn.scalar(select(schema.cases.c.session_hash).where(schema.cases.c.case_id == cid))
+            for target in (cid, other):
+                for attempt in range(3):
+                    token = f"prep-{target}-{attempt}"
+                    assert store.begin_preparation(conn, target, owner, None, token)
+                    store.finish_preparation(conn, token)
+                if target == cid:
+                    with pytest.raises(PublicDenied) as prep_denied:
+                        store.begin_preparation(conn, cid, owner, None, "over-case-prep")
+                    assert prep_denied.value.code == "LIMIT"
+            with pytest.raises(PublicDenied) as prep_denied:
+                store.begin_preparation(conn, third, owner, None, "over-daily-prep")
+            assert prep_denied.value.code == "LIMIT"
+            assert conn.scalars(select(schema.admissions.c.initial)).all() == []
+            store.bind_sample(conn, cid, "test-only", [{"source_asset_ref": "source-" + cid,
+                "sha256": "a" * 64, "byte_size": 10, "duration_ms": 1000}])
+
+        retry = {"kind": "RUN_NOTICE_ACTION", "payload": {
+            "notice_code": "search.candidate_search_failed", "action": "RETRY_SEARCH"}}
+        start = {"kind": "START_ANALYSIS", "payload": {"description": "Test"}}
+        edit = {"kind": "EDIT_HINT", "payload": {"description": "Updated test"}}
+
+        def admit(revision, command, job_kind="COARSE_SEARCH"):
+            payload = {"case_id": cid, "expected_case_rev": revision, **command}
+            records = [] if job_kind is None else [
+                {"kind": job_kind, "job_id": f"test-{revision}", "case_id": cid}]
+            with engine.begin() as conn:
+                public.admit_result(conn, payload, SimpleNamespace(appended_job_records=records))
+
+        admit(1, start, "HINT_EXTRACT")
+        followups = {"HINT_EXTRACT": "COARSE_SEARCH", "COARSE_SEARCH": "FINE_VERIFY"}
+        reflector = PublicResultReflector(SimpleNamespace(reflect=lambda conn, item: ReflectionResult(
+            "APPLIED", jobs=(RuntimeJobRecord("child-" + item.kind, cid, followups[item.kind]),))), store)
+        for kind, child in followups.items():
+            with engine.begin() as conn:
+                incoming = ReflectionInput("execution-" + kind, "parent-" + kind, cid, kind, 1,
+                                           HandlerResult(status="SUCCEEDED"))
+                assert reflector.reflect(conn, incoming).jobs[0].kind == child
+                assert conn.scalars(select(schema.admissions.c.initial)).all() == [True]
+                assert store.active_count(conn) == 1
+
+        for revision, command in enumerate((edit, retry, edit, retry), 2):
+            admit(revision, command)
+        with pytest.raises(PublicDenied) as denied:
+            admit(6, retry)
+        assert denied.value.code == "LIMIT" and denied.value.status == 429
+
+        # Reads and jobless correction bypass admission. Local jobs use their own ledger.
+        assert client.get(f"/cases/{cid}/view").status_code == 200
+        monkeypatch.setattr(ApiComposition, "load_asset", lambda *_: (b"fixture", "video/mp4"))
+        assert client.get(f"/cases/{cid}/assets/fixture").status_code == 200
+        correction = {"kind": "EDIT_EVENT_TIME", "payload": {"value": None}}
+        admit(7, correction, None)
+        admit(8, correction, "REPORT_VIDEO_EXPORT")
+        admit(9, {"kind": "REQUEST_CANDIDATE_VIDEO_PREVIEW", "payload": {"candidate_id": "test"}},
+              "CANDIDATE_VIDEO_PREVIEW")
+        with engine.connect() as conn:
+            assert conn.scalars(select(schema.admissions.c.initial)
+                                .order_by(schema.admissions.c.initial)).all() == [False] * 4 + [True]
+            assert len(conn.scalars(select(schema.local_admissions.c.job_ids)).all()) == 2
+
+        clock = before_midnight + timedelta(seconds=1)
+        assert client.post("/cases", headers=headers).status_code == 201
+        admit(6, retry)
+
+
 def test_missing_approval_serves_health_but_refuses_analysis_and_raw_upload(api_startup):
     startup, _ = api_startup
     startup = replace(startup, config=replace(startup.config,
@@ -78,6 +177,39 @@ def test_catalog_selects_only_safe_presentation_fields(a1_app):
         text = result.text
         assert "Synthetic" in text and "1000" in text
         assert all(x not in text for x in ("authorization_ref", "sha256", "part.mp4", "samples_root"))
+
+
+def test_intake_mode_remains_available_when_catalog_is_unavailable(a1_app):
+    app, _, _ = a1_app
+    app.state.composition.public.catalog = None
+    with TestClient(app, base_url="https://testserver") as client:
+        assert client.get("/public/samples").status_code == 503
+        assert client.get("/public/intake-mode").json() == {
+            "upload_enabled": False, "retention_ttl_sec": 1800}
+
+
+@pytest.mark.parametrize("a1_app", [{"case_ttl_sec": 86400, "source_ttl_sec": 90},
+    {"case_ttl_sec": 90, "source_ttl_sec": 86400}], indirect=True)
+def test_intake_reports_earliest_case_and_source_deadline(a1_app):
+    app, _, _ = a1_app
+    with TestClient(app, base_url="https://testserver") as client:
+        assert client.get("/public/intake-mode").json()["retention_ttl_sec"] == 90
+
+
+@pytest.mark.parametrize("a1_app", [{}, {"input_mode": "upload_bundle",
+    "session_create_daily": 50, "session_analysis_daily": 5, "upload_case_attempts": 3}], indirect=True)
+def test_public_owner_cannot_delete_own_case(a1_app):
+    app, engine, _ = a1_app
+    origin = {"Origin": "https://testserver"}
+    with TestClient(app, base_url="https://testserver") as client:
+        session(client)
+        response = client.post("/cases", headers=origin)
+        assert response.status_code == 201
+        cid = response.json()["case_id"]
+        assert client.delete(f"/cases/{cid}", headers=origin).status_code == 404
+        assert client.get(f"/cases/{cid}/view").status_code == 200
+    with engine.connect() as conn:
+        assert conn.scalar(select(schema.cases.c.state).where(schema.cases.c.case_id == cid)) == "ACTIVE"
 
 
 def test_closed_gate_does_not_hide_jobless_domain_validation_or_owner_view(a1_app):

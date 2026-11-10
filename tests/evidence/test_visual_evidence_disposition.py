@@ -135,6 +135,52 @@ class VisualEvidenceDispositionTests(unittest.TestCase):
         self.assertEqual(event["violation_expression"]["value"], package["report_inputs"]["violation_expression"])
         self.assertEqual(draft, {key: package["report"][key] for key in ("title", "description")})
 
+    def test_helmet_draft_matches_package_for_observed_and_corrected_types(self):
+        helmet_type = "MOTORCYCLE_HELMET_NON_USE"
+        observed = self._assemble(self._visual("OBSERVED", helmet_type))
+        self.assertNotIn("situation_response", observed)
+
+        solid_line = self._visual("OBSERVED", "SOLID_LINE_LANE_CHANGE")
+        before = self._assemble(solid_line)
+        correction = {
+            "contract_version": "correction-record/v1.2", "correction_id": "corr_helmet",
+            "case_id": "case_h001", "selection_rev": 1, "kind": "SITUATION_CHANGE",
+            "target_field": "event.visual_event_type", "previous_value": "SOLID_LINE_LANE_CHANGE",
+            "new_value": helmet_type, "supersedes_ref": None,
+            "corrected_at": "2026-08-24T18:24:00+09:00",
+        }
+        response = {"value": "CORRECTED", "responded_at": correction["corrected_at"],
+                    "candidate_ref": before["basis"]["candidate_ref"]}
+        corrected = self._assemble(solid_line, response, [correction])
+
+        for record, expected_reason in (
+            (observed, "evidence.situation_observed_without_response"),
+            (corrected, "evidence.situation_corrected"),
+        ):
+            with self.subTest(reason=expected_reason):
+                self.assertEqual(helmet_type, record["event"]["visual_event_type"]["value"])
+                draft = render_report_draft(record)
+                self.assertIsNotNone(draft)
+                self.assertEqual("이륜차 안전모 미착용 신고", draft["title"])
+                self.assertIn(
+                    "차량번호 12가3456의 이륜차 운전자 또는 탑승자가 안전모를 착용하지 않고 주행하는 것을 확인하여 신고합니다.",
+                    draft["description"],
+                )
+                self.assertNotIn("차량이", draft["description"])
+                final = evaluate_requirements(
+                    record, scope="FINAL_PACKAGE", report_id="req_helmet",
+                    evaluated_at="2026-08-24T18:25:00+09:00", time_resolution=self.time, asset_facts=self.assets,
+                )
+                check = next(check for check in final["checks"] if check["code"] == "package.evidence.situation_response")
+                self.assertEqual(("PASS", expected_reason), (check["outcome"], check["reason_code"]))
+                package = build_report_package(
+                    record, final, package_id="pkg_helmet",
+                    created_at="2026-08-24T18:26:00+09:00", asset_facts=self.assets,
+                )
+                self.assertEqual("이륜차 위반", package["report_inputs"]["safety_report_type"])
+                self.assertEqual("12가3456", package["report_inputs"]["vehicle_number"])
+                self.assertEqual(draft, {key: package["report"][key] for key in ("title", "description")})
+
     # ── 3. UNCERTAIN + null + USER_UNSURE ──────────────────────────────
     def test_uncertain_with_user_unsure_keeps_generic_path(self):
         visual = self._visual("UNCERTAIN", None)

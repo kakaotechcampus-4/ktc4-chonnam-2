@@ -9,7 +9,7 @@ from collections.abc import Callable
 from sqlalchemy.engine import Connection
 
 from daesingo.case.analysis_start import InitialSearchBudget
-from daesingo.case.reflection import ExecutionOutcome, ProducedReader, reflect_execution
+from daesingo.case.reflection import ExecutionOutcome, ProducedReader, reflect_execution, resume_auto_exports
 from daesingo.case.store import CaseStore
 from daesingo.case.store_mysql import MySQLCaseRepository
 from daesingo.case.timeline_source import CaseTimelineSource
@@ -56,3 +56,12 @@ class CaseReflector:
     def reflect_with_admission(self, conn, incoming, *, admit_auto_exports, on_auto_exports_deferred):
         return self.reflect(conn, incoming, admit_auto_exports=admit_auto_exports,
                             on_auto_exports_deferred=on_auto_exports_deferred)
+
+    def resume_auto_exports(self, conn: Connection, case_id: str, *,
+                            admit_auto_exports) -> tuple[RuntimeJobRecord, ...]:
+        """#674: Case's own gate re-issues exports that admission deferred during an earlier T2."""
+        store = self.store_factory(conn)
+        if store.conn is not conn:
+            raise ValueError("resume store must share caller connection")
+        return tuple(RuntimeJobRecord(job["job_id"], job["case_id"], job["kind"])
+                     for job in resume_auto_exports(case_id, store=store, admit_auto_exports=admit_auto_exports))

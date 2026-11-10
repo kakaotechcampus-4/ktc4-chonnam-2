@@ -21,14 +21,15 @@ import carTop from '../assets/car/car-top.webp'
 // 주행 게임을 빌드에서 끈다(`VITE_DRIVING_GAME=off`). 끄면 진입 버튼이 없고 Three.js도 불러오지 않는다.
 const DRIVING_ON = import.meta.env.VITE_DRIVING_GAME !== 'off'
 
-// Figma 02_Main_Flow · 02_Retry_Flow · 02_Fail_Flow. 세 프레임은 같은 틀이고
+// 팀 Figma(비공개) 프레임 02_Main_Flow · 02_Retry_Flow · 02_Fail_Flow(저장소 사본 docs/design/wireframe/07-main-flow.png). 세 프레임은 같은 틀이고
 // 단계 상태(progress)와 알림(notices)만 다르다 — 둘 다 CaseView에서 온다.
-// 진행 화면에는 버튼이 없다. 실패한 단계는 목록에서 빨갛게 칠하고, 다른 단계가 실제로
+// 진행 화면에는 [분석 중단] 말고 작업 버튼이 없다. 실패한 단계는 목록에서 빨갛게 칠하고, 다른 단계가 실제로
 // RUNNING일 때만 「나머지 작업은 계속하고 있어요」를 한 줄 붙인다. 전체 작업이 멈췄는지는
 // 화면이 RUNNING 유무로 단정하지 않는다 — 단계 사이에도 RUNNING이 잠깐 없을 수 있다.
-// 멈춤은 blocking notice(계약 B절 notices[].blocking)로만 알 수 있고, 그때는 이 안내를
-// 내지 않는다. 무슨 일이 있었는지는 실패·결과 화면에서 알린다. 버튼은 [분석 중단] 하나뿐이고,
-// 중단할 수 있을 때만 부모가 `onStop`을 준다(STOP_ANALYSIS, #342).
+// 멈춤은 blocking notice(`contract-job-record-case-view.md` B절 notices[].blocking)로만 알 수 있고, 그때는 이 안내를
+// 내지 않는다. 무슨 일이 있었는지는 실패·결과 화면에서 알린다. 작업 버튼은 [분석 중단] 하나뿐이고,
+// 중단할 수 있을 때만 부모가 `onStop`을 준다(STOP_ANALYSIS). 그 밖에 영상 미리보기 안에
+// 대기 중 주행 게임을 여는 선택 버튼이 있다(`components/VideoThumb.tsx`, `VITE_DRIVING_GAME=off`면 없다).
 //
 // 가장 크게 보이는 제목은 지금 RUNNING인 단계의 이름이다(progress에서 그대로 읽는다).
 // 단계 사이처럼 RUNNING이 잠깐 없을 때는 마지막으로 진행하던 단계를 그대로 두어 제목이
@@ -79,7 +80,7 @@ export function FlowScreen(props: {
   // 대표 영상 = 업로드가 정상으로 받아들인 첫 파일. 지금 분석 중인 파일이라는 뜻이 아니다
   // (CaseView에는 파일별 진행이 없다).
   const representative = props.files.find((f) => !props.skipped?.includes(f.name)) ?? null
-  // 경과 시간만 보여준다. 남은 시간·퍼센트는 내지 않는다(§7).
+  // 경과 시간만 보여준다. 남은 시간·퍼센트는 내지 않는다(core-user-flow §7).
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000)
@@ -166,7 +167,7 @@ export function FlowScreen(props: {
               </>
             )}
           </p>
-          {/* 1초마다 바뀌므로 live 영역에서 뺀다 — 화면 낭독기가 단계 안내 사이에 매초 읽지 않게(#509 #1) */}
+          {/* 1초마다 바뀌므로 live 영역에서 뺀다 — 화면 낭독기가 단계 안내 사이에 매초 읽지 않게(접근성 점검 결함 1, docs/modules/web/experiments/a11y-check-2026-10-31.md) */}
           <p className="flow-elapsed" aria-live="off">
             경과 시간 <span>{elapsed}</span>
           </p>

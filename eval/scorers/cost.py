@@ -1,6 +1,6 @@
 """비용 지표.
 
-정본 집계 키는 case_id 다 (contract-usage-record.md §9-2). run_ref 는
+정본 집계 키는 case_id 다 (docs/architecture/contracts/contract-usage-record.md §9-2). run_ref 는
 per-run 감사용이며, run 이 산출되지 않은 attempt(run_ref=null,
 RUN_NOT_PRODUCED)는 run_ref 로 묶으면 통째로 빠져 비용이 과소 보고된다.
 
@@ -15,7 +15,7 @@ pack 에도 들어 있다 — 새로 만드는 값이 아니라 버리고 있던
 """
 import math
 
-SCORER_VERSION = "c3"   # 2026-09-20 비용 미상 row 를 버리지 않는다 (이슈 #107)
+SCORER_VERSION = "c3"   # 비용 미상 row 를 버리지 않고 coverage에 기록한다.
 
 NO_ROWS = "NO_USAGE_RECORDS — 이 실행에 비용 기록이 없다"
 MIXED = ("MIXED_CURRENCY — 통화가 섞여 합산하지 않는다. 환율은 "
@@ -35,7 +35,7 @@ def _priced(usage_records):
     그렇다고 0원으로 세면 「쌌다」가 된다 — 세지 않되 몇 건인지는 남긴다.
 
     cost 객체는 있는데 amount 가 null 인 row 도 같은 「모른다」다. KRW 요율이
-    없거나 실패 호출의 과금을 확인하기 전에는 그렇게 기록된다 (#244 RD-18).
+    없거나 실패 호출의 과금을 확인하기 전에는 그렇게 기록된다.
     """
     return [r for r in usage_records
             if r.get("cost") is not None and r["cost"].get("amount") is not None]

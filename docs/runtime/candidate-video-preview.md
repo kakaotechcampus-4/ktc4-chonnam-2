@@ -1,7 +1,8 @@
 # 후보 영상 미리보기 구현·검증
 
-사용자 승인: 2026-11-02. 최종 로컬 검증: 2026-11-03 (Asia/Seoul).
-브랜치: `codex/candidate-video-preview`. 코드 변경은 로컬이며 commit/push/PR 변경은 하지 않았다.
+2026-11-02에 구현을 승인받았고, 아래 초기 구현과 검증은 2026-11-03의 로컬 기록이다. 당시 `codex/candidate-video-preview` 브랜치에서 검증했으며 그 작업에서는 커밋·푸시·PR 변경을 하지 않았다.
+
+**AWS 공개 검수.** 2026-11-10 배포 `61d9b7ea`에서 후보 미리보기를 켰다. 후보 두 개를 각각 재생·탐색했고, 다른 세션의 일반 영상 URL과 Range 요청은 모두 `404`를 반환했다. 공개본은 한 번에 한 후보 영상의 재생을 지원한다. [최종 AWS 공개 배포](a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)
 
 ## 동작
 
@@ -47,6 +48,6 @@
 
 원시 로그·스크린샷·manual-qa.json·검토 보고서는 `.omo/evidence/candidate-video/` 및 `.omo/evidence/candidate-video-preview-*.md`에 로컬 보존했다.
 
-## develop 통합 후 최신 검증
+## 2026-11-03 develop 통합 검증
 
 2026-11-03 develop의 #525·#532를 보존하고 단일 후보 재생 입구를 추가했다. 변경·최종 결과·MySQL 제한은 [통합 검증 기록](candidate-video-integration-2026-11-03.md)을 따른다. 이전 수치와 합산하지 않는다.

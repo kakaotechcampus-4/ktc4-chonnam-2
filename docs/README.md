@@ -32,9 +32,11 @@
 | 환경변수·배포 설정 이름, GitHub Secrets/Variables, 무엇이 공개 가능한지 | `management/environment-and-deployment-config.md` | 실행 절차는 그 문서 §7의 runbook으로 |
 | 누가 무엇을 맡는지 | `management/ownership.md` | — |
 | 모듈 경계 밖 운영 결정(승인 경로·리뷰 담당) | `management/cross-cutting-decisions.md` | `archive/management/`의 안건지 |
+| 현재 공개 배포에서 확인된 기능·운영값 | [최종 AWS 인계](runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포) | 이전 배포의 수치·검수 결과는 당시 기록 |
+| RC 수용 결정 · CI 실행 구조 | [11/5 RC 결정](management/rc-scope-2026-11-05.md) · [CI 실행 구조](runtime/ci-test-partitions.md) | — |
 | 배포 전 점검 | `management/pre-deploy-security-review.md` · `management/tool-trajectory-review.md` | — |
 | 계약이 지금 어디까지 합의됐는지 | **현재 상태:** `architecture/contracts/README.md` + 해당 `contract-*.md` · **역사적 종결 근거:** `architecture/contracts/adr/adr-data-contract-call-closure-2026-09-08.md` §9·§10.2 → 09-07 회차 → 09-06 보정/감사 | 2026-09-19 현재 canonical 계약 16건 모두 `Final — Accepted`. 과거 closure ADR의 Pending 표는 당시 snapshot이며 이후 변경은 현재 Contract/모듈 문서를 따른다 |
-| 평가 지표·실험 기록 방법 | `modules/eval/metrics/metric-definitions.md`(확정 지표의 계산 정의) · `modules/eval/initial-evaluation-plan.md` · `modules/eval/experiment-guide.md` | — |
+| 평가 지표·실험 기록 방법 | `modules/eval/metrics/metric-definitions.md`(확정 지표의 계산 정의) · `modules/eval/initial-evaluation-plan.md` · `modules/eval/experiment-guide.md` · [평가 결과와 해석 한계](modules/eval/evaluation-results-2026-11-01.md#7-해석할-때-지켜야-할-것) | — |
 | 과거 제출물·발표 맥락 | `archive/` — **현재 문서가 아니다** | — |
 
 ## 문서가 서로 다른 말을 할 때

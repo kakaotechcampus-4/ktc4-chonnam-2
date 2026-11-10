@@ -107,40 +107,25 @@ test('파일을 고르기 전 「영상에서 찾아보기」는 못 누르는 �
   await expect(search).toHaveAccessibleDescription(/.+/)
 })
 
-test('체험 삭제는 키보드 확인을 거치고 취소·삭제202·완료를 구분한다', async ({ page }) => {
-  let deleted = 0
+test('공개 체험은 자동 정리 안내와 업로드 동의를 보여주고 직접 삭제를 제공하지 않는다', async ({ page }) => {
   const happy = JSON.parse(readFileSync(new URL('../../../data/mock/case/scenario_happy_001.json', import.meta.url), 'utf8'))
-  const view = { ...happy.case_views[0], case_id: 'owned', stage: 'INTAKE', running_jobs: [] }
-  await page.route('**/public/samples', route => route.fulfill({ json: { samples: [] } }))
+  const view = { ...happy.case_views[0], case_id: 'owned', stage: 'INTAKE', running_jobs: [],
+    manifest_summary: { ...happy.case_views[0].manifest_summary, file_count: 0, ok_file_count: 0 } }
+  await page.route('**/public/intake-mode', route => route.fulfill({ json: {
+    upload_enabled: true, retention_ttl_sec: 90,
+  } }))
   await page.route('**/cases/owned/view', route => route.fulfill({ json: view }))
-  await page.route('**/cases/owned', route => {
-    expect(route.request().method()).toBe('DELETE')
-    deleted++
-    return route.fulfill({ status: deleted === 1 ? 202 : 200,
-      json: { state: deleted === 1 ? 'DELETING' : 'DELETED' } })
-  })
-  await page.goto('/?sample&case=owned')
-  const remove = page.getByRole('button', { name: '체험 데이터 삭제' })
-  await tabTo(page, remove)
-  await page.keyboard.press('Enter')
-  const dialog = page.getByRole('dialog', { name: '체험 데이터를 삭제할까요?' })
-  await expect(dialog).toBeVisible()
-  await expect(dialog).toHaveAccessibleDescription('삭제하면 분석 결과와 신고자료를 다시 볼 수 없어요')
-  await expectNamedControls(page)
-  await expect(page.getByRole('button', { name: '취소', exact: true })).toBeFocused()
-  await page.keyboard.press('Escape')
-  await expect(dialog).not.toBeVisible()
-  expect(deleted).toBe(0)
-  await expect(remove).toBeFocused()
-  await page.keyboard.press('Enter')
-  await expect(dialog).toBeVisible()
-  await tabTo(page, page.getByRole('button', { name: '삭제하기', exact: true }))
-  await page.keyboard.press('Enter')
-  await expect(page.getByText('삭제 중이에요. 완료 여부를 다시 확인할 수 있어요.')).toBeVisible()
-  expect(deleted).toBe(1)
-  await expect(page.getByText('삭제했어요.', { exact: true })).not.toBeVisible()
-  await tabTo(page, page.getByRole('button', { name: '삭제 다시 확인' }))
-  await page.keyboard.press('Enter')
-  await expect(page.getByText('삭제했어요.', { exact: true })).toBeVisible()
-  expect(deleted).toBe(2)
+  await page.goto('/?case=owned')
+  await expect(page.getByRole('button', { name: '파일 선택' })).toBeVisible()
+  await expect(page.getByText(/체험을 시작한 뒤 1분 30초부터/).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: '체험 데이터 삭제' })).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: '체험 데이터를 삭제할까요?' })).toHaveCount(0)
+
+  // Fresh intake has upload consent, which remains independent of the removed deletion dialog.
+  await page.evaluate(() => localStorage.clear())
+  await page.goto('/')
+  await page.locator('input[type=file]').setInputFiles({ name: 'sample.mp4', mimeType: 'video/mp4', buffer: Buffer.from('test') })
+  const consent = page.getByRole('dialog', { name: '영상을 올리기 전에 확인해 주세요' })
+  await expect(consent.getByText(/체험을 시작한 뒤 1분 30초부터/)).toBeVisible()
+  await expect(consent.getByRole('button', { name: '동의하고 올리기' })).toBeVisible()
 })

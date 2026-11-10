@@ -240,6 +240,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
         time_v1 = resolve_time(
             time_source_candidates=upstream["recording"]["time_source_candidates"],
             overlay_time_readout=overlay,
+            incident_clip=clip,
             candidate_event=candidate,
             case_id=latest_view["case_id"],
             selection_rev=config["selection_rev"],
@@ -256,6 +257,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
         time_v2 = resolve_time(
             time_source_candidates=upstream["recording"]["time_source_candidates"],
             overlay_time_readout=overlay,
+            incident_clip=clip,
             candidate_event=candidate,
             correction_records=corrections,
             case_id=latest_view["case_id"],
@@ -288,6 +290,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
         time = resolve_time(
             time_source_candidates=upstream["recording"]["time_source_candidates"],
             overlay_time_readout=overlay,
+            incident_clip=clip,
             candidate_event=candidate,
             case_id=latest_view["case_id"],
             selection_rev=config["selection_rev"],
@@ -332,6 +335,7 @@ def run_scenario(root: Path, scenario_id: str, config: Contract) -> Contract:
         time = resolve_time(
             time_source_candidates=upstream["recording"]["time_source_candidates"],
             overlay_time_readout=overlay,
+            incident_clip=clip,
             candidate_event=candidate,
             case_id=latest_view["case_id"],
             selection_rev=config["selection_rev"],

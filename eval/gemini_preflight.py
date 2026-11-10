@@ -39,10 +39,10 @@ def prepare(scope: dict[str, str]) -> PreparedEval:
     manifest_name = scope.get("manifest", "")
     if manifest_name not in EXPECTED_CLIPS:
         problems.append(
-            "search eval (gemini-coarse-p3, s1~s3) supports manifest=%s only" % ", ".join(EXPECTED_CLIPS)
+            "search eval (search:gemini-coarse-p3, search:s1-flash-1x, search:s2-flash-slow, search:s3-argon-gore) supports manifest=%s only" % ", ".join(EXPECTED_CLIPS)
         )
     if scope.get("stage") != "candidate":
-        problems.append("search eval (gemini-coarse-p3, s1~s3) supports stage=candidate only")
+        problems.append("search eval (search:gemini-coarse-p3 and registered S1/S2/S3 implementations) supports stage=candidate only")
 
     api_key = env.get("GEMINI_API_KEY", "").strip()
     if not api_key:

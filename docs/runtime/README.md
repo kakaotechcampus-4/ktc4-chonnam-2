@@ -1,6 +1,26 @@
 # Runtime Documentation
 
-대신고의 `common/runtime` 실행 인프라 문서 진입점이다.
+대신고의 작업 실행, 배포, 운영, 복구 안내다. 작업 실행 코드는
+[`common/jobs/`](../../src/daesingo/common/jobs/)에 있다.
+
+## 현재 실행 흐름
+
+1. API는 Case가 발주한 `JobRecord`를 받아 같은 DB 트랜잭션에 첫 `JobExecution`을 `QUEUED`로 저장한다.
+2. Worker는 실행 한 건을 가져와 `RUNNING`으로 바꾸고, 실행 권한의 만료 시각을 주기적으로 갱신한다.
+3. Worker는 종료 상태와 결과를 저장한다(T1). 성공·실패 결과는 별도 트랜잭션으로 Case에 전달한다(T2).
+4. Worker가 실행 권한을 갱신하지 못해 만료되면 정리 작업이 해당 시도를 `STALE`로 기록한다.
+   재시도 조건을 충족하면 새 시도를 추가한다. 아직 Case에 반영하지 못한 결과는 따로 재전달한다.
+
+로컬 실행은 [실행환경 안내](local-runtime-environment.md), 배포와 복구는 [배포 절차](deployment-runbook.md)를 참고한다.
+저장소 루트에서 작업 실행과 배포 도구의 비-MySQL 테스트를 실행할 수 있다.
+
+```sh
+uv sync --locked --extra test --extra eval-gemini --extra quality
+uv run --no-sync pytest -m 'not mysql' tests/common/jobs tests/worker/test_worker_loop.py tests/deploy -q
+uv run --no-sync python scripts/check_runtime_quality.py
+```
+
+실제 MySQL 통합 테스트의 준비와 실행은 [CI 실행 구조](ci-test-partitions.md)를 참고한다.
 
 2026-11-02 현재 구현과 과거 구현 전 snapshot의 구분은 [P2 정합성 감사](./reviews/runtime-p2-plan-audit-2026-11-02.md),
 RT-14 이후 capacity·#452 결합 검증의 남은 질문은 [갱신한 P2 계획](./experiments/elice-runtime-capacity-smoke-plan.md)을 참조한다.
@@ -10,7 +30,7 @@ P2는 [Product Spec](../product/product-spec.md)의 장시간·다중 영상 후
 최종 제품 한도가 아니다. 0a 현 구성 rejection·0b baseline 관측·0c 격리 override probe를 분리하고,
 30~60분 P3도 logical timeline 기준으로 처리 방식을 열어 둔다. 제품 지원 범위 변경은 PM 최종 승인 대상이다.
 
-P-6 orphan publish 후속 #445의 구현·안전성·직접 검증·남은 Owner/CI 확인은
+미등록 원본 파일 정리(P-6, #445)의 구현과 검증, 남은 확인 항목은
 [Implementation Notes](issue445-orphan-publish.md)에 기록한다. 기존 RT-12(a)/(b)
 이력의 publish 제외 범위는 소급 변경하지 않는다.
 
@@ -36,6 +56,7 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | [`local-runtime-environment.md`](./local-runtime-environment.md) | 현재 로컬 Compose/API/Worker canonical 실행환경: 실제 env·secret 경계·버전·Recording profile 미결·production OCR·실행 순서·8종 등록 확인 (#460) |
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
 | [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
+| [A-1 운영 인계](./a1-public-readiness.md#2026-11-10-최종-aws-공개-배포) | 최종 공개 배포 SHA, 실제 운영 한도, AWS 단일 체험 및 5세션 검수 범위 |
 | [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
 | [`rt14-deployment.md`](./rt14-deployment.md) | RT-14 준비 도구·보호 입력·CI/ECR/SSM/Compose·rollback 명령, 미결 정책/실계정 acceptance와 증거 경계 (#450) |
 | [`rt14-deployment-design.md`](./rt14-deployment-design.md) | RT-14 Decision Gate 승인본(2026-10-30) — Gate별 상태(ACCEPT · 구현 후 acceptance 대기 · 변경 필요 · 후속), 근거, 공개 endpoint 모델, 남은 구현 변경 · blocker, 공개 운영 hardening 경계 (#450) |
@@ -94,7 +115,7 @@ Runtime 구현 시 다음 문서를 직접 참조한다.
 
 schema, enum, 불변조건을 Runtime 문서로 복사해 별도 SoT를 만들지 않는다. Logical ERD에서 JSON/관계 테이블처럼 물리 저장 선택이 열려 있으면 Runtime Tech Spec이 구현 근거를 가지고 닫는다.
 
-## 현재 구현 상태 — 2026-10-02 (`develop` `9c204ee` 기준)
+## 과거 구현 상태 — 2026-10-02 (`develop` `9c204ee` 기준)
 
 ### 확인된 구현
 

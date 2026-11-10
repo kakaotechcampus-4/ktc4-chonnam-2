@@ -13,7 +13,7 @@ import { videoTime, videoTimeText, type VideoTime } from '../state/videoTime'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 // 원본 보관 안내 — 공유된 보관 정책(원본 최대 24시간)만 적는다. 공개 한도는 확정 전이라 숫자를 적지 않고,
-// 너무 긴 영상은 서버 안내(notice.analysis_range_too_long)가 알린다. 실제 삭제 확인은 공개 게이트(#606 철원 님 답)
+// 너무 긴 영상은 서버 안내(notice.analysis_range_too_long)가 알린다. 보관 시간이 지나면 지워지는지는 화면이 아니라 공개 배포 점검에서 확인한다
 const LIMIT_TEXT = '올린 영상은 최대 24시간 보관해요.'
 
 export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
@@ -28,7 +28,7 @@ const DROP_TEXT: Record<Exclude<UploadState, 'done'>, string> = {
 let introPlayed = false
 const INTRO_MS = 700
 
-// 고른 `File` — `?api`는 화면에 업로드 결과 이름만 넘기므로 영상 시각은 고를 때 받아 둔 원본에서 읽는다.
+// 고른 `File` — 실제 흐름(ApiFlow)은 화면에 업로드 결과 이름만 넘기므로 영상 시각은 고를 때 받아 둔 원본에서 읽는다.
 // 출발 장면의 겉모습 복사본은 따로 고른 적이 없어 마지막으로 읽은 결과를 그대로 쓴다.
 let picked: File[] = []
 let lastTime: VideoTime | null = null
@@ -122,7 +122,8 @@ function sceneTransform(view: View, width: number): string {
   return `translate(${width / 2 - f.x * s}px, ${SCENE_H / 2 - f.y * s}px) scale(${s})`
 }
 
-// Figma 01_Home_Upload · 01_Uploading · 01_UploadComplete · 01_UploadFail.
+// 팀 Figma(비공개) 프레임 01_Home_Upload · 01_Uploading · 01_UploadComplete · 01_UploadFail.
+// 저장소 사본은 docs/design/wireframe/03~06.
 // 업로드 칸 = 자동차 앞문. 커서나 파일이 칸에 들어오면 문이 열리고(접수 전만), 파일을 놓거나
 // 고르면 한 번 접수한다. 파일 고르기는 칸 안의 버튼 하나로만 키보드가 멈춘다 — 칸 클릭은 고르기
 // 전(idle)과 실패 때만 쓰는 마우스용 지름길이다. 버튼은 모든 상태에서 같은 요소로 남아(문구·모양만
@@ -133,7 +134,7 @@ function sceneTransform(view: View, width: number): string {
 // 휠이 구르며 앞(왼쪽)으로 출발한다. 칸이 다시 펼쳐지지 않으므로 입력칸을 밀지 않는다.
 export function UploadScreen(props: {
   state: UploadState
-  /** 이름만 쓴다 — 시연은 고른 `File`을, `?api`는 업로드 결과 목록을 그대로 넘긴다 */
+  /** 이름만 쓴다 — 시연은 고른 `File`을, 실제 흐름(ApiFlow)은 업로드 결과 목록을 그대로 넘긴다 */
   files: { name: string }[]
   /** 열 수 없어 건너뛴 파일. 일부 실패를 전체 실패로 만들지 않는다(core-user-flow §23) */
   skipped: string[]
@@ -147,6 +148,10 @@ export function UploadScreen(props: {
   failReason?: string
   /** 올리기 전에 개인정보·외부 처리 안내 동의를 받는다. ApiFlow가 신고(case)마다 첫 업로드에만 켠다 */
   consent?: boolean
+  officialBundle?: boolean
+  registeredCount?: number
+  selectionDisabled?: boolean
+  retentionNotice?: string
 }): JSX.Element {
   const situationId = useId()
   // 동의를 기다리는 파일 — 동의하기 전에는 onFiles(서버 업로드)를 부르지 않는다
@@ -164,7 +169,7 @@ export function UploadScreen(props: {
     consentBox.current?.close?.()
     consentBox.current?.removeAttribute('open')
     setPending(null)
-    // 닫힌 모달 안에 포커스가 남지 않게 「파일 선택」으로 돌려준다(#606 리뷰). 동의 뒤에도 같은 버튼이 남는다
+    // 닫힌 모달 안에 포커스가 남지 않게 「파일 선택」으로 돌려준다. 동의 뒤에도 같은 버튼이 남는다
     pickButton.current?.focus()
     if (agree && files) send(files)
   }
@@ -178,10 +183,11 @@ export function UploadScreen(props: {
   }, [])
   const input = useRef<HTMLInputElement>(null)
   const pickButton = useRef<HTMLButtonElement>(null)
-  const choose = () => input.current?.click()
+  const choose = () => { if (!props.selectionDisabled) input.current?.click() }
   const pick = (files: FileList | null) => {
+    if (props.selectionDisabled) return
     if (!files?.length) return
-    // 올리는 중에 고른 파일은 받지 않으므로 동의도 묻지 않는다(#606 리뷰)
+    // 올리는 중에 고른 파일은 받지 않으므로 동의도 묻지 않는다
     if (props.consent) {
       if (props.state !== 'uploading') setPending([...files])
     } else send([...files])
@@ -210,7 +216,7 @@ export function UploadScreen(props: {
     return () => {
       live = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 목록은 내용(uploadedKey)이 바뀔 때만
+    // 의존성에 파일 배열 대신 내용 문자열(uploadedKey)을 둔다: 배열은 렌더마다 새로 만들어져 매번 다시 읽게 된다
   }, [state, uploadedKey, props.departing])
   const timeText = vtime && videoTimeText(vtime)
 
@@ -272,7 +278,7 @@ export function UploadScreen(props: {
   const spinning = phase === 'wheel'
   const fx = props.departing ? departFx(width) : null
 
-  const okCount = props.files.filter((f) => !props.skipped.includes(f.name)).length
+  const okCount = props.registeredCount ?? props.files.filter((f) => !props.skipped.includes(f.name)).length
   const title = state === 'done' ? `업로드 완료 · 영상 ${okCount}개` : DROP_TEXT[state]
   const canClickArea = state === 'idle' || state === 'fail'
   const names = props.files.map((f) => f.name).join(', ')
@@ -394,7 +400,9 @@ export function UploadScreen(props: {
                 </b>
                 {state === 'idle' && (
                   <span className="rs-drop-note">
-                    여러 파일도 한 번에 올릴 수 있어요. {LIMIT_TEXT}
+                    {props.officialBundle
+                      ? '노션에서 받은 공식 3분 또는 10분 ZIP을 풀어 주세요. 한 묶음에서 원하는 영상을 하나 이상 골라 주세요.'
+                      : `여러 파일도 한 번에 올릴 수 있어요. ${LIMIT_TEXT}`}
                   </span>
                 )}
                 {state === 'uploading' && (
@@ -403,13 +411,13 @@ export function UploadScreen(props: {
                     {names}
                   </span>
                 )}
-                {/* 원인은 서버가 알려 준 것만 쓴다 — 화면이 형식·손상·네트워크를 짐작하지 않는다(#224 recording 리뷰) */}
+                {/* 원인은 서버가 알려 준 것만 쓴다 — 화면이 형식·손상·네트워크를 짐작하지 않는다 */}
                 {state === 'fail' && (
-                  <span className="rs-drop-note">{props.failReason ?? '파일을 올리지 못했어요. 다시 골라 주세요.'}</span>
+                  <span className="rs-drop-note" role={props.officialBundle ? 'alert' : undefined}>{props.failReason ?? '파일을 올리지 못했어요. 다시 골라 주세요.'}</span>
                 )}
               </div>
             )}
-            <button
+            {!props.selectionDisabled && <button
               ref={pickButton}
               type="button"
               // 고르기 전·실패 때는 주 동작, 고른 뒤에는 「영상에서 찾아보기」가 주 동작이라 보조로 낮춘다.
@@ -420,12 +428,13 @@ export function UploadScreen(props: {
               }}
             >
               {state === 'idle' ? '파일 선택' : '다시 선택'}
-            </button>
+            </button>}
           </div>
           <input
             ref={input}
             type="file"
-            accept="video/*"
+            accept={props.officialBundle ? '.mp4' : 'video/*'}
+            disabled={props.selectionDisabled}
             multiple
             hidden
             onChange={(e) => {
@@ -459,6 +468,7 @@ export function UploadScreen(props: {
             {fx && <SpeedLines items={fx.lines} />}
           </div>
         )}
+        {props.retentionNotice && <p className="rs-hint">{props.retentionNotice}</p>}
         {state === 'done' && props.skipped.length > 0 && (
           <p className="skip-list">
             올리지 못했거나 열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')}. 나머지
@@ -495,11 +505,11 @@ export function UploadScreen(props: {
             describedBy={`${situationId}-hint`}
           />
         </label>
-        {/* 버튼은 label 밖(#509) */}
+        {/* 버튼은 label 밖에 둔다 — label 안에 두면 버튼 글자가 입력칸 이름에 섞인다 */}
         <ExampleButton example={EXAMPLE} value={props.situation} onChange={props.onSituation} inputId={situationId} />
 
         {props.consent && (
-          // 공개 운영 정책 §4 — 파일을 고르는 순간 서버로 올라가므로 고른 직후·보내기 전에 동의를 받는다(#606 리뷰).
+          // 공개 운영 정책 — 파일을 고르는 순간 서버로 올라가므로 고른 직후·보내기 전에 동의를 받는다.
           // Esc는 cancel 이벤트 → 취소와 같다(업로드하지 않음)
           <dialog
             ref={consentBox}
@@ -514,8 +524,8 @@ export function UploadScreen(props: {
             <ul>
               <li>영상에는 번호판 · 얼굴 · 위치 같은 개인정보가 담길 수 있어요.</li>
               <li>장면을 찾기 위해 영상 일부가 외부 AI 서비스로 전송돼요.</li>
-              <li>올린 영상은 최대 24시간, 분석 결과와 신고자료는 최대 7일 보관해요.</li>
-              <li>직접 찍었거나 올릴 권한이 있는 영상만 올려 주세요.</li>
+              <li>{props.retentionNotice ?? '올린 영상은 최대 24시간, 분석 결과와 신고자료는 최대 7일 보관해요.'}</li>
+              <li>{props.officialBundle ? '노션에서 받은 공식 샘플만 등록할 수 있어요.' : '직접 찍었거나 올릴 권한이 있는 영상만 올려 주세요.'}</li>
               <li>대신고는 신고를 대신 접수하거나 위반을 확정하지 않아요.</li>
             </ul>
             <div className="rs-consent-actions">
@@ -530,7 +540,7 @@ export function UploadScreen(props: {
         )}
 
         <div className="rs-actions">
-          {/* disabled 대신 aria-disabled — Tab으로 닿아 못 누르는 이유가 읽힌다(#509 #5). 화면에는 업로드 칸이 상태를 보인다 */}
+          {/* disabled 대신 aria-disabled — Tab으로 닿아 못 누르는 이유가 읽힌다(접근성 점검 결함 5, docs/modules/web/experiments/a11y-check-2026-10-31.md). 화면에는 업로드 칸이 상태를 보인다 */}
           <button
             type="button"
             className="rs-btn pri lg"
@@ -565,7 +575,7 @@ export function SituationInput(props: {
   /** 칸 아래 안내 — 화면 낭독기가 칸과 함께 읽는다 */
   describedBy?: string
 }): JSX.Element {
-  // Tab은 초점 이동에만 쓴다. 예시 문장은 ExampleButton으로 넣는다(#509 #4)
+  // Tab은 초점 이동에만 쓴다. 예시 문장은 ExampleButton으로 넣는다(접근성 점검 결함 4, docs/modules/web/experiments/a11y-check-2026-10-31.md)
   return (
     <textarea
       id={props.id}

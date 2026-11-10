@@ -1,10 +1,13 @@
 # `worker` — Worker composition root
 
-RT-12(a)는 첫 claim 전 temp 잔여 scan과 별도의 주기 cleanup thread를 시작하고,
-startup/claim 실패와 정상 종료 모두에서 stop/join한다. `loop.media`는 기존
-materializer에 service별 temp_root와 활성 lease를 주입하는 factory다. 기본
-entrypoint의 실제 handler 등록은 그대로 후속 범위다.
-[경계·검증](../../../docs/runtime/rt12a-cleanup.md)을 참조한다.
+`python -m daesingo.worker`는 작업 종류별 처리기와 `StoredCaseReflector`를 연결한다.
+등록하는 처리기는 미디어 설정에 따라 달라진다. [실행환경과 처리기 확인 방법](../../../docs/runtime/local-runtime-environment.md)을 참고한다.
+
+Worker는 실행 결과와 종료 상태를 저장한 뒤(T1), 별도 트랜잭션에서 Case에 결과를 반영한다(T2).
+시작할 때와 실행 중 주기적으로 만료된 실행을 정리하고, Case 반영이 끝나지 않은 결과를 재전달한다(RT-06).
+임시 파일 정리도 첫 작업을 가져오기 전에 시작한다. [임시 파일 정리 범위](../../../docs/runtime/rt12a-cleanup.md)를 참고한다.
+
+공개 체험의 자동 내보내기가 동시 작업 한도로 보류되면 Worker는 T2 커밋으로 슬롯을 반환한 뒤 별도 트랜잭션에서 발주를 다시 시도한다. 재발주가 거부되거나 실패해도 이미 반영한 결과는 유지한다. 신고영상과 선택 항목인 번호판 이미지를 함께 발주할 수 없으면 신고영상만 다시 발주할 수 있는지 확인한다. [재발주 변경 #674](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/674) · [신고영상 우선 발주 #675](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/675)
 
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §6-2 · §8-2
 
@@ -12,7 +15,11 @@ entrypoint의 실제 handler 등록은 그대로 후속 범위다.
 - `STALE`은 실행 중 Worker가 살아 있지 않다고 Runtime이 판정한 terminal 실행 상태다. `case`가 현재 context에 유효하지 않다고 판단해 반영하지 않는 늦은 결과(중단된 job 등)와는 다른 개념이다 — 그런 실행은 `SUCCEEDED`를 유지하고, `case`가 그 `produced`를 domain state에 반영하지 않아 현재 `CaseView`를 덮지 않는다 (`docs/architecture/contracts/contract-job-execution.md` §6 · §9-8).
 - Background로 가는 것(§8-1): 큰 source/proxy 준비 · RemoteCopy upload · Coarse/Fine 외부 AI · 장시간 OCR · Incident Clip / Report Video export.
 
-## 상태
+## 구현 이력
+
+이 절의 등록 상태와 미완료 항목은 각 작업 당시의 기록이다. 위 진입점 설명이 현재 조립 경로다.
+이력에서 B-D8은 Worker가 실패한 DB 트랜잭션 전체를 재시도하는 규칙을 뜻한다.
+[재시도 기준](../../../docs/runtime/provisional-baseline-v0.1.md)을 참고한다.
 
 RT-01의 `bootstrap.py`를 구현했다. `bootstrap(revision=...)`은 `DAESINGO_ENV_FILE`(미지정 시 cwd `.env`)을 명시적으로 읽어 불변 Worker RuntimeConfig를 만들고, Search의 기존 `GeminiSearchConfig.from_dotenv(mapping)` 및 추가 등록 모듈의 factory/validator를 startup에서 호출한다. 실패 시 설정 key 이름만 기록하고 `SystemExit(1)`로 종료한다. `revision`은 호출자가 전달하는 commit SHA 등 안전한 식별자다.
 
@@ -20,13 +27,13 @@ RT-01의 `bootstrap.py`를 구현했다. `bootstrap(revision=...)`은 `DAESINGO_
 
 RT-04(a)는 `python -m daesingo.worker` 진입점 · 단일 kind registry · claim loop · ExecutionContext · T1 terminal 기록을 구현한다. 기존 Worker engine/claim/finish/transaction helper를 재사용하며 claim commit 후 handler를 실행한다. 빈 queue는 B-Q1, 완료 후 다음 claim은 즉시, DB 오류는 B-Q3 대기다. T1은 B-D8 재시도 소진 뒤에도 결과를 유지하고 B-Q3 간격으로 재기록한다. SIGINT/SIGTERM은 실행 중 handler·T1을 중단하지 않고 다음 idle 지점에서 반영한다.
 
-실제 handler 등록은 비어 있다. 미등록 kind는 `RUNTIME_UNREGISTERED_KIND`로 `FAILED`다. 성공·모듈 failure taxonomy·예외 처리와 registration은 fake handler 및 실제 MySQL로 검증한다. RT-07(b)는 execution별 UsageSink 주입·begin/finish/explicit finalize를 구현한다. 실제 Recording/Search handler는 RT-10 범위다.
+RT-04(a) 구현 당시에는 실제 처리기 등록이 비어 있었다. 현재도 미등록 작업은 `RUNTIME_UNREGISTERED_KIND`로 `FAILED`가 된다. 성공·모듈 failure taxonomy·예외 처리와 registration은 fake handler 및 실제 MySQL로 검증한다. RT-07(b)는 execution별 UsageSink 주입·begin/finish/explicit finalize를 구현한다. 실제 Recording/Search handler는 RT-10 범위다.
 
 WorkerLoop는 heartbeat 시작 뒤 dispatch 전 cancellation checkpoint를 확인하고, composition이 공급한 factory로 execution마다 새 sink를 만든다. sink에 주입하는 transaction runner는 usage DB callback만 재시도하며 provider HTTP를 포함하지 않는다. `KindRegistry`가 UsageError를 재전파하고 loop는 `RUNTIME_USAGE_PERSISTENCE/VALIDATION/CONFLICT/STATE`로 FAILED를 기록한다. T1 retry는 이 결과만 보존하고 handler를 다시 호출하지 않는다. sink는 connection을 method 사이에 유지하지 않으며 이미 관측한 usage에는 ownership fence를 적용하지 않는다.
 
 RT-07(c)는 정상 T1 commit 이후 별도 usage transaction과 기존 startup/periodic sweep hook에 terminal reconciliation을 연결한다. begin의 예정 Run ref는 존재 근거가 아니며 terminal `JobExecution.produced`에 그 ref가 있을 때만 실제 Run에 연결한다(FAILED 포함). 없으면 `RUN_NOT_PRODUCED`, 명시적 no-Run 선언은 `DIRECT_NO_RUN`이다. Run 의도가 불분명한 legacy/pending 행은 보류한다. 살아 있는 RUNNING 행은 변경하지 않는다. recovery 이후 늦은 finish는 Final을 고정한 채 tracker에 관측값·late event marker를 보존한다. 같은 관측 replay는 no-op, 다른 관측·관계는 conflict다. 일반 metric/logger/observer 오류는 durable 결과를 바꾸지 않으며 기존 fatal/cleanup/thread 정책은 유지한다. 실제 Search adapter 배선은 SRCH-1 범위다.
 
-RT-06(a)는 첫 claim 전에 startup sweep을 실행하고, handler와 독립적인 `runtime-sweep` thread에서 같은 만료 조건으로 주기 sweep을 수행한다. 만료 후보마다 짧은 transaction에서 row 잠금·lease·중단 표식을 재확인하고 STALE과 상한 내 다음 attempt QUEUED를 함께 기록한다. backoff는 DB 생성 시각에 더한 `available_at`으로 적용한다. startup DB 장애는 성공할 때까지 B-Q3 대기하며 claim을 막고, 종료 시 sweep thread를 stop/join한다. `compose_worker(sweep_hooks=(...))`는 RT-07용 등록 지점이며 hook은 connection 반환 뒤 startup/주기 sweep에서 호출되고 일반 예외는 격리된다. RT-06(b)의 재전달 배선은 아래에 기록한다.
+RT-06(a)는 첫 claim 전에 startup sweep을 실행하고, handler와 독립적인 `runtime-sweep` thread에서 같은 만료 조건으로 주기 sweep을 수행한다. 만료 후보마다 짧은 transaction에서 row 잠금·lease·중단 표식을 재확인하고 STALE과 상한 내 다음 attempt QUEUED를 함께 기록한다. 현재 재시도의 `available_at`은 직전 STALE의 `ended_at`에 대기 시간을 더해 정한다. startup DB 장애는 성공할 때까지 B-Q3 대기하며 claim을 막고, 종료 시 sweep thread를 stop/join한다. `compose_worker(sweep_hooks=(...))`는 RT-07용 등록 지점이며 hook은 connection 반환 뒤 startup/주기 sweep에서 호출되고 일반 예외는 격리된다. RT-06(b)의 재전달 배선은 아래에 기록한다.
 
 `runtime.queue.wait_ms`는 DB `queued_at → started_at`을 측정하고 `status=INITIAL/RETRY`로 attempt 묶음을 구분한다. retry의 계획된 backoff도 포함한다. 로그 sink가 느려도 lease를 갱신할 수 있도록 heartbeat 시작 뒤 기록한다.
 
@@ -38,7 +45,7 @@ RT-04(b)는 `compose_worker(reflector=...)`로 `ResultReflector`를 주입한다
 
 Case lock 이후 Runtime terminal facts와 표식을 잠금 확인한다. COMMIT 응답 유실 재실행은 Case idempotency와 이미 기록된 표식을 확인해 후속 execution을 다시 enqueue하지 않는다. `runtime.retry.after_case_stopped_count`는 commit된 `attempt >= 2 AND NOT_APPLIED(STOPPED_WAITING)`에서만 기록하며, 이미 전달된 결과는 집계하지 않는다. sink 장애 시 event 유실은 가능하다.
 
-RT-06(b)는 `worker.case_reflector.CaseReflector(reader=..., timelines=..., store_factory=...)`로 실제 Case 8-8 공개 함수를 연결한다. 기본 store는 caller Connection을 공유하는 MySQLCaseRepository와 Runtime read port다. reader와 timeline은 composition에서 주입하며 실제 모듈 결과 저장소는 RT-10 선행 경계다. 이 reflector를 `compose_worker`에 전달하면 direct T2와 startup/periodic redelivery가 같은 adapter를 사용한다. 기본 entrypoint의 reflector는 여전히 비어 있다.
+RT-06(b)는 `worker.case_reflector.CaseReflector(reader=..., timelines=..., store_factory=...)`로 실제 Case 8-8 공개 함수를 연결했다. 기본 store는 caller Connection을 공유하는 MySQLCaseRepository와 Runtime read port다. reader와 timeline은 composition에서 주입하며 실제 모듈 결과 저장소는 RT-10 선행 경계다. 이 reflector를 `compose_worker`에 전달하면 direct T2와 startup/periodic redelivery가 같은 adapter를 사용한다. 당시 기본 진입점에는 reflector를 연결하지 않았다.
 
 `common.jobs.redelivery.redeliver_once`는 SUCCEEDED/FAILED 중 `case_applied_at IS NULL`인 후보를 잠금 없이 읽고 connection을 반환한 뒤 후보마다 B-D8 transaction을 실행한다. replay마다 receipt를 비잠금 재조회하고, Case lock → Runtime lock/후속 enqueue/receipt 순서로 처리한다. CANCELLED와 STALE은 전달하지 않는다. startup scan 완료 전 첫 claim을 막으며 일반 reflector/DB 오류는 후보 단위로 격리하고 다음 후보·다음 주기에 진행한다. scan DB 오류는 startup admission 재시도 대상이다. post-commit `runtime.reflect.redelivery_count`와 기존 STOPPED_WAITING retry 지표를 안전한 logger로 기록한다.
 

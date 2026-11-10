@@ -97,19 +97,7 @@ group_key = source_video_id
 | `license` | 라이선스 표기 |
 | `condition` | 주야 / 날씨 / 도로유형 |
 
-## 4. 원문 — 라벨 체계 (작성 당시 TODO)
-
-> **이 문서에서 확정하지 않는다.** 아래는 무엇을 정해야 하는지의 목록이다. 라벨링을 시작하기 전에 별도 문서(라벨링 규칙서)로 고정한 뒤 착수한다. **혼자 라벨링하므로 기준이 시간에 따라 흔들릴 위험이 크고, 규칙을 먼저 못 박는 것이 유일한 방어책이다.**
-
-### 4-1. 정해야 할 라벨 필드
-
-| 필드 | 왜 필요한가 | 정해야 할 것 |
-| --- | --- | --- |
-| `review_status` | `fp_per_clip`의 **분모**를 확보하려면 「봤고 위반 없음」과 「안 봄」을 구분해야 한다. 안 본 클립은 「없음」이 아니라 「모름」이다 | 값 목록, `NOT_REVIEWED`를 manifest에서 제외할지 |
-| `violation_type` | classification 정답 | 4종 + NONE. A tier 라벨과 이름·범위를 일치시킬 것 |
-| `completeness` | 경계에 잘린 사건을 정답/오답으로 단순 계산할 수 없다(§4-2) | 값 목록, 판정 경계 |
-| `onset_sec` | `timestamp_error`의 정답 | 무엇을 onset으로 볼지 (위반 행위 시작? 판단 근거 등장?) |
-| `target_vehicle` | `target_correct`의 정답 | 표기 방식 (bbox? 설명문? track id?) |
+## 4. 원문 — 라벨링 기준
 
 ### 4-2. 경계 사건 — 왜 별도 분류가 필요한가
 
@@ -123,8 +111,6 @@ group_key = source_video_id
 - **클립 08** — 선을 넘는 장면은 있는데 **빨간불이었는지 안 보인다.** 모델이 「신호위반」이라 하면 **근거 없이 추측한 것**이다. 정확도상으로는 정답처럼 보이지만 실제로는 위험한 행동이다.
 
 즉 두 케이스는 **정답/오답으로 셀 수 없어서** 따로 빼둬야 한다.
-
-**결정해야 할 것:** ① 평가에서 제외할지 ② 별도 카테고리로 점수를 따로 낼지. POST_ONSET 유형은 「근거 없이 확정하는지」를 보는 좋은 테스트라 버리기 아깝다.
 
 ### 4-3. 라벨링 범위
 
@@ -150,14 +136,6 @@ group_key = source_video_id
 ```
 
 **③ 주의:** ffmpeg의 `-c copy` segment는 키프레임 단위로만 자른다. 정확히 60초로 안 잘릴 수 있으므로 `start_offset`은 **의도한 값이 아니라 실제 잘린 값**을 기록해야 `timestamp_error` 계산이 어긋나지 않는다.
-
-## 6. 원문 — 미결
-
-- **6-1 목표 클립 수(김대원).** 1시간 영상 10개 = 600클립이 시작점이지만 위반이 몇 건 나오는지에 따라 recall 신뢰구간이 크게 달라진다. 무편집 주행 영상은 위반 밀도가 낮아 600클립에서 위반이 10건 이하일 수도 있다. 파일럿으로 영상 1~2개를 먼저 라벨링해 밀도를 확인한 뒤 총량을 정한다.
-- **6-2 라이선스 근거(김대원).** 팀 내부 평가용이라도 근거는 필요하다. CC BY 영상 / 업로더 허락 / 공개 데이터셋(BDD100K · Nexar Collision · DoTA) 중 하나를 택한다. **최소한 `source_url`과 `license`를 메타에 남긴다.**
-- **6-3 TRUNCATED 채점 방식(김대원 + 서어진).** §4-2 참고.
-- **6-4 C tier 착수 시점(정철원).** plate 3종과 time 2종이 통째로 묶여 있다. **번호판 샘플만이라도 먼저 확보**하는 우회 경로를 검토한다.
-- **6-5 A tier와 B tier 결과가 어긋날 때(팀 전체).** `recall_macro`를 `_image`/`_video` 두 tier로 각각 산출하는데, 이미지에서 잘하고 영상에서 못하면 어느 쪽을 제품 성능으로 주장할 것인가.
 
 ## 7. 원문 — 요약
 
@@ -188,8 +166,8 @@ B tier 핵심 규칙
 
 ### 8-2. B tier — 실제로 만들어진 것
 
-- **클립 55개**, 전부 `source_video_id: YT_0001` 한 편에서 나왔고 `split`은 전부 `DEV`다. **`locked`는 아직 없다.**
-- **사건 5건** — `SIGNAL` 2 · `SOLID_LINE_LANE_CHANGE` 3. 밀도는 **클립 11개당 1건**으로, 원문 6-1이 걱정한 「600클립에 10건 이하」보다 높다. 다만 source video가 1편이라 조건 다양성(§2-3)과 group 분리(§3-2)는 **아직 검증되지 않았다** — 그룹이 하나뿐이라 누수가 생길 수 없는 상태일 뿐이다.
+- **클립 55개**, 전부 `source_video_id: YT_0001` 한 편에서 나왔고 `split`은 전부 `DEV`다.
+- **사건 5건** — `SIGNAL` 2 · `SOLID_LINE_LANE_CHANGE` 3. 밀도는 **클립 11개당 1건**으로, 계획 당시 예상한 「600클립에 10건 이하」보다 높다. 다만 source video가 1편이라 조건 다양성(§2-3)과 group 분리(§3-2)는 **아직 검증되지 않았다** — 그룹이 하나뿐이라 누수가 생길 수 없는 상태일 뿐이다.
 - **`review_status` 문제의식은 해결됐다.** 필드 이름으로는 안 들어갔고, 정답지 `meta.coverage`에 `clips_reviewed: 55` · `negatives_confirmed: true`로 들어갔다. 55개 전부 사람이 보고 확인했다는 뜻이라 `fp_per_clip`의 분모가 성립한다.
 - **경계 사건은 §4-2의 ② 「별도 분류」로 결정됐다.** 정답지 target에 `scoring` 필드가 있고 현재 `INCLUDED` 4건 · `BOUNDARY_EXCLUDED` 1건이다. 채점기는 `BOUNDARY_EXCLUDED`를 분모에서 빼고 그 사실을 `coverage`에 적는다. 원문의 `completeness`라는 이름은 채택되지 않았다.
 - **사건 라벨 필드**는 `events.json`에 `t_onset_sec`·`t_start_sec`·`t_end_sec`·`target_vehicle`·`plate_status`·`plate_text`·`plate_partial_text`·`plate_vehicle_type`·`label_status`·`labeler`·`labeled_at`·`evidence_note`로 확정됐다. 5건 모두 `label_status: CONFIRMED`, `labeler: daewon`.
@@ -203,23 +181,9 @@ B tier 핵심 규칙
 | `cost_per_clip` | `cost_per_source_video_hour` — 분모는 **중복 제거한 사건 timeline 길이**다(전후방 2개 소스를 합산하지 않는다). 비용 집계 정본 키는 `UsageRecord.case_id`(`usage-record/v1.2`) |
 | `target_correct` | `target_correctness` (A tier) |
 
-### 8-4. 아직 안 된 것 — 지금 이 정리 작업과 직결
-
-**`clips.json`에 `source_url`·`license`·`condition`·`clip_index`가 없다.** 현재 필드는 `clip_id`·`source_video_id`·`start_sec`·`end_sec`·`duration_sec`·`file_path`·`sha256`·`split`뿐이다. 원문 §3-3과 §6-2가 **최소한 `source_url`과 `license`는 남긴다**고 못 박았는데 빠져 있다 — 출처 유실 방지가 이번 정리의 목적이므로 **원본 YouTube URL과 라이선스 표기를 확보해 manifest에 채워야 한다.**
-
-그 밖에 미반영으로 남은 것: 조건 다양성(§2-3, 현재 영상 1편) · `locked` split(§5 ⑥⑦) · 라벨링 규칙서 문서화(§4).
-
 ### 8-5. 그대로 유효한 것
 
 무편집 연속 주행 영상만 사용 · 1분 겹침 없는 분할 · `group_key = source_video_id` · 경계 사건 보존 · C tier 대체 불가 · A tier를 다른 모듈과 무관하게 먼저 돌린다 — 전부 현행 구조가 따르고 있다.
-
-## 9. 출처
-
-> **[작성 필요]**
-
-- B tier 원본 영상(`YT_0001`) URL과 라이선스 표기 — `[링크 필요]` (8-4의 manifest 보강과 같은 값)
-- 대체 후보 공개 데이터셋 — BDD100K · Nexar Collision Prediction · DoTA 각 공식 페이지 `[링크 필요]`
-- `eval_metrics_revision_v1.md` (주지표 13개 원문) — 저장소 내 위치 확인 필요
 
 ## 10. 관련 문서
 

@@ -2,7 +2,9 @@
 
 조사·실험을 근거로 확정한 이 모듈 내부 결정을 둔다. 다른 모듈/제품 범위를 침범하는 결정은 여기서 단독 확정하지 않는다.
 
-## 현재 결정
+## 정책 결정 이력
+
+현재 적용 버전은 [소스 README의 정책 데이터](../../../../src/daesingo/evidence/README.md#정책-데이터)에서 확인한다. 아래의 v1과 v1.1은 이전 결정 기록이다.
 
 - `no-separate-signoff.md — 신고요건 변경 서명자를 두지 않는 근거 (B-3)`
 - `source-kind-registry.md — Mock이 신설한 source.kind 5종과 v2 사용자 correction 적용 범위`

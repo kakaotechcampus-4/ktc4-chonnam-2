@@ -1,4 +1,4 @@
-"""Evaluate video-level labels on the selected AI-Hub Validation videos.
+"""Evaluate video-level labels on selected AI-Hub Validation or all videos.
 
 The prediction is the top-ranked Coarse candidate's type. This measures the
 Search pipeline's ability to return the right type from an entire positive

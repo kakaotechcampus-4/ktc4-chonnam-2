@@ -59,9 +59,50 @@ class PublicResultReflector(_PublicJobAdmission):
                 raise ValueError('automatic export identity changed')
             self.admit(conn, incoming.case_id, "followup:" + incoming.execution_id,
                        [r for r in records if r['job_id'] not in admitted])
-        # Called inside reflect_terminal's transaction, BEFORE child enqueue.
-        # Refusal leaves T1/usage intact and T2 unapplied on every delivery path.
+        # 일반 후속 작업의 수락 거부는 T2를 중단하고 T1과 사용량 기록을 보존한다.
+        # 위 자동 내보내기 경로는 발주만 보류하고 T2 결과 반영을 계속한다.
         return result
+
+    @staticmethod
+    def capacity_deferred(conn, case_id):
+        """Nonlocking read: does this case hold a LOCAL_CONCURRENT export deferral?
+
+        Lets the caller skip the resume transaction (and its control-row lock)
+        for the common case; `resume_deferred_exports` rechecks under the lock.
+        """
+        pending = conn.scalar(select(schema.cases.c.local_work_state).where(schema.cases.c.case_id == case_id))
+        return bool(pending) and pending.get('reason') == 'LOCAL_CONCURRENT'
+
+    def resume_deferred_exports(self, conn, case_id, execution_id):
+        """#674: retry exports deferred for capacity, in a transaction AFTER that T2 committed.
+
+        While a terminal is being reflected its own job still holds the case's
+        local slots, so the automatic exports issued by the last OCR are always
+        deferred. Only LOCAL_CONCURRENT is transient; limits and stops keep
+        their notice and manual action. A successful admission clears the
+        deferral (`admit_local`). Returns the admitted records for enqueue.
+        """
+        if not self.tagged(conn, case_id):
+            return ()
+        capable = getattr(self.inner, 'resume_auto_exports', None)
+        if not self.capacity_deferred(conn, case_id) or not callable(capable):
+            return ()
+        admitted: list[dict[str, str]] = []
+        def automatic(records):
+            if not records or any(r['case_id'] != case_id or r['kind'] not in
+                    {'REPORT_VIDEO_EXPORT', 'PLATE_IMAGE_EXPORT'} for r in records):
+                raise ValueError('invalid automatic exports')
+            try:
+                with conn.begin_nested():
+                    self.admit(conn, case_id, 'auto-export-resume:' + execution_id, records)
+            except PublicDenied:
+                return False
+            admitted.extend({k: r[k] for k in ('job_id', 'case_id', 'kind')} for r in records)
+            return True
+        jobs = tuple(capable(conn, case_id, admit_auto_exports=automatic))
+        if [{"job_id": j.job_id, "case_id": j.case_id, "kind": j.kind} for j in jobs] != admitted:
+            raise ValueError('resumed exports were not admitted')
+        return jobs
 
 
 class PublicExhaustionReceiver(_PublicJobAdmission):

@@ -229,9 +229,10 @@ def _run_notice_action(case: CaseAggregate, payload: dict[str, Any], view: dict[
     if kind == "COARSE_SEARCH" and case.stage == "CANDIDATE_REVIEW":
         case.regress_to_searching()
     # RETRY_* 는 FAILED가 cache hit 대상이 아니라 force_rerun 없이 새 job_id만으로 성립한다(B절 §7).
-    if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT"}:
+    if kind in {"REPORT_VIDEO_EXPORT", "PLATE_IMAGE_EXPORT", "PLATE_READ"}:
         # A new explicit intent needs a new revision. Replaying its old payload
-        # must be stale, while a later failed-export retry has a different admission identity.
+        # must be stale, while a later failed local-job retry has a different
+        # admission identity. Preserve the existing same-clip/input snapshot.
         case.bump_revision()
     jobs.issue_same_input(case, prior)
 
@@ -406,17 +407,15 @@ def execute_command(
     # 성공한 command 뒤에는 #167 gate(FINAL PASS/WARN + ReportPackage)를 case가 다시 본다 — transport가
     # 부르면 통로에 판단이 들어간다(#106). UNCERTAIN의 상황 응답이나 정정 뒤 Package가 풀리는 경우가 대표적이다(§5).
     if case.stage == "EVIDENCE_REVIEW" and request["kind"] not in _SKIP_EXPORT_GATE:
-        from daesingo.case.exports import issue_missing_exports
+        from daesingo.case import exports
         adapter = store.adapter_for(case)
-        corrected = copy.deepcopy(case) if admit_auto_exports is not None else None
-        before_exports = len(case.job_records)
-        issue_missing_exports(case, adapter, view_of(case))
-        if (admit_auto_exports is not None and len(case.job_records) > before_exports
-                and not admit_auto_exports(copy.deepcopy(case.job_records[jobs_before:]))):
+        if admit_auto_exports is None:
+            exports.issue_missing_exports(case, adapter, view_of(case))
+        else:
             # Keep the accepted review/correction. Only automatic export effects
             # are deferred; explicit jobs and domain validation stay atomic.
-            assert corrected is not None
-            case = corrected
+            # Admission sees this command's jobs too (one request key per command).
+            case = exports.gate_auto_exports(case, adapter, view_of(case), admit_auto_exports, since=jobs_before)
         mark_ready_if_package_ready(case, adapter)
     store.save(case)
     appended = copy.deepcopy(case.job_records[jobs_before:])

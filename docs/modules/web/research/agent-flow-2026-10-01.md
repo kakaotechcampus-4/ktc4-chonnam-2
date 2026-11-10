@@ -54,7 +54,7 @@
 
 ## 4. 후보 비교 UI (멘토 참고 사이트)
 
-| | [Apple iPhone 비교](https://www.apple.com/iphone/compare/) | [OpenAI 모델 비교](https://developers.openai.com/api/docs/models/compare) |
+| 항목 | [Apple iPhone 비교](https://www.apple.com/iphone/compare/) | [OpenAI 모델 비교](https://developers.openai.com/api/docs/models/compare) |
 | --- | --- | --- |
 | 열 | 최대 3개, 열마다 드롭다운으로 교체 | 3개 나란히 (열 교체 방식은 확인 필요) |
 | 행 | 카테고리별 묶음(디스플레이·칩·카메라…) | 성능·가격·컨텍스트·지식 컷오프·지원 기능 |

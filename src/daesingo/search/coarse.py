@@ -48,6 +48,11 @@ from .schemas import CoarseCandidate, CoarseResponse
 from .scope import AnalysisScope
 from .sources import AnalysisSourceResolver, ResolvedAnalysisSource
 
+# Coarse가 돌려주는 후보 수 상한. 하류(썸네일 · 미리보기 · Fine top-k)가 rank 1~3만 다루므로
+# 사용자 화면에도 최대 3개만 보이게 여기서 자른다. 프롬프트는 영상 밖 후보가 빠져도 3개가 남도록
+# 최대 5개를 요청한다(#609) — 상한은 프롬프트가 아니라 이 값이 보장한다.
+MAX_COARSE_CANDIDATES = 3
+
 
 @dataclass(frozen=True, slots=True)
 class LinkedCoarseResult:
@@ -191,6 +196,8 @@ def search_coarse(
     kept: list[CandidateEvent] = []
     dropped = 0
     for candidate_source, candidate in ranked:
+        if len(kept) == MAX_COARSE_CANDIDATES:
+            break
         try:
             kept.append(_candidate(run_id, len(kept) + 1, candidate_source, candidate))
         except InvalidCoarseSpanError:

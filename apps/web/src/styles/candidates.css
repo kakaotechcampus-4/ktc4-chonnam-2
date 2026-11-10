@@ -1,9 +1,9 @@
 /* ============================================================
-   후보 비교 그리드 (A-1)
+   후보 비교 그리드
    DESIGN-stage1-mockups.html 「화면 5 — 후보와 원본 영상 비교」에서 포팅.
 
    global.css가 이미 옮겨 둔 `.cand`·`.cand.sel` 위에 얹는다. 그 두 규칙은
-   다시 정의하지 않는다 — 공통 토큰·공통 스타일 파일은 web Owner 소유다.
+   다시 정의하지 않는다 — 공통 토큰·공통 스타일은 tokens.css · global.css에 둔다.
    색·그림자·반경은 전부 tokens.css의 var()를 참조한다.
    ============================================================ */
 
@@ -141,7 +141,7 @@
 
 .hint-none { font-size: calc(13px * var(--font-scale)); color: var(--slate); font-weight: 600; }
 
-/* 「다른 후보 보기」 — 결과 화면에서 여는 선택 경로(§8-1). 접힌 채로 시작한다. */
+/* 「다른 후보 보기」 — 결과 화면에서 여는 선택 경로(core-user-flow §8-1). 접힌 채로 시작한다. */
 .other-cands { border: 1px solid var(--border); border-radius: var(--R); background: var(--panel); }
 .other-cands > summary {
   cursor: pointer; padding: 12px 14px;
@@ -156,7 +156,10 @@
 .cand-axis-ends { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--rs-sub, #6e6e73); }
 .cand-axis-bar { height: 8px; border-radius: 999px; background: var(--rs-line, #d2d2d7); }
 .cand-axis-pins { position: relative; }
-.cand-axis-pin { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.cand-axis-pin { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
+.cand-axis-pin:hover b { border-color: var(--rs-ink, #1d1d1f); }
+/* 번호로 옮겨 온 카드 — 마우스로 눌러도 어느 카드인지 보이게 초점 테두리를 둔다 */
+.cand:focus { outline: 2px solid var(--rs-ink, #1d1d1f); outline-offset: 3px; }
 .cand-axis-pin i { display: block; width: 2px; height: calc(8px + var(--row, 0) * 34px); background: var(--rs-line-strong, #86868b); }
 .cand-axis-pin b {
   width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center;

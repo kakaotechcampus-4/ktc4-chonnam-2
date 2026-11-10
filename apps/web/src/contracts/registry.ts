@@ -9,7 +9,7 @@
 // `job.report_video_export`가 전부 「처리 중」 fallback으로 뭉개지고 있었는데 테스트는 초록색이었다.
 // readout의 `registry.py`와 같은 자리다.
 //
-// 새 값은 계약에 등재한 뒤 여기에 옮긴다. 옮기면 `labels.test`의 전수 매핑 검사가
+// 새 값은 계약에 등재한 뒤 여기에 옮긴다. 옮기면 `__tests__/caseView.test.ts`의 전수 매핑 검사가
 // 문구를 만들 때까지 깨진다 — 그것이 이 파일의 목적이다.
 
 import type {

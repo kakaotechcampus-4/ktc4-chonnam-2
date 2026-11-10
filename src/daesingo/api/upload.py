@@ -18,6 +18,7 @@ from python_multipart.multipart import parse_options_header
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.body_limit import RequestBodyLimitMiddleware
 from starlette.requests import ClientDisconnect
+from daesingo.common.public_runtime.policy import PublicDenied
 
 from .errors import error_response
 
@@ -38,7 +39,8 @@ class NoUploadResponse:
 def _source_request(scope):
     parts = scope.get('path', '').split('/')
     return (scope['type'] == 'http' and scope.get('method') == 'POST'
-            and len(parts) == 4 and parts[1] == 'cases' and bool(parts[2]) and parts[3] == 'sources')
+            and len(parts) == 4 and parts[1] == 'cases' and bool(parts[2])
+            and parts[3] in ('sources', 'official-uploads'))
 
 
 class SourceBodyLimitMiddleware:
@@ -92,6 +94,7 @@ class _MultipartFile:
             'on_header_end': self.on_header_end,
             'on_headers_finished': self.on_headers_finished,
             'on_part_data': self.on_part_data,
+            'on_part_end': self.on_part_end,
             'on_end': self.on_end,
         }
         try:
@@ -143,6 +146,9 @@ class _MultipartFile:
     def on_part_data(self, data, start, end):
         self.target.write(memoryview(data)[start:end])
 
+    def on_part_end(self):
+        pass
+
     def on_end(self):
         self.finished = True
 
@@ -166,6 +172,58 @@ def _open_staging(root):
     staging.mkdir(exist_ok=True)
     final.mkdir(exist_ok=True)
     return tempfile.NamedTemporaryFile(mode='w+b', prefix='upload-', dir=staging, delete=False)
+
+
+class _MultipartBundle(_MultipartFile):
+    def __init__(self, content_type, root, max_files):
+        _, options = parse_options_header(content_type)
+        if len(options.get(b'boundary', b'')) > 70:
+            raise HTTPException(400)
+        super().__init__(content_type, None)
+        self.root = root
+        self.max_files = max_files
+        self.paths = []
+
+    def on_part_begin(self):
+        self.parts += 1
+        if self.parts > self.max_files:
+            raise PublicDenied("BUNDLE_MISMATCH")
+        self.disposition = None
+        self.filename = None
+
+    def on_header_field(self, data, start, end):
+        if len(self.header_name) + end - start > 8192:
+            raise HTTPException(400)
+        super().on_header_field(data, start, end)
+
+    def on_header_value(self, data, start, end):
+        if len(self.header_value) + end - start > 8192:
+            raise HTTPException(400)
+        super().on_header_value(data, start, end)
+
+    def on_headers_finished(self):
+        super().on_headers_finished()
+        self.target = _open_staging(self.root)
+        self.paths.append(Path(self.target.name))
+
+    def on_part_end(self):
+        if self.target is None:
+            raise HTTPException(400)
+        self.target.close()
+        self.target = None
+
+    def finish(self):
+        self.parser.finalize()
+        if not self.finished or not self.paths or self.target is not None:
+            raise HTTPException(400)
+
+    def cleanup(self):
+        try:
+            if self.target is not None:
+                self.target.close()
+        finally:
+            for path in self.paths:
+                path.unlink(missing_ok=True)
 
 
 async def _storage_call(callback, *args):
@@ -244,33 +302,10 @@ async def receive_source(request, composition, *, started=None, verify_root=lamb
     owner = _StagingOwner(root, scanner, verify_root)
     target = None
     started = monotonic() if started is None else started
-    last_byte = started
-    total_bytes = 0
     try:
         target = await _storage_call(owner.open)
         parser = _MultipartFile(content_type, target)
-        stream = request.stream().__aiter__()
-        while True:
-            now = monotonic()
-            idle = settings.idle_timeout_sec - (now-last_byte)
-            total = settings.max_duration_sec - (now-started)
-            reason = 'duration' if total <= idle else 'idle'
-            try:
-                if min(idle, total) <= 0:
-                    raise TimeoutError
-                chunk = await asyncio.wait_for(anext(stream), timeout=min(idle, total))
-            except StopAsyncIteration:
-                break
-            except TimeoutError:
-                _abort(request, reason)
-            except ClientDisconnect:
-                _abort(request, 'disconnect')
-            # Empty ASGI messages must not refresh the idle byte clock.
-            if chunk:
-                last_byte = monotonic()
-                total_bytes += len(chunk)
-                await _storage_call(parser.write, chunk)
-        await _storage_call(parser.finish)
+        total_bytes = await _receive_multipart(request, settings, parser, started, settings.max_bytes)
         path = Path(target.name)
         await _storage_call(target.close)
         target = None
@@ -285,6 +320,68 @@ async def receive_source(request, composition, *, started=None, verify_root=lamb
         # Preserve rowless abort staging for B-C1, but release its live lease.
         # The lease includes the closed staging -> publish window.
         owner.close()
+
+
+async def _receive_multipart(request, settings, parser, started, max_bytes):
+    last_byte = started
+    total_bytes = 0
+    stream = request.stream().__aiter__()
+    while True:
+        now = monotonic()
+        idle = settings.idle_timeout_sec - (now-last_byte)
+        total = settings.max_duration_sec - (now-started)
+        reason = 'duration' if total <= idle else 'idle'
+        try:
+            if min(idle, total) <= 0:
+                raise TimeoutError
+            chunk = await asyncio.wait_for(anext(stream), timeout=min(idle, total))
+        except StopAsyncIteration:
+            break
+        except TimeoutError:
+            _abort(request, reason)
+        except ClientDisconnect:
+            _abort(request, 'disconnect')
+        if chunk:
+            last_byte = monotonic()
+            total_bytes += len(chunk)
+            if total_bytes > max_bytes:
+                raise HTTPException(413)
+            await _storage_call(parser.write, chunk)
+    await _storage_call(parser.finish)
+    return total_bytes
+
+
+@asynccontextmanager
+async def staged_bundle(request, composition, *, max_files, max_input_bytes):
+    content_type = request.headers.get('content-type', '')
+    if content_type.split(';', 1)[0].strip().lower() != 'multipart/form-data':
+        raise HTTPException(415)
+    config = composition.startup.config
+    # Bound raw multipart overhead independently of the manifest's payload budget.
+    max_bytes = min(config.upload.max_bytes, max_input_bytes + 65536)
+    parser = _MultipartBundle(content_type, config.media_root, max_files)
+    scanner = next(s for s in composition.cleanup.scanners if s.kind == 'staging')
+    lease = scanner.in_use()
+    entered = False
+
+    def enter():
+        nonlocal entered
+        lease.__enter__()
+        entered = True
+
+    try:
+        try:
+            await _storage_call(enter)
+            await _receive_multipart(request, config.upload, parser, monotonic(), max_bytes)
+        except OSError:
+            raise HTTPException(503) from None
+        yield tuple(parser.paths)
+    finally:
+        try:
+            await _storage_call(parser.cleanup)
+        finally:
+            if entered:
+                await _storage_call(lease.__exit__, None, None, None)
 
 
 @asynccontextmanager

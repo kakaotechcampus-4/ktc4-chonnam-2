@@ -10,7 +10,7 @@ from daesingo.common.usage.schema import usage_inflight
 
 from . import schema as t
 from .policy import PublicDenied
-from .work import local_only, LOCAL_RESULT_KINDS
+from .work import local_only, local_ocr_usage, LOCAL_RESULT_KINDS, LOCAL_OCR_KINDS, LOCAL_OCR_OPERATIONS
 
 
 def now(conn):
@@ -144,7 +144,7 @@ class PublicStore:
             t.local_admissions.c.active.is_(True))).scalars().all()
         inherited = conn.scalar(sa.select(sa.func.count()).select_from(t.admissions).where(
             t.admissions.c.case_id == context.case_id, t.admissions.c.active.is_(True)))
-        if not inherited and not any(context.job_id in group for group in ids):
+        if not any(context.job_id in group for group in ids) and (context.kind in LOCAL_OCR_KINDS or not inherited):
             raise PublicDenied("INPUT")
         return row
 
@@ -178,8 +178,13 @@ class PublicStore:
         stamp = now(conn)
         count = conn.execute(sa.select(sa.func.count()).select_from(t.cases).where(
             t.cases.c.session_hash == owner, t.cases.c.created_at >= day_start(stamp))).scalar_one()
-        if count >= self.policy.session_daily:
+        if count >= (self.policy.session_create_daily or self.policy.session_daily):
             raise PublicDenied("LIMIT")
+        if self.policy.input_mode == "upload_bundle":
+            ip_count = conn.scalar(sa.select(sa.func.count()).select_from(t.cases).where(
+                t.cases.c.ip_hash == session["ip_hash"], t.cases.c.created_at >= day_start(stamp)))
+            if ip_count >= self.policy.ip_daily:
+                raise PublicDenied("LIMIT")
         conn.execute(t.cases.insert().values(case_id=case_id, session_hash=owner, ip_hash=session["ip_hash"],
             state="ACTIVE", created_at=stamp, expires_at=stamp + timedelta(seconds=self.policy.case_ttl_sec),
             source_expires_at=stamp + timedelta(seconds=self.policy.source_ttl_sec), sources=[], temp_token=uuid4().hex))
@@ -213,14 +218,18 @@ class PublicStore:
         self.accepting(conn)
         row = self.require_owner(conn, case_id, owner)
         if row["sources"]:
-            if row["sample_id"] != sample_id or row["manifest_hash"] != bytes.fromhex(self.policy.manifest_sha256):
+            if sample_id is None or row["sample_id"] != sample_id or row["manifest_hash"] != bytes.fromhex(self.policy.manifest_sha256):
                 raise PublicDenied("INPUT")
             return False
         stamp = now(conn)
         def count(*conditions):
             return conn.execute(sa.select(sa.func.count()).select_from(t.preparations).where(*conditions)).scalar_one()
+        case_attempts = (self.policy.upload_case_attempts if self.policy.input_mode == "upload_bundle"
+                         else self.policy.case_repeats + 1)
+        if case_attempts is None:
+            raise PublicDenied()
         if (row["source_expires_at"] <= stamp
-                or count(t.preparations.c.case_id == case_id) >= self.policy.case_repeats + 1
+                or count(t.preparations.c.case_id == case_id) >= case_attempts
                 or count(t.preparations.c.ip_hash == row["ip_hash"],
                          t.preparations.c.created_at >= day_start(stamp)) >= self.policy.ip_daily
                 or count(t.preparations.c.session_hash == owner,
@@ -251,9 +260,12 @@ class PublicStore:
                 raise PublicDenied("NOT_FOUND")
             return None
         self.local_accepting(conn) if local else self.accepting(conn)
+        approved_hashes = {bytes.fromhex(self.policy.manifest_sha256)}
+        if self.policy.previous_manifest_sha256 is not None:
+            approved_hashes.add(bytes.fromhex(self.policy.previous_manifest_sha256))
         if (row["state"] != "ACTIVE" or row["expires_at"] <= now(conn)
                 or row["source_expires_at"] <= now(conn) or not row["sources"]
-                or row["manifest_hash"] != bytes.fromhex(self.policy.manifest_sha256)):
+                or row["manifest_hash"] not in approved_hashes):
             raise PublicDenied("INPUT")
         return row
 
@@ -288,10 +300,16 @@ class PublicStore:
         stamp = now(conn)
         def count(*conditions):
             return conn.execute(sa.select(sa.func.count()).select_from(t.admissions).where(*conditions)).scalar_one()
+        session_conditions = (t.admissions.c.session_hash == row["session_hash"],
+                              t.admissions.c.created_at >= day_start(stamp))
+        daily_exceeded = (
+            count(*session_conditions) >= self.policy.session_analysis_daily
+            if self.policy.session_analysis_daily is not None else
+            initial and count(*session_conditions, t.admissions.c.initial.is_(True)) >= self.policy.session_daily
+        )
         if (count(t.admissions.c.ip_hash == row["ip_hash"], t.admissions.c.created_at >= day_start(stamp)) >= self.policy.ip_daily
-                or (initial and count(t.admissions.c.session_hash == row["session_hash"],
-                    t.admissions.c.initial.is_(True), t.admissions.c.created_at >= day_start(stamp)) >= self.policy.session_daily)
-                or (not initial and count(t.admissions.c.case_id == case_id,
+                or daily_exceeded
+                or (self.policy.input_mode == "server_sample" and not initial and count(t.admissions.c.case_id == case_id,
                     t.admissions.c.initial.is_(False)) >= self.policy.case_repeats)):
             raise PublicDenied("LIMIT")
         preparing = conn.execute(sa.select(sa.func.count()).select_from(t.preparations).where(
@@ -309,24 +327,46 @@ class PublicStore:
         """Guard an attempt; return whether it belongs to a public Case."""
         # Always detect tagged Cases, even if a new Worker was misconfigured internal.
         self.locked(conn)
-        row = self._bound_case(conn, snapshot["case_id"])
+        case_key(snapshot["case_id"])
+        tagged = conn.execute(sa.select(t.cases.c.case_id).where(
+            t.cases.c.case_id == snapshot["case_id"]).with_for_update()).first()
+        if tagged is None:
+            if self.require_public:
+                raise PublicDenied("NOT_FOUND")
+            return False
+        execution = conn.execute(sa.select(job_execution.c.case_id, job_execution.c.status, job_execution.c.kind,
+            job_execution.c.job_id,
+            job_execution.c.lease_owner, job_execution.c.lease_expires_at, job_execution.c.cancel_requested_at)
+            .where(job_execution.c.execution_id == snapshot.get("execution_ref")).with_for_update()).mappings().one_or_none()
+        local = execution is not None and execution["kind"] in LOCAL_OCR_KINDS
+        row = self._bound_case(conn, snapshot["case_id"], local=local)
         if row is None:
             return False
-        execution = conn.execute(sa.select(job_execution.c.case_id, job_execution.c.status,
-            job_execution.c.lease_owner, job_execution.c.lease_expires_at, job_execution.c.cancel_requested_at)
-            .where(job_execution.c.execution_id == snapshot["execution_ref"]).with_for_update()).mappings().one_or_none()
         if (execution is None or execution["case_id"] != snapshot["case_id"] or execution["status"] != "RUNNING"
                 or self.worker_id is None or execution["lease_owner"] != self.worker_id
                 or execution["lease_expires_at"] is None or execution["lease_expires_at"] <= now(conn)):
             raise PublicDenied("CLAIM_LOST")
         if execution["cancel_requested_at"] is not None:
             raise PublicDenied("CANCELLED")
-        if not conn.execute(sa.select(sa.func.count()).select_from(t.admissions).where(
+        if local or snapshot.get("operation") in LOCAL_OCR_OPERATIONS.values() or snapshot.get("provider_label") == "ocr-local":
+            if not local_ocr_usage(execution["kind"], snapshot):
+                raise PublicDenied("UNSUPPORTED")
+            groups = conn.execute(sa.select(t.local_admissions.c.job_ids).where(
+                t.local_admissions.c.case_id == snapshot["case_id"], t.local_admissions.c.active.is_(True))).scalars()
+            if not any(execution["job_id"] in group for group in groups):
+                raise PublicDenied("INPUT")
+        elif not conn.execute(sa.select(sa.func.count()).select_from(t.admissions).where(
                 t.admissions.c.case_id == snapshot["case_id"], t.admissions.c.active.is_(True))).scalar_one():
             raise PublicDenied("INPUT")
         values = {k: snapshot[k] for k in ("usage_id", "execution_ref", "case_id", "operation", "provider_label")}
         existing = conn.execute(sa.select(t.reservations).where(t.reservations.c.usage_id == snapshot["usage_id"])
                                 .with_for_update()).mappings().one_or_none()
+        if local:
+            if existing is not None and any(existing[k] != v for k, v in values.items()):
+                raise PublicDenied("CONFLICT")
+            # Keep local OCR observations and all prior liabilities. No monetary
+            # reservation is invented, and external-call bounds remain below.
+            return True
         if self.policy.funding_mode == "elice_supported":
             self.policy.require_supported(snapshot["operation"], snapshot["provider_label"])
             if existing is not None and any(existing[k] != v for k, v in values.items()):

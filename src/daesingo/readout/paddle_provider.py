@@ -17,7 +17,7 @@ readout은 보존만 한다(`contract-plate-overlay-readout.md` §「`frame_ref`
 ## 측정 근거
 
 필터 기준은 `experiments/ocr-baseline-2026-09-15` 실행에서 가져왔다. **목표치가 아니라
-그때 돌던 값**이고, 실측이 쌓이면 Technical Spec에서 확정한다.
+그때 돌던 값**이고, 실측이 쌓이면 Technical Spec에서 확정한다(readout Technical Spec은 아직 없다).
 """
 from __future__ import annotations
 
@@ -84,6 +84,7 @@ class SourceFrame:
     frame_ref: str
     offset_sec: float
     image: object
+    frame_offset_sec: float | None = None
 
 
 @dataclass
@@ -155,7 +156,9 @@ def _to_frame_boxes(boxes, origin, scale):
 
 
 class LocalVideoFrameSource:
-    """로컬 영상 파일을 직접 연다 — `recording` 연결 전까지 쓰는 경로.
+    """로컬 영상 파일을 직접 연다 — 독립 실험용 경로(예: `scripts/run_readout_real.py`).
+
+    운영 경로는 `RecordingFrameSource`를 쓴다.
 
     **`frame_ref`가 임시값이고 `read_frame()`으로 조회되지 않는다.**
     """
@@ -243,11 +246,12 @@ class RecordingFrameSource:
             for ratio in self._ratios:
                 # Preserve decimal sample instants across the strict Recording boundary.
                 offset_sec = float(Decimal(str(clip.duration_sec)) * Decimal(str(ratio)))
-                frame, content = clip_frames.read_at(offset_sec)
+                frame, content, frame_offset_sec = clip_frames.read_at_with_frame_offset(offset_sec)
                 frames.append(SourceFrame(
                     frame_ref=frame.frame_ref,
                     offset_sec=round(offset_sec, 3),
                     image=_decode_image(content),
+                    frame_offset_sec=frame_offset_sec,
                 ))
             return frames
         except ProviderError:
@@ -429,6 +433,7 @@ class PaddleOcrProvider(OcrProvider):
                     frame_ref=frame.frame_ref,
                     offset_sec=frame.offset_sec,
                     raw_text=line.text,
+                    frame_offset_sec=frame.frame_offset_sec,
                 ))
         # 날짜 줄을 못 찾은 것을 「overlay가 없다」로 단정하지 않는다. 우리가 못 본 것과 화면에
         # 없는 것은 다르고, 없다고 하면 사용자가 화면을 다시 보지 않는다(failure-taxonomy.md).

@@ -1,4 +1,4 @@
-// 진행 화면 전용 문구 — `labels.ts`에 합치는 것은 web Owner가 한다.
+// 진행 화면 전용 문구. 화면 공통 문구는 `labels.ts`에 있다.
 //
 // 여기 있는 것은 계약의 `*_label_key`가 아니다. `progress[].step` 이름을 진행 화면의
 // 안내 문구로 바꾸는 표이고, 키는 이 파일이 소유한다(`labels.candidate.ts`와 같은 취급).
@@ -62,6 +62,8 @@ export const PREVIEW_UNAVAILABLE = '미리보기를 표시할 수 없어요'
 export const SITUATION_HEADING = '적어 주신 상황'
 
 export const SCENE_SEARCH_MESSAGES = {
+  // 상황 설명 읽기·장면 찾기 job이 아직 Worker에 잡히지 않음 — 앞선 분석을 기다리거나 막 작업 요청된 직후
+  QUEUED: '분석 차례를 기다리고 있어요',
   PREPARING: '영상을 준비하고 있어요',
   SEARCHING: '말씀하신 상황을 찾고 있어요',
   ORGANIZING: '찾은 장면을 정리하고 있어요',

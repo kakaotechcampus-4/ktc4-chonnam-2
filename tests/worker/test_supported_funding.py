@@ -10,7 +10,8 @@ from daesingo.worker.bootstrap import SearchSettings, require_supported_elice
 
 
 @pytest.mark.parametrize("operation,module", [("HINT_EXTRACT", "intent"), ("SEARCH_COARSE", "search"),
-                                              ("SEARCH_FINE", "search")])
+                                              ("SEARCH_FINE", "search"), ("CANDIDATE_SEARCH", "search"),
+                                              ("VISUAL_VERIFY", "search")])
 def test_actual_supported_provider_configuration_is_required(operation, module):
     config = GeminiSearchConfig(model="test-model")
     snapshot = {"operation": operation, "provider_label": "elice:test-model"}

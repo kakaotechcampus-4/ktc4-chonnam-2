@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import shutil
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +54,14 @@ _SKIP_REASON = (
     else None
 )
 _NEEDS_REAL_VIDEO_ENV = pytest.mark.skipif(_SKIP_REASON is not None, reason=_SKIP_REASON or "")
+
+
+def _assert_monday_event_time(value: str) -> None:
+    # The Search stub centers the candidate on source ~10s. The known overlay shows
+    # 14:19:58 at source ~8s, so the representative point is around 14:20:00.
+    # The camera prints whole seconds and the first frame at/after a seek can differ from its request.
+    expected = datetime.fromisoformat("2026-06-20T14:20:00+09:00")
+    assert abs((datetime.fromisoformat(value) - expected).total_seconds()) <= 1
 
 
 def _visual_evidence_template() -> dict[str, Any]:
@@ -139,6 +148,9 @@ def _install_stubbed_search(monkeypatch: pytest.MonkeyPatch) -> None:
             selected_video_stream=selected,
         )
 
+    # Setup for both stubbed Search calls can run without provider credentials or a client.
+    monkeypatch.setattr(real_e2e, "load_env_file", lambda: {"GEMINI_API_KEY": "stub-search-key"})
+    monkeypatch.setattr(search_module, "build_gemini_search_service", lambda **kwargs: object())
     monkeypatch.setattr(search_module, "search_candidates", fake_search_candidates)
     monkeypatch.setattr(
         search_module, "verify_visual_with_stream_context", fake_verify_visual_with_stream_context
@@ -178,15 +190,7 @@ def test_real_video_adapter_reaches_caseview_without_premature_ready(monkeypatch
     # (ADR-EVIDENCE-005 D2-c) EVIDENCE_REVIEW에 머문다.
     assert view["stage"] == "EVIDENCE_REVIEW"
     assert view["package"] is None
-    # 실제 dashcam overlay OCR이 실제로 읽은 값이다(스텁이 아님).
-    # 발생시각은 overlay(화면 시계) OCR에서 샘플 중 가장 이른 프레임의 시각이다(readout
-    # `_interpret_overlay` min(parsed)). IncidentClip(파일 6.7~13.4초)을 clip 20~80% 7점으로 읽고
-    # (readout `SAMPLE_RATIOS`, PR #345), 가장 이른 샘플이 clip 20%(1.335초, 파일 8.0초) → 14:19:58이다.
-    # 이전 기대값 14:19:59는 3점(30/50/70%) 시절 가장 이른 샘플(clip 2.0초, 파일 8.7초) 값이고,
-    # 14:19:56은 원본 전체 샘플 중 사건 구간 **밖** 프레임(파일 6.0초)에서 읽은 값이었다(PR #146
-    # 멘토 리뷰 r4084810910). 실영상이 로컬에만 있어 CI에서 skip된다 — readout 샘플 지점이 바뀌면
-    # 여기서만 드러난다.
-    assert view["evidence"]["event_time_display"]["value"] == "2026-06-20T14:19:58+09:00"
+    _assert_monday_event_time(view["evidence"]["event_time_display"]["value"])
     assert view["evidence"]["event_time_display"]["info_state"] == "INFO_SOURCE_VERIFIED"
     # 이 영상은 판독은 됐지만 번호를 읽지 못한다(PlateReadout 존재, value null). #172 D-3 ·
     # requirement-rules-v5부터 이 상태는 UNKNOWN이 아니라 WARN이다(ADR-EVIDENCE-008 §5.1).
@@ -218,13 +222,7 @@ def test_real_video_context_can_be_reused_for_multiple_candidates(monkeypatch: p
         bundle = real_e2e.build_evidence_for_real_video_candidate(
             context, candidates[0], case_id=case.case_id
         )
-        # 발생시각은 overlay(화면 시계) OCR에서 샘플 중 가장 이른 프레임의 시각이다(readout
-        # `_interpret_overlay` min(parsed)). IncidentClip(파일 6.7~13.4초)을 clip 20~80% 7점으로 읽고
-        # (readout `SAMPLE_RATIOS`, PR #345), 가장 이른 샘플이 clip 20%(1.335초, 파일 8.0초) → 14:19:58이다.
-        # 이전 기대값 14:19:59는 3점(30/50/70%) 시절 가장 이른 샘플(clip 2.0초, 파일 8.7초) 값이고,
-        # 14:19:56은 원본 전체 샘플 중 사건 구간 **밖** 프레임(파일 6.0초)에서 읽은 값이었다(PR #146
-        # 멘토 리뷰 r4084810910). 실영상이 로컬에만 있어 CI에서 skip된다 — readout 샘플 지점이 바뀌면
-        # 여기서만 드러난다.
-        assert bundle.evidence_record["occurred_at"]["value"] == "2026-06-20T14:19:58+09:00"
+        _assert_monday_event_time(bundle.evidence_record["occurred_at"]["value"])
+        assert bundle.evidence_record["occurred_at"]["resolution_status"] == "OK"
     finally:
         context.rec_service.close()

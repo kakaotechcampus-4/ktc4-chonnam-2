@@ -20,6 +20,7 @@ from daesingo.evidence import (
     classify_visual_evidence,
     resolve_independent_facts,
     resolve_time,
+    validate_contract,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -63,12 +64,13 @@ class IndependentFactsTests(unittest.TestCase):
             correction_records=list(corrections),
         )
 
-    def _assemble_after_unsure(self, corrections=()):
+    def _assemble_after_unsure(self, corrections=(), *, plate="default"):
         """같은 관찰 입력에 사용자가 「잘 모르겠어요」로 답한 뒤의 조립."""
         return assemble_evidence(
             case_id="case_h001", selection_rev=1, candidate_event=self.candidate,
             visual_evidence=self.uncertain, time_resolution=self._time(corrections),
-            plate_readout=self.plate, incident_clip=self.clip, record_id="er_facts_unit",
+            plate_readout=self.plate if plate == "default" else plate,
+            incident_clip=self.clip, record_id="er_facts_unit",
             location_hint=self.location_hint, correction_records=list(corrections),
             situation_response={"value": "USER_UNSURE", "responded_at": "2026-09-13T10:00:00+09:00", "candidate_ref": None},
         )
@@ -103,7 +105,7 @@ class IndependentFactsTests(unittest.TestCase):
 
     def test_corrections_apply_by_the_same_rules(self):
         corrections = [
-            self._correction("corr_plate", "vehicle_number", "12가3456", "55나5555", "PLATE_MANUAL_EDIT"),
+            self._correction("corr_plate", "vehicle_number", "12가3456", "12가3457", "PLATE_MANUAL_EDIT"),
             self._correction("corr_place", "location.place_name", None, "수정 장소", "REPORT_TYPE_CHANGE"),
             self._correction("corr_coord", "location.coord", {"lat": 35.1, "lon": 126.1}, {"lat": 35.2, "lon": 126.2}, "REPORT_TYPE_CHANGE"),
             self._correction("corr_time", "occurred_at", "2026-08-24T18:21:44+09:00", "2026-08-24T18:22:00+09:00", "EVENT_TIME_MANUAL"),
@@ -112,11 +114,45 @@ class IndependentFactsTests(unittest.TestCase):
         record = self._assemble_after_unsure(corrections)
 
         self.assertEqual({key: record[key] for key in _FIELDS}, facts)
-        self.assertEqual("55나5555", facts["vehicle_number"]["value"])
-        self.assertTrue(facts["vehicle_number"]["user_corrected"])
+        plate = facts["vehicle_number"]
+        correction_ref = {"kind": "correction_record", "ref": "corr_plate"}
+        readout_ref = self._facts()["vehicle_number"]["source"]["ref"]
+        self.assertEqual("12가3457", plate["value"])
+        self.assertEqual(
+            {"kind": "case.user_correction", "ref": correction_ref, "observability": "OBSERVED", "label_key": None},
+            plate["source"],
+        )
+        self.assertEqual([correction_ref, readout_ref], plate["support_refs"])
+        self.assertTrue(plate["user_corrected"])
+        self.assertFalse(plate["needs_review"])
+        self.assertEqual([], validate_contract(record))
         self.assertEqual("수정 장소", facts["location"]["place_name"]["value"])
         self.assertEqual("2026-08-24T18:22:00+09:00", facts["occurred_at"]["value"])
         self.assertTrue(facts["occurred_at"]["user_corrected"])
+
+    def test_direct_input_has_no_readout_support(self):
+        first = dict(
+            self._correction("corr_input", "vehicle_number", None, "12가3456", "PLATE_MANUAL_EDIT"),
+            contract_version="correction-record/v1.2",
+        )
+        second = self._correction("corr_edit", "vehicle_number", "12가3456", "12가3457", "PLATE_MANUAL_EDIT")
+        second["supersedes_ref"] = {"kind": "correction_record", "ref": first["correction_id"]}
+        abstained = dict(self.plate, abstained=True)
+        unread = dict(self.plate, observation={"status": "UNKNOWN", "value": None})
+        # A later successful readout with the same text as the first manual input is unrelated.
+        for plate in (None, abstained, unread, self.plate):
+            with self.subTest(plate=plate):
+                corrected = self._facts([first, second], plate=plate)["vehicle_number"]
+                self.assertEqual("12가3457", corrected["value"])
+                self.assertEqual([{"kind": "correction_record", "ref": "corr_edit"}], corrected["support_refs"])
+
+    def test_correction_does_not_adopt_readout_from_another_candidate_or_clip(self):
+        edit = self._correction("corr_plate", "vehicle_number", "12가3456", "12가3457", "PLATE_MANUAL_EDIT")
+        other_candidate = dict(self.plate, candidate_id="candidate_other")
+        other_clip = dict(self.plate, input_ref={**self.plate["input_ref"], "incident_clip_ref": "clip_other"})
+        for plate, message in ((other_candidate, "PlateReadout mismatch"), (other_clip, "supplied IncidentClip")):
+            with self.subTest(message=message), self.assertRaisesRegex(ContractInputError, message):
+                self._assemble_after_unsure([edit], plate=plate)
 
     def test_situation_dependent_corrections_are_ignored(self):
         change = self._correction("corr_report", "event.safety_report_type", "TRAFFIC_VIOLATION", "MOTORCYCLE_VIOLATION", "REPORT_TYPE_CHANGE")

@@ -16,6 +16,12 @@ from daesingo.common.usage.port import UsageError
 Positive = Annotated[int, Field(strict=True, gt=0, le=10**15)]
 
 
+def supported_policy_operation(operation: str) -> str:
+    """Translate existing Search usage names only at supported-mode guards."""
+    return {"CANDIDATE_SEARCH": "SEARCH_COARSE",
+            "VISUAL_VERIFY": "SEARCH_FINE"}.get(operation, operation)
+
+
 class PublicDenied(UsageError):
     """Fixed codes cross HTTP/Worker boundaries without inputs or SQL text."""
     def __init__(self, code="UNCONFIGURED"):
@@ -27,7 +33,7 @@ class PublicDenied(UsageError):
         return {"NOT_FOUND": 404, "ORIGIN": 403, "UPLOAD_DISABLED": 403,
                 "LIMIT": 429, "CONCURRENT": 429, "BUDGET": 429,
                 "LOCAL_LIMIT": 429, "LOCAL_CONCURRENT": 429,
-                "INPUT": 422, "BUSY": 409}.get(self.code, 503)
+                "INPUT": 422, "BUNDLE_MISMATCH": 422, "BUSY": 409}.get(self.code, 503)
 
 
 class Bound(BaseModel):
@@ -70,6 +76,12 @@ class PublicPolicy(BaseModel):
     session_concurrent: Positive
     global_concurrent: Positive
     funding_mode: Literal["krw", "elice_supported"] = "krw"
+    input_mode: Literal["server_sample", "upload_bundle"] = "server_sample"
+    session_create_daily: Positive | None = None
+    session_analysis_daily: Positive | None = None
+    upload_case_attempts: Positive | None = None
+    previous_manifest_sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")] | None = None
+    candidate_previews: bool = False
     case_budget_micros: Positive | None = None
     daily_budget_micros: Positive | None = None
     total_budget_micros: Positive | None = None
@@ -95,6 +107,16 @@ class PublicPolicy(BaseModel):
 
     @model_validator(mode="after")
     def funding_contract(self) -> Self:
+        if self.input_mode == "upload_bundle":
+            if (self.session_create_daily is None or self.session_analysis_daily is None
+                    or self.upload_case_attempts is None):
+                raise ValueError("explicit bundle experience, analysis and upload limits required")
+        elif (self.session_create_daily is not None or self.session_analysis_daily is not None
+              or self.upload_case_attempts is not None
+              or self.previous_manifest_sha256 is not None or self.candidate_previews):
+            raise ValueError("bundle settings require upload_bundle input mode")
+        if self.candidate_previews and self.local_work is None:
+            raise ValueError("candidate previews require local work limits")
         budgets = (self.case_budget_micros, self.daily_budget_micros, self.total_budget_micros)
         if self.funding_mode == "krw":
             if any(value is None for value in budgets) or not self.bounds or self.support_ref is not None or self.supported_calls:
@@ -136,6 +158,10 @@ class PublicPolicy(BaseModel):
 
     def fingerprint(self):
         data = self.model_dump(mode="json")
+        if self.input_mode == "server_sample":
+            for key in ("input_mode", "session_create_daily", "session_analysis_daily", "upload_case_attempts",
+                        "previous_manifest_sha256", "candidate_previews"):
+                del data[key]
         if self.funding_mode == "krw":
             # Preserve the already-installed KRW policy identity across upgrade.
             for key in ("funding_mode", "support_ref", "supported_calls"):
@@ -150,6 +176,7 @@ class PublicPolicy(BaseModel):
         return matches[0].reserve_micros
 
     def require_supported(self, operation, provider):
+        operation = supported_policy_operation(operation)
         if not any((b.operation, b.provider_label) == (operation, provider) for b in self.supported_calls):
             raise PublicDenied("UNSUPPORTED")
 

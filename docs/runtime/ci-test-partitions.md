@@ -166,7 +166,7 @@ MySQL setup + canonical MySQL + strict + mutation) + aggregator`다.
 
 ## 로컬 실행과 rollback
 
-ffmpeg/ffprobe와 locked test + eval-gemini 의존성을 준비하고, 비-MySQL 회귀는
+ffmpeg/ffprobe와 `uv sync --locked`로 test + eval-gemini 의존성을 준비하고, 비-MySQL 회귀는
 `uv run --no-sync python -m tests.ci_orchestration regression <JUnit 출력 경로>`, collection은
 `uv run --no-sync python -m tests.ci_orchestration collect <증거 디렉터리>`로 실행한다.
 실제 MySQL gate는 폐기 가능한 MySQL 8.4 URL을 환경변수로 설정하고

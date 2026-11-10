@@ -1,179 +1,156 @@
-# 대신고 (Daesingo)
+# 대신고
 
-**블랙박스 영상에서 교통위반 신고 자료를 준비해 주는 제품.**
+블랙박스 영상에서 교통위반 장면을 찾고, 번호판·시각·증거 영상을 모아 신고자료를 준비하는 서비스입니다.
 
-위험한 위반을 목격했고 신고할 마음도 생겼지만, 운전 중이라 **정확한 시각과 장소를 적어두지 못한 운전자**가 타깃이다. 몇 시간짜리 영상을 손으로 훑는 대신, 기억나는 단서를 자연어로 말하면(대충 언제 · 어떤 차 · 무슨 일 · 어디쯤) 제품이 사건 구간 후보와 그 전후 증거를 찾아온다. **사용자는 확인하고 고치기만 한다.**
+- [서비스 체험](https://daesingo-ktc4.duckdns.org/)
+- [개발 환경과 실행](docs/getting-started.md)
+- [프로젝트 문서](docs/README.md)
 
-목표는 신고할 마음이 없던 사람을 유도하는 게 아니라, **이미 생긴 신고 의향이 준비 과정의 마찰 때문에 사라지지 않게 하는 것**이다.
+> AI는 신고자료 준비를 돕습니다. 내용 확인과 안전신문고 최종 제출은 사용자가 직접 합니다.
 
-> **현재 Runtime 실행환경 (2026-10-30 갱신):** 로컬 Compose는 API·Worker·migration·MySQL을 구성한다. 기본 Worker는 Search·Recording·production PaddleOCR·export를 조립하며, Analysis/Incident encoding 설정에 따라 등록 가능한 handler가 달라진다. 실제 env·버전·cache·실행 순서와 미결 항목은 [Runtime/Ops·Recording 실행환경](docs/runtime/local-runtime-environment.md), 검증 이력과 남은 위험은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
+<img src="docs/images/readme/cover.png" alt="대신고 — 기억 속 한 장면이 더 안전한 길의 시작" width="800">
 
-## 무엇을 하고, 무엇을 하지 않는가
+[서비스 흐름](#주요-기능) · [아키텍처](#아키텍처) · [기술 스택](#기술-스택) · [평가 결과](#평가-결과)
 
-제품이 약속하는 것과 명시적으로 하지 않는 것은 **[`docs/product/product-spec.md`](docs/product/product-spec.md) §5**가 소유한다. 요약하면:
+---
 
-**한다** — 자연어 기억 단서를 시간·차량·상황 정보로 구조화 · 1차 탐색(Coarse)으로 상위 후보 생성 후 정밀 검증 · Top-3 구조화 카드와 사용자 보정 · 사건 전후 증거 구간 구성(**영상 파일 경계에 걸친 사건 포함**) · 번호판 best frame과 OCR · 시각을 **출처와 함께**(화면 표시 / 파일명 / 메타데이터 / 사용자 / Unknown) 관리 · GPS가 있으면 위치 보강, 없으면 사용자 단서 유지 · 신고요건 점검과 안전신문고 handoff
+## 서비스 소개
 
-**하지 않는다** — AI가 법적 위반 여부를 최종 확정 · 사용자 승인 없는 무인 자동신고 · 신뢰 가능한 출처 없는 시각을 임의 생성 · 자체 지도 UI · 모든 도로교통법 위반 유형 지원
+위반을 목격하고도 장면을 찾고, 영상을 자르고, 번호판과 시각을 확인하는 과정이 번거로워 신고를 포기하는 운전자를 돕습니다.
+기억나는 상황을 입력하면 대신고가 자료 초안을 준비하고, 사용자는 확인·수정한 뒤 직접 제출합니다.
 
-### 초기 지원 사건 4종
+**지원 유형:** 신호위반 · 중앙선 침범 · 백색 실선 침범 · 이륜차 안전모 미착용
 
-신호위반 · 중앙선 침범 · 진로변경(백색 실선 침범) · 이륜차 안전모 미착용
+<details>
+<summary>대신고가 맡는 일</summary>
 
-4종으로 좁힌 이유는 시간 순서 판단(신호 → 정지선 → 통과)과 객체 속성 판단(안전모)처럼 **서로 다른 인식 능력을 함께 검증**할 수 있기 때문이다. 자세한 근거는 product-spec §6.
+<img src="docs/images/readme/workflow.png" alt="자료 준비를 자동화하고 사용자 확인과 제출로 연결하는 흐름" width="800">
 
-### 넘지 않는 선
+</details>
 
-[`product-spec.md`](docs/product/product-spec.md) **§7**이 제품 수준 불변 경계를 소유한다. 그중 셋만 옮기면:
+<a id="주요-기능"></a>
 
-- **원본 영상을 덮어쓰지 않는다.**
-- 번호판·시각·위치가 불확실하면 **값을 만들어내지 않고** 출처와 `확인 필요`/`UNKNOWN` 상태를 보여준다.
-- **실제 안전신문고 제출은 사용자가 직접 한다.**
+## 기억에서 신고자료까지
 
-## 사용자 흐름
+<img src="docs/images/readme/step-1-input.png" alt="STEP 1. 정확한 시각보다 기억나는 장면부터 — 영상과 상황 입력" width="800">
 
-영상 업로드 → 영상에서 읽은 정보 확인(촬영 시간 · 화면 시각 유무 · GPS 유무) → 사용자가 기억을 말함 → 단서 구조화와 탐색 범위 확인 → 분석 → 사건 후보 비교·검증 → 사용자 보정 → 번호판·시각·위치 확정 → 신고요건 점검 → 안전신문고로 handoff.
+영상을 올리고 기억나는 상황을 적으면, 시간·차량·상황 단서를 정리합니다.
 
-화면 단위 흐름과 **실패했을 때 무엇을 보여주는지**는 [`docs/product/core-user-flow.md`](docs/product/core-user-flow.md)가 소유한다. 채팅 인터페이스가 아니라 **단계형 화면**이고, 자연어 입력은 단서 입력 한 곳에만 있다.
+<br>
 
-## 구조
+<img src="docs/images/readme/step-2-analysis.png" alt="STEP 2. 장면을 찾고 필요한 도구 연결 — 탐색과 번호판 판독" width="800">
 
-모듈 7개로 나눈다. 기준은 팀원 수가 아니라 **서로 다른 변경 이유**다 — 무엇이 바뀌면 어디를 고치게 되는가.
+장면 탐색부터 후보 확인·번호판 판독·증거 정리까지, 지금 진행하는 작업을 보여줍니다.
 
-| 모듈 | 다루는 사실 |
+<br>
+
+<img src="docs/images/readme/step-3-report.png" alt="STEP 3. 확인하고 필요한 것만 수정 — 신고자료 확인과 내보내기" width="800">
+
+확인이 필요한 값을 보완하고 영상과 신고 내용을 가져갑니다. 최종 제출은 안전신문고에서 직접 합니다.
+
+## 공개 체험
+
+- Desktop Web에서 로그인 없이 이용합니다.
+- 제공받은 공식 3분·10분 ZIP을 풀고, 같은 묶음의 MP4를 합계 **10분까지** 올립니다. 임의 사용자 영상은 받지 않습니다.
+- 결과는 체험을 시작한 브라우저에서 확인합니다. 시작 24시간 후부터 자동 정리 대상이므로 필요한 자료는 미리 다운로드합니다.
+
+---
+
+## 아키텍처
+
+<img src="docs/images/readme/architecture.png" alt="React Web, FastAPI, MySQL, Worker와 도메인 모듈 구성" width="900">
+
+- API는 요청·조회를, Worker는 영상 분석·파일 생성을 담당하며 MySQL 기반 DB Queue로 연결합니다.
+- `case`가 진행을 관리하고 `search`·`readout`의 관찰 결과를 `evidence`가 신고자료로 구성합니다.
+- Eval은 제품 런타임과 분리된 개발용 평가 도구입니다. 카카오 지도는 키 설정 시 사용하는 보조 기능입니다.
+
+<details>
+<summary>후보 탐색과 정밀 검증</summary>
+
+<img src="docs/images/readme/coarse-fine.png" alt="넓은 범위의 Coarse 탐색과 선택한 후보의 Fine 검증" width="800">
+
+전체 범위에서 후보를 찾고 선택한 장면을 자세히 확인합니다. 다른 후보를 선택하면 해당 장면을 검증하며 기존 결과는 재사용합니다.
+
+[모듈 경계와 계약](docs/architecture/module-architecture.md) · [Runtime 설계](docs/runtime/runtime-tech-spec.md)
+
+</details>
+
+## 기술 스택
+
+| 구분 | 주요 기술 |
 | --- | --- |
-| `recording` | 블랙박스 파일·stream이라는 현실. Source가 말해주는 것과 픽셀 접근 경계 |
-| `search` | 넓은 영상 범위의 픽셀이 말해주는 것 — 사건 구간 후보 탐색 |
-| `readout` | 좁은 화면 영역의 값 — 번호판·화면 시각이 어떻게 보이는지 |
-| `evidence` | 확정 Evidence + 신고 규정 + Package 정책 |
-| `case` | 진행 상태·사용자 선택·부분 재실행·작업 발주 의도 |
-| `web` | 도메인 상태를 갖지 않고 `CaseView`를 표현하는 작업공간 |
-| `eval` | 제품 런타임과 분리된 채점 도구 |
+| FE | ![React 19](https://img.shields.io/badge/React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) ![Vite 6](https://img.shields.io/badge/Vite%206-646CFF?style=for-the-badge&logo=vite&logoColor=white) ![CSS](https://img.shields.io/badge/CSS-663399?style=for-the-badge&logo=css&logoColor=white) |
+| BE | ![Python 3.12+](https://img.shields.io/badge/Python%203.12%2B-3776AB?style=for-the-badge&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white) ![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white) ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white) ![MySQL 8.4](https://img.shields.io/badge/MySQL%208.4-4479A1?style=for-the-badge&logo=mysql&logoColor=white) ![Alembic](https://img.shields.io/badge/Alembic-444444?style=for-the-badge) |
+| AI·영상 | ![Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white) ![PaddleOCR](https://img.shields.io/badge/PaddleOCR-0062B0?style=for-the-badge) ![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white) ![FFmpeg](https://img.shields.io/badge/FFmpeg-007808?style=for-the-badge&logo=ffmpeg&logoColor=white) |
+| 인프라 | ![AWS](https://img.shields.io/badge/AWS-FF9900?style=for-the-badge) ![Docker Compose](https://img.shields.io/badge/Docker%20Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white) ![Caddy](https://img.shields.io/badge/Caddy-1F88C0?style=for-the-badge) ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white) |
+| 테스트·품질 | ![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-D7FF64?style=for-the-badge&logo=ruff&logoColor=black) ![mypy](https://img.shields.io/badge/mypy-3776AB?style=for-the-badge) |
 
-두 가지가 이 구조의 핵심이다. **관찰(`search`·`readout`)과 확정(`evidence`)을 분리한다** — "AI가 그렇게 봤다"와 "이 값이 맞다"는 다른 사실이다. 그리고 **`eval`은 제품 런타임이 아니다** — `search`와 `readout`은 `eval`의 존재를 모른다.
+## 평가 결과
 
-경계·계약·각 모듈이 **알면 안 되는 것**은 [`docs/architecture/module-architecture.md`](docs/architecture/module-architecture.md)가 소유한다. 1,900줄이므로 전체를 읽지 않는다 — §1 → §2 → 자기 모듈 §4 → §5 순서로 읽는다.
+2026-11-01 평가 기록입니다. 사건 탐색과 영상 유형 분류, 번호판 판독을 각각 측정했습니다.
 
-### 기술 스택 (확정)
+| 평가 | 데이터 | 결과 |
+| --- | --- | --- |
+| 사건 탐색·정밀 확인 | 유튜브 179클립, 위반 16건 | 4/16 → **10/16 (62.5%)** |
+| 영상 유형 분류 | AI-Hub 양성 영상 400개 | **371/400 (92.8%)** |
+| 번호판의 잘못된 확정 | AI-Hub 번호판 crop 314장, O1 → O2 | **129건 → 32건** |
 
-Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Queue · ffmpeg/ffprobe · AWS · React 19/Vite 6 웹 앱(선택형 주행 게임에 Three.js 0.160.1) · Desktop Web 우선(모바일 반응형은 MVP 제외). 안전신문고 자동 제출 API는 연동하지 않는다.
+사건 탐색은 설정 선택에 사용한 사건 10건을 포함하는 개발 평가입니다(95% 신뢰구간 약 39–82%). 정상 클립당 최종 오탐은 0.35건입니다. 유형 분류는 양성 영상, 번호판은 crop 이미지·10/22 규칙 기준으로 전체 제품 성능과 구분합니다.
 
-## 레포 구성
+<details>
+<summary>평가 그래프와 비용·오탐 비교</summary>
 
-`apps/`에 실행 코드, `docs/`에 living document, `src/`·`eval/`에 Python 구현이 있다. 모듈별 진행 상태는 다르다 — 코드가 들어온 곳도 있고, 아직 README만 있는 골격도 있다. 정확한 현황은 각 폴더의 README와 `docs/management/ownership.md`가 소유한다.
+<img src="docs/images/readme/evaluation.png" alt="설정별 사건 탐색 결과와 영상 유형 적중률" width="800">
 
-| 경로 | 내용 |
-| --- | --- |
-| `apps/prototype/` | 흐름 프로토타입 (React 19 + Vite 6, 목데이터). **제품 코드 아님** |
-| `apps/web/` | 실제 웹 앱(React 19 · Vite 6). `/`는 실제 API 흐름 — 업로드 → 장면 찾기 → 후보 확인 → 번호판 · 발생 시각 확인 · 입력 → 신고자료 복사 · 다운로드. `/?demo`는 목데이터 시연. 테스트는 web을 바꾸는 PR마다 CI가 실행(Owner: 신유민) — 자세한 현황은 `apps/web/README.md` |
-| `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있다. `api`는 설정·로그 bootstrap, app factory·envelope·health·단일 process 실행, Case 생성·조회·command/enqueue·중단 배선, 원본 upload·저장 FrameRef·DerivedAsset HTTP와 분석 시작 timeline을 구현했다. `worker`는 claim/dispatch·T1/T2·heartbeat/cancel·STALE/retry·T2 재전달과 기본 Search handler/reader 조립을 구현했다(명시적 media profile 등 세부 조건·미결은 각 README와 RT-10(b) 기록 참조) |
-| `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
-| `data/` | 테스트 · 데모용 고정 데이터 — `mock/`(모듈별 계약 fixture · 시나리오), `real/`(실제 영상 E2E 산출 JSON) |
-| `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
-| `scripts/` | 경계·계약 검사 등 팀 스크립트 (`check_boundaries.py` 등) |
-| `Dockerfile` · `compose.yaml` · `docker/` | RT-13(a) local api/worker/migrate/mysql 구성·실행 어댑터. 설정과 전용 smoke는 [RT-13(a) Notes](docs/runtime/rt13a-docker-compose.md) 참조 |
-| `deploy/` | RT-14 수동 OIDC/ECR/SSM·rollback, release-bound Web·Caddy·외부 smoke 도구. Gate 승인 후 구현이며 실제 공개 배포 acceptance는 pending; [실행·복구 계약](docs/runtime/rt14-public-deployment.md) |
-| `tests/` | 모듈별 pytest 테스트. 루트 `pyproject.toml`(`pythonpath=["src"]`, `testpaths=["tests"]`) 기준으로 수집하며, CI는 비-MySQL 회귀와 실제 MySQL·report gate를 분리한다 ([실행 구조](docs/runtime/ci-test-partitions.md)) |
-| `docs/product/` | 타깃·문제·제품 약속·지원 범위·사용자 흐름·검증 계획 |
-| `docs/architecture/` | 모듈 경계(v4)와 계약 원칙 |
-| `docs/runtime/` | 공통 실행 인프라의 Runtime Tech Spec · Ops Spec. `common/runtime`은 도메인 모듈이 아님 |
-| `docs/modules/` | 모듈별 조사·실험·결정·계약 |
-| `docs/management/` | 역할 배정·운영 계획·cross-cutting 결정·보안 검수 |
-| `docs/design/` | 디자인 시스템·1단계 목업·프로토타입 스펙 |
-| `docs/archive/` | 지난 제출물과 종료된 안건 — **현재 문서가 아니다** |
+<img src="docs/images/readme/evaluation-tradeoffs.png" alt="탐지 증가에 따른 비용과 오탐 변화" width="800">
 
-Local logical backup/restore와 실제 복원 acceptance 실행은 [RT-13(b) Notes](docs/runtime/rt13b-backup-restore.md)를 따른다. DB backup은 shared media volume 자체를 포함하지 않는다.
+</details>
 
-문서는 한국어로 쓰고 폴더·파일 이름은 영어로 쓴다.
+[상세 결과·평가 조건](docs/modules/eval/evaluation-results-2026-11-01.md) · [지표 정의](docs/modules/eval/metrics/metric-definitions.md)
 
-## 문서를 읽는 순서
+## 저장소 구조
 
-**전체를 읽지 않는다.** 자기 작업에 해당하는 것만 연다.
-
-| 하려는 일 | 읽을 것 |
-| --- | --- |
-| 제품이 무엇을 약속하고 안 하는지 | `docs/product/product-spec.md` §5 · §7 |
-| 화면 흐름 · 실패 UX | `docs/product/core-user-flow.md` |
-| 내 모듈의 경계 · 계약 · 금지사항 | `docs/architecture/module-architecture.md` §1 → §2 → §4 내 모듈 → §5 |
-| 내 모듈의 조사 · 실험 · 결정 | `docs/modules/<module>/` |
-| DB Queue · retry · lease/heartbeat · Worker 실행 기반 | `docs/runtime/runtime-tech-spec.md` |
-| 배포 · logging · monitoring · storage/retention · capacity | `docs/runtime/ops-spec.md` |
-| 누가 무엇을 맡는지 | `docs/management/ownership.md` |
-| 운영 결정(승인 경로 · 리뷰 담당) | `docs/management/cross-cutting-decisions.md` |
-| 문서 폴더 규칙 · 문서가 서로 다른 말을 할 때 | `docs/README.md` |
-
-문서가 충돌하면 우선순위는 **제품 약속 = `product-spec.md`** → **모듈 경계·계약 = `module-architecture.md`(v4)** → **화면 흐름 = `core-user-flow.md`** 이고, 셋이 어긋나면 혼자 고치지 않고 주간 회의 안건으로 올린다. 자세한 규칙은 [`docs/README.md`](docs/README.md).
-
-**미결은 미결로 남긴다.** 업로드 전략 · timeout 수치 · correction 로그 재사용 설계 · overlay 존재 탐지 세부 · 실패 분류 이름 목록은 실측 전이라 `미결`로 표시돼 있다. 문서를 완성도 있게 보이려고 채우지 않는다.
-
-## 실행
-
-로컬 Compose/API/Worker 구성은 [Runtime/Ops·Recording 실행환경](docs/runtime/local-runtime-environment.md)을 먼저 읽고
-[`.env.example`](.env.example)의 빈 필수값을 보호된 파일에 채운다. 현재 지원 toolchain, migration 순서,
-Search/Intent 모델 구분, production Paddle cache, encoding 미결 항목과 8종 등록 확인 방법을 한곳에서 안내한다.
-
-Node.js 20 이상. npm workspace라서 **레포 루트에서 한 번만** 설치한다(`apps/*` 안에서 하지 않는다).
-
-```bash
-npm install            # 루트에서 한 번
-npm run dev:prototype  # Vite가 출력하는 URL 열기 (기본 http://localhost:5173)
+```text
+apps/web/           실제 웹 앱
+apps/prototype/     초기 흐름 프로토타입
+src/daesingo/       API · Worker · 도메인 모듈
+eval/              예측 · 채점 · 평가 결과
+tests/             모듈별 테스트와 CI 실행 도구
+docs/              제품 · 아키텍처 · 운영 문서
+deploy/            배포·복구 도구
 ```
 
-```bash
-npm run build              # build 스크립트가 있는 workspace 전부
-npm run preview:prototype  # 프로토타입 프로덕션 빌드 서빙
-npm run dev:web            # apps/web 개발 서버 — / 는 실제 흐름(API 서버 :8000 필요), 시연은 /?demo
-npm run preview:web        # apps/web 프로덕션 빌드 서빙
-npm run test:web           # apps/web 테스트 (vitest)
-```
+<a id="실행"></a>
 
-`apps/web` 결과 화면의 위치 지도는 선택적 build 설정 `VITE_KAKAO_MAP_KEY`를 읽는다. 로컬 공급 위치(`apps/web/.env.local`)와 배포 이미지 공급 경로는 [환경·배포 설정 명세 §2.4](docs/management/environment-and-deployment-config.md#24-web-선택적-build-설정)를 따르며, API/Worker runtime 설정만으로 활성화되지 않는다. 키가 없으면 지도 칸만 숨고 나머지 흐름은 그대로 동작한다.
+## 빠른 시작
 
-### Python (`src/daesingo`, `eval/`)
+- [Web 실행](apps/web/README.md) — Node.js 20 이상. `/?demo`는 API 없는 목데이터 시연입니다.
+- [API·Worker 실행](docs/getting-started.md) — Python 3.12 이상. 실제 분석에 필요한 DB·모델·환경 설정을 포함합니다.
+- [평가 실행](eval/README.md) — 저장한 예측을 채점하고 결과를 비교합니다.
 
-Python 3.12 이상. 레포 루트에 `pyproject.toml`이 있고 `src/` 레이아웃(`pythonpath=["src"]`)으로 잡혀 있다.
+## 문서
 
-```bash
-uv sync --locked --extra test --extra quality   # pytest와 quality negative control 도구도 잠금 버전으로 설치
-# uv 없이: pip install -e ".[test,quality]" — 이 경우 아래 명령의 `uv run`은 빼고 실행한다
-uv run python -m tests.ci_orchestration regression .codex-scratch/regression.xml  # 비-MySQL 회귀 (출력 폴더를 먼저 만든다)
-uv run pytest tests/case/   # 모듈 하나만
-uv run python scripts/check_boundaries.py  # 모듈 경계 위반 검사
-```
+| 문서 | 내용 |
+| --- | --- |
+| [제품 명세](docs/product/product-spec.md) · [사용자 흐름](docs/product/core-user-flow.md) | 지원 범위, 화면과 예외 처리 |
+| [아키텍처](docs/architecture/module-architecture.md) · [논리 ERD](docs/architecture/erd-draft.md) | 모듈 경계와 데이터 구조 |
+| [공개 운영 안내](docs/runtime/a1-public-readiness.md) · [배포·복구](docs/runtime/rt14-public-deployment.md) | AWS 운영, ECR·SSM 기반 배포 |
+| [CI 실행 구조](docs/runtime/ci-test-partitions.md) | Python 회귀·MySQL 통합·품질 검사 |
+| [전체 문서](docs/README.md) | 모듈별 설계와 의사결정 기록 |
 
-경계 검사는 기존 문자열·계약 검사에 Runtime Python import 검사를 더한다.
-대상 경로·허용/금지 방향은 [ownership §6](docs/management/ownership.md),
-정적 분석 한계·검증 기록은 [RT-15(b) Notes](docs/runtime/rt15b-import-boundaries.md)를 따른다.
-`--only=boundaries`로 경계만 실행할 수 있고, 회귀 fixture는
-`uv run --no-sync pytest tests/test_import_boundaries.py`로 확인한다.
+## 팀
 
-Runtime lint/type gate는 네 소유 경로만 검사한다. `uv sync --locked --extra quality`
-후 로컬과 CI에서 `uv run --no-sync python scripts/check_runtime_quality.py`를 실행한다.
-Ruff·mypy 버전, 규칙, 타입 예외와 검증 기록은 [RT-15(a) Notes](docs/runtime/rt15a-runtime-quality.md)에 있다.
+| 이름 | 담당 |
+| --- | --- |
+| 김준영 | PM · 증거 확정·신고자료 구성(`evidence`) · 공통 기반·운영 |
+| 유소연 | 진행 관리·오케스트레이션(`case`) · E2E 통합 |
+| 서어진 | 사건 후보 탐색·정밀 검증(`search`) |
+| 신유민 | 번호판·화면 값 판독(`readout`) · Web 상태·API 연결 |
+| 정철원 | 블랙박스 파일·미디어 처리(`recording`) · 작업 실행 기반 |
+| 김대원 | 평가 설계·채점(`eval`) · Web 화면·접근성 구현 |
 
-배포 전 secret 검사는 `python scripts/check_secrets.py install --tool-dir .codex-scratch/rt15c/tool` 후 `python scripts/check_secrets.py scan --repo . --tool-dir .codex-scratch/rt15c/tool`로 실행한다. 고정 Gitleaks와 전체 HEAD 이력이 필요하며 원문 없이 rule ID·익명 예외 ID·건수만 출력한다. 합성 검증은 `python scripts/secret_scan_controls.py --tool-dir .codex-scratch/rt15c/tool`이다. A01·A02는 정확한 위치·좌표·값/패턴 지문만 허용하며, 같은 위치의 새 credential은 실패한다. 별도 `secret-scan.yml`은 develop 수동 실행 및 배포 workflow 선행 검사이며 일반 PR gate에는 편입하지 않았다. 예외 근거·비노출 사고와 보강·실패 정책·검사 한계는 [RT-15(c) Notes](docs/runtime/rt15c-secret-scan.md)를 따른다.
-
-MySQL integration은 `DAESINGO_MYSQL_URL`로 지정한 폐기 가능한 MySQL 8.4 테스트 DB에서 실행한다. 공용 harness는 테스트별 schema를 생성·삭제하므로 해당 권한이 필요하며, 기존 Case fixture는 지정 DB의 Case table을 초기화한다. 권한 실패 시나리오까지 포함한 전체 검증은 테스트 사용자 생성·SELECT 권한 부여·사용자 삭제 권한도 필요하다. CI의 `python-tests.yml`은 비-MySQL `regression`과 MySQL 8.4 service를 쓰는 `mysql`을 병렬 실행하고 `quality`도 독립 실행하며 기존 `test`가 quality·regression·mysql 세 성공을 요구한다. 전체 MySQL gate는 `uv run python -m tests.ci_orchestration mysql .codex-scratch/mysql-evidence`로 실행한다. 실제 inventory 1회 → 같은 실행의 JSON/JUnit strict → catalog·실제 report mutation 순서이며 skip/xfail 0을 요구한다. 검증 wrapper를 단독 또는 bare pytest로 실행하면 현재 실행의 evidence가 없어 실패하므로 전체 gate 진입점을 사용한다. URL 없는 개별 DB 테스트의 기존 opt-in skip은 유지된다. partition·실행 환경·제약은 [CI 실행 구조](docs/runtime/ci-test-partitions.md)를 따른다.
-
-Migration은 `uv run python -m daesingo.common.db.migrate --database-url-stdin`으로 실행한다. 호출자가 URL 한 개를 비대화형 stdin에 명시적으로 전달하며 credential을 argv·로그에 넣지 않는다. runner는 URL 환경변수·`.env`·RuntimeConfig를 읽지 않는다. 소스 checkout의 env를 frozen registry `case → runtime → recording` 순서로 `head`까지 적용하며, 새 env는 registry와 필수 테스트에 등록해야 한다. 기존 MySQL gate는 RT-02(a)·Case 실행 목록과 migration·Recording 필수 check를 함께 검사한다.
-
-Migration은 단일 실행 전제다. process 내부 중복 호출만 거부하며 cross-process 동시 실행 안전성을 보장하지 않는다. 첫 실패에서 중단하고 retry·stamp·downgrade·resume/startup migration은 제공하지 않는다. MySQL DDL의 부분 적용은 전체 rollback되지 않으므로 실패 후 상태 검사·복구가 필요하다. 현재 Runtime head는 `runtime_0004`이며 `job_execution`·`usage_inflight`·`usage_record`와 tracker의 관계 의도·복구/늦은 관측 표식을 갖는다. RT-07(a)의 Final append는 caller transaction에 참여하고, RT-07(b)는 execution별 UsageSink begin/finish와 원자적 explicit finalize를 연결한다. RT-07(c)는 terminal produced 기반 reconciliation·명시적 DIRECT_NO_RUN·P-7 늦은 관측·Final usage_refs projection을 연결한다. 실제 Search adapter와 배포 실행 시점·URL 출처·배포 artifact 배치는 후속 범위다. 실제 구현·검증 상태는 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
-
-API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127.0.0.1 --port 8000`으로 실행한다. RT-01 파일 설정을 소비하며 현재 HTTP surface는 `GET /health/live`·`GET /health/ready`·`POST /cases`·`GET /cases/{case_id}/view`·`POST /cases/{case_id}/commands`·`POST /cases/{case_id}/sources`·`GET /cases/{case_id}/frames/{frame_ref}`다. 일반 오류 envelope와 기본 framework 오류 차단, 전용 ready DB 연결, metadata-only mount 검사, command 저장과 enqueue·cancel의 원자적 commit, streaming upload와 commit 후 응답을 제공한다. 지원 CLI가 upload timeout 연결 종료용 API 내부 HTTP protocol을 선택한다. FrameRef는 짧은 소유 확인·저장 이미지 조회 후 Connection을 반환하고 bytes를 전송한다. DerivedAsset HTTP route·분석 시작 timeline dependency는 후속 범위다. MySQL gate는 API health의 정상·pool 고갈·연결 단절·실제 서버 중지·RO mount·실제 API process 증거도 요구한다. 실제 서버 중지 검사는 suite DB와 분리된 Docker 테스트 서버(Linux CI) 또는 WSL 서버(Windows)를 사용하며, RO mount는 private namespace에서 만들고 정리한다.
-
-### 프로토타입에 대해
-
-`apps/prototype`은 **흐름 프로토타입**이다. 목데이터로 도는 10화면이고 백엔드·영상 파이프라인·AI 호출이 없다. 결과 없음 · 탐색 실패 · 범위 확장처럼 **실패 상태로 바로 점프하는 `ScenarioBar` 데모 컨트롤**이 들어 있다. 제품 코드가 아니므로 손대지 않는다.
-
-후보 비교 영상 미리보기는 현재 세대 rank 1~3을 대상으로 첫 요청 때 구간 MP4를 준비한다. 재생은 후보 선택과 분리되며 `GET /cases/{case_id}/candidate-videos/{clip_ref}`의 inline·Range 응답을 사용한다. 구현 범위·상태·검증 한계는 [후보 영상 미리보기 결정](docs/modules/case/decisions/candidate-video-preview.md)을 확인한다.
-
-실제 웹 앱은 `apps/web`에서 구현이 진행 중이다(`CaseView` 소비 화면·컴포넌트). 프로토타입을 얼마나 참고했는지·구조가 어떻게 다른지는 `web` Owner가 관리하는 [`apps/web/README.md`](apps/web/README.md)와 `docs/modules/web/`이 소유한다.
+모듈별 역할과 협업 경계는 [담당 영역](docs/management/ownership.md)에 정리했습니다.
 
 ## 라이선스
 
-[MIT](LICENSE).
-
-
-### 기본 Worker OCR 연결 (Issue #468 작업 중)
-
-`python -m daesingo.worker`의 production OCR 조립과 이미지 사전 다운로드, startup 실패 의미는 [Issue #468 Notes](docs/runtime/issue468-production-readout.md)에 기록한다. 상태: **IN_PROGRESS · Refs #468 · Related #460**.
+[MIT](LICENSE)

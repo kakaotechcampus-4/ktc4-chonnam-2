@@ -49,9 +49,9 @@ export function createPublicSamplesApi(options: { fetch?: typeof fetch } = {}) {
     getView: async (id: string) => checkedView(await original.getView(id), id),
     sendCommand: async (...args: Parameters<typeof original.sendCommand>) => checkedView(await original.sendCommand(...args), args[0]),
   }
-  async function call<T>(url: string, init?: RequestInit): Promise<ApiResult<T>> {
+  async function call<T>(url: string, init?: RequestInit, bounded = true): Promise<ApiResult<T>> {
     let response: Response
-    try { response = await authenticated(url, { ...init, signal: AbortSignal.timeout(15000), cache: 'no-store' }) }
+    try { response = await authenticated(url, { ...init, signal: bounded ? AbortSignal.timeout(15000) : undefined, cache: 'no-store' }) }
     catch { return failed(0, NETWORK_ERROR) }
     let body: any
     try { body = await response.json() } catch { return failed(response.status, INVALID_RESPONSE) }
@@ -61,6 +61,13 @@ export function createPublicSamplesApi(options: { fetch?: typeof fetch } = {}) {
   }
   return {
     cases,
+    async intakeMode() {
+      const result = await call<{ upload_enabled: boolean; retention_ttl_sec: number }>('/public/intake-mode')
+      if (!result.ok) return result
+      const data = result.data
+      return typeof data?.upload_enabled !== 'boolean' || !Number.isSafeInteger(data.retention_ttl_sec) || data.retention_ttl_sec <= 0
+        ? failed(result.status, INVALID_RESPONSE) : result
+    },
     async listSamples(): Promise<ApiResult<{ samples: OfficialSample[] }>> {
       const result = await call<{ samples: OfficialSample[] }>('/public/samples')
       if (!result.ok) return result
@@ -85,7 +92,14 @@ export function createPublicSamplesApi(options: { fetch?: typeof fetch } = {}) {
       return result.ok && (!result.data || result.data.case_id !== caseId || !validView(result.data.case_view, caseId))
         ? failed(result.status, INVALID_RESPONSE) : result
     },
-    deleteCase: (caseId: string) => call<{ state: 'DELETING' | 'DELETED' }>(`/cases/${encodeURIComponent(caseId)}`, { method: 'DELETE' }),
+    async uploadBundle(caseId: string, files: File[]) {
+      const form = new FormData()
+      for (const file of files) form.append('file', file)
+      const result = await call<{ case_id: string; case_view: CaseView }>(`/cases/${encodeURIComponent(caseId)}/official-uploads`,
+        { method: 'POST', body: form }, false)
+      return result.ok && (!result.data || result.data.case_id !== caseId || !validView(result.data.case_view, caseId))
+        ? failed(result.status, INVALID_RESPONSE) : result
+    },
   }
 }
 export type PublicSamplesApi = ReturnType<typeof createPublicSamplesApi>

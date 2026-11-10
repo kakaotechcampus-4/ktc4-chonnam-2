@@ -184,12 +184,12 @@ class ApiComposition:
         from uuid import uuid4
         from daesingo.common.public_runtime.policy import PublicDenied
         from daesingo.common.db.errors import CommitOutcomeUnknown
-        from .official_samples import source_duration_ms
-        from .public_samples import copy_verified_sample, discard_copies, CopiedProbe
         public = self.public
         if public is None:
             raise PublicDenied("UPLOAD_DISABLED")
         public.ready()
+        if public.policy.input_mode != "server_sample":
+            raise PublicDenied("UPLOAD_DISABLED")
         assert public.catalog is not None and self.cleanup is not None
         if not public.catalog.contains(sample_id):
             raise PublicDenied("INPUT")
@@ -200,40 +200,56 @@ class ApiComposition:
                 conn, case_id, public.owner(), sample_id, token))
             if not needed:
                 return {"case_id": case_id, "case_view": self.get_view(case_id)}
-            copied = ()
             try:
                 # Admission/owner/reuse checks precede any hash or ffprobe work.
                 sample = public.catalog.verify(sample_id)
-                copied = copy_verified_sample(sample, self.startup.config.media_root)
-                def register(conn):
-                    public.store.accepting(conn)
-                    public.require(conn, case_id)
-                    store = self._store(conn)
-                    case = store.load_for_update(case_id)
-                    if case.stage != "INTAKE" or case.sources:
-                        raise PublicDenied("INPUT")
-                    bindings = []
-                    with RecordingService(self._recording_repository(conn), media_probe=CopiedProbe(copied)) as recording:
-                        for source in copied:
-                            item = recording.register_local_source(source.path,
-                                original_filename=source.original_filename, case_id=case_id)
-                            case_api.record_source_registered(case_id, item.source_asset.model_dump(mode="json"),
-                                media_streams=[s.model_dump(mode="json") for s in item.media_streams], store=store)
-                            bindings.append({"source_asset_ref": item.source_asset.source_asset_ref,
-                                "sha256": source.sha256, "byte_size": source.byte_size,
-                                "duration_ms": source_duration_ms(source)})
-                    public.store.bind_sample(conn, case_id, sample_id, bindings)
-                    public.store.finish_preparation(conn, token)
-                run_api_transaction(self.engine, register)
+                self._commit_official_sample(case_id, sample, token)
             except CommitOutcomeUnknown:
                 # May be registered: preserve copies and marker. The owned
                 # retention scan reconciles only under an exclusive FS lease.
                 raise
             except BaseException:
-                discard_copies(copied)
                 public.transaction(lambda conn: public.store.finish_preparation(conn, token))
                 raise
         return {"case_id": case_id, "case_view": self.get_view(case_id)}
+
+    def _commit_official_sample(self, case_id, sample, token):
+        from daesingo.common.db.errors import CommitOutcomeUnknown
+        from daesingo.common.public_runtime.policy import PublicDenied
+        from .official_samples import source_duration_ms
+        from .public_samples import copy_verified_sample, discard_copies, CopiedProbe
+
+        public = self.public
+        assert public is not None
+        copied = copy_verified_sample(sample, self.startup.config.media_root)
+
+        def register(conn):
+            public.store.accepting(conn)
+            public.require(conn, case_id)
+            store = self._store(conn)
+            case = store.load_for_update(case_id)
+            if case.stage != "INTAKE" or case.sources:
+                raise PublicDenied("INPUT")
+            bindings = []
+            with RecordingService(self._recording_repository(conn), media_probe=CopiedProbe(copied)) as recording:
+                for source in copied:
+                    item = recording.register_local_source(source.path,
+                        original_filename=source.original_filename, case_id=case_id)
+                    case_api.record_source_registered(case_id, item.source_asset.model_dump(mode="json"),
+                        media_streams=[s.model_dump(mode="json") for s in item.media_streams], store=store)
+                    bindings.append({"source_asset_ref": item.source_asset.source_asset_ref,
+                        "sha256": source.sha256, "byte_size": source.byte_size,
+                        "duration_ms": source_duration_ms(source)})
+            public.store.bind_sample(conn, case_id, sample.sample_id, bindings)
+            public.store.finish_preparation(conn, token)
+
+        try:
+            run_api_transaction(self.engine, register)
+        except CommitOutcomeUnknown:
+            raise
+        except BaseException:
+            discard_copies(copied)
+            raise
 
     def register_source(self, case_id, path, original_filename):
         if self.public is not None:

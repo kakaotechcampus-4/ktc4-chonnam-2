@@ -12,7 +12,7 @@
 >
 > **2026-09-14 갱신 (Mock Pack v5 반영).** v5(PR [#43](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/43), `develop` @ `72e0e05`)에서 `readout.overlay.ocr_failed` fixture가 **처음 생겼다**(`readout/scenario_infra_failure_001.json`의 `readout_x001_overlay_reread`). 미리 등재해둔 notice 값(`readout.overlay_ocr_failed` · `INFO` · `blocking=false` · `actions=[]`)이 그대로 쓰였음을 4차 재검수(이슈 [#38](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/38))에서 확인했다. 이 fixture 덕분에 세 갈래가 데이터에서 어떻게 갈리는지 관측 가능해져 **「fixture 지문」 표를 신설**했다. 등재값·규칙 변경은 없다.
 >
-> **Owner 미결은 없다.** 다만 overlay 「없음」/「확인 못함」의 **판정 기준**은 실측 전 잠정이며 readout Technical Spec에서 확정한다(해당 절에 표시).
+> **Owner 미결은 없다.** 다만 overlay 「없음」/「확인 못함」의 **판정 기준**은 실측 전 잠정이며 readout Technical Spec에서 확정한다(해당 절에 표시). readout Technical Spec은 아직 없다(2026-11-09).
 
 이 문서 안에서 **확정**과 **잠정**을 구분한다. 표 제목과 절 제목에 표시했다.
 
@@ -143,14 +143,14 @@ observation.status            = NEEDS_REVIEW | UNKNOWN
 
 `samples` 유무로 `reason.code`를 **역추론하지 않는다.** 위는 기록된 값을 읽는 표이고, 어느 code를 낼지는 아래 판정 기준이 정한다.
 
-### 어느 쪽을 낼지 정하는 판정 기준 — **잠정. Technical Spec에서 확정**
+### 어느 쪽을 낼지 정하는 판정 기준 — **잠정. Technical Spec에서 확정**(readout Technical Spec은 아직 없다)
 
 **잠정 규칙 (v1):**
 
 - 프레임 샘플링·ROI 추출이 정상 수행됐고 **샘플 전부에서 overlay가 안 보임** → `NOT_APPLICABLE`
 - 프레임 접근 실패 · 유효 샘플 수 미달 · 야간/압축으로 ROI 판정 불가 → `UNKNOWN`
 
-**이 기준은 잠정이다.** `overlay-presence-detection.md` 미결 **#3(오판율 — 있는데 없다고 / 없는데 있다고)**이 실측 전이고, 같은 문서 미결 **#4(「overlay 없음」과 「탐지 실패」를 구분하는 방법)**가 바로 이 항목이다. 두 미결 모두 「실제 블랙박스 샘플로 검증한 뒤 Owner가 Technical Spec에서 확정한다」로 되어 있다.
+**이 기준은 잠정이다.** `overlay-presence-detection.md` 미결 **#3(오판율 — 있는데 없다고 / 없는데 있다고)**이 실측 전이고, 같은 문서 미결 **#4(「overlay 없음」과 「탐지 실패」를 구분하는 방법)**가 바로 이 항목이다. 두 미결 모두 「실제 블랙박스 샘플로 검증한 뒤 Owner가 Technical Spec에서 확정한다」로 되어 있다. readout Technical Spec은 아직 없다(2026-11-09).
 
 실측에서 false negative(있는데 없다고)가 유의미하게 나오면 **기본값을 `UNKNOWN` 쪽으로 보수적으로 옮긴다** — 「없음」이라고 하면 사용자가 화면을 다시 보지 않기 때문이다.
 
@@ -196,7 +196,7 @@ readout run 실패는 `JobExecution.failure_kind = "READOUT_INFRA"`로 올라간
 
 ---
 
-## `abstain_reason` 값 공간 — 확정 4종
+## `abstain_reason` 값 공간 — 확정 5종
 
 `PlateReadout.abstain_reason`의 등재 목록이 지금까지 없었다(계약 예시에 `FRAME_DISAGREEMENT` 하나가 등장할 뿐이다). 아래를 등재한다. **닫힌 목록이 아니며** 신규 값은 이 문서에 등재한 뒤 쓴다.
 
@@ -205,7 +205,7 @@ readout run 실패는 `JobExecution.failure_kind = "READOUT_INFRA"`로 올라간
 | `TARGET_AMBIGUOUS` | 대상 차량 association이 애매해 어느 차량의 번호판인지 확정할 수 없음 |
 | `FRAME_DISAGREEMENT` | 프레임 간 OCR 결과가 합의되지 않음 |
 | `LOW_RESOLUTION` | 번호판 영역 해상도가 문자 판독 하한에 미달 |
-| `OCR_LOW_CONFIDENCE` | 인식은 됐으나 신뢰도가 확정 임계 미만 |
+| `OCR_LOW_CONFIDENCE` | 인식은 됐으나 신뢰도가 확정 임계 미만. best frame 판독값에 한글이 없을 때(숫자만 읽힘)도 이 값을 쓴다(`api.py`) |
 | `PARTIAL_PLATE_READ` | 2줄 번호판의 한 행처럼 전체 번호판이 아닌 일부만 읽힘. 온전한 형식이 아닌 값도 여기에 든다(2026-09-29, PR #185 eval 베이스라인). 온전한 형식은 국토교통부고시 제2025-121호 제5조·제6조를 따른다 — 용도 한글 40자(비사업 32 · 운수사업 `바사아자배` · 대여 `하허호`), 지역명(17 시·도)은 운수사업용 2자리에만(`api.is_full_plate`, 2026-10-26). 관찰 문자열은 보존하지만 자동 확정하지 않으며, 텍스트 행 bbox를 전체 번호판 bbox로 발행하지 않음 |
 
 ### 사유가 겹칠 때 우선순위 — `association > frame consensus`

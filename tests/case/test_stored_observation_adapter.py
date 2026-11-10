@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 
 from daesingo import search as search_module
-from daesingo.case import jobs, observation, real_e2e, service
+from daesingo.case import correction, jobs, observation, real_e2e, service
 from daesingo.case.adapters import MockFixtureAdapter
 from daesingo.case.domain import CaseAggregate
 from daesingo.case.service import candidates_from_events
@@ -252,7 +252,17 @@ def test_failed_plate_read_is_reported_and_evidence_is_assembled_without_plate(c
 
     assert adapter.get_plate_read_status() == "FAILED"
     assert adapter.get_plate_readouts() == []
-    assert adapter.get_evidence_record() is not None
+    assert "vehicle_number" not in adapter.get_evidence_record()
+
+    chain.case.stage = "EVIDENCE_REVIEW"
+    correction.apply_correction(
+        chain.case, kind="PLATE_MANUAL_EDIT", target_field="vehicle_number",
+        previous_value=None, new_value="12가3457",
+    )
+    evidence = service.build_view_from_adapter(chain.case, chain.adapter())["evidence"]
+    assert evidence["plate_display"]["value"] == "12가3457"
+    assert evidence["plate_display"]["info_state"] == "INFO_USER_CONFIRMED"
+    assert evidence["plate_preview_ref"] is None
 
 
 # ── 선택 · 세대 ─────────────────────────────────────────────────────────

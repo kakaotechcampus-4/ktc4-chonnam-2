@@ -97,6 +97,18 @@
         {
           "step": "overlay_time_read",
           "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "PENDING"
+        },
+        {
+          "step": "requirement_check",
+          "state": "PENDING"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -188,6 +200,18 @@
         {
           "step": "overlay_time_read",
           "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "PENDING"
+        },
+        {
+          "step": "requirement_check",
+          "state": "PENDING"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -281,6 +305,18 @@
         {
           "step": "overlay_time_read",
           "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "PENDING"
+        },
+        {
+          "step": "requirement_check",
+          "state": "PENDING"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
         }
       ],
       "candidates": [
@@ -374,6 +410,18 @@
         {
           "step": "overlay_time_read",
           "state": "DONE"
+        },
+        {
+          "step": "evidence_assembly",
+          "state": "PENDING"
+        },
+        {
+          "step": "requirement_check",
+          "state": "PENDING"
+        },
+        {
+          "step": "package_assembly",
+          "state": "PENDING"
         }
       ],
       "candidates": [

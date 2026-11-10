@@ -10,7 +10,7 @@ import { CandidatesScreen, PlayableCandidateCard } from './CandidatesScreen'
 import { EvidenceScreen } from './EvidenceScreen'
 import { ExampleButton, SituationInput } from './UploadScreen'
 
-// Figma 03_Sub_* 공통 틀: 「<」 뒤로 + 제목 + 본문.
+// 팀 Figma(비공개) 프레임 03_Sub_* 공통 틀(저장소 사본은 docs/design/wireframe/): 「<」 뒤로 + 제목 + 본문.
 // 열리면 제목이 키보드 포커스를 받아 화면이 바뀐 것을 알린다. 뒤로는 결과 화면으로 돌아간다.
 function SubPage(props: { title: string; onBack: () => void; children: ReactNode; className?: string }): JSX.Element {
   const head = useRef<HTMLHeadingElement>(null)
@@ -68,17 +68,18 @@ export function DetailsCheck(props: { view: CaseView; onBack: () => void } & Can
   )
 }
 
-// 사용자 입력 번호판 형식(#487) — 경고용이다. 최종 규칙이 아니다(ADR-EVIDENCE-006: 정상값인 지역·구형 번호판도 어긋날 수 있다).
+// 사용자 입력 번호판 형식 — 경고용이다. 최종 규칙이 아니다(ADR-EVIDENCE-006: 정상값인 지역·구형 번호판도 어긋날 수 있다).
 const PLATE_FORMAT = /^([가-힣]{2})?\d{2,3}[가-힣]\d{4}$/
 
 // 03_Sub_Plate_Check — 번호판을 읽은 장면과 번호판 확대를 나란히 두고, 여기서 번호를 고친다.
-// 장면은 번호판을 읽은 frame(evidence.plate_preview_ref)이다. preview_ref는 사건 대표 썸네일이라 쓰지 않는다(#47 · #446).
-// 값이 없으면(null) 자리만 둔다. 번호판 확대는 자를 위치(bbox)가 CaseView에 없어 아직 자리만 둔다.
+// 장면은 번호판을 읽은 frame(evidence.plate_preview_ref)이다. preview_ref는 사건 대표 썸네일이라 쓰지 않는다.
+// 값이 없으면(null) 자리만 둔다. 번호판 확대는 신고자료의 번호판 이미지(`package.plate_image_ref`)를 보여 준다.
+// 그 이미지가 없으면(시연 · package 전) 자리만 둔다.
 // 수정은 읽은 값을 채운 채 열어 틀린 글자만 고치게 한다.
 //   저장 — 고친 값이 사건의 번호판이 된다(사용자 확인됨). 결과·자세히 보기를 오가도 유지된다.
 //   취소·Esc·뒤로 — 고치던 글자만 버리고, 마지막으로 저장한 값(없으면 읽은 값)을 그대로 둔다.
 // aiValue는 번호판 판독이 읽은 값이다. 사용자가 고친 값과 다르면 함께 보여 무엇을 바꿨는지 알 수 있게 한다.
-// 시연은 화면 안에서만 반영하고, `?api`는 `MANUAL_PLATE_INPUT` command로 보낸다(#449).
+// 시연은 화면 안에서만 반영하고, 실제 흐름(ApiFlow)은 `MANUAL_PLATE_INPUT` command로 보낸다.
 // `onEdit`이 없으면 수정 버튼을 두지 않는다.
 export function PlateCheck(props: {
   view: CaseView
@@ -214,7 +215,7 @@ export function PlateCheck(props: {
   )
 }
 
-// 발생 시각 직접 입력(#449) — 결과 화면 발생 시간의 「시각 입력하기 · 수정하기」나 notice의 `시각 직접 입력`으로 연다.
+// 발생 시각 직접 입력(`EDIT_EVENT_TIME`) — 결과 화면 발생 시간의 「시각 입력하기 · 수정하기」나 notice의 `시각 직접 입력`으로 연다.
 // 입력칸은 날짜 · 시간만 받고, 계약이 오프셋이 있는 RFC3339를 요구해 한국 시간(+09:00)을 붙여 보낸다.
 export function TimeEdit(props: { view: CaseView; onBack: () => void; onSave: (value: string) => void }): JSX.Element {
   const shown = splitDateTime(props.view.evidence?.event_time_display.value ?? null)
@@ -253,7 +254,7 @@ export function TimeEdit(props: { view: CaseView; onBack: () => void; onSave: (v
   )
 }
 
-// 설명 고쳐 다시 찾기(#410) — notice가 `EDIT_HINT`를 실었을 때 연다. 분석 시작과 같은 원문 입력이고
+// 설명 고쳐 다시 찾기 — notice가 `EDIT_HINT`를 실었을 때 연다. 분석 시작과 같은 원문 입력이고
 // 이전 설명(`CaseView.description`)을 미리 채운다. 보내면 case가 단서 정리부터 다시 돈다(`EDIT_HINT` command).
 // 「고친 내용으로 찾기」를 앞에 두고 강조, 「처음으로」는 약하게 — 언제나 그리는 고정 출구다(서버 action이 아니다).
 export function EditHint(props: {
@@ -269,7 +270,7 @@ export function EditHint(props: {
   )
 }
 
-// 설명 입력 폼만 — 위반 미관찰에 다른 후보가 없으면 화면 안에 바로 둔다(#431)
+// 설명 입력 폼만 — 위반 미관찰에 다른 후보가 없으면 화면 안에 바로 둔다
 export function HintForm(props: { view: CaseView; onSearch: (description: string) => void; onHome: () => void }): JSX.Element {
   const [text, setText] = useState(props.view.description ?? '')
   const id = useId()
@@ -299,7 +300,7 @@ export function HintForm(props: { view: CaseView; onSearch: (description: string
       </label>
       <ExampleButton example={example} value={text} onChange={setText} inputId={id} />
       <div className="rs-actions">
-        {/* 비어 있으면 보내지 않는다(#410 web 의견) — 서버는 빈 설명도 받지만 web에서 그 경로는 쓰지 않는다 */}
+        {/* 비어 있으면 보내지 않는다 — 서버는 빈 설명도 받지만 web에서 그 경로는 쓰지 않는다 */}
         <button type="submit" className="rs-btn pri" disabled={!text.trim()}>
           고친 내용으로 찾기
         </button>

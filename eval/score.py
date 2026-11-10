@@ -90,7 +90,7 @@ def build_result(env):
     env_contract = env["meta"].get("contract_version")
     if gt_contract and env_contract and gt_contract != env_contract:
         raise ContractMismatch(
-            "계약 버전이 다르면 비교하지 않는다 (v4 §9-2 규칙 5): "
+            "계약 버전이 다르면 비교하지 않는다 (docs/architecture/module-architecture.md §9-2 규칙 5): "
             "정답지=%s · 예측=%s" % (gt_contract, env_contract))
 
     result = {

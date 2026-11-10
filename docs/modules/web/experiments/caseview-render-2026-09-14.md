@@ -1,7 +1,7 @@
 # CaseView 16 스냅샷 렌더 결과 — 2026-09-14
 
 > 대상: `apps/web` @ 첫 커밋 · 입력 `data/mock/case/*.json`(Mock Pack v5, 7 시나리오 16 스냅샷)
-> 재현: `npm run dev:web` → 화면 상단 스냅샷 바에서 각 항목 클릭. 아래 표는 렌더된 DOM에서 배지·버튼·notice를 그대로 수집한 것이다.
+> 재현: `npm run dev:web` → 화면 상단 스냅샷 바(현재는 `/?dev`로 연다)에서 각 항목 클릭. 아래 표는 렌더된 DOM에서 배지·버튼·notice를 그대로 수집한 것이다.
 > 「1차 완료 체크리스트」의 `web` 항목 증빙.
 
 ## 결과 — 16건 전부 렌더, 파싱 위반 0건
@@ -34,13 +34,6 @@
 - **`evidence=null`(8건)·`candidates=[]`(1건)·`package=null`을 실패로 그리지 않는다** — 진행 상태 화면과 빈 결과 화면이 따로 있다
 - **WARN에서도 제출 경로가 열린다** — `unknown_abstain_partial #2`는 `requirements_package.readiness=WARN`인데 capabilities 3종 버튼이 그대로 뜬다(값 상태 표시 규칙 §3-7)
 - **`stale_revision_label_key`로 문구를 고른다** — `relative_rebase #2`에서만 뜨고 boolean으로 문구를 만들지 않는다
-
-## 아직 증빙하지 못한 것
-
-- **같은 `job_id`의 attempt 대표 선택** — `representativeJobs()`로 구현했으나 **v5 fixture에 중복 `job_id`도 `attempt` 필드도 없어** 목데이터로 눌러볼 수 없다. 코드만 있고 화면 증빙이 없는 상태다.
-- **`at_provenance` 출처 문구** — `case-view/v1.4`의 `at_provenance_label_key` 확정 대기. 지금은 raw 값을 mono로 그대로 보여준다.
-- **위치 미확보 notice 문구**(이슈 #48 Q3) — 값 등재 후 매핑 추가.
-- **PNG 화면 캡처 3장** — 회의 자료용으로 별도 확보 필요.
 
 ## 부수 발견 — fixture 불일치 1건
 

@@ -291,8 +291,64 @@ def test_default_api_same_transaction_rolls_back_admission_case_and_queue(public
     assert client.get(f"/cases/{cid}/view").json()["case_rev"] == revision
 
 
+@pytest.mark.mysql_check("public_a1", "api_atomicity")
+@pytest.mark.parametrize("public_api", [{"input_mode": "upload_bundle", "session_create_daily": 3,
+    "session_analysis_daily": 3, "upload_case_attempts": 4, "session_daily": 6}], indirect=True)
+def test_bundle_upload_rejects_before_probe_and_rolls_back_all_rows(public_api, monkeypatch):
+    from daesingo.api.composition import case_api
+    from daesingo.recording.mysql_repository import entries
+
+    client, composition, engine, _ = public_api
+    headers = {"Origin": "https://testserver"}
+    case_id = client.post("/cases", headers=headers).json()["case_id"]
+    endpoint = f"/cases/{case_id}/official-uploads"
+    media_root = composition.startup.config.media_root
+    original = case_api.record_source_registered
+
+    def assert_empty():
+        with engine.connect() as conn:
+            assert conn.scalar(sa.select(sa.func.count()).select_from(entries)) == 0
+            assert conn.scalar(sa.select(sa.func.count()).select_from(job_execution)) == 0
+            assert conn.scalar(sa.select(sa.func.count()).select_from(t.preparations).where(
+                t.preparations.c.finished_at.is_(None))) == 0
+        assert client.get(f"/cases/{case_id}/view").json()["manifest_summary"]["ok_file_count"] == 0
+        assert not list((media_root / "staging").glob("upload-*"))
+        assert not list((media_root / "source").glob("*"))
+
+    def unexpected_probe(*args):
+        pytest.fail("Unapproved bytes reached ffprobe")
+
+    with monkeypatch.context() as patch:
+        patch.setattr("daesingo.recording.probe.FfprobeMediaProbe.probe", unexpected_probe)
+        rejected = client.post(endpoint, headers=headers, files={"file": ("part.mp4", b"UNAPPROVED")})
+    assert rejected.status_code == 422 and rejected.json()["error"]["code"] == "public.bundle_mismatch"
+    assert_empty()
+    oversized = client.post(endpoint, headers=headers, files=[
+        ("file", ("first.mp4", b"synthetic!")), ("file", ("second.mp4", b"synthetic!"))])
+    assert oversized.status_code == 422 and oversized.json()["error"]["code"] == "public.bundle_mismatch"
+    assert_empty()
+
+    def fail_after_registration(*args, **kwargs):
+        original(*args, **kwargs)
+        raise RuntimeError("synthetic rollback after Case registration")
+
+    valid = {"file": ("client-name.mp4", b"synthetic!")}
+    with monkeypatch.context() as patch:
+        patch.setattr(case_api, "record_source_registered", fail_after_registration)
+        assert client.post(endpoint, headers=headers, files=valid).status_code == 500
+    assert_empty()
+
+    result = client.post(endpoint, headers=headers, files=valid)
+    assert result.status_code == 201 and result.json()["case_view"]["manifest_summary"]["ok_file_count"] == 1
+    assert not list((media_root / "staging").glob("upload-*"))
+    client.cookies.clear()
+    assert client.get(f"/cases/{case_id}/view").status_code == 404
+    assert client.post(endpoint, headers=headers, files=valid).status_code == 404
+
+
 @pytest.mark.mysql_check("public_a1", "deletion")
-def test_default_delete_removes_source_chunks_case_and_keeps_official_and_budget_ledger(public_api):
+def test_expiry_removes_source_chunks_case_and_keeps_official_and_budget_ledger(public_api):
+    from datetime import timedelta
     from daesingo.recording.mysql_repository import entries, chunks, _key
     client, composition, engine, canonical = public_api
     cid, _ = register(client)
@@ -307,8 +363,10 @@ def test_default_delete_removes_source_chunks_case_and_keeps_official_and_budget
         from daesingo.common.public_runtime.repository import now
         conn.execute(t.reservations.insert().values(usage_id="historic-cost", execution_ref="past", case_id=cid,
             operation="SEARCH_COARSE", provider_label="fake:test", amount_micros=10, created_at=now(conn)))
-    result = client.delete(f"/cases/{cid}", headers={"Origin": "https://testserver"})
-    assert result.status_code == 200 and result.json()["state"] == "DELETED"
+        conn.execute(t.cases.update().where(t.cases.c.case_id == cid).values(
+            source_expires_at=now(conn) - timedelta(seconds=1)))
+    result = composition.public.retention.scan()
+    assert result.count == 1 and result.failed == 0
     assert client.get(f"/cases/{cid}/view").status_code == 404
     assert not list((composition.startup.config.media_root / "source").glob("*"))
     assert (canonical / "part.mp4").read_bytes() == b"synthetic!"

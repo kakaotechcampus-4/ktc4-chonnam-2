@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPublicSamplesApi, type OfficialSample, type PublicSamplesApi } from '../api/publicSamples'
 import type { CaseView } from '../contracts/caseView'
 import { forgetCase, rememberCase } from '../state/lastCase'
@@ -10,8 +10,18 @@ function message(code: string) {
   return errorMessage(code)
 }
 
-/** A-1 intake only; existing CaseView-driven results/downloads remain in ApiFlow. */
-export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?: string | null; remembered?: boolean }) {
+function retentionNotice(seconds: number) {
+  const parts: [number, string][] = [
+    [Math.floor(seconds / 3600), '시간'],
+    [Math.floor(seconds % 3600 / 60), '분'],
+    [seconds % 60, '초'],
+  ]
+  const duration = parts.filter(([value]) => value > 0).map(([value, unit]) => `${value}${unit}`).join(' ')
+  return `체험을 시작한 뒤 ${duration}부터 이 체험의 영상·분석 결과·신고자료를 서버에서 자동으로 정리해요. 정리된 자료는 다시 볼 수 없어요.`
+}
+
+/** 공개 체험(A-1: 서버가 공식 샘플 · 공식 업로드만 받는 모드)의 접수만 맡는다. 결과 · 다운로드는 ApiFlow가 CaseView로 그린다. */
+export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?: string | null; remembered?: boolean; upload?: boolean; retentionSeconds: number }) {
   const [client] = useState(() => props.client ?? createPublicSamplesApi())
   const [samples, setSamples] = useState<OfficialSample[] | null>(null)
   const [selected, select] = useState('')
@@ -20,12 +30,17 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
   const [description, setDescription] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [deletion, setDeletion] = useState<'DELETING' | 'DELETED' | null>(null)
   const pending = useRef(false)
-  const deleteDialog = useRef<HTMLDialogElement>(null)
-  const deleteTitle = useId()
+  const [uploadApi] = useState(() => ({
+    ...client.cases,
+    async createCase() {
+      const session = await client.ensureSession()
+      return session.ok ? client.cases.createCase() : session
+    },
+  }))
 
   useEffect(() => {
+    if (props.upload) return
     let active = true
     void client.listSamples().then(result => {
       if (!active) return
@@ -40,7 +55,7 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
       } else setError(message(result.error.code))
     })
     return () => { active = false }
-  }, [client, props.caseId, props.remembered])
+  }, [client, props.caseId, props.remembered, props.upload])
 
   function retain(id: string) {
     setCaseId(id); rememberCase(id)
@@ -76,7 +91,7 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
       const result = await client.cases.sendCommand(caseId, view.case_rev, { kind: 'START_ANALYSIS', payload: { description } })
       if (result.ok) return setView(result.data)
       if (result.caseView) setView(result.caseView)
-      // Unknown outcome: read only. Never automatically repeat a paid command.
+      // 결과를 모르는 실패: 다시 읽기만 한다. 비용이 드는 command를 자동으로 다시 보내지 않는다.
       if (result.status === 0 || (result.status >= 500 && result.status !== 503)) {
         const latest = await client.cases.getView(caseId)
         if (latest.ok) {
@@ -87,48 +102,18 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
       setError(message(result.error.code))
     })
   }
-  async function remove() {
-    if (!caseId) return
-    await perform(async () => {
-      const result = await client.deleteCase(caseId)
-      if (!result.ok) return setError(message(result.error.code))
-      if ((result.status === 200 && result.data.state === 'DELETED') || (result.status === 202 && result.data.state === 'DELETING')) {
-        setDeletion(result.data.state)
-        if (result.data.state === 'DELETED') {
-          forgetCase(); setView(null)
-          const url = new URL(location.href); url.searchParams.delete('case'); history.replaceState(null, '', url)
-        }
-      } else setError(message('web.invalid_response'))
-    })
-  }
+  const notice = retentionNotice(props.retentionSeconds)
+  if (props.upload) return <ApiFlow api={uploadApi} caseId={props.caseId} remembered={props.remembered}
+    uploadBundle={client.uploadBundle} retentionNotice={notice} />
+
   const ready = !!view && view.manifest_summary.ok_file_count > 0
-  const deleteButton = caseId && deletion !== 'DELETED' && <>
-    <button type="button" className="rs-btn sec" disabled={busy} onClick={() => {
-      if (pending.current) return
-      if (deletion === 'DELETING') void remove()
-      else if (!deleteDialog.current?.open) deleteDialog.current?.showModal()
-    }}>
-      {deletion === 'DELETING' ? '삭제 다시 확인' : '체험 데이터 삭제'}
-    </button>
-    <dialog ref={deleteDialog} className="rs-consent" aria-labelledby={deleteTitle} aria-describedby={`${deleteTitle}-description`}>
-      <h2 id={deleteTitle}>체험 데이터를 삭제할까요?</h2>
-      <p id={`${deleteTitle}-description`}>삭제하면 분석 결과와 신고자료를 다시 볼 수 없어요</p>
-      <div className="rs-consent-actions">
-        <button type="button" className="rs-btn sec" onClick={() => deleteDialog.current?.close()}>취소</button>
-        <button type="button" className="rs-btn pri" disabled={busy} onClick={() => {
-          if (pending.current) return
-          deleteDialog.current?.close()
-          void remove()
-        }}>삭제하기</button>
-      </div>
-    </dialog>
-  </>
   return <>
-    {view && view.stage !== 'INTAKE' && !deletion ? <ApiFlow api={client.cases} caseId={caseId}
+    {view && view.stage !== 'INTAKE' ? <ApiFlow api={client.cases} caseId={caseId}
       intake={<p role="status">체험 진행 정보를 확인하고 있어요.</p>} /> : <main className="web-main rs-page">
       <h1>공식 샘플로 체험하기</h1>
       <p>공식 샘플만 이용할 수 있어요. 직접 영상 업로드는 지원하지 않아요.</p>
-      {deletion === 'DELETED' ? <p role="status">삭제했어요.</p> : deletion === 'DELETING' ? <p role="status">삭제 중이에요. 완료 여부를 다시 확인할 수 있어요.</p> : ready && view ? <>
+      <p>{notice}</p>
+      {ready && view ? <>
         <p>서버에 등록된 영상 {view.manifest_summary.ok_file_count}개를 준비했어요.</p>
         <label>찾을 장면 설명<textarea value={description} onChange={e => setDescription(e.target.value)} disabled={busy} /></label>
         <button type="button" className="rs-btn pri" disabled={busy || !description.trim()} onClick={() => void start()}>분석 시작</button>
@@ -140,10 +125,9 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
           </label>)}
         </fieldset>}
         <p>공식 샘플은 한 번에 합계 10분까지 이용할 수 있어요.</p>
-        <p>보관·삭제 기간과 반복 횟수는 아직 확정되지 않았어요. 현재는 공개 준비 중이에요.</p>
         <button type="button" className="rs-btn pri" disabled={busy || !selected} onClick={() => void prepare()}>샘플 준비</button>
       </>}
     </main>}
-    <div className="web-main">{error && <p role="alert">{error}</p>}{deleteButton}</div>
+    {error && <div className="web-main"><p role="alert">{error}</p></div>}
   </>
 }

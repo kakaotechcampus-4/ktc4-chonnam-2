@@ -17,13 +17,13 @@ import { FrameSlot } from '../components/FrameSlot'
 import { CandidateVideo, type CandidatePlayback } from '../components/CandidateVideo'
 import { reportVideoState, splitDateTime } from '../state/resultModel'
 
-// 03_Main_Result — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
+// 03_Main_Result(팀 Figma 결과 화면 프레임, 비공개. 저장소 사본은 docs/design/wireframe/) — 위에 전체 준비 상태, 아래는 안전신문고 신고 양식 순서
 // (유형 → 동영상 → 위치 선택 → 제목 → 신고 내용 → 차량 번호 → 발생 일자 → 발생 시간), 마지막에 복사와 이동.
 // 값과 상태는 계약 대응표 그대로다(case-view §report_fields ↔ evidence.*_display) — package가 있으면
 // report_fields·report_field_states를, 없으면(판독 실패 등) 같은 출처인 evidence.*_display를 읽는다.
 // 복사·이동은 package가 있을 때만 연다(COPY_FIELDS·OPEN_DESTINATION).
-// 제출 단계로의 연결은 READY(= PACKAGE_READY)이고 blocking notice가 없을 때만 연다(#171 C, #172).
-// 안전신문고는 새 창으로 연다 — 이 화면을 옆에 두고 보며 직접 제출한다(§21). 자료를 보내거나 자동으로
+// 제출 단계로의 연결은 READY(= PACKAGE_READY)이고 blocking notice가 없을 때만 연다.
+// 안전신문고는 새 창으로 연다 — 이 화면을 옆에 두고 보며 직접 제출한다(`docs/product/core-user-flow.md` §21). 자료를 보내거나 자동으로
 // 채우지 않는다. 대신고에는 접수 버튼이 없다.
 // 첫 화면이 아니라 「자동차·교통 위반 신고」 양식으로 바로 연다 — 사용자가 메뉴를 다시 찾지 않게 한다.
 const SAFETY_REPORT_URL = 'https://www.safetyreport.go.kr/#safereport/safereport3'
@@ -44,7 +44,7 @@ const VIDEO_STATUS: Record<Exclude<ReturnType<typeof reportVideoState>, 'ready'>
   held: '영상은 준비됐어요 · 신고자료가 완성되면 받을 수 있어요',
 }
 const NO_DOWNLOAD_LINK = '영상 파일을 내려받는 연결이 아직 준비되지 않았어요'
-// 받기 실패는 일시적인 연결 문제일 수 있다 — 버튼은 열어 두고 다시 누르게 한다(#563 리뷰). 다시 받기는 새 작업을 만들지 않는다
+// 받기 실패는 일시적인 연결 문제일 수 있다 — 버튼은 열어 두고 다시 누르게 한다. 다시 받기는 새 작업을 만들지 않는다
 const DOWNLOAD_FAILED = '신고용 영상을 받지 못했어요. 다시 눌러 받아 주세요.'
 const PLATE_DOWNLOAD_FAILED = '번호판 이미지를 받지 못했어요. 다시 눌러 받아 주세요.'
 const PLATE_FRAME_FAILED = '번호판 장면을 받지 못했어요. 다시 눌러 받아 주세요.'
@@ -58,8 +58,10 @@ const DATE_EDIT_LINK = { none: '일자 입력하기', some: '일자 수정하기
 const LOCAL_EDIT_NOTE = '이 화면에서만 바꿨어요. 서버에는 아직 저장되지 않아요.'
 const KEYWORD_MISSING = 'evidence.location_search_keyword_missing'
 const PREPARING_TITLE = '신고자료를 준비하고 있어요.'
-// 번호판은 형식만 맞으면 「출처 확인됨」이다 — 대상 차량의 번호판인지는 사용자가 장면에서 본다(#597 코멘트)
+// 번호판은 형식만 맞으면 「출처 확인됨」이다 — 대상 차량의 번호판인지는 사용자가 장면에서 본다
 const PLATE_SCENE_CHECK = '신고할 차량의 번호판인지 확인해 주세요'
+// 상황 고치기는 판별 유형을 사용자의 선택으로 바꾸고 신고자료를 다시 준비한다(evidence 정책) — 고르기 전에 밝힌다
+const CORRECT_FORM_NOTE = '고르시면 AI가 판별한 유형 대신 고른 상황으로 신고자료를 다시 준비해요.'
 const UNSURE_AGAIN = '「잘 모르겠어요」로 남긴 상황이에요. 근거 장면을 보고 다시 골라 주세요.'
 
 /** 제목·신고 내용·위치를 이 화면에서만 고친 값. 이 칸들을 고치는 command가 아직 없다 */
@@ -78,6 +80,45 @@ function tone(n: Notice): 'fail' | 'review' | 'info' {
   return n.severity === 'ERROR' ? 'fail' : n.severity === 'WARN' ? 'review' : 'info'
 }
 
+// Runtime 보류 안내는 사유만 싣고 무엇이 보류됐는지는 싣지 않는다 — 신고용 영상 상태로 가른다.
+// 결과 화면에서는 OCR 완료 반영으로도 뜨므로 「수정 내용은 저장했어요」로 시작하지 않는다
+const DEFERRED_WORK = 'public.local_work_not_queued'
+const DEFERRED_WHY: Record<string, string> = {
+  'notice.public_local_local_concurrent': '다른 작업이 진행 중이라',
+  'notice.public_local_local_limit': '체험 이용 한도에 도달해',
+  'notice.public_local_local_unconfigured': '영상 생성 이용 기준을 준비 중이라',
+  'notice.public_local_stopped': '체험 설정을 확인해야 해서',
+  'notice.public_local_jobs_stopped': '긴급 중단 중이라',
+  'notice.public_local_input': '영상 생성에 필요한 입력을 확인할 수 없어',
+  'notice.public_local_unconfigured': '체험 설정을 확인할 수 없어',
+}
+// 영상 상태는 영상 칸이 이미 보인다 — 보류된 번호판 이미지와 신고에 지장 없음만 말한다
+const PLATE_HELD = '번호판 이미지는 만들지 않았어요. 없어도 신고자료는 완성돼요.'
+
+export function deferredWork(view: CaseView, hasPlateImage: boolean): { text: string; tone: 'review' | 'info' } | null {
+  const n = view.notices.find((x) => x.code === DEFERRED_WORK)
+  if (!n) return null
+  const why = DEFERRED_WHY[n.message_key]
+  if (!why) return { text: noticeMessage(n.message_key), tone: 'review' }
+  const video = reportVideoState(view)
+  // 영상·이미지 작업이 진행 중이면 보류된 것이 진행 중인 작업과 별개인지 알 수 없다 — 사유만 중립적으로 말한다
+  if (video === 'preparing' || view.running_jobs.some((j) => j.kind === 'PLATE_IMAGE_EXPORT'))
+    return { text: `${why} 영상·이미지를 새로 만들지 않았어요. 진행 중인 작업이 끝나면 다시 확인해 주세요.`, tone: 'review' }
+  switch (video) {
+    case 'ready':
+    case 'held':
+      return hasPlateImage ? null : { text: PLATE_HELD, tone: 'info' }
+    case 'none': {
+      const next = n.message_key === 'notice.public_local_local_concurrent'
+        ? ` 작업이 끝나면 「${ACTION_LABELS.GENERATE_REPORT_VIDEO}」를 눌러 주세요.` : ''
+      return { text: `${why} 신고용 영상을 만들지 않았어요.${next}`, tone: 'review' }
+    }
+    // 실패 안내가 따로 뜬다 — 보류된 것이 영상인지 번호판 이미지인지 알 수 없어 덧붙이지 않는다
+    case 'failed':
+      return null
+  }
+}
+
 export function withLocation(description: string, before: string | null | undefined, after: string | undefined): string {
   if (after === undefined || !before) return description
   return description.includes(before) ? description.split(before).join(after) : `${description}\n위치: ${after}`
@@ -94,7 +135,7 @@ export function ResultScreen(props: {
   onCandidates: () => void
   onPlate: () => void
   onDetails: () => void
-  /** 발생 시각 직접 입력 화면을 연다(`?api`, #449). 없으면(시연) 입구를 두지 않는다 */
+  /** 발생 시각 직접 입력 화면을 연다(실제 흐름(ApiFlow)). 없으면 입구를 두지 않는다 */
   onTime?: () => void
   onAction: (noticeCode: string, action: Action) => void
   /** 지금 연결된 notice 동작인가 — 아니면 버튼을 사용 불가로 두고 이유를 적는다 */
@@ -115,7 +156,7 @@ export function ResultScreen(props: {
   videoHref?: string
   /** 번호판 이미지를 받을 주소. 선택 첨부라 없으면(시연 · 아직 못 만듦) 버튼을 두지 않는다 */
   plateImageHref?: string
-  /** `[다른 상황]` 정정(#545). 없으면 고치기 입구를 두지 않는다 */
+  /** `[다른 상황]` 정정. 없으면 고치기 입구를 두지 않는다 */
   onCorrect?: (type: VisualEventType) => void
   /** 안전신문고로 넘어갈 때 최종 검토를 기록한다(MARK_REVIEWED). 없으면(시연) 이동만 한다 */
   onReviewed?: () => void
@@ -129,7 +170,7 @@ export function ResultScreen(props: {
   const frame = (ref: string | null | undefined) => (ref && props.frameSrc ? props.frameSrc(ref) : null)
   const pkg = view.package
   const ev = view.evidence
-  // 신고 상황은 결과 화면에서 묻는다(core-user-flow §20, #171 B-2). 응답 전에는 묶음이 없다.
+  // 신고 상황은 결과 화면에서 묻는다(core-user-flow §20). 응답 전에는 묶음이 없다.
   const selected = view.candidates.find((c) => c.selected)
   const candidateVideo = selected?.video_preview && props.videoSrc && (
     <CandidateVideo key={selected.candidate_id} preview={selected.video_preview} ordinal={selected.rank ?? 1}
@@ -141,7 +182,7 @@ export function ResultScreen(props: {
   const awaiting =
     selected?.situation_confirmation === 'NOT_ASKED' &&
     view.notices.some((n) => n.code === 'case.situation_response_pending')
-  // 응답 전 부분 투영(v1.8, evidence.record_id null) — 상황 따라 정해지는 값은 응답 뒤에 정해진다
+  // 응답 전 일부만 채운 CaseView(case-view v1.8, evidence.record_id null) — 상황 따라 정해지는 값은 응답 뒤에 정해진다
   const partial = !pkg && ev?.record_id === null
 
   // 계약 대응표: report_fields 키 ↔ evidence.*_display. package가 없으면 evidence 쪽을 읽는다.
@@ -176,22 +217,23 @@ export function ResultScreen(props: {
     ev ? { value: ev.event_time_display.value, state: ev.event_time_display.info_state, source: sourceLabel(ev.event_time_display.source_label_key) } : null,
   )
   const when = splitDateTime(occurred?.value ?? null)
-  // 제목·신고 내용은 case가 만든 신고문(package.report, v1.7)을 그대로 보여 주고 복사만 한다.
-  // 묶음 전에는 초안(report_draft, #597)을 보인다. 둘 다 없으면(옛 판본 · 필수 입력 없음) 예전처럼 둔다.
+  // 제목·신고 내용은 case가 만든 신고문(package.report, case-view v1.7)을 그대로 보여 주고 복사만 한다.
+  // 묶음 전에는 초안(report_draft — 상황 응답 없이 보이는 신고서 초안, docs/modules/evidence/decisions/observed-report-draft.md)을 보인다. 둘 다 없으면(옛 판본 · 필수 입력 없음) 예전처럼 둔다.
   const shownReport = pkg?.report ?? view.report_draft ?? null
   const report = shownReport && {
     title: edits.title ?? shownReport.title,
-    // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다(#563 멘토 리뷰).
+    // 신고문은 case가 원래 위치 글을 넣어 만들었다 — 위치를 고쳤으면 그 글만 고친 글로 바꾼다.
     // 원래 글이 신고문에 그대로 없으면(case가 다듬어 넣은 경우) 옛 위치를 조용히 복사하지 않게 고친 위치를 끝에 붙인다
     description: edits.description ?? withLocation(shownReport.description, shownLocation?.value, edits.location),
   }
-  // 위치를 고쳤으면 검색어도 고친 글을 따른다 — 보이는 값·복사·지도가 같은 글을 쓴다(#563 멘토 리뷰)
+  // 위치를 고쳤으면 검색어도 고친 글을 따른다 — 보이는 값·복사·지도가 같은 글을 쓴다
   const keyword = edits.location ?? ev?.location_display.search_keyword ?? null
   const hasForm = Boolean(pkg || ev)
   // 검색어를 못 만들었다는 안내는 위치 칸에 붙는 말이라 위 목록이 아니라 검색어 자리에 둔다
   // (버튼 없는 INFO라 옮겨도 잃는 것이 없다). 위치 칸이 없으면 위 목록에 남긴다.
   const keywordMissing = hasForm ? view.notices.find((n) => n.code === KEYWORD_MISSING) : undefined
-  const headNotices = keywordMissing ? view.notices.filter((n) => n !== keywordMissing) : view.notices
+  const deferred = deferredWork(view, !!props.plateImageHref)
+  const headNotices = view.notices.filter((n) => n !== keywordMissing && (n.code !== DEFERRED_WORK || deferred))
 
   const counts = new Map<InfoState, number>()
   for (const s of Object.values(pkg?.report_field_states ?? {})) counts.set(s.info_state, (counts.get(s.info_state) ?? 0) + 1)
@@ -200,8 +242,8 @@ export function ResultScreen(props: {
   // 신고용 영상 등을 만드는 중 — 끝나지 않은 것을 「완성하지 못했어요」로 보이지 않는다
   const preparing = view.running_jobs.some((j) => j.kind !== 'CANDIDATE_VIDEO_PREVIEW')
   const plateScene = plate?.value ? frame(ev?.plate_preview_ref) : null
-  // 상황을 고칠 수 있는 때 — 조립된 evidence에 판별된 유형(Fine OBSERVED)이 있을 때만이다.
-  // UNCERTAIN은 유형이 null이고 정정 조립을 지원하지 않는다(#597 evidence 결정). 응답 대기 중에는 위 「신고 상황」이 묻는다
+  // 상황을 고칠 수 있는 때 — 조립된 evidence에 정밀 확인(Fine)이 판별한 유형(OBSERVED)이 있을 때만이다.
+  // UNCERTAIN은 유형이 null이고 정정 조립을 지원하지 않는다(docs/modules/evidence/decisions/observed-report-draft.md). 응답 대기 중에는 위 「신고 상황」이 묻는다
   const typeCode = !awaiting && ev?.record_id ? (ev.case_type_display.code as VisualEventType | null) : null
   const canCopy = !!pkg?.capabilities.includes('COPY_FIELDS')
   const video = reportVideoState(view)
@@ -211,7 +253,7 @@ export function ResultScreen(props: {
     video !== 'ready' ? VIDEO_STATUS[video] : !props.videoHref ? NO_DOWNLOAD_LINK : failedDownload ? DOWNLOAD_FAILED : null
   const plateFailed = props.plateImageHref !== undefined && downloadFailed.includes(props.plateImageHref)
   const canDownloadPlate = !!props.plateImageHref && !downloading
-  // 번호판을 읽은 장면 전체(#600) — 잘라낸 번호판 이미지로는 어느 차량인지 대조하기 어렵다.
+  // 번호판을 읽은 장면 전체 — 잘라낸 번호판 이미지로는 어느 차량인지 대조하기 어렵다.
   // 번호판 확인 화면의 장면과 같은 주소라, 그 화면이 장면을 그리지 않을 때(plate_preview_ref null · 시연)는 버튼도 두지 않는다
   const plateFrameHref = frame(ev?.plate_preview_ref) ?? undefined
   const plateFrameFailed = plateFrameHref !== undefined && downloadFailed.includes(plateFrameHref)
@@ -239,7 +281,7 @@ export function ResultScreen(props: {
       setDownloading(false)
     }
   }
-  // 붙여넣을 것(§21: 제목·차량번호·신고 내용) 중 지금 값이 있는 것만, 칸 이름을 붙여 복사한다.
+  // 붙여넣을 것(core-user-flow §21: 제목·차량번호·신고 내용) 중 지금 값이 있는 것만, 칸 이름을 붙여 복사한다.
   const pasteText = [
     ['제목', report?.title],
     ['차량 번호', plate?.value],
@@ -327,12 +369,13 @@ export function ResultScreen(props: {
         {headNotices.length > 0 && (
           <ul className="res-notices">
             {headNotices.map((n) => {
-              const t = tone(n)
+              const shown = n.code === DEFERRED_WORK && deferred ? deferred : { text: noticeMessage(n.message_key), tone: tone(n) }
+              const t = shown.tone
               const Icon = t === 'info' ? Info : CircleAlert
               return (
                 <li key={n.code} className={`res-notice is-${t}`}>
                   <Icon size={18} strokeWidth={1.8} aria-hidden />
-                  <span className="res-notice-text">{noticeMessage(n.message_key)}</span>
+                  <span className="res-notice-text">{shown.text}</span>
                   {/* notice가 실은 actions[]만 버튼으로 연다 — 계약 밖 버튼은 만들지 않는다.
                       연결되지 않은 동작은 눌러도 아무 일이 없게 두지 않고, 사용 불가와 이유를 보인다 */}
                   {n.actions.filter(isAction).map((a) =>
@@ -366,11 +409,11 @@ export function ResultScreen(props: {
           <p className="res-situation-text">
             이 사건을 이렇게 정리했어요. <b>“{selected.observed}”</b>
           </p>
-          {/* 근거 장면은 있을 때만 보인다. case는 사건 장면 준비 전 · 발급 실패 때 null을 준다(#446) */}
-          {/* 미리보기를 볼 수 없는 후보면 근거 장면 이미지만 둔다 — 「볼 수 없어요」가 붙으면 이미지도 못 보는 것처럼 읽힌다(#554 리뷰) */}
+          {/* 근거 장면은 있을 때만 보인다. case는 사건 장면 준비 전 · 발급 실패 때 null을 준다 */}
+          {/* 미리보기를 볼 수 없는 후보면 근거 장면 이미지만 둔다 — 「볼 수 없어요」가 붙으면 이미지도 못 보는 것처럼 읽힌다 */}
           {candidateVideo && selected?.video_preview?.status !== 'UNAVAILABLE' ? <div className="res-frame">{candidateVideo}</div> :
             <FrameSlot className="res-frame" src={frame(ev?.preview_ref)} alt="근거 장면" />}
-          {/* 상황에 따라 정해지는 값 셋(#171)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
+          {/* 상황에 따라 정해지는 값 셋(사건 유형 · 신고 유형 · 위반 내용)만 응답 뒤로 미룬다. 나머지(번호판·시각·위치)는 그대로 둔다 */}
           <ul className="res-pending">
             {['사건 유형', '신고 유형', '위반 내용'].map((label) => (
               <li key={label}>
@@ -381,12 +424,12 @@ export function ResultScreen(props: {
           </ul>
           {/* 「잘 모르겠어요」도 진행을 막지 않는다. 값은 AI 추정으로 남는다(core-user-flow 「신고 상황」) */}
           <div className="res-actions">
-            {/* B안(#597)에서 응답 대기는 UNCERTAIN에만 생기고, UNCERTAIN은 「맞아요」를 지원하지 않는다 */}
+            {/* 유형이 판별되면 상황 응답 없이 초안을 보이므로(docs/modules/case/decisions/observed-skips-situation-response.md) 응답 대기는 UNCERTAIN에만 생기고, UNCERTAIN은 「맞아요」를 지원하지 않는다 */}
             <button type="button" className="rs-btn pri" onClick={() => props.onRespond!('USER_UNSURE')}>
               잘 모르겠어요
             </button>
           </div>
-          {/* 응답 전에는 영상 칸이 없으니 다른 후보 입구를 여기에 둔다(§20 묶음 전) */}
+          {/* 응답 전에는 영상 칸이 없으니 다른 후보 입구를 여기에 둔다(core-user-flow §20, 묶음 전) */}
           {others > 0 && (
             <button type="button" className="res-link" onClick={props.onCandidates}>
               다른 장면이었나요? 다른 후보 {others}
@@ -421,15 +464,15 @@ export function ResultScreen(props: {
             )}
           </Item>
 
-          {/* 신고용 영상은 응답 뒤 조립에서 만들어진다. 응답 전(v1.8 부분 투영 포함)에는 영상 칸을 그리지 않는다.
+          {/* 신고용 영상은 응답 뒤 조립에서 만들어진다. 응답 전(일부만 채운 CaseView, case-view v1.8 포함)에는 영상 칸을 그리지 않는다.
               다른 후보 입구는 위 「신고 상황」에 이미 있다 */}
           {!awaiting && (
             <Item label="동영상">
               <div className="res-video">
                 {/* 후보 영상 재생과 신고용 영상 다운로드는 각각의 준비 상태를 따른다 */}
-                {/* 왼쪽은 후보 미리보기(Search 구간 그대로)다. 시각을 새긴 신고용 영상은 오른쪽 다운로드로 받는다(#554 리뷰) */}
+                {/* 왼쪽은 후보 미리보기(Search 구간 그대로)다. 시각을 새긴 신고용 영상은 오른쪽 다운로드로 받는다 */}
                 <div className="res-preview">
-                  {/* 후보 미리보기를 둘 수 없으면 고른 후보의 장면 이미지를 둔다(#636) — 포스터와 같은 순서(thumb_ref → 근거 장면).
+                  {/* 후보 미리보기를 둘 수 없으면 고른 후보의 장면 이미지를 둔다 — 포스터와 같은 순서(thumb_ref → 근거 장면).
                       이미지도 없거나 못 불러오면 지금의 안내를 둔다 */}
                   {candidateVideo ? <div className="res-frame">{candidateVideo}</div> : (
                     <FrameSlot className="res-frame" src={frame(selected?.thumb_ref ?? ev?.preview_ref)} alt="고른 후보 장면">
@@ -441,7 +484,7 @@ export function ResultScreen(props: {
                 </div>
                 <div className="res-video-side">
                   {video === 'ready' && <p className="res-video-cap">{VIDEO_CAPTION}</p>}
-                  {/* disabled 대신 aria-disabled — Tab으로 닿아야 못 누르는 이유(res-video-why)가 읽힌다(#509 #5) */}
+                  {/* disabled 대신 aria-disabled — Tab으로 닿아야 못 누르는 이유(res-video-why)가 읽힌다(접근성 점검 결함 5, docs/modules/web/experiments/a11y-check-2026-10-31.md) */}
                   <button
                     type="button"
                     className="rs-btn sec sm"
@@ -570,7 +613,7 @@ export function ResultScreen(props: {
             <div className="res-plate">
               <div className="res-plate-row">
                 <p className={`res-plate-v${plate?.value ? '' : ' is-none'}`}>{plate?.value ?? '알 수 없음'}</p>
-                {/* 번호판을 읽은 장면 — 누르면 번호판 확인 화면이 같은 장면을 크게 보인다(#597) */}
+                {/* 번호판을 읽은 장면 — 누르면 번호판 확인 화면이 같은 장면을 크게 보인다 */}
                 {plateScene && (
                   <button type="button" className="res-plate-thumb" onClick={props.onPlate}>
                     <FrameSlot className="res-plate-thumb-img" src={plateScene} alt="번호판을 읽은 장면 — 눌러서 크게 보기">
@@ -615,7 +658,7 @@ export function ResultScreen(props: {
           <Item label="발생 시간" review={occurred?.state} pick>
             <Value f={occurred && { ...occurred, value: when.time }} />
             {props.timeEditedLocally && <p className="res-hint">{LOCAL_EDIT_NOTE}</p>}
-            {/* 결과 화면 발생 시각 수정이 EDIT_EVENT_TIME의 입구다(input-commands 결정 §2-8). 값 칸이 없으면 case가 거부한다 */}
+            {/* 결과 화면 발생 시각 수정이 EDIT_EVENT_TIME의 입구다(docs/modules/case/decisions/input-commands.md §2-8). 값 칸이 없으면 case가 거부한다 */}
             {ev && props.onTime && (
               <p className="res-plate-edit">
                 <button type="button" className="res-link" onClick={props.onTime}>
@@ -652,9 +695,9 @@ export function ResultScreen(props: {
                 className="rs-btn pri"
                 disabled={!ready}
                 onClick={() => {
-                  // 새 창은 클릭 안에서 바로 연다(팝업 차단). 최종 검토 기록은 처음 한 번만 남긴다(#597, §20)
+                  // 새 창은 클릭 안에서 바로 연다(팝업 차단). 최종 검토 기록은 처음 한 번만 남긴다(core-user-flow §20)
                   window.open(SAFETY_REPORT_URL, '_blank', 'noopener')
-                  // user_reviewed는 새 view가 와야 바뀌어서, 그 전에 두 번 눌러도 한 번만 보낸다(#621 리뷰)
+                  // user_reviewed는 새 view가 와야 바뀌어서, 그 전에 두 번 눌러도 한 번만 보낸다
                   const record = ev?.record_id ?? null
                   if (!view.user_reviewed && reviewSent.current !== record) {
                     reviewSent.current = record
@@ -697,8 +740,8 @@ function Item(props: { label: string; review?: InfoState; pick?: boolean; childr
   )
 }
 
-// 값 — 바로 옆에 상태 배지(와 복사 버튼), 아래에 출처. 값이 없으면 「알 수 없음」이다(§3-3).
-// pending: 응답 전 부분 투영에서 상황 따라 정해지는 값 — 「알 수 없음」이 아니라 응답 뒤에 정해진다.
+// 값 — 바로 옆에 상태 배지(와 복사 버튼), 아래에 출처. 값이 없으면 「알 수 없음」이다(docs/modules/web/ux/value-state-display.md §3-3).
+// pending: 응답 전 일부만 채운 CaseView(case-view v1.8)에서 상황 따라 정해지는 값 — 「알 수 없음」이 아니라 응답 뒤에 정해진다.
 function Value(props: { f: Field | null; pending?: boolean; after?: ReactNode }): JSX.Element {
   const f = props.f
   if (props.pending)
@@ -734,7 +777,7 @@ function EditText(props: {
   const opener = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     if (draft !== null) (line.current ?? area.current)?.focus()
-  }, [draft !== null]) // eslint-disable-line react-hooks/exhaustive-deps -- 열릴 때만
+  }, [draft !== null]) // 의존성은 일부러 열림 여부만 둔다: 열릴 때 한 번 초점을 주고, 글자를 칠 때마다 다시 옮기지 않는다
   const close = () => {
     setDraft(null)
     requestAnimationFrame(() => opener.current?.focus())
@@ -784,8 +827,8 @@ function EditText(props: {
   )
 }
 
-// 상황 고치기(#545) — 판별된 유형이 틀렸으면 상황 설명 중에서 다시 고른다. 지금 유형은 선택지에서 뺀다(case-command §12-3).
-// 「잘 모르겠어요」로 남긴 경우에는 근거 장면을 보고 「맞아요」로 확인하거나 다른 상황을 고르게 한다(#597 evidence 결정).
+// 상황 고치기 — 판별된 유형이 틀렸으면 상황 설명 중에서 다시 고른다. 지금 유형은 선택지에서 뺀다(contract-case-command.md §12-3).
+// 「잘 모르겠어요」로 남긴 경우에는 근거 장면을 보고 「맞아요」로 확인하거나 다른 상황을 고르게 한다(docs/modules/evidence/decisions/observed-report-draft.md).
 function SituationFix(props: {
   current: VisualEventType
   unsure: boolean
@@ -796,7 +839,7 @@ function SituationFix(props: {
   const [open, setOpen] = useState(false)
   const [picked, setPicked] = useState<VisualEventType | null>(null)
   const [sent, setSent] = useState(false)
-  // 폼이 닫히면 누른 버튼도 사라지므로 초점을 「다른 상황이었어요」로 돌린다(#621 리뷰, #577과 같은 방식)
+  // 폼이 닫히면 누른 버튼도 사라지므로 초점을 「다른 상황이었어요」로 돌린다
   const toggle = useRef<HTMLButtonElement>(null)
   const wasOpen = useRef(false)
   useEffect(() => {
@@ -842,6 +885,7 @@ function SituationFix(props: {
         >
           <fieldset>
             <legend>어떤 상황이었나요?</legend>
+            <p className="res-hint">{CORRECT_FORM_NOTE}</p>
             {choices.map((t) => (
               <label key={t}>
                 <input type="radio" name="situation" value={t} checked={picked === t} onChange={() => setPicked(t)} />

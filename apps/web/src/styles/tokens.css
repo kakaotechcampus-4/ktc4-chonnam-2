@@ -1,5 +1,6 @@
-/* Design tokens — ported verbatim from PROTOTYPE-SPEC.md §2 (the corrected,
-   measured values from stage-1 mockups; wins over DESIGN.md's frontmatter). */
+/* 디자인 토큰 — apps/prototype/src/styles/tokens.css와 같은 내용의 사본이다(정본은 그쪽, docs/design/DESIGN.md).
+   값은 docs/design/PROTOTYPE-SPEC.md §2에서 측정해 고친 값이다. 지금 제품 화면은 .rs 범위의 refresh.css(--rs-* 토큰)를 주로 쓰고,
+   이 파일의 값은 상태 색(주황·빨강 등)과 .rs 밖(?dev) 화면에 쓰인다. */
 :root{
   --font-scale:1;
 

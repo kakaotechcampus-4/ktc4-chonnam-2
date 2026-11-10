@@ -4,6 +4,14 @@
 
 이 폴더는 `readout` 모듈의 세부 문서 작업공간이다. authoritative 경계는 `docs/architecture/module-architecture.md`, 역할은 `docs/management/ownership.md`를 따른다.
 
+## 한눈에
+
+- **하는 일:** 사건 구간(incident clip) 프레임에서 번호판과 화면에 찍힌 시각(overlay timestamp)을 읽는다. 확실하지 않으면 확정하지 않고 보류(abstain)한다.
+- **입출력:** `ReadRequest` → `read_plate()`는 `(ReadoutRun, PlateReadout | None)`, `read_overlay_time()`은 `(ReadoutRun, OverlayTimeReadout | None)`을 돌려준다.
+- **코드:** [`src/daesingo/readout/`](../../../src/daesingo/readout/)
+- **현재 운영 OCR 조합:** [`decisions/production-ocr-combo.md`](decisions/production-ocr-combo.md)
+- **테스트:** `uv sync --locked --extra test` 뒤 `uv run pytest tests/readout`
+
 ## 다루는 범위
 
 - 대상차량 판독
