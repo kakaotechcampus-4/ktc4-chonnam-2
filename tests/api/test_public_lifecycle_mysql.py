@@ -32,13 +32,16 @@ PRICING = {"pricing_id": "TEST_ONLY", "unit": "fixed"}
 
 
 @pytest.mark.mysql_check("public_a1", "deletion")
-def test_owner_can_retry_completed_delete_but_cannot_read_tombstone(public_api):
-    client, _, engine, canonical = public_api
+def test_operator_can_retry_completed_cleanup_and_public_owner_cannot_delete(public_api):
+    client, composition, engine, canonical = public_api
     cid, _ = register(client)
     path = f"/cases/{cid}"
+    assert client.delete(path, headers=ORIGIN).status_code == 404
+    assert client.get(path + "/view").status_code == 200
+    public = composition.public
+    public.transaction(lambda conn: public.store.begin_delete(conn, cid))
     for _ in range(2):
-        result = client.delete(path, headers=ORIGIN)
-        assert result.status_code == 200 and result.json()["state"] == "DELETED"
+        assert public.retention.purge(cid)["state"] == "DELETED"
     assert client.get(path + "/view").status_code == 404
     client.cookies.clear()
     assert client.post("/public/session", headers=ORIGIN).status_code == 201
@@ -265,9 +268,10 @@ def test_actual_delete_retries_partial_failure_and_preserves_canonical(public_ap
         source.write_bytes(b"CHANGED!!!")
     else:
         sa.event.listen(composition.engine, "before_cursor_execute", failure)
+    public = composition.public
+    public.transaction(lambda conn: public.store.begin_delete(conn, cid))
     try:
-        response = client.delete(f"/cases/{cid}", headers=ORIGIN)
-        assert response.status_code == 202 and response.json()["state"] == "DELETING"
+        assert public.retention.purge(cid)["state"] == "DELETING"
         assert source.exists() is (fault == "hash")
         with engine.connect() as conn:
             assert conn.execute(sa.select(t.cases.c.deletion_plan).where(t.cases.c.case_id == cid)).scalar_one() is not None
@@ -277,8 +281,7 @@ def test_actual_delete_retries_partial_failure_and_preserves_canonical(public_ap
             sa.event.remove(composition.engine, "before_cursor_execute", failure)
     if fault == "hash":
         source.write_bytes(original)
-    done = client.delete(f"/cases/{cid}", headers=ORIGIN)
-    assert done.status_code == 200 and done.json()["state"] == "DELETED"
+    assert public.retention.purge(cid)["state"] == "DELETED"
     assert not source.exists() and (canonical / "part.mp4").read_bytes() == b"synthetic!"
     with engine.connect() as conn:
         assert conn.exec_driver_sql("SELECT COUNT(*) FROM cases WHERE case_id=%s", (cid,)).scalar_one() == 0

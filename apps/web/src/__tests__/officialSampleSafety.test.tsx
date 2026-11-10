@@ -68,7 +68,7 @@ it('실제 ApiFlow의 재조회가 지연돼도 A1에서 파일 입력을 노출
     if (reads > 1) return new Promise<Response>(() => {})
     return new Response(JSON.stringify(view), { status: 200 })
   }) })
-  render(<OfficialSampleEntry client={client} caseId="owned" />)
+  render(<OfficialSampleEntry retentionSeconds={86400} client={client} caseId="owned" />)
   await waitFor(() => expect(reads).toBeGreaterThan(1))
   expect(document.querySelector('input[type=file]')).toBeNull()
   expect(screen.queryByText('영상을 먼저 올려 주세요.')).toBeNull()

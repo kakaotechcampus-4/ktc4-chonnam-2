@@ -89,12 +89,20 @@ def test_file_mismatch_is_partial_and_retry_reuses_persisted_plan(retention):
     assert service.purge("case_1")["state"] == "DELETED" and official.exists()
 
 
-def test_expiry_scanner_uses_earliest_source_or_case_deadline(retention):
+@pytest.mark.parametrize("deadline", ["source_expires_at", "expires_at"])
+def test_expiry_scanner_preserves_live_data_then_removes_expired_case(retention, deadline):
     service, store, owner, engine, source, official, temporary = retention
+    before = service.scan()
+    assert before.count == before.failed == 0
+    assert source.exists() and temporary.exists()
     with engine.begin() as conn:
-        conn.execute(t.cases.update().values(source_expires_at=now(conn)-timedelta(seconds=1)))
+        conn.execute(t.cases.update().values({deadline: now(conn)-timedelta(seconds=1)}))
     result = service.scan()
-    assert result.count == 1 and not source.exists() and official.exists()
+    assert result.count == 1 and result.failed == 0
+    assert not source.exists() and not temporary.exists()
+    assert official.read_bytes() == b"KEEP_OFFICIAL"
+    with engine.connect() as conn:
+        assert conn.scalar(sa.select(t.cases.c.state)) == "DELETED"
 
 
 def test_db_failure_after_physical_removal_keeps_plan_and_retries_without_restoring_files(retention):

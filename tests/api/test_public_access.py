@@ -184,7 +184,32 @@ def test_intake_mode_remains_available_when_catalog_is_unavailable(a1_app):
     app.state.composition.public.catalog = None
     with TestClient(app, base_url="https://testserver") as client:
         assert client.get("/public/samples").status_code == 503
-        assert client.get("/public/intake-mode").json() == {"upload_enabled": False}
+        assert client.get("/public/intake-mode").json() == {
+            "upload_enabled": False, "retention_ttl_sec": 1800}
+
+
+@pytest.mark.parametrize("a1_app", [{"case_ttl_sec": 86400, "source_ttl_sec": 90},
+    {"case_ttl_sec": 90, "source_ttl_sec": 86400}], indirect=True)
+def test_intake_reports_earliest_case_and_source_deadline(a1_app):
+    app, _, _ = a1_app
+    with TestClient(app, base_url="https://testserver") as client:
+        assert client.get("/public/intake-mode").json()["retention_ttl_sec"] == 90
+
+
+@pytest.mark.parametrize("a1_app", [{}, {"input_mode": "upload_bundle",
+    "session_create_daily": 50, "session_analysis_daily": 5, "upload_case_attempts": 3}], indirect=True)
+def test_public_owner_cannot_delete_own_case(a1_app):
+    app, engine, _ = a1_app
+    origin = {"Origin": "https://testserver"}
+    with TestClient(app, base_url="https://testserver") as client:
+        session(client)
+        response = client.post("/cases", headers=origin)
+        assert response.status_code == 201
+        cid = response.json()["case_id"]
+        assert client.delete(f"/cases/{cid}", headers=origin).status_code == 404
+        assert client.get(f"/cases/{cid}/view").status_code == 200
+    with engine.connect() as conn:
+        assert conn.scalar(select(schema.cases.c.state).where(schema.cases.c.case_id == cid)) == "ACTIVE"
 
 
 def test_closed_gate_does_not_hide_jobless_domain_validation_or_owner_view(a1_app):

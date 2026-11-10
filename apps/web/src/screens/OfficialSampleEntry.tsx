@@ -1,9 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPublicSamplesApi, type OfficialSample, type PublicSamplesApi } from '../api/publicSamples'
 import type { CaseView } from '../contracts/caseView'
 import { forgetCase, rememberCase } from '../state/lastCase'
 import { ApiFlow } from './ApiFlow'
-import { AppHeader } from '../components/AppHeader'
 import { errorMessage } from '../contracts/labels'
 
 function message(code: string) {
@@ -11,20 +10,27 @@ function message(code: string) {
   return errorMessage(code)
 }
 
+function retentionNotice(seconds: number) {
+  const parts: [number, string][] = [
+    [Math.floor(seconds / 3600), '시간'],
+    [Math.floor(seconds % 3600 / 60), '분'],
+    [seconds % 60, '초'],
+  ]
+  const duration = parts.filter(([value]) => value > 0).map(([value, unit]) => `${value}${unit}`).join(' ')
+  return `체험을 시작한 뒤 ${duration}부터 이 체험의 영상·분석 결과·신고자료를 서버에서 자동으로 정리해요. 정리된 자료는 다시 볼 수 없어요.`
+}
+
 /** A-1 intake only; existing CaseView-driven results/downloads remain in ApiFlow. */
-export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?: string | null; remembered?: boolean; upload?: boolean }) {
+export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?: string | null; remembered?: boolean; upload?: boolean; retentionSeconds: number }) {
   const [client] = useState(() => props.client ?? createPublicSamplesApi())
   const [samples, setSamples] = useState<OfficialSample[] | null>(null)
   const [selected, select] = useState('')
-  const [caseId, setCaseId] = useState(props.upload ? null : props.caseId ?? null)
+  const [caseId, setCaseId] = useState(props.caseId ?? null)
   const [view, setView] = useState<CaseView | null>(null)
   const [description, setDescription] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [deletion, setDeletion] = useState<'DELETING' | 'DELETED' | null>(null)
   const pending = useRef(false)
-  const deleteDialog = useRef<HTMLDialogElement>(null)
-  const deleteTitle = useId()
   const [uploadApi] = useState(() => ({
     ...client.cases,
     async createCase() {
@@ -96,73 +102,17 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
       setError(message(result.error.code))
     })
   }
-  async function remove() {
-    if (!caseId) return
-    await perform(async () => {
-      const result = await client.deleteCase(caseId)
-      if (!result.ok) return setError(message(result.error.code))
-      if ((result.status === 200 && result.data.state === 'DELETED') || (result.status === 202 && result.data.state === 'DELETING')) {
-        setDeletion(result.data.state)
-        if (result.data.state === 'DELETED') {
-          forgetCase(); setView(null)
-          const url = new URL(location.href); url.searchParams.delete('case'); history.replaceState(null, '', url)
-        }
-      } else setError(message('web.invalid_response'))
-    })
-  }
-  const home = () => location.assign(location.pathname)
+  const notice = retentionNotice(props.retentionSeconds)
+  if (props.upload) return <ApiFlow api={uploadApi} caseId={props.caseId} remembered={props.remembered}
+    uploadBundle={client.uploadBundle} retentionNotice={notice} />
+
   const ready = !!view && view.manifest_summary.ok_file_count > 0
-  const uploadFlow = props.upload && !deletion
-  const deleteButton = caseId && deletion !== 'DELETED' && <>
-    <button type="button" className="rs-btn sec" disabled={busy} onClick={() => {
-      if (pending.current) return
-      if (deletion === 'DELETING') void remove()
-      else if (!deleteDialog.current?.open) deleteDialog.current?.showModal()
-    }}>
-      {deletion === 'DELETING' ? '삭제 다시 확인' : '체험 데이터 삭제'}
-    </button>
-    {/* 색·글꼴 변수는 .rs 안에만 있다 — 결과 화면 밖에서 그려지므로 rs를 함께 단다 */}
-    <dialog ref={deleteDialog} className="rs rs-consent" aria-labelledby={deleteTitle} aria-describedby={`${deleteTitle}-description`}>
-      <h2 id={deleteTitle}>체험 데이터를 삭제할까요?</h2>
-      <p id={`${deleteTitle}-description`}>삭제하면 분석 결과와 신고자료를 다시 볼 수 없어요</p>
-      <div className="rs-consent-actions">
-        <button type="button" className="rs-btn sec" onClick={() => deleteDialog.current?.close()}>취소</button>
-        <button type="button" className="rs-btn pri" disabled={busy} onClick={() => {
-          if (pending.current) return
-          deleteDialog.current?.close()
-          void remove()
-        }}>삭제하기</button>
-      </div>
-    </dialog>
-  </>
   return <>
-    {uploadFlow ? <ApiFlow api={uploadApi} caseId={props.caseId} remembered={props.remembered}
-      uploadBundle={client.uploadBundle} onCase={setCaseId} caseActions={deleteButton} /> : view && view.stage !== 'INTAKE' && !deletion ? <ApiFlow api={client.cases} caseId={caseId}
-      intake={<p role="status">체험 진행 정보를 확인하고 있어요.</p>} /> : deletion ? <>
-      {/* #678 삭제 화면은 등록 방식과 무관하다 — 샘플 입구 안내 대신 결과 없음·실패와 같은 상태 화면 틀을 쓴다 */}
-      <AppHeader onNewReport={home} />
-      <main className="web-main rs-page">
-        <div className="rs rs-screen state-page">
-          <p className="state-context">체험 데이터</p>
-          <section className="state-card">
-            {deletion === 'DELETED' ? <>
-              <h1 className="state-head">삭제했어요</h1>
-              {/* 공식 샘플 원본은 다른 체험과 함께 쓰여 지우지 않는다 — 「올린 영상」을 지웠다고 쓰지 않는다 */}
-              <p className="state-body" role="status">이 체험의 분석 결과와 신고자료를 서버에서 지웠어요. 이미 내려받은 파일은 이 기기에 그대로 있어요.</p>
-              <div className="state-actions"><button type="button" className="rs-btn pri" onClick={home}>처음으로</button></div>
-            </> : <>
-              <h1 className="state-head">삭제하고 있어요</h1>
-              {/* 서버 정리 작업이 DELETING 케이스를 주기적으로 마저 지운다(public_retention.scan) */}
-              <p className="state-body" role="status">창을 닫아도 서버에서 이어서 지워요. 끝났는지 지금 다시 확인할 수도 있어요.</p>
-              {error && <p className="state-body" role="alert">{error}</p>}
-              <div className="state-actions"><button type="button" className="rs-btn pri" disabled={busy} onClick={() => { if (!pending.current) void remove() }}>삭제 다시 확인</button></div>
-            </>}
-          </section>
-        </div>
-      </main>
-    </> : <main className="web-main rs-page">
+    {view && view.stage !== 'INTAKE' ? <ApiFlow api={client.cases} caseId={caseId}
+      intake={<p role="status">체험 진행 정보를 확인하고 있어요.</p>} /> : <main className="web-main rs-page">
       <h1>공식 샘플로 체험하기</h1>
       <p>공식 샘플만 이용할 수 있어요. 직접 영상 업로드는 지원하지 않아요.</p>
+      <p>{notice}</p>
       {ready && view ? <>
         <p>서버에 등록된 영상 {view.manifest_summary.ok_file_count}개를 준비했어요.</p>
         <label>찾을 장면 설명<textarea value={description} onChange={e => setDescription(e.target.value)} disabled={busy} /></label>
@@ -175,13 +125,9 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
           </label>)}
         </fieldset>}
         <p>공식 샘플은 한 번에 합계 10분까지 이용할 수 있어요.</p>
-        <p>보관·삭제 기간과 반복 횟수는 아직 확정되지 않았어요. 현재는 공개 준비 중이에요.</p>
         <button type="button" className="rs-btn pri" disabled={busy || !selected} onClick={() => void prepare()}>샘플 준비</button>
       </>}
     </main>}
-    {!deletion && (error || (!uploadFlow && deleteButton)) && <div className="web-main">
-      {error && <p role="alert">{error}</p>}
-      {!uploadFlow && deleteButton && <div className="rs-case-actions">{deleteButton}</div>}
-    </div>}
+    {error && <div className="web-main"><p role="alert">{error}</p></div>}
   </>
 }

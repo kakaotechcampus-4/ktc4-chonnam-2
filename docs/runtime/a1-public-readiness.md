@@ -34,7 +34,9 @@ version 정확한 SHA 및 readiness 200을 확인했다. 준비 버튼은 누르
 브라우저 인증자료는 저장하지 않았다. 기존 검수 브라우저는 이 확인 전에 연결이 종료된 상태여서
 인증을 복사하지 않은 새 익명 context로 공개 진입만 확인했다.
 
-### 알려진 문제: 삭제 최초 응답 유실
+### 과거 검수 기록: 공개 삭제의 최초 응답 유실
+
+아래는 공개 삭제 API를 제공하던 당시의 검수 기록이다.
 
 실제 검수에서 첫 삭제 요청 한 번은 Web의 15초 AbortSignal 이후 `web.network_error`로 표시됐다.
 이는 삭제 실패 확정이 아니다. 서버 읽기 전용 대조에서 `DELETED`, 전용 원본·파생·분석·청크·임시 파일 삭제,
@@ -168,7 +170,7 @@ Coarse 실행 예산은 600초 그대로이며, 공개 입력 합계 600초와�
 | 반복·동시 | 프로세스 로컬 카운터 대신 MySQL control singleton current-read lock. session/IP 일일·Case 반복·session/전역 동시 admission과 enqueue 동일 transaction | 격리 MySQL8.4 동시성·장애 PASS. 실제 이미지/운영 한도 검증 |
 | 비용 | 실제 Worker UsageSink.begin에서 현재 RUNNING claim/owner/lease/cancel 확인 후 invocation별 보수적 예약과 STARTED 동일 commit. API 차단만으로 대체하지 않음 | 실제 단가·최악 호출액·예산 승인 및 provider별 범위 |
 | 긴급 중단 | DB accepting switch를 API와 매 attempt 직전에 확인. 이미 관측한 비용은 cancellation/중단 후에도 finish/finalize 보존 | 최종 이미지에서 운영자 stop/open/재개 검증 |
-| 삭제 | owner DELETE/TTL → DELETING → 활성 job/미반영 결과/미확정 usage 확인 → 저장된 계획·공유 lease → 파일·청크·Case/produced 삭제 → DELETED. 실패하면 계획 유지·재시도 | 격리 MySQL 부분 실패·재시도 PASS. 이미지/실제 kill 복구 검증 |
+| 삭제 | 운영자 정리/TTL → DELETING → 활성 job/미반영 결과/미확정 usage 확인 → 저장된 계획·공유 lease → 파일·청크·Case/produced 삭제 → DELETED. 실패하면 계획 유지·재시도 | 격리 MySQL 부분 실패·재시도 PASS. 이미지/실제 kill 복구 검증 |
 | 임시 파일 | 양 서비스 공통 shared media의 `public-temp/a1-<DB token>` 사용. Recording·Search 변환에 같은 pinned temp context 전달 | 실제 컨테이너 mount/권한·크래시 잔여 검증 |
 | 프록시 | Caddy의 API matcher에 `/public*` 추가 | live Caddy 변경·검증 NOT_RUN |
 
@@ -214,7 +216,7 @@ KST 일일 한도는 당일 생성/정산 및 이전 미정산 예약을 모두 
 | POST /cases/{id}/official-samples | JSON `{"sample_id":"..."}`만 수락. 정확한 기존 binding 재사용은 새 hash/probe/copy·quota 소비 없음 |
 | POST /cases/{id}/commands | 기존 Case command 형식, owner/source/admission 검증과 실제 발주 동일 commit |
 | GET /cases/{id}/view 및 media/Range | 같은 owner 검증. 미소유와 없는 Case 모두 비노출 404 |
-| DELETE /cases/{id} | owner만 요청. 완료 200/DELETED, 진행·재시도 202/DELETING. 팀 job을 임의 취소하지 않음 |
+| DELETE /cases/{id} | 공개 라우트 없음. 유효한 소유 세션과 Origin으로 요청해도 404 |
 
 오류는 기존 envelope와 고정 code를 사용한다. public.input=422, public.upload_disabled=403,
 public.origin=403, public.limit/concurrent/budget=429(Retry-After 포함),
@@ -223,6 +225,11 @@ public.unconfigured/stopped/unpriced/claim_lost=503, 미소유는 http.not_found
 429/503에서 새 command나 유료 호출을 자동 재전송하지 않는다.
 
 ## 삭제와 보존
+
+공개 세션에서는 직접 삭제를 제공하지 않는다. 공개 Web의 삭제 동작과 `DELETE /cases/{case_id}`를 제거한다.
+운영자 정리와 보관 스캐너는 기존 `PublicRetention` 경로를 사용한다.
+`GET /public/intake-mode`의 `retention_ttl_sec`는 Case와 원본 보관 설정 중 짧은 기간이며,
+공개 화면과 업로드 동의에 같은 값이 표시된다. 보관 기한은 체험 생성부터 센다.
 
 정상 분석이 저장하는 time_observation·prepared metadata·청크·frame·파생 descriptor도 계획에 포함한다.
 다른 Case의 공유 연결과 소유 불명 source graph는 보존한다. unknown graph, metadata 상한 초과,
