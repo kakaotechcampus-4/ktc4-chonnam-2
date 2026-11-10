@@ -282,7 +282,7 @@ describe('라벨 매핑 — fallback으로 새지 않는다', () => {
     // 「매핑 안 되는 raw」와 「값 자체를 모름」을 나누지 않기로 한 결정.
     expect(atProvenanceLabel(null)).toBe(AT_PROVENANCE_FALLBACK)
     expect(atProvenanceLabel('candidate.at_provenance.made_up')).toBe(AT_PROVENANCE_FALLBACK)
-    // v5 fixture는 계약이 Y로 정한 이 필드를 아직 안 내린다 — undefined도 같은 자리로.
+    // 이 필드를 아직 내리지 않는 서버가 있다 — undefined도 같은 자리로.
     expect(atProvenanceLabel(undefined)).toBe(AT_PROVENANCE_FALLBACK)
   })
 
