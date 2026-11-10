@@ -292,10 +292,12 @@ KST 일일 한도는 당일 생성/정산 및 이전 미정산 예약을 모두 
 
 | 요청 | 내용 |
 | --- | --- |
+| GET /public/intake-mode | 업로드 모드 사용 여부와 자동 정리 기준인 `retention_ttl_sec`를 반환 |
 | GET /public/samples | sample_id/label/example_hint/합계 duration_ms·byte_size/file_count만 표시 |
 | POST /public/session | 승인 Origin에서 server cookie 발급·기존 유효 세션 재사용. 알 수 없는 client token은 서버 난수로 교체 |
 | POST /cases | cookie owner와 Case 동일 commit |
-| POST /cases/{id}/official-samples | JSON `{"sample_id":"..."}`만 수락. 정확한 기존 binding 재사용은 새 hash/probe/copy·quota 소비 없음 |
+| POST /cases/{id}/official-samples | `server_sample` 모드에서 JSON `{"sample_id":"..."}`만 수락. 정확한 기존 연결을 재사용하면 해시 확인·미디어 검사·복사와 할당량 소비를 반복하지 않음 |
+| POST /cases/{id}/official-uploads | `upload_bundle` 모드에서 `multipart/form-data`의 `file` 항목으로 MP4를 하나 이상 수락. 같은 공식 묶음 하나에 속하는 파일만 크기·SHA-256·영상 길이를 확인한 뒤 허용 목록 순서로 등록하고 `201`을 반환. 다른 묶음 혼합·중복·목록 밖 파일은 `422 public.bundle_mismatch`로 거부 |
 | POST /cases/{id}/commands | 기존 Case command 형식, owner/source/admission 검증과 실제 발주 동일 commit |
 | GET /cases/{id}/view 및 media/Range | 같은 owner 검증. 미소유와 없는 Case 모두 비노출 404 |
 | DELETE /cases/{id} | 공개 라우트 없음. 유효한 소유 세션과 Origin으로 요청해도 404 |
@@ -303,7 +305,8 @@ KST 일일 한도는 당일 생성/정산 및 이전 미정산 예약을 모두 
 오류는 기존 envelope와 고정 code를 사용한다. public.input=422, public.upload_disabled=403,
 public.origin=403, public.limit/concurrent/budget=429(Retry-After 포함),
 public.unconfigured/stopped/unpriced/claim_lost=503, 미소유는 http.not_found=404다.
-본문 수신은 빈 조각 반복으로 연장할 수 없는 전체 15초 상한과 기존 JSON byte 한도를 적용한다.
+JSON 요청에는 빈 조각 반복으로 연장할 수 없는 전체 15초 수신 상한과 기존 바이트 한도를 적용한다.
+공식 MP4 업로드에는 별도의 파일 수·바이트 상한과 업로드 설정의 무응답·전체 수신 시간 제한을 적용한다.
 429/503에서 새 command나 유료 호출을 자동 재전송하지 않는다.
 
 ## 삭제와 보존

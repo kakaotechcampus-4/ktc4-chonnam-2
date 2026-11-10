@@ -4,13 +4,15 @@
 
 ## 이 폴더에 들어갈 authoritative 문서
 
-- `ownership.md` — 현재 역할 배정안 (모듈 Owner + 운영 역할)
+- [역할 배정과 초기 계획 이력](ownership.md) — 모듈·계약 소유, 구현 담당, PM 승인과 공통 검수 역할
 - `project-operating-plan.md` — 1.3에서 옮긴 운영 원칙과 주간 리듬. 실제 일정은 팀 Notion
-- [`rc-scope-2026-11-05.md`](rc-scope-2026-11-05.md) — 11/5 PM RC 포함·제외·P0 차단·조건부 수용·11/9 동결 판정. 사용자 지원 범위·배포 보호는 Product/Ops Spec을 따른다
+- [11/5 RC 결정](rc-scope-2026-11-05.md) — 당시 포함·제외·차단·조건부 수용과 동결 판정. 현재 상태는 아래 후속 근거에서 확인한다.
 - `pre-deploy-security-review.md` — 배포 전 보안·개인정보 검수표 (담당 Owner · 확인일 · PASS/WARN/BLOCK)
 - `tool-trajectory-review.md` — 결과가 아니라 **경로**가 맞았는지 판정하는 절차 (목데이터 통합 1회 + 데모 직전 1회)
 - `cross-cutting-decisions.md` — 모듈 경계 밖 운영 책임 11건의 결정 기록
 - [`environment-and-deployment-config.md`](environment-and-deployment-config.md) — 로컬·AWS 실행/배포 설정 이름, GitHub Secrets/Variables, host·policy 구조, Recording baseline v1. 공개 가능한 명세만 두고 실제 팀 값·Secret 위치는 팀 Notion
+
+11/5 RC 판정 이후 #583의 후보 썸네일은 [이전 AWS에서 검증](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/523#issuecomment-6719540476)했고, 별도 기능인 후보 영상 재생은 [최종 공개본에서 개별 재생을 검증](../runtime/candidate-video-preview.md)했다. 당시 RC에서 제외한 상황 정정(#545)은 이후 #621에 구현됐고 [로컬 실영상 통합 테스트](../modules/case/experiments/real-e2e-20261108-597-integrated.md#3-2-유형-정정--pass)에서 확인했다. 최종 AWS의 실제 입력·운영값과 E2E 범위는 [11/10 공개 인계](../runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)에서 확인한다.
 
 ## 회의 안건지의 수명
 
