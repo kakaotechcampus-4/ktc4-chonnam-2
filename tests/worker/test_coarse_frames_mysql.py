@@ -58,7 +58,7 @@ def test_coarse_frames_survive_fine_without_clip_and_t1_retry(queue, tmp_path, m
         case = stored_case_store(conn, storage_root=root).get_case(case_id)
         view = build_case_view(case)
         assert {c['candidate_id']: c['thumb_ref'] for c in view['candidates'] if c['thumb_ref']} == refs
-        assert len(view['candidates']) == 4 and view['candidates'][3]['thumb_ref'] is None
+        assert len(view['candidates']) == 3  # Provider returns 4; Coarse caps at 3 (#686).
         fine_job, = [r for r in rows if r['kind'] == 'FINE_VERIFY']
         assert fine_job['case_applied_at'] is not None
         assert fine_job['status'] == ('FAILED' if fine == 'failed' else 'SUCCEEDED')
