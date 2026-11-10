@@ -30,7 +30,7 @@ B01 종결(2026-09-07)에서 `location_display.value`의 대표값 우선순위�
 
 이름이 비슷해 섞어 쓰기 쉬운데 **축이 다르다.** 화면을 만들 때 반드시 구분한다.
 
-| | 어디에 | 무엇을 뜻하나 |
+| 항목 | 어디에 | 무엇을 뜻하나 |
 | --- | --- | --- |
 | `*_display.needs_review` | 여섯 display 각각 | 그 값 자체를 다시 검토해야 하는가 |
 | `evidence.review_needed` | `evidence` object 1개 | 「검토 필요한 게 하나라도 있는가」의 **집계**. 여섯 `needs_review` OR + 여섯 `info_state==INFO_NEEDS_REVIEW` OR (계약 B절 §7) |

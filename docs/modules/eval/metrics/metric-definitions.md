@@ -258,7 +258,7 @@ AI-Hub 71555 의 촬영조건 라벨은 **한 클립 안에서 값이 갈린다*
 
 정답 판정은 **`abstained` × GT `legibility` 교차표** 하나다.
 
-| | GT `READABLE` | GT `UNREADABLE` |
+| 항목 | GT `READABLE` | GT `UNREADABLE` |
 | --- | --- | --- |
 | `abstained = false` | `exact_accuracy` 의 분모 · 값이 맞으면 분자 | **`wrong_accept_rate` 의 분자** |
 | `abstained = true` | 놓친 판독 (어느 지표에도 안 들어간다) | `abstention_recall` 의 분자 |
@@ -338,7 +338,7 @@ abstention_recall   1.0      <- 기권해야 할 걸 전부 기권했다
 
 그래서 **어떤 Exact·CER 수치든 아래 셋을 함께 적지 않으면 다른 수치와 나란히 놓지 않는다.**
 
-| | 무엇을 적나 |
+| 항목 | 무엇을 적나 |
 | --- | --- |
 | **정규화 규칙** | 원문 그대로 비교인가 · 공백·하이픈을 떼는가 · 전각/반각을 접는가 |
 | **이미지 출처** | 어느 데이터셋의 어떤 crop 인가 (원본 프레임 · 확대 · ROI) |

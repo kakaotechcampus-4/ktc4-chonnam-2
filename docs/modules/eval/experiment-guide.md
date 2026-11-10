@@ -62,15 +62,12 @@ AI 시스템은 모델뿐 아니라 프롬프트, 입력 데이터, FPS, 해상�
 
 실험마다 최소한 아래 정보는 남긴다.
 
-| 항목 | 예시 |
-| --- | --- |
-| 실험명 | `search_fps_compare_v1` |
-| 실행자 / 실행일 |  |
-| 실험 목적 | 1fps → 2fps 변경 효과 확인 |
-| Baseline | 기존 설정 또는 Run |
-| 변경 사항 | FPS만 1 → 2 |
-| Git Commit | `a31f...` |
-| 결과 JSON | `eval/results/<run_id>.*.json` |
+- 항목: 실험명 · 예시: `search_fps_compare_v1`
+- 항목: 실험 목적 · 예시: 1fps → 2fps 변경 효과 확인
+- 항목: Baseline · 예시: 기존 설정 또는 Run
+- 항목: 변경 사항 · 예시: FPS만 1 → 2
+- 항목: Git Commit · 예시: `a31f...`
+- 항목: 결과 JSON · 예시: `eval/results/<run_id>.*.json`
 
 ### 왜 필요한가?
 
@@ -88,16 +85,9 @@ AI 실험에서는 한 번에 여러 설정을 바꾸면 **무엇 때문에 성�
 
 현행 평가셋의 규모·정답 범위·용도는 [`datasets/README.md`](datasets/README.md)를 따른다. 새 AI-Hub 선별 영상은 `a_aihub_best100_all`(원본 Training 포함 전체 개발 진단), `a_aihub_best100_val`(중복 제거 Validation), `aihub_mixed_pilot_mp2`(8쌍 파일럿), `aihub_mixed_100_v1`(100쌍 확장 합성 진단)로 **별도** 기록한다. 삽입 영상 수치를 실제 장시간 블박 성능과 합산하지 않는다.
 
-| 항목 | 예시 |
-| --- | --- |
-| Dataset | `long_dashcam_eval` |
-| Dataset Version | `v0.2` |
-| 영상 수 / 총 길이 |  |
-| Positive 수 |  |
-| Hard-negative 수 |  |
-| 사건 유형 구성 |  |
-| 주간/야간/우천 등 구성 |  |
-| Ground Truth Version | `gt_v0.2` |
+- 항목: Dataset · 예시: `long_dashcam_eval`
+- 항목: Dataset Version · 예시: `v0.2`
+- 항목: Ground Truth Version · 예시: `gt_v0.2`
 
 ### 왜 필요한가?
 

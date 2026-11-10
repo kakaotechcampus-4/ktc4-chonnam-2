@@ -73,7 +73,7 @@ manifests/b_youtube/    manifests/a_aihub/    (향후) manifests/c_team_sd/
 
 Mock Pack v1이 `data/mock/eval/prediction_{correct,wrong}.happy_001.json`을 이미 만들었다. 형태가 평평한 단일 객체라 위 envelope과 다르다. **둘을 통일하지 않고 역할로 나눈다.**
 
-| | `data/mock/eval/prediction_*.json` | `eval/predictions/<run_id>.json` |
+| 항목 | `data/mock/eval/prediction_*.json` | `eval/predictions/<run_id>.json` |
 | --- | --- | --- |
 | 무엇 | Mock E2E 접합 확인용 **샘플 1건** | runner 실행 산출물 **N건** |
 | 생산자 | `case` Owner (Mock Pack) | eval runner |
@@ -192,13 +192,11 @@ results/<run_id>.<gt_version>.json        커밋 (§10-2 「Eval result: JSON + 
 
 레포가 PUBLIC이고 `product-strategy.md` §6이 「세부 실패 사례와 Hard-negative 데이터셋」·「차량번호」를 비공개로 둔다. 그래서 GT를 둘로 나눈다.
 
-| 커밋 (`*.manifest.json` · `gt/*.json`) | gitignore |
-| --- | --- |
-| `clip_id` · `sequence_id` · `source_video_id` | 번호판 문자열 (`*.private.json`) |
-| `violation_type` · span · `label` | hard-negative가 어려운 이유 서술 (`*.private.json`) |
-| `split` · `tier` · `condition` | 정확한 위치 (`*.private.json`) |
-| `meta.coverage` (검토 실적) | 아카이브 원본 (`*.zip`) · 미디어 |
-| | 중간 작업 파일 (`events_draft.json`) |
+- 커밋 (`*.manifest.json` · `gt/*.json`): `clip_id` · `sequence_id` · `source_video_id` · gitignore: 번호판 문자열 (`*.private.json`)
+- 커밋 (`*.manifest.json` · `gt/*.json`): `violation_type` · span · `label` · gitignore: hard-negative가 어려운 이유 서술 (`*.private.json`)
+- 커밋 (`*.manifest.json` · `gt/*.json`): `split` · `tier` · `condition` · gitignore: 정확한 위치 (`*.private.json`)
+- 커밋 (`*.manifest.json` · `gt/*.json`): `meta.coverage` (검토 실적) · gitignore: 아카이브 원본 (`*.zip`) · 미디어
+- gitignore: 중간 작업 파일 (`events_draft.json`)
 
 왼쪽만으로 v1 지표가 전부 계산된다. §6이 「집계된 성능 비교 결과」를 공개 가능으로 둔 것과 일치한다.
 

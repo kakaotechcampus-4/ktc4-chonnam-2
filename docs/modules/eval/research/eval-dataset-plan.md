@@ -213,14 +213,6 @@ B tier 핵심 규칙
 
 무편집 연속 주행 영상만 사용 · 1분 겹침 없는 분할 · `group_key = source_video_id` · 경계 사건 보존 · C tier 대체 불가 · A tier를 다른 모듈과 무관하게 먼저 돌린다 — 전부 현행 구조가 따르고 있다.
 
-## 9. 출처
-
-> **[작성 필요]**
-
-- B tier 원본 영상(`YT_0001`) URL과 라이선스 표기 — `[링크 필요]` (8-4의 manifest 보강과 같은 값)
-- 대체 후보 공개 데이터셋 — BDD100K · Nexar Collision Prediction · DoTA 각 공식 페이지 `[링크 필요]`
-- `eval_metrics_revision_v1.md` (주지표 13개 원문) — 저장소 내 위치 확인 필요
-
 ## 10. 관련 문서
 
 - `docs/modules/eval/research/aihub-71555-survey.md` — A tier 소스 사전조사
