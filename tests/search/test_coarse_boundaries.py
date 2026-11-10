@@ -305,3 +305,50 @@ def test_candidate_source_link_rejects_mismatched_resolved_timeline(
     assert captured.value.source_ref.ref == "source-1"
     assert captured.value.source_timeline_id == "timeline-1"
     assert captured.value.source_timeline_revision == 4
+
+
+def _scored(start_sec: float, score: float) -> CoarseCandidate:
+    return CoarseCandidate.model_construct(
+        event_type=VisualEventType.SIGNAL,
+        span=CoarseSpan.model_construct(start_sec=start_sec, end_sec=start_sec + 1.0),
+        at_sec=start_sec + 0.5,
+        observed=("signal visible",),
+        score=score,
+    )
+
+
+def test_search_coarse_returns_at_most_three_candidates() -> None:
+    # Given — 모델이 후보 5개를 낸다. 하류(썸네일 · 미리보기 · Fine)는 1~3위만 다룬다
+    response = CoarseResponse.model_construct(
+        candidates=tuple(_scored(float(i), 0.9 - i * 0.1) for i in range(5))
+    )
+    service = _service(_source(), response)
+
+    # When
+    result = service.search_candidates(_scope())
+
+    # Then — score 상위 3개만 남는다. 버린 4·5위는 실패가 아니다
+    assert [c.rank for c in result.candidates] == [1, 2, 3]
+    assert [c.span.start_ms for c in result.candidates] == [0, 1000, 2000]
+    assert result.analysis_run.outcome is RunOutcome.SUCCEEDED
+    assert result.analysis_run.issues == ()
+
+
+def test_search_coarse_fills_three_after_dropping_invalid_span() -> None:
+    # Given — 1위가 영상 밖이면 4위가 3위로 올라온다(#609의 여유 2개)
+    response = CoarseResponse.model_construct(
+        candidates=(
+            _candidate(11.0, 12.0, 11.5),
+            *(_scored(float(i), 0.8 - i * 0.1) for i in range(4)),
+        )
+    )
+    service = _service(_source(), response)
+
+    # When
+    result = service.search_candidates(_scope())
+
+    # Then
+    assert [c.rank for c in result.candidates] == [1, 2, 3]
+    assert [c.span.start_ms for c in result.candidates] == [0, 1000, 2000]
+    assert result.analysis_run.outcome is RunOutcome.PARTIAL
+    assert result.analysis_run.issues[0].detail == "dropped=1"
