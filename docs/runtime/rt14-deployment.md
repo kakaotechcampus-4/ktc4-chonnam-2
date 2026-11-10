@@ -2,11 +2,9 @@
 
 # RT-14 — EC2 배포 준비
 
-**IN_PROGRESS · Refs #450 · Related #287, #460, #452**
+**RT-14 배포 준비 기록 · [#450](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/450) 완료 · 관련 #287, #460, #452**
 
-이 문서는 [deployment runbook](deployment-runbook.md)의 구현 명령을 제공한다.
-배포/복구 명령은 **향후 승인된 운영 작업의 예시**다. 이번 구현에서 실행하지 않았다.
-아래 candidate는 Owner 결정이나 production acceptance를 대신하지 않는다.
+이 문서는 [배포 절차](deployment-runbook.md)를 지원하기 위해 RT-14에서 작성한 준비 기록이다. 아래 명령은 준비 당시 예시이며 그 단계에서는 실제 배포·복구를 실행하지 않았다. 운영에 적용한 배포와 복구 검증 범위는 [최종 AWS 공개 배포](a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)를 참고한다.
 2026-10-30 Decision Gate 승인값과 이 준비 구현에 남은 변경은 [RT-14 배포 설계](rt14-deployment-design.md) §1 · §16이다.
 
 ## 2026-10-31 후속 운영 기준
