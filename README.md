@@ -8,9 +8,9 @@
 
 ## 공개 체험
 
-[공식 샘플 체험 열기](https://daesingo-ktc4.duckdns.org/?sample). 로그인 없이 공식 영상 10개로 구성된 10분 묶음을 분석할 수 있다. 공개 체험에서는 임의 영상 업로드를 차단하고, 생성한 결과는 해당 브라우저 세션에서만 조회하고 내려받을 수 있다.
+[공식 샘플 체험 열기](https://daesingo-ktc4.duckdns.org/). 공식 3분·10분 샘플 묶음 중 하나를 골라 압축을 풀고, 같은 묶음의 MP4를 하나 이상 올리면 된다. 로그인 없이 분석할 수 있고 합계 상한은 10분이다. 서버는 공식 샘플만 등록하며, 결과는 체험을 시작한 브라우저 세션에서 조회하고 내려받을 수 있다.
 
-2026-11-09 운영 기록 기준 배포 커밋은 `91e41a15de0fe1c1879b76026ee454cb809be08f`다. 제한 체험에서는 기존 탐색 결과를 이어받아 번호판 판독, 신고자료 준비, 영상 다운로드·재생, 데이터 삭제까지 확인했다. 공개 전환 후에는 새 익명 브라우저에서 체험 진입을 확인했다. 같은 배포의 재기동 복구는 검증했으며 전체 DB·미디어 복원은 미검증이다. [공개 운영 검수와 복구 범위](docs/runtime/a1-public-readiness.md#제한적-외부-공개-운영-인계--2026-11-09-kst)
+2026-11-10 공개 전환 기록의 배포 커밋은 `f6976ada863b3a16640918817aae90ef89319833`다. 제한 AWS 검수에서 공식 10분 묶음의 업로드부터 신고영상 자동 생성·다운로드까지 확인했다. 후보 미리보기는 한 번에 하나씩 재생할 수 있다. [AWS 공개 운영 인계](docs/runtime/a1-public-readiness.md#2026-11-10-aws-공개-운영-인계)
 
 > **현재 Runtime 실행환경 (2026-10-30 갱신):** 로컬 Compose는 API·Worker·migration·MySQL을 구성한다. 기본 Worker는 Search·Recording·production PaddleOCR·export를 조립하며, Analysis/Incident encoding 설정에 따라 등록 가능한 handler가 달라진다. 실제 env·버전·cache·실행 순서와 미결 항목은 [Runtime/Ops·Recording 실행환경](docs/runtime/local-runtime-environment.md), 검증 이력과 남은 위험은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
 
@@ -163,7 +163,7 @@ MySQL integration은 `DAESINGO_MYSQL_URL`로 지정한 폐기 가능한 MySQL 8.
 
 Migration은 `uv run python -m daesingo.common.db.migrate --database-url-stdin`으로 실행한다. 호출자가 URL 한 개를 비대화형 stdin에 명시적으로 전달하며 credential을 argv·로그에 넣지 않는다. runner는 URL 환경변수·`.env`·RuntimeConfig를 읽지 않는다. 소스 checkout의 env를 frozen registry `case → runtime → recording` 순서로 `head`까지 적용하며, 새 env는 registry와 필수 테스트에 등록해야 한다. 기존 MySQL gate는 RT-02(a)·Case 실행 목록과 migration·Recording 필수 check를 함께 검사한다.
 
-Migration은 단일 실행 전제다. process 내부 중복 호출만 거부하며 cross-process 동시 실행 안전성을 보장하지 않는다. 첫 실패에서 중단하고 retry·stamp·downgrade·resume/startup migration은 제공하지 않는다. MySQL DDL의 부분 적용은 전체 rollback되지 않으므로 실패 후 상태 검사·복구가 필요하다. 공개 배포 `91e41a15`의 스키마는 Case `case_0001`, Recording `recording_0002`, Runtime `runtime_0008`이다. 작업 실행과 사용량 기록의 구현·검증 이력은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
+Migration은 단일 실행 전제다. process 내부 중복 호출만 거부하며 cross-process 동시 실행 안전성을 보장하지 않는다. 첫 실패에서 중단하고 retry·stamp·downgrade·resume/startup migration은 제공하지 않는다. MySQL DDL의 부분 적용은 전체 rollback되지 않으므로 실패 후 상태 검사·복구가 필요하다. 11/10 공개 배포 `f6976ada`의 스키마는 Case `case_0001`, Recording `recording_0002`, Runtime `runtime_0008`이다. 작업 실행과 사용량 기록의 구현·검증 이력은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
 
 API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127.0.0.1 --port 8000`으로 실행한다. RT-01 파일 설정을 소비하며 현재 HTTP surface는 `GET /health/live`·`GET /health/ready`·`POST /cases`·`GET /cases/{case_id}/view`·`POST /cases/{case_id}/commands`·`POST /cases/{case_id}/sources`·`GET /cases/{case_id}/frames/{frame_ref}`다. 일반 오류 envelope와 기본 framework 오류 차단, 전용 ready DB 연결, metadata-only mount 검사, command 저장과 enqueue·cancel의 원자적 commit, streaming upload와 commit 후 응답을 제공한다. 지원 CLI가 upload timeout 연결 종료용 API 내부 HTTP protocol을 선택한다. FrameRef는 짧은 소유 확인·저장 이미지 조회 후 Connection을 반환하고 bytes를 전송한다. DerivedAsset HTTP route·분석 시작 timeline dependency는 후속 범위다. MySQL gate는 API health의 정상·pool 고갈·연결 단절·실제 서버 중지·RO mount·실제 API process 증거도 요구한다. 실제 서버 중지 검사는 suite DB와 분리된 Docker 테스트 서버(Linux CI) 또는 WSL 서버(Windows)를 사용하며, RO mount는 private namespace에서 만들고 정리한다.
 
