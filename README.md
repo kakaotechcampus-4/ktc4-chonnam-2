@@ -2,13 +2,13 @@
 
 **블랙박스 영상에서 교통위반 신고 자료를 준비해 주는 제품.**
 
-위험한 위반을 목격했고 신고할 마음도 생겼지만, 운전 중이라 **정확한 시각과 장소를 적어두지 못한 운전자**가 타깃이다. 몇 시간짜리 영상을 손으로 훑는 대신, 기억나는 단서를 자연어로 말하면(대충 언제 · 어떤 차 · 무슨 일 · 어디쯤) 제품이 사건 구간 후보와 그 전후 증거를 찾아온다. **사용자는 확인하고 고치기만 한다.**
+위험한 위반을 목격했지만 정확한 시각과 장소를 기록하지 못한 운전자를 돕는다. 기억나는 시간·차량·상황·장소를 입력하면 장시간 블랙박스 영상에서 사건 후보와 전후 근거를 찾아 신고자료를 준비하는 것이 제품 목표다. 현재 공개 체험에서 사용할 수 있는 영상은 아래 범위로 제한된다.
 
 목표는 신고할 마음이 없던 사람을 유도하는 게 아니라, **이미 생긴 신고 의향이 준비 과정의 마찰 때문에 사라지지 않게 하는 것**이다.
 
 ## 공개 체험
 
-[공식 샘플 체험 열기](https://daesingo-ktc4.duckdns.org/). 공식 3분·10분 샘플 묶음 중 하나를 골라 압축을 풀고, 같은 묶음의 MP4를 하나 이상 올리면 된다. 로그인 없이 분석할 수 있고 합계 상한은 10분이다. 서버는 공식 샘플만 등록하며, 결과는 체험을 시작한 브라우저 세션에서 조회하고 내려받을 수 있다.
+[공식 샘플 체험 열기](https://daesingo-ktc4.duckdns.org/). 별도로 제공받은 공식 3분 또는 10분 ZIP의 압축을 풀고, 같은 묶음에 속한 MP4를 하나 이상 올린다. 한 번에 합계 10분까지 이용할 수 있다. 서버는 공식 파일의 크기와 SHA-256을 확인하며 임의 사용자 영상은 받지 않는다. 로그인 없이 분석하고 체험을 시작한 브라우저 세션에서 결과를 조회·다운로드할 수 있다.
 
 2026-11-10 최종 공개 배포는 `61d9b7ea3ed706fc90a995a1d1e1c8ba213eba6a`다. 제한 AWS 검수에서 공식 10분 묶음 업로드부터 신고영상 자동 생성·다운로드까지 확인했다. 후보 영상은 한 번에 하나씩 재생할 수 있다. 체험 시작 24시간 후부터 서버 자동 정리 대상이 되므로 필요한 신고영상은 미리 다운로드한다. [최종 AWS 공개 운영 인계](docs/runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)
 
@@ -20,7 +20,7 @@
 
 **한다** — 자연어 기억 단서를 시간·차량·상황 정보로 구조화 · 1차 탐색(Coarse)으로 상위 후보 생성 후 정밀 검증 · Top-3 구조화 카드와 사용자 보정 · 사건 전후 증거 구간 구성(**영상 파일 경계에 걸친 사건 포함**) · 번호판 best frame과 OCR · 시각을 **출처와 함께**(화면 표시 / 파일명 / 메타데이터 / 사용자 / Unknown) 관리 · GPS가 있으면 위치 보강, 없으면 사용자 단서 유지 · 신고요건 점검과 안전신문고 handoff
 
-**하지 않는다** — AI가 법적 위반 여부를 최종 확정 · 사용자 승인 없는 무인 자동신고 · 신뢰 가능한 출처 없는 시각을 임의 생성 · 자체 지도 UI · 모든 도로교통법 위반 유형 지원
+**하지 않는다** — AI가 법적 위반 여부를 최종 확정 · 안전신문고 자동 제출 · 신뢰 가능한 출처 없는 시각을 임의 생성 · 안전신문고 최종 신고 위치의 자동 확정 · 모든 도로교통법 위반 유형 지원
 
 ### 초기 지원 사건 4종
 
@@ -38,7 +38,9 @@
 
 ## 사용자 흐름
 
-영상 업로드 → 영상에서 읽은 정보 확인(촬영 시간 · 화면 시각 유무 · GPS 유무) → 사용자가 기억을 말함 → 단서 구조화와 탐색 범위 확인 → 분석 → 사건 후보 비교·검증 → 사용자 보정 → 번호판·시각·위치 확정 → 신고요건 점검 → 안전신문고로 handoff.
+공식 MP4 등록 → 기억나는 상황 입력 → 분석 시작 → 후보와 결과 확인 → 필요한 값 수정, 다른 후보 선택 또는 다시 탐색 → 신고자료 복사·다운로드 → 안전신문고에서 직접 첨부·제출.
+
+단서 구조화와 탐색 범위 계산은 분석 중에 자동으로 진행한다. 결과 화면에서 위치 텍스트를 고치거나, 보조 지도가 활성화된 경우 핀으로 주변을 살펴볼 수 있다. 최종 신고 위치는 안전신문고에서 사용자가 선택한다.
 
 화면 단위 흐름과 **실패했을 때 무엇을 보여주는지**는 [`docs/product/core-user-flow.md`](docs/product/core-user-flow.md)가 소유한다. 채팅 인터페이스가 아니라 **단계형 화면**이고, 자연어 입력은 단서 입력 한 곳에만 있다.
 
@@ -66,13 +68,13 @@ Python · FastAPI · **Modular Monolith**(API 1 + Worker 1) · MySQL 8.4 · DB Q
 
 ## 레포 구성
 
-`apps/`에 실행 코드, `docs/`에 living document, `src/`·`eval/`에 Python 구현이 있다. 모듈별 진행 상태는 다르다 — 코드가 들어온 곳도 있고, 아직 README만 있는 골격도 있다. 정확한 현황은 각 폴더의 README와 `docs/management/ownership.md`가 소유한다.
+`apps/`에 웹 앱과 프로토타입, `src/daesingo/`에 제품 서버, `eval/`에 평가 코드, `docs/`에 설계·운영 문서가 있다. 각 영역의 구현과 검증은 해당 README에서 확인한다.
 
 | 경로 | 내용 |
 | --- | --- |
 | `apps/prototype/` | 흐름 프로토타입 (React 19 + Vite 6, 목데이터). **제품 코드 아님** |
-| `apps/web/` | 실제 웹 앱(React 19 · Vite 6). `/`는 기존 API 흐름, `/?sample`은 공식 샘플로 실제 분석하는 공개 체험, `/?demo`는 목데이터 시연이다. Web 변경 PR의 CI와 실행 방법은 [웹 앱 README](apps/web/README.md)를 확인한다. |
-| `src/daesingo/` | Python 모듈형 모놀리스 — `case`·`search`·`readout`·`recording`·`evidence`·`common`은 실제 구현+테스트가 있다. `api`는 설정·로그 bootstrap, app factory·envelope·health·단일 process 실행, Case 생성·조회·command/enqueue·중단 배선, 원본 upload·저장 FrameRef·DerivedAsset HTTP와 분석 시작 timeline을 구현했다. `worker`는 claim/dispatch·T1/T2·heartbeat/cancel·STALE/retry·T2 재전달과 기본 Search handler/reader 조립을 구현했다(명시적 media profile 등 세부 조건·미결은 각 README와 RT-10(b) 기록 참조) |
+| `apps/web/` | 실제 웹 앱(React 19 · Vite 6). 공식 공개 주소의 `/`와 기존 `/?sample` 링크는 같은 공개 체험에 연결된다. 개발 환경의 목데이터 시연은 `/?demo`를 사용한다. [웹 앱 실행·CI](apps/web/README.md) |
+| `src/daesingo/` | Python 모듈형 모놀리스. [API](src/daesingo/api/README.md)는 Case·업로드·자산 조회를 제공하고, [Worker](src/daesingo/worker/README.md)는 큐에서 분석·OCR·영상 및 이미지 생성 작업을 실행한다. |
 | `eval/` | 오프라인 채점 도구 — `datasets` / `manifests` / `runners` / `scorers` / `predictions` / `results` / `locked_test`, 실제로 동작한다 |
 | `data/` | 테스트 · 데모용 고정 데이터 — `mock/`(모듈별 계약 fixture · 시나리오), `real/`(실제 영상 E2E 산출 JSON) |
 | `examples/` | `recording` · `search` 공개 함수 사용 예제 스크립트 |
@@ -98,19 +100,20 @@ Local logical backup/restore와 실제 복원 acceptance 실행은 [RT-13(b) Not
 
 | 하려는 일 | 읽을 것 |
 | --- | --- |
-| 제품이 무엇을 약속하고 안 하는지 | `docs/product/product-spec.md` §5 · §7 |
-| 화면 흐름 · 실패 UX | `docs/product/core-user-flow.md` |
+| 제품 약속과 지원 범위 | [Product Spec](docs/product/product-spec.md) §3·§5·§7 |
+| 화면 흐름 · 실패 UX | [Core User Flow](docs/product/core-user-flow.md) |
 | 내 모듈의 경계 · 계약 · 금지사항 | `docs/architecture/module-architecture.md` §1 → §2 → §4 내 모듈 → §5 |
 | 내 모듈의 조사 · 실험 · 결정 | `docs/modules/<module>/` |
 | DB Queue · retry · lease/heartbeat · Worker 실행 기반 | `docs/runtime/runtime-tech-spec.md` |
-| 배포 · logging · monitoring · storage/retention · capacity | `docs/runtime/ops-spec.md` |
+| 운영 정책과 실제 공개 검증 | [Ops Spec](docs/runtime/ops-spec.md) · [최종 AWS 인계](docs/runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포) |
+| RC 수용 결정과 평가·CI 결과 읽기 | [11/5 RC 결정](docs/management/rc-scope-2026-11-05.md) · [Eval 결과와 한계](docs/modules/eval/evaluation-results-2026-11-01.md#7-해석할-때-지켜야-할-것) · [CI 실행 구조](docs/runtime/ci-test-partitions.md) |
 | 누가 무엇을 맡는지 | `docs/management/ownership.md` |
 | 운영 결정(승인 경로 · 리뷰 담당) | `docs/management/cross-cutting-decisions.md` |
 | 문서 폴더 규칙 · 문서가 서로 다른 말을 할 때 | `docs/README.md` |
 
 문서가 충돌하면 우선순위는 **제품 약속 = `product-spec.md`** → **모듈 경계·계약 = `module-architecture.md`(v4)** → **화면 흐름 = `core-user-flow.md`** 이고, 셋이 어긋나면 혼자 고치지 않고 주간 회의 안건으로 올린다. 자세한 규칙은 [`docs/README.md`](docs/README.md).
 
-**미결은 미결로 남긴다.** 업로드 전략 · timeout 수치 · correction 로그 재사용 설계 · overlay 존재 탐지 세부 · 실패 분류 이름 목록은 실측 전이라 `미결`로 표시돼 있다. 문서를 완성도 있게 보이려고 채우지 않는다.
+정책의 우선순위와 실제 적용 여부는 구분한다. 적용 범위와 검증 결과는 해당 코드·테스트 및 배포 기록에서 확인한다.
 
 ## 실행
 
@@ -165,7 +168,7 @@ Migration은 `uv run python -m daesingo.common.db.migrate --database-url-stdin`�
 
 Migration은 단일 실행 전제다. process 내부 중복 호출만 거부하며 cross-process 동시 실행 안전성을 보장하지 않는다. 첫 실패에서 중단하고 retry·stamp·downgrade·resume/startup migration은 제공하지 않는다. MySQL DDL의 부분 적용은 전체 rollback되지 않으므로 실패 후 상태 검사·복구가 필요하다. 11/10 최종 공개 배포 `61d9b7ea`의 스키마는 Case `case_0001`, Recording `recording_0002`, Runtime `runtime_0008`이다. 작업 실행과 사용량 기록의 구현·검증 이력은 [Runtime Implementation Log](docs/runtime/runtime-implementation-log.md)를 확인한다.
 
-API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127.0.0.1 --port 8000`으로 실행한다. RT-01 파일 설정을 소비하며 현재 HTTP surface는 `GET /health/live`·`GET /health/ready`·`POST /cases`·`GET /cases/{case_id}/view`·`POST /cases/{case_id}/commands`·`POST /cases/{case_id}/sources`·`GET /cases/{case_id}/frames/{frame_ref}`다. 일반 오류 envelope와 기본 framework 오류 차단, 전용 ready DB 연결, metadata-only mount 검사, command 저장과 enqueue·cancel의 원자적 commit, streaming upload와 commit 후 응답을 제공한다. 지원 CLI가 upload timeout 연결 종료용 API 내부 HTTP protocol을 선택한다. FrameRef는 짧은 소유 확인·저장 이미지 조회 후 Connection을 반환하고 bytes를 전송한다. DerivedAsset HTTP route·분석 시작 timeline dependency는 후속 범위다. MySQL gate는 API health의 정상·pool 고갈·연결 단절·실제 서버 중지·RO mount·실제 API process 증거도 요구한다. 실제 서버 중지 검사는 suite DB와 분리된 Docker 테스트 서버(Linux CI) 또는 WSL 서버(Windows)를 사용하며, RO mount는 private namespace에서 만들고 정리한다.
+API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127.0.0.1 --port 8000`으로 실행한다. Case 생성·조회·명령, 원본·공식 샘플 등록, 프레임·파생 자산·후보 영상 조회를 제공한다. 로컬 실행 조건과 경로별 지원 범위는 [API README](src/daesingo/api/README.md), 운영 모드별 경계는 [A-1 운영 인계](docs/runtime/a1-public-readiness.md#http-연결-계약)를 확인한다.
 
 ### 프로토타입에 대해
 
@@ -173,13 +176,13 @@ API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127
 
 후보 비교 영상 미리보기는 현재 세대 rank 1~3을 대상으로 첫 요청 때 구간 MP4를 준비한다. 재생은 후보 선택과 분리되며 `GET /cases/{case_id}/candidate-videos/{clip_ref}`의 inline·Range 응답을 사용한다. 구현 범위·상태·검증 한계는 [후보 영상 미리보기 결정](docs/modules/case/decisions/candidate-video-preview.md)을 확인한다.
 
-실제 웹 앱은 `apps/web`에서 구현이 진행 중이다(`CaseView` 소비 화면·컴포넌트). 프로토타입을 얼마나 참고했는지·구조가 어떻게 다른지는 `web` Owner가 관리하는 [`apps/web/README.md`](apps/web/README.md)와 `docs/modules/web/`이 소유한다.
+실제 웹 앱의 화면 구조와 프로토타입과의 관계는 [웹 앱 README](apps/web/README.md)와 [Web 문서](docs/modules/web/)에서 확인한다.
 
 ## 라이선스
 
 [MIT](LICENSE).
 
 
-### 기본 Worker OCR 연결 (Issue #468 작업 중)
+### 기본 Worker OCR
 
-`python -m daesingo.worker`의 production OCR 조립과 이미지 사전 다운로드, startup 실패 의미는 [Issue #468 Notes](docs/runtime/issue468-production-readout.md)에 기록한다. 상태: **IN_PROGRESS · Refs #468 · Related #460**.
+`python -m daesingo.worker`의 production OCR 초기화와 검증은 [Issue #468 구현 기록](docs/runtime/issue468-production-readout.md)을 확인한다.

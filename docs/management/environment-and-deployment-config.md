@@ -2,7 +2,7 @@
 
 **Refs #460 · #450 · 2026-11-01, `develop` `23a26987` 코드 기준**
 
-2026-11-03 Web build 전달 경로 추가: 지정 브랜치 기준이며 #541 consumer와 실제 배포의 통합·검증은 별도다([검증 기록](../runtime/reviews/kakao-map-build-config-2026-11-03.md)). 기존 운영 snapshot의 기준일은 유지한다.
+2026-11-03 Web build 전달 경로를 추가했다. 당시 임시 통합과 키 전달의 [검증 기록](../runtime/reviews/kakao-map-build-config-2026-11-03.md)은 그 시점의 근거다. 현재 코드의 키 소비는 §2.4를 참고한다.
 
 A-1 서버 연결 변경: `DAESINGO_RUNTIME_PUBLIC_MODE` 기본값은 `a1`이고 보호된
 `DAESINGO_RUNTIME_PUBLIC_POLICY_FILE`이 없거나 맞지 않으면 분석을 거부한다.
@@ -13,7 +13,7 @@ A-1 서버 연결 변경: `DAESINGO_RUNTIME_PUBLIC_MODE` 기본값은 `a1`이고
 
 - **실행 절차는 여기 없다.** 아래 §7의 기존 runbook으로 간다.
 - **API/Worker runtime 키별 의미·허용값·코드 기본값의 원문**은 [canonical guide](../runtime/local-runtime-environment.md)다. 이 문서는 그 표를 복제하지 않고 이름·필수 여부·값 분류만 모은다. Web build 입력의 원문은 이 문서 §2.4다.
-- 이 문서가 원문인 것은 [§3 Recording baseline v1·현재 적용값](#3-recording-초기-배포-baseline-v1)과, 흩어져 있던 이름·구조를 모은 인벤토리다.
+- 이 문서가 원문인 것은 [§3 Recording baseline v1·적용 이력](#3-recording-초기-배포-baseline-v1)과, 흩어져 있던 이름·구조를 모은 인벤토리다.
 - 실제 팀 환경의 값(account·instance·경로·hostname·허용 IP 등)과 Secret 보관 위치는 **팀 Notion 엔지니어링 위키의 「운영 비공개 정보」**에 있다.
 
 ## 1. 공개 구분 규칙
@@ -93,7 +93,7 @@ GitHub **Variable** 값은 공개 Actions 로그의 step `env`에 그대로 찍�
 - **카카오 JavaScript 키만** 허용한다. 브라우저에 그대로 포함되므로 다운로드·열람 가능하다. GitHub Secret에 저장하더라도 bundle을 비밀로 만들지 못한다. REST API 키·관리자 키·provider/DB/AWS credential을 이 입력이나 다른 `VITE_*`로 전달하지 않는다. build arg도 비밀 전달 수단이 아니다.
 - 키 소유 앱의 JavaScript SDK 도메인 허용 목록에 실제 서비스 origin을 등록하고 카카오맵 사용 설정을 확인해야 한다. 도메인 제한이 필요하다. 키·콘솔·SDK 접근 권한·실제 지도 로드는 별도 운영 검증이며 이 배선 검증으로 입증되지 않는다.
 - Vite는 `apps/web/package.json`의 `tsc -b && vite build` 실행 시 process env를 읽고 build 때 정적으로 치환한다. `.dockerignore`의 `.env*` 제외는 유지한다. API/Worker runtime 파일 변경이나 컨테이너 restart만으로 기존 Web bundle에 키가 반영되지 않는다.
-- 미설정 Docker build도 성공해야 한다. #541이 포함된 앱은 키 없음/SDK 실패 시 지도 칸만 숨기고 기존 신고 흐름을 유지한다. **현재 지정 브랜치에는 #541 consumer가 없다.** 배선과 #541은 별도 병합 가능하지만 지도가 포함된 배포 artifact에는 두 변경이 모두 필요하다. 임시 통합 검증은 병합·배포 완료가 아니다.
+- 미설정 Docker build도 성공해야 한다. 현재 [Web 코드](../../apps/web/src/components/kakaoMap.ts)는 키를 읽고 키가 없거나 SDK 로드가 실패하면 지도 칸을 숨긴다. 11/3 검수에서 consumer가 없던 대상은 당시 브랜치다. 최종 공개본의 키 공급과 지도 활성은 별도 증거로 확인한다.
 - 공개 build 입력이 달라지면 같은 source SHA라도 Web bytes와 manifest hash가 달라질 수 있다. revision marker만으로 지도 설정 반영을 판단하지 않는다. 실제 승격 검증은 **검증·게시한 정확한 image digest**, 그 image에서 추출한 Web 전체 파일 manifest와 `release.json`의 `web_sha256`, Web/API/image revision 일치를 함께 대조한다.
 - 기존 ECR `IMMUTABLE` tag는 source SHA이고 host는 `releases/<revision>` 및 `approvals/<revision>.json`을 사용한다. `deploy/ec2.py stage_web()`은 기존 경로의 image/manifest 불일치를 거부한다. **이미 게시·staging된 SHA에 키만 바꿔 다른 image를 재게시·덮어쓰지 않는다.** 키를 설정·교체한 새 build는 새 source revision으로 기존 CI/publish/승인 절차를 따른다. 같은 SHA의 여러 build variant 운영이 필요하면 image/tag/release/approval identity 설계에 대한 별도 결정이 필요하며 이번에 바꾸지 않는다.
 
@@ -103,7 +103,7 @@ GitHub **Variable** 값은 공개 Actions 로그의 step `env`에 그대로 찍�
 
 ### 3.1 과거 초기 배포·재현 기준
 
-아래는 `aws-e2e-20261031-v1` 당시의 baseline v1이다. 현재 Incident 적용값은 §3.2를 따른다.
+아래는 `aws-e2e-20261031-v1` 당시의 baseline v1이다. 11/2의 Incident 적용 기록은 §3.2에 있다.
 
 ```env
 DAESINGO_RECORDING_ANALYSIS_PROFILE_REF=aws-e2e-v1
@@ -126,7 +126,7 @@ DAESINGO_RECORDING_INCIDENT_CRF=23
 - 배포에서는 `MAX_BYTES + packet_margin_bytes < 실제 DB session max_allowed_packet`를 controller가 확인한다(현재 48 MiB + 8 MiB < 64 MiB).
 - 한도의 정확한 의미: [AnalysisSource 한도](../modules/recording/analysis-source-limits.md).
 
-### 3.2 현재 적용값 — Incident 720p (2026-11-02)
+### 3.2 Incident 720p 적용 기록 (2026-11-02)
 
 운영자 제공 적용 결과 기준으로 current config는 `aws-e2e-20261102-incident720-v1`,
 previous는 `aws-e2e-20261031-v1`이다. Incident만 다음 값으로 바뀌었다.
@@ -140,7 +140,7 @@ DAESINGO_RECORDING_INCIDENT_CRF=20
 Analysis 6개 값은 §3.1 그대로이며 `ANALYSIS_PROFILE_REF=aws-e2e-v1`을 유지한다.
 이미지·revision·비밀번호 등 나머지 설정도 유지됐다는 운영자 보고다.
 근거와 한계는 [Incident 720p 적용·실영상 E2E 기록](../runtime/experiments/2026-11-02-incident720-config-real-e2e.md)에 둔다.
-이는 현재 적용 기준이며 최적 화질·OCR 정확도·모든 입력의 성능이나 실제 신고 수용을 보장하지 않는다.
+위 값은 2026-11-02 검증 환경에 적용한 값이다. 최종 공개본의 encoding 설정과 최적 화질·OCR 정확도·입력별 성능은 별도 근거로 확인한다.
 
 ## 4. AWS E2E / production
 
