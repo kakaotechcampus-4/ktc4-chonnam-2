@@ -135,7 +135,9 @@ def test_points_before_v4_send_fine_prompt_without_gore_note(fake_run):
 
 def test_normalizer_keeps_verification(fake_run):
     norm = normalize.normalize_candidate(search_pipeline.run_s1(fake_run))
-    assert {c["verification"] for c in norm[0]["candidates"]} == {"NOT_OBSERVED", None}
+    # Coarse가 후보를 Fine top-k와 같은 3개로 자르므로 Fine을 거치지 않은 후보(None)는 남지 않는다
+    assert len(norm[0]["candidates"]) == search_pipeline.FINE_TOP_K
+    assert {c["verification"] for c in norm[0]["candidates"]} == {"NOT_OBSERVED"}
 
 
 # --- pipeline scorer -------------------------------------------------------
