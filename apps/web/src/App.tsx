@@ -22,7 +22,9 @@ export function App(): JSX.Element {
 
 function LiveEntry(props: { caseId: string | null; remembered: boolean }) {
   const [client] = useState(createPublicSamplesApi)
-  const [mode, setMode] = useState<'loading' | 'internal' | 'server' | 'bundle' | 'error'>('loading')
+  const [mode, setMode] = useState<'loading' | 'internal' | 'error' | {
+    upload: boolean; retentionSeconds: number
+  }>('loading')
   useEffect(() => {
     const url = new URL(location.href)
     if (url.searchParams.has('sample')) {
@@ -31,7 +33,7 @@ function LiveEntry(props: { caseId: string | null; remembered: boolean }) {
     }
     let active = true
     void client.intakeMode().then(result => {
-      if (active) setMode(result.ok ? result.data.upload_enabled ? 'bundle' : 'server'
+      if (active) setMode(result.ok ? { upload: result.data.upload_enabled, retentionSeconds: result.data.retention_ttl_sec }
         : result.status === 404 ? 'internal' : 'error')
     })
     return () => { active = false }
@@ -39,7 +41,7 @@ function LiveEntry(props: { caseId: string | null; remembered: boolean }) {
   if (mode === 'loading') return <main className="web-main"><p role="status">체험 설정을 확인하고 있어요.</p></main>
   if (mode === 'error') return <main className="web-main"><p role="alert">체험에 연결할 수 없어요. 잠시 뒤 새로고침해 주세요.</p></main>
   if (mode === 'internal') return <ApiFlow {...props} />
-  return <OfficialSampleEntry {...props} client={client} upload={mode === 'bundle'} />
+  return <OfficialSampleEntry {...props} client={client} {...mode} />
 }
 
 // `?dev` 스냅샷 보기 — 라우터·서버·로컬 상태 머신 없이 fixture 스냅샷만 넘겨 본다.

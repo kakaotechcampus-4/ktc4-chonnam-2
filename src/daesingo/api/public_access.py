@@ -196,16 +196,14 @@ class PublicHTTPMiddleware:
                 else:
                     case_id = path.split("/")[2]
                     await _storage_call(public.transaction,
-                        lambda conn: public.ownership.require_owner(conn, case_id, owner,
-                            deleting=scope["method"] == "DELETE"))
+                        lambda conn: public.ownership.require_owner(conn, case_id, owner))
                 token = _actor.set(owner)
-                if scope["method"] != "DELETE":
-                    scanner = next(s for s in public.cleanup.scanners if s.kind == "orphan")
-                    guard = scanner.in_use()
-                    def enter_guard():
-                        guard.__enter__()
-                        guard_entered[0] = True
-                    await _storage_call(enter_guard)
+                scanner = next(s for s in public.cleanup.scanners if s.kind == "orphan")
+                guard = scanner.in_use()
+                def enter_guard():
+                    guard.__enter__()
+                    guard_entered[0] = True
+                await _storage_call(enter_guard)
             async def bounded_receive():
                 nonlocal body_complete
                 if body_complete or bundle_upload:
@@ -268,8 +266,10 @@ def public_router(composition):
     @router.get("/public/intake-mode")
     def intake_mode():
         public.configured()
-        return JSONResponse({"upload_enabled": public.policy.input_mode == "upload_bundle"},
-                            headers={"Cache-Control": "no-store"})
+        return JSONResponse({
+            "upload_enabled": public.policy.input_mode == "upload_bundle",
+            "retention_ttl_sec": min(public.policy.case_ttl_sec, public.policy.source_ttl_sec),
+        }, headers={"Cache-Control": "no-store"})
 
     @router.post("/public/session")
     def session(request: Request):
@@ -336,14 +336,6 @@ def public_router(composition):
         except Exception:
             raise RuntimeError("bundle response unavailable after commit") from None
         return JSONResponse({"case_id": case_id, "case_view": view}, status_code=201,
-                            headers={"Cache-Control": "private, no-store"})
-
-    @router.delete("/cases/{case_id}")
-    async def delete_case(case_id: str):
-        await _storage_call(public.transaction, lambda conn: public.store.begin_delete(
-            conn, case_id, owner=public.owner()))
-        result = await _storage_call(public.retention.purge, case_id)
-        return JSONResponse(result, status_code=200 if result["state"] == "DELETED" else 202,
                             headers={"Cache-Control": "private, no-store"})
 
     return router

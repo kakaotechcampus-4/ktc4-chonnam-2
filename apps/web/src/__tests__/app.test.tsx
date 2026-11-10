@@ -49,7 +49,7 @@ it('주소에 case가 없으면 기억한 case로 이어가고, 주소의 case�
 })
 
 it('공개 모드에서는 /와 이전 sample 주소가 같은 입구이고 case는 보존한다', async () => {
-  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ upload_enabled: true })))
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ upload_enabled: true, retention_ttl_sec: 86400 })))
   history.replaceState(null, '', '/?sample&case=c1')
   render(<App />)
   expect(await screen.findByText('sample c1')).toBeTruthy()

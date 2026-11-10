@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type JSX, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react'
 import { ChevronDown, CircleAlert } from 'lucide-react'
 import carSide from '../assets/car/car-side.webp'
 import carDoorOpen from '../assets/car/car-door-open.webp'
@@ -150,7 +150,7 @@ export function UploadScreen(props: {
   officialBundle?: boolean
   registeredCount?: number
   selectionDisabled?: boolean
-  cardActions?: ReactNode
+  retentionNotice?: string
 }): JSX.Element {
   const situationId = useId()
   // 동의를 기다리는 파일 — 동의하기 전에는 onFiles(서버 업로드)를 부르지 않는다
@@ -467,7 +467,7 @@ export function UploadScreen(props: {
             {fx && <SpeedLines items={fx.lines} />}
           </div>
         )}
-        {props.cardActions && <div className="rs-case-actions">{props.cardActions}</div>}
+        {props.retentionNotice && <p className="rs-hint">{props.retentionNotice}</p>}
         {state === 'done' && props.skipped.length > 0 && (
           <p className="skip-list">
             올리지 못했거나 열 수 없는 파일 {props.skipped.length}개는 건너뛰었어요: {props.skipped.join(', ')}. 나머지
@@ -523,7 +523,7 @@ export function UploadScreen(props: {
             <ul>
               <li>영상에는 번호판 · 얼굴 · 위치 같은 개인정보가 담길 수 있어요.</li>
               <li>장면을 찾기 위해 영상 일부가 외부 AI 서비스로 전송돼요.</li>
-              <li>올린 영상은 최대 24시간, 분석 결과와 신고자료는 최대 7일 보관해요.</li>
+              <li>{props.retentionNotice ?? '올린 영상은 최대 24시간, 분석 결과와 신고자료는 최대 7일 보관해요.'}</li>
               <li>{props.officialBundle ? '노션에서 받은 공식 샘플만 등록할 수 있어요.' : '직접 찍었거나 올릴 권한이 있는 영상만 올려 주세요.'}</li>
               <li>대신고는 신고를 대신 접수하거나 위반을 확정하지 않아요.</li>
             </ul>

@@ -44,7 +44,7 @@ const CORRECTED_TOAST = '본문과 제목이 수정되었어요'
 const CORRECTED_TOAST_MS = 3000
 
 export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?: boolean; intake?: ReactNode;
-  uploadBundle?: FlowOptions['uploadBundle']; onCase?: (id: string) => void; caseActions?: ReactNode }): JSX.Element {
+  uploadBundle?: FlowOptions['uploadBundle']; retentionNotice?: string }): JSX.Element {
   const [api] = useState(() => props.api ?? createApi())
   const { state, addFiles, send, resume } = useCaseFlow(api, { uploadBundle: props.uploadBundle })
   const { view } = state
@@ -80,8 +80,8 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   // 서버가 돌려준 case만 기억한다 — 없는 case 주소를 열어도 기억해 둔 내 case를 덮지 않는다
   const seen = view?.case_id
   useEffect(() => {
-    if (seen) { rememberCase(seen); props.onCase?.(seen) }
-  }, [seen, props.onCase])
+    if (seen) rememberCase(seen)
+  }, [seen])
   // 기억한 case가 서버에 없으면(보관 기간이 지나 지워짐 등) 잊는다. 주소 없이 이어받던 중이면 새 신고로 시작한다 —
   // 사용자가 연 적 없는 「찾을 수 없어요」를 보이지 않는다.
   const gone = state.error?.code === 'http.not_found'
@@ -227,8 +227,6 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             </section>
           </div>
         ) : page}
-        {props.caseActions && (analysing || state.viewUnavailable || props.intake) &&
-          <div className="rs-case-actions">{props.caseActions}</div>}
       </main>
       {/* 색·글꼴 변수는 .rs 안에만 있다 — main 밖이라 rs를 함께 단다 */}
       <p className="rs rs-float-toast" role="status" aria-live="polite">
@@ -260,7 +258,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
         registeredCount={props.uploadBundle ? already : undefined}
         officialBundle={!!props.uploadBundle}
         selectionDisabled={!!props.uploadBundle && (state.busy || already > 0)}
-        cardActions={props.caseActions}
+        retentionNotice={props.retentionNotice}
         // 같은 신고에서는 한 번만 묻는다 — case가 생기면 동의를 받은 뒤다. 새 신고(caseId 없음)는 다시 묻는다
         consent={!state.caseId}
         situation={situation}

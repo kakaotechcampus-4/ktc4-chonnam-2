@@ -62,8 +62,10 @@ export function createPublicSamplesApi(options: { fetch?: typeof fetch } = {}) {
   return {
     cases,
     async intakeMode() {
-      const result = await call<{ upload_enabled: boolean }>('/public/intake-mode')
-      return result.ok && typeof result.data?.upload_enabled !== 'boolean'
+      const result = await call<{ upload_enabled: boolean; retention_ttl_sec: number }>('/public/intake-mode')
+      if (!result.ok) return result
+      const data = result.data
+      return typeof data?.upload_enabled !== 'boolean' || !Number.isSafeInteger(data.retention_ttl_sec) || data.retention_ttl_sec <= 0
         ? failed(result.status, INVALID_RESPONSE) : result
     },
     async listSamples(): Promise<ApiResult<{ samples: OfficialSample[] }>> {
@@ -98,7 +100,6 @@ export function createPublicSamplesApi(options: { fetch?: typeof fetch } = {}) {
       return result.ok && (!result.data || result.data.case_id !== caseId || !validView(result.data.case_view, caseId))
         ? failed(result.status, INVALID_RESPONSE) : result
     },
-    deleteCase: (caseId: string) => call<{ state: 'DELETING' | 'DELETED' }>(`/cases/${encodeURIComponent(caseId)}`, { method: 'DELETE' }),
   }
 }
 export type PublicSamplesApi = ReturnType<typeof createPublicSamplesApi>

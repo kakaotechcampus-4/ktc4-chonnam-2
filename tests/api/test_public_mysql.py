@@ -347,7 +347,8 @@ def test_bundle_upload_rejects_before_probe_and_rolls_back_all_rows(public_api, 
 
 
 @pytest.mark.mysql_check("public_a1", "deletion")
-def test_default_delete_removes_source_chunks_case_and_keeps_official_and_budget_ledger(public_api):
+def test_expiry_removes_source_chunks_case_and_keeps_official_and_budget_ledger(public_api):
+    from datetime import timedelta
     from daesingo.recording.mysql_repository import entries, chunks, _key
     client, composition, engine, canonical = public_api
     cid, _ = register(client)
@@ -362,8 +363,10 @@ def test_default_delete_removes_source_chunks_case_and_keeps_official_and_budget
         from daesingo.common.public_runtime.repository import now
         conn.execute(t.reservations.insert().values(usage_id="historic-cost", execution_ref="past", case_id=cid,
             operation="SEARCH_COARSE", provider_label="fake:test", amount_micros=10, created_at=now(conn)))
-    result = client.delete(f"/cases/{cid}", headers={"Origin": "https://testserver"})
-    assert result.status_code == 200 and result.json()["state"] == "DELETED"
+        conn.execute(t.cases.update().where(t.cases.c.case_id == cid).values(
+            source_expires_at=now(conn) - timedelta(seconds=1)))
+    result = composition.public.retention.scan()
+    assert result.count == 1 and result.failed == 0
     assert client.get(f"/cases/{cid}/view").status_code == 404
     assert not list((composition.startup.config.media_root / "source").glob("*"))
     assert (canonical / "part.mp4").read_bytes() == b"synthetic!"
