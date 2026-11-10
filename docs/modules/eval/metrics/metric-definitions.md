@@ -32,17 +32,12 @@
 | --- | --- | --- | --- |
 | Candidate | `recall_at` 1/3/10 · **`localization_recall_at`** · **`type_accuracy_given_localized`** · `onset_error_sec` · `containment_rate` · `fp_per_clip` · `by_type` | **확정 · 구현** | 예 (B tier) |
 | Classification | `recall_macro` · `precision_macro` · `recall_by_label` · 5×5 `confusion` · `target_correctness` | **확정 · 구현** | 예. `NONE` 행·열은 `ab_mixed` manifest 에서만 채워진다 |
-| ~~Classification `by_condition`~~ | ~~촬영조건별 정확도~~ | **철회 (`cl2`)** | 아니오 — 근거는 §4-4 |
 | Plate | `exact_accuracy` · `wrong_accept_rate` · `abstention_recall` · **`readable_abstention_rate`** · **`abstain_reasons`** | **확정 · 구현** | 예 — mock tier와 AI-Hub 번호판 crop(`private_aihub172_plate`, 비공개 root) |
 | Cost | `cost_per_case` · `cost_per_source_video_hour` · `total` · **`latency_ms`** · **`latency_per_source_video_hour`** | **확정 · 구현** | 예 (`UsageRecord` 가 있을 때) |
 | Fine · 최종 (`pl1`) | Fine 판정 분포 · `fine_confirm_rate` · `fine_reject_rate` · 최종 `recall` · `fp_per_negative_clip` | **구현 (10/28)** | 예 — prediction에 Fine 판정(`verification`)이 있을 때. §6-2 |
 | Persistence (`t1`) | `detected_ratio` · `longest_run` · `gaps` · `frame_recall` | **구현** | 예 — 차량 박스 정답지가 있을 때(`private_aihub172_track1`). §6-3 |
-| Timestamp | source agreement · offset error · overlay validation · UNKNOWN/CONFLICT rate | 확정 · **미구현** | 아니오 |
-| E2E | Final Event Recall@3 · 사용자 검토 후보 수 | 확정 · 일부 구현 | 상위 3개 후보에 Fine을 돌린 `pl1` 최종 `recall`로 근사한다. 제품 흐름(사용자가 고른 후보에만 Fine) 그대로의 E2E는 아니다 |
-| Product | 사용자 직접 작업시간 · 준비 완료율 · handoff 행동 | 확정 · **코드 채점 아님** | 별도 사용자 테스트 |
 
-「확정 · 미구현」은 지표 이름과 배치가 §9-3 에서 정해졌지만 scorer 가 없다는 뜻이다.
-이 문서의 3~6절은 **구현된 것만** 정의한다. 미구현 지표의 계산 의미는 구현 시점에 여기에 추가한다.
+이 문서의 3~6절은 구현된 지표의 계산 방법을 정의한다.
 
 ---
 
@@ -523,27 +518,7 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 
 ---
 
-## 10. 아직 확정되지 않은 것
-
-| # | 항목 | 지표에 미치는 영향 |
-| --- | --- | --- |
-| F8 | `tolerance_sec = 2.0` 과 bbox IoU `0.5` 가 실험으로 정해지지 않았다 | 두 값은 **서로 무관**하다(1-D 시간 vs 2-D 공간). 같은 값인 것은 우연 |
-| F1 | 실제 주행 영상의 번호판 정답 보강 | C tier 영상은 확보했다. 비공개 AI-Hub crop의 plate 진단과 실제 주행 영상의 판독 성능은 구분한다. 데이터 범위는 [데이터셋 목록](../datasets/README.md)을 따른다 |
-| F2 | 화면시각 라벨 없음 | Timestamp 지표 전체. **라벨링이 필요하다** |
-| F4 | hard-negative 대조쌍 없음 | Hard-negative FPR. **라벨링이 필요하다** |
-| F5 | 제품 사용자 흐름 그대로의 E2E 평가 | Search 실측과 Coarse → Fine 채점(`pl1`)은 구현돼 있다. 상위 3개 후보에 Fine을 실행한 근사값을 사용자가 선택한 후보만 검증하는 제품 E2E와 구분한다. [실험 기록](../experiments/2026-10-28-search-points-pipeline.md) |
-| F3 | B tier의 작은 사건 표본 | `b_youtube`는 10건, 확장판 `b_youtube_m4`는 16건이다. 유형별 사건 수와 미포함 유형은 선택한 manifest의 GT와 결과 `by_type`을 확인한다 |
-| — | `NONE` 은 `a_aihub` 단독 채점에서 여전히 0 | manifest 선택이 곧 측정 범위다 (§4-3) |
-| — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
-| — | 독립적인 최종 일반화 성능 측정 없음 | 현재 수치는 보유 데이터의 개발 중 반복 측정이다. 최종 제품 성능으로 인용하지 않는다 |
-| — | 자동 검증 범위 | `python-tests.yml`이 eval 테스트를 실행한다. 원본 영상과 API 키가 필요한 실험 재실행까지 CI가 보장하지는 않는다 |
-| — | **plate 텍스트 정규화 규칙이 없다** | `exact_accuracy` 는 지금 `value == true_text` 문자열 **완전 일치**다(§5). 공백·하이픈·전각/반각을 어떻게 다룰지가 정의돼 있지 않다. eval 소유이고 eval 이 닫되, C tier 가 없어 실데이터 번호판 정답지가 0건이라 **실측 없이 정하지 않는다.** **기록 요건은 먼저 닫았다**(§5-3) — 규칙이 없어도 「어떤 정규화 위에서 잰 값인가」를 적게 하면 수치가 조용히 어긋나지는 않는다 |
-| — | **`legibility` 라벨이 eval 정답지에만 있다** | `wrong_accept_rate`·`abstention_recall` 은 분모가 **GT 의 legibility** 다(§5-1). readout 의 baseline 측정에는 이 라벨이 없어 **계산 자체가 불가능**하고, 그쪽 「틀리게 확정 / 제대로 포기」는 분모가 **예측 기준**이라 이름이 비슷해도 다른 값이다(readout PR [#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120)). C tier 정답지를 만들 때 `legibility` 를 같이 라벨링해야 두 축이 이어진다 |
-| — | **plate 천장은 전처리로 올라가지 않는다** | 같은 AI-Hub `172` crop 에서 **학습 모델 CER 0.76% vs pretrained 55.3%** 다 (Sensors 2026 · readout PR [#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120) §4). plate 실측이 낮게 나올 때 **원인을 전처리에서 찾지 않는다** — 파인튜닝 전까지의 천장이다 |
-| — | **`plate_px_height` 로 성능을 자르지 않는다** | 검출 박스가 텍스트 줄 단위라 **2줄 번호판에서는 아랫줄만** 감싼다. 계약 `plate-readout/v1.3` 은 「좌표로 성립하는 값인가」까지만 고정하고 **「박스가 번호판의 무엇을 감싸는가」는 정하지 않는다.** 두 값을 한 축에 놓으면 「해상도가 낮으면 못 읽는다」로 보이지만 실제로는 「2줄이 섞였다」일 수 있다 — `by_condition` 과 같은 함정이다(§4-4). **계약이 정해지기 전까지 이 축을 열지 않는다.** 실물: readout PR [#113](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/113) 의 `clip_20260810_175721_evt_1.json` — 황색 2줄이 `bbox_xywh [930,837,103,36]` · `plate_px_height 36` · `value "바5215"` · `abstained false` 로 확정된다 |
-| — | **정답지에 번호판 「1줄/2줄」 라벨이 없다** | `MIN_ASPECT` 필터가 1줄 기준이라 **2줄이 1줄처럼 파이프라인에 들어온다**(readout `paddle_provider.py`). 정답지에 줄 수가 없으면 plate 지표에서 그 혼입을 **사후에 분리할 수 없다.** C tier 정답지를 만들 때 `legibility` 와 함께 라벨링한다 |
-| — | **촬영조건별 성능을 못 잰다** | `by_condition` 을 `cl2` 에서 **철회했다**(§4-4) — AI-Hub 71555 의 조명·날씨 라벨이 무작위에 가까웠다. `road_type` 은 멀쩡하지만 원래 의도한 축이 아니라 갈아타지 않았다. **조명·날씨별 성능을 재려면 라벨이 새로 필요하다** — 코드로 못 푼다 |
-| — | **candidate·classification 에 판단 근거가 없다** | `CandidateEvent` 계약에 근거 필드가 **아예 없다**. plate 는 `abstain_reason` 으로 이었지만(§5-0-1) 이쪽은 옮길 값 자체가 없다. **계약 개정 사안이라 `search` Owner 소유** |
+## 10. 구현 이력
 
 **해소된 항목** (2026-09-16~18): F7(1:1 배정) · F11(깨진 bbox 카운터) · F12(`NONE` 데이터 경로) ·
 F13(시퀀스 불변식 검사기) · F10(유형별 대상 객체) · F6(plate 채점) · F3(B tier 123클립 확장) ·
@@ -552,10 +527,7 @@ F13(시퀀스 불변식 검사기) · F10(유형별 대상 객체) · F6(plate �
 
 **멘토 피드백 해소** (2026-09-20 · 안용준 멘토): ① 판독 판단 근거 보존(§5-0-1 · `n1 → n2`) ·
 ② 기권만 하는 모델(§5-0 · `p1 → p2`) · ③ 채점 결과 보존(§7-7 · §9) · ④ 속도(§6-1 · `c1 → c2`) ·
-⑤ 시간 축과 유형 축 분리(§3-1-1 · `s3 → s4`). ①의 candidate·classification 쪽은 계약에 필드가
-없어 위 표에 미결로 남겼다.
-
-미결은 미결로 둔다. 이 표의 항목을 「대충 정한 값」으로 채워 문서를 완성시키지 않는다.
+⑤ 시간 축과 유형 축 분리(§3-1-1 · `s3 → s4`).
 
 ---
 

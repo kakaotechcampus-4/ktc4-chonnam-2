@@ -62,7 +62,6 @@ case:
 | 지표 | 계산 | 단위 |
 | --- | --- | --- |
 | `label_acc` | 5×5 혼동행렬. 종별 분리 + macro 평균 | case |
-| `onset_frame_error` | `\|pred − onset_frame\|`. median / p90 / ±2프레임 이내 비율 | 맞힌 case |
 | `target_correct` | 예측 대상이 `violation_target_bbox`와 일치 | 맞힌 case |
 
 **절대 금지**: 이 정확도를 제품 성능으로 발표. 위반 시퀀스만 모은 폴더라 base rate가 인위적이다.
@@ -115,13 +114,6 @@ case:
 | --- | --- |
 | `label_acc` (5×5 + macro) | `confusion`(5×5) · `recall_macro` · `precision_macro` · `recall_by_label` |
 | `target_correct` | `target_correctness` — bbox가 `null`인 GT 항목은 **분모에서 제외**(미탐으로 세지 않는다) |
-| `onset_frame_error` | 미구현 (위 ①) |
-
-### 2-3. 미채택·미구현으로 남은 것
-
-- **`label_folder`/`label_annotation` 병기 · `label_conflict` · `--polarity-rule`** — `g1`은 `label` 단일이다. 샘플링이 폴더 기준(type-stratified, seed `20260906`, 종당 30개)이라 두 출처가 갈리는 `_0000000003` 유형이 표본 120건에 들어오지 않았다. **원문의 문제의식은 유효하다** — 충돌 케이스를 표본에 넣는 순간 다시 필요해진다.
-- `group_key`(그룹 누수 방지) · `unjudgeable` / `unjudgeable_reason` · `split`의 `locked` 값(현재 전부 `DEV`).
-- `--frames-per-case` — 샘플러 인자는 `--per-type`·`--seed`뿐이다(`eval/tools/sample_aihub.py`).
 
 ### 2-4. 그대로 유효한 것
 
