@@ -56,6 +56,7 @@ Runtime 문서는 Architecture나 Final Contract schema를 다시 정의하지 �
 | [`local-runtime-environment.md`](./local-runtime-environment.md) | 현재 로컬 Compose/API/Worker canonical 실행환경: 실제 env·secret 경계·버전·Recording profile 미결·production OCR·실행 순서·8종 등록 확인 (#460) |
 | [`runtime-tech-spec.md`](./runtime-tech-spec.md) | DB Queue, claim, JobExecution persistence, retry, lease/heartbeat, STALE recovery, Usage persistence, Worker dispatch |
 | [`ops-spec.md`](./ops-spec.md) | EC2/Docker Compose, logging, monitoring, health 운영, storage/cleanup/retention, capacity, CI/CD, rollback 원칙 |
+| [A-1 운영 인계](./a1-public-readiness.md#2026-11-10-최종-aws-공개-배포) | 최종 공개 배포 SHA, 실제 운영 한도, AWS 단일 체험 및 5세션 검수 범위 |
 | [`deployment-runbook.md`](./deployment-runbook.md) | 배포 전 확인, revision 식별, health/smoke 검증, rollback, 장애 원인 축소 실행 체크리스트 |
 | [`rt14-deployment.md`](./rt14-deployment.md) | RT-14 준비 도구·보호 입력·CI/ECR/SSM/Compose·rollback 명령, 미결 정책/실계정 acceptance와 증거 경계 (#450) |
 | [`rt14-deployment-design.md`](./rt14-deployment-design.md) | RT-14 Decision Gate 승인본(2026-10-30) — Gate별 상태(ACCEPT · 구현 후 acceptance 대기 · 변경 필요 · 후속), 근거, 공개 endpoint 모델, 남은 구현 변경 · blocker, 공개 운영 hardening 경계 (#450) |

@@ -6,8 +6,7 @@
 
 A-1 서버 연결 변경: `DAESINGO_RUNTIME_PUBLIC_MODE` 기본값은 `a1`이고 보호된
 `DAESINGO_RUNTIME_PUBLIC_POLICY_FILE`이 없거나 맞지 않으면 분석을 거부한다.
-기존 내부 전용 설정은 `internal`을 명시한다. 정책·head7·공유 temp·복구 조건과
-운영 미적용 상태는 [A-1 준비 기록](../runtime/a1-public-readiness.md)을 확인한다.
+내부 전용 설정은 `internal`을 명시한다. 설정·권한·복구 조건은 [A-1 서버 연결](../runtime/a1-public-readiness.md), 실제 운영값과 검수 범위는 [최종 AWS 공개 배포](../runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)를 참고한다.
 
 서버를 띄우거나 Local E2E · AWS E2E · publish/deploy를 할 때 필요한 **설정 이름**과
 그 값이 공개 가능한지, 실제 값이 어디에 있는지를 한 곳에서 찾기 위한 문서다.
@@ -236,6 +235,8 @@ controller 입력 검사(파일 mode가 정확히 0400/0700, symlink 금지, 소
 
 ### 4.7 Public ingress (Caddy · DDNS)
 
+아래 Caddy 설정과 IP 허용 목록은 2026-11-01 문서 기준의 제한 검수 구성이다. 공식 샘플 외부 공개 운영은 [최종 AWS 공개 배포](../runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)를 참고한다.
+
 | 이름 / 파일 | 위치 | 값 분류 |
 | --- | --- | --- |
 | `RT14_PUBLIC_HOSTNAME` | GitHub Variable + host Caddy `EnvironmentFile` | 공개 DNS 이름(두 곳 값 동일) |
@@ -246,7 +247,7 @@ controller 입력 검사(파일 mode가 정확히 0400/0700, symlink 금지, 소
 | DuckDNS token | `/etc/daesingo-ddns/token`(root 0400, 상위 0700) | **credential** |
 | release Web mount | `srv-daesingo.mount`: `/opt/daesingo/releases` → `/srv/daesingo`, `bind,ro,nosuid,nodev,noexec` | 공개 구조 |
 
-**host Caddyfile은 repo [`deploy/Caddyfile`](../../deploy/Caddyfile)과 다르다.** host에는 다음이 추가되어 있다.
+**제한 검수 때 사용한 host Caddyfile은 저장소의 [`deploy/Caddyfile`](../../deploy/Caddyfile)과 달랐다.** 검수용 구성에는 다음 규칙이 있었다.
 
 ```caddyfile
 @outside not remote_ip {$RT14_E2E_ALLOWED_IP}
@@ -259,7 +260,7 @@ route {
 }
 ```
 
-- 앱 인증이 없는 현재 상태에서 API를 허용 IP로만 여는 장치다. **repo 파일을 그대로 설치하면 인증 없는 API가 인터넷 전체에 열린다.**
+- 제한 검수에서는 이 규칙으로 인증 없이 제공되는 API의 접근을 허용 IP로 제한했다. 당시 검수 구성을 재현할 때는 저장소의 Caddyfile을 그대로 설치하면 이 IP 제한이 적용되지 않는다.
 - allowlist가 있는 동안 GitHub-hosted runner의 외부 smoke는 403이고, deploy/rollback/smoke job은 SSM 성공 뒤에도 FAIL로 끝난다. 외부 smoke는 허용 IP에서 `deploy/public_smoke.py`로 한다.
 - 현재 EIP를 쓰므로 DDNS timer는 비활성 백업이다([공개 배포 Notes §2](../runtime/rt14-public-deployment.md#ddns-운영)).
 

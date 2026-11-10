@@ -267,7 +267,7 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 
 #### 공개 운영 모드 결정 (2026-11-05, PM)
 
-**11/10 적용 기록.** AWS 배포 `f6976ada`에서 공식 샘플 전용 A-1을 공개했다. 기본 주소에서 공식 3분·10분 묶음의 MP4를 올리며, 서버가 공식 파일 여부를 검사한다. 별도 세션의 미리보기 접근 차단도 확인했다. 실제 적용값과 검수 범위는 [11/10 AWS 공개 운영 인계](./a1-public-readiness.md#2026-11-10-aws-공개-운영-인계)에 기록한다.
+**11/10 최종 적용 기록.** AWS 배포 `61d9b7ea`에서 공식 샘플 전용 A-1을 운영한다. 기본 주소에서 공식 3분·10분 묶음의 MP4를 올리며, 서버가 공식 파일 여부를 검사한다. 별도 세션의 미리보기 접근 차단도 확인했다. 실제 적용값과 검수 범위는 [최종 AWS 공개 배포](./a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)에 기록한다.
 
 아래 표와 설명은 **11/5 당시 결정과 초기 조건**이다.
 
@@ -310,7 +310,7 @@ AWS 실행 상태 — 2026-10-30, `develop` `7bab60bc`:
 
 #### 공개 체험 사용량·비용 제한안 (2026-11-05 PM 정책, 구현·승인 전)
 
-아래는 **11/5 초기 운영 제한안**이다. A-1의 실제 접수 슬롯, 세션·IP 한도, 로컬 작업 한도와 Worker 수는 [11/10 AWS 공개 운영 인계](./a1-public-readiness.md#2026-11-10-aws-공개-운영-인계)에서 관리한다. 탐색과 로컬 작업은 별도로 집계한다. 공개 배포는 `elice_supported`로 운영하며 원화 금액은 운영 목표로 관리한다. 이 모드는 횟수·동시 접수 제한, 긴급 중단, 사용량 원장을 유지한다.
+아래는 **11/5 초기 운영 제한안**이다. A-1의 실제 접수 슬롯, 세션당 탐색 한도, IP당 한도를 포함한 로컬 작업 한도와 Worker 수는 [최종 AWS 공개 배포](./a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)에서 관리한다. 탐색과 로컬 작업은 별도로 집계한다. 공개 배포는 `elice_supported`로 운영하며 원화 금액은 운영 목표로 관리한다. 이 모드는 횟수·동시 접수 제한, 긴급 중단, 사용량 원장을 유지한다.
 
 | 항목 | 시작 목표값 | 필수 검증·비고 |
 | --- | --- | --- |
@@ -812,9 +812,9 @@ Object Storage를 baseline 의무로 두지 않는다.
 
 ## 14. Retention / Cleanup
 
-**A-1의 자동 정리.** 원본과 체험의 보관 기간 중 먼저 끝나는 시점부터 해당 체험의 전용 영상·분석 결과·신고자료를 자동 정리 대상으로 삼는다. 물리 정리 시점은 스캔 주기와 진행 중인 작업 상태에 따라 달라진다. 공개본과 운영 검수 범위는 [11/10 AWS 공개 운영 인계](./a1-public-readiness.md#2026-11-10-aws-공개-운영-인계), 구현 규칙은 [A-1 삭제와 보존](./a1-public-readiness.md#삭제와-보존)에 둔다.
+**A-1의 자동 정리.** 원본과 체험의 보관 기간 중 먼저 끝나는 시점부터 해당 체험의 전용 영상·분석 결과·신고자료를 자동 정리 대상으로 삼는다. 물리 정리 시점은 스캔 주기와 진행 중인 작업 상태에 따라 달라진다. 공개본과 운영 검수 범위는 [최종 AWS 공개 배포](./a1-public-readiness.md#2026-11-10-최종-aws-공개-배포), 구현 규칙은 [A-1 삭제와 보존](./a1-public-readiness.md#삭제와-보존)에 둔다.
 
-[#685](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/685)의 공개 직접 삭제 경로 제거와 보관 안내는 후속 AWS 배포의 확인 항목이다. 운영자 정리와 만료 자동 정리는 유지한다.
+[#685](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/685)의 변경을 `61d9b7ea`에서 확인했다. 공개 화면의 삭제 버튼·확인창이 제거됐고, 소유 세션의 직접 `DELETE` 요청은 `404`를 반환했다. 현재 운영 설정에서는 체험 시작 24시간 후부터 자동 정리 대상이 된다. 운영자 정리와 만료 자동 정리는 유지한다.
 
 아래 표는 **2026-11-05 PM의 초기 보관 목표**다. 서비스 종료·외부 Provider·로그 등 각 정리 경계의 검증은 별도로 기록한다. [#71](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/71)
 
@@ -1089,7 +1089,7 @@ coverage는 미검증 경로를 찾는 보조지표로 사용하며 근거 없�
 
 **정책 확정은 배포 승인·acceptance PASS가 아니다.** 실제 배포 revision, 실행 일시, 결과·증거 링크와 담당자 판단을 기록한 후 PM이 공개 모드를 승인한다.
 
-**11/10 A-1 검수 기록.** `f6976ada`에서 공식 10분 단일 E2E, 비공식 입력 거부, 미리보기 세션 격리, 긴급 중단, 외부 진입을 확인했다. 검수한 항목과 범위는 [11/10 AWS 공개 운영 인계](./a1-public-readiness.md#2026-11-10-aws-공개-운영-인계)를 따른다. 최종 후보의 AWS 검수와 [#677의 5세션 시험](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/677)은 각각 별도로 남긴다. 아래 표의 판정은 11/5 당시 기준이다.
+**11/10 A-1 검수 기록.** 최종 공개본 `61d9b7ea`에서 공식 10분 묶음 업로드부터 신고영상 자동 생성·다운로드까지 확인했다. 후보별 재생·탐색과 다른 세션의 영상 URL·Range 차단, 직접 삭제 차단과 보관 안내도 확인했다. 비공식 입력 거부와 긴급 중단의 AWS 검수는 [이전 배포 기록](./a1-public-readiness.md#2026-11-10-aws-공개-운영-인계)을 참고한다. 공개 전환 후에는 [공식 3분 샘플 5세션 검증](./a1-public-readiness.md#2026-11-10-677-aws-5세션-검증)을 별도로 진행했다. 아래 표의 판정은 11/5 당시 기준이다.
 
 | Gate | 배포 전 확인할 사항 | 검증 담당 | 초기 판정 |
 | --- | --- | --- | --- |
@@ -1145,12 +1145,12 @@ Prometheus/Grafana/OpenTelemetry full stack
 - [x] build-time / runtime configuration 주입 방식과 변수 ownership — §4-1 · Tech Spec §15.2 (RD-07)
 - [ ] immutable release 식별 + known-good revision 기록 + rollback exact command — RD-12c · RD-12e 승인(2026-10-30). 구현·복구 절차는 [RT-14 공개 배포 Notes](rt14-public-deployment.md)와 [호환 release 절차](rt14-preview-bridge.md) 참조. 대상 release의 실제 rollback rehearsal 증거가 필요하다
 - [ ] post-deploy health/readiness + external smoke test 연결 — Run Command `Success`만으로 성공 판정하지 않는다(§2-1). 2026-10-31 제한 접근의 외부 smoke는 [공개 배포 Notes](rt14-public-deployment.md)로 구현됐고 검증자 PC에서 PASS했다. Caddy `/32` 제한 중 workflow 단계 smoke는 runner에서 403이라 공개 범위 확대 때 함께 정한다(§2-2)
-- [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** 공개 모델(same-origin · HTTPS · Caddy host 인프라 · release-bound Web artifact · SG 80/443만 · ~~DDNS 우선 · EIP 비필수~~ EIP + DuckDNS, updater는 백업)은 [RT-14 배포 설계](./rt14-deployment-design.md) §13, 2026-10-30 Gate 승인 · 2026-10-31 RD-14a 갱신. 2026-10-31 검증자 1명(`/32`) 제한 public acceptance PASS([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 11/10 A-1의 외부 진입 확인은 [11/10 AWS 공개 운영 인계](./a1-public-readiness.md#2026-11-10-aws-공개-운영-인계)에 기록했다
+- [ ] public endpoint / domain / TLS(RD-14) — **최종 제출 요건으로 트리거됨(§2-3).** 공개 모델(same-origin · HTTPS · Caddy host 인프라 · release-bound Web artifact · SG 80/443만 · ~~DDNS 우선 · EIP 비필수~~ EIP + DuckDNS, updater는 백업)은 [RT-14 배포 설계](./rt14-deployment-design.md) §13, 2026-10-30 Gate 승인 · 2026-10-31 RD-14a 갱신. 2026-10-31 검증자 1명(`/32`) 제한 public acceptance PASS([실행 기록](experiments/2026-10-31-rt14-aws-real-e2e.md)). 11/10 A-1의 외부 진입 확인은 [최종 AWS 공개 배포](./a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)에 기록했다
 - [x] **공개 운영 방향 결정**(2026-11-05) — C 제한형 Public Beta 목표, 미충족 시 A-1 공식 샘플 실분석 대체, 종료일 11/20(§2-3). 11/10에 A-1을 공개했다
-- [ ] 최종 A-1 후보의 실제 AWS 검수와 공개 판단을 해당 배포 기록에 남긴다(§21-1). C 공개는 별도 정책·검수 범위다
+- [x] 최종 A-1 후보의 실제 AWS 검수와 공개 판단 — [최종 AWS 공개 배포](./a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)에 기록했다(§21-1). C 공개는 별도 정책·검수 범위다
 - [ ] 제출 뒤 배포본 hotfix 허용 여부 — 공지에 없음, 카테캠 확인 필요
-- [ ] 후속 A-1 배포의 보호 상한과 긴급 중단을 재확인한다. 11/10 공개본에서 확인한 값과 동작은 [11/10 AWS 공개 운영 인계](./a1-public-readiness.md#2026-11-10-aws-공개-운영-인계)에 기록했다
-- [ ] 외부 체험 부하 시험 — [#677](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/677)의 AWS 5세션 동시 접수, 큐 대기, 시간 초과, 슬롯 반환 후 재시도를 검증한다
+- [ ] 후속 A-1 배포마다 보호 상한과 긴급 중단을 재확인한다. [최종 공개본 운영값](./a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)과 [이전 배포의 긴급 중단 검수](./a1-public-readiness.md#2026-11-10-aws-공개-운영-인계)를 참고한다
+- [x] 외부 체험 부하 시험 — [#677](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/677)의 공식 3분 샘플 5건이 모두 신고영상 반영까지 완료됐다. 슬롯 포화 시 429와 슬롯 반환 후 같은 체험의 재등록을 확인했다. 재시도 응답·마지막 화면의 캡처 한계와 10분 샘플 5세션 미검증 범위는 [검수 기록](./a1-public-readiness.md#2026-11-10-677-aws-5세션-검증)에 남겼다
 - [ ] **11/20 공개 운영 종료 실행 및 데이터 정리 검증** — 종료일은 결정됨. 발표(11/16)까지 가용성·일정/잔여 예산·종료 전 삭제 증거는 별도 확인(§2-3 · §14)
 - [x] 공유 EC2 전원 자동화 금지 — §2-1 「공유 EC2 전원 · host 변경 원칙」(2026-10-30 공유 사용 충돌 근거)
 - [ ] README 배포 절 · 환경 분리 서술 — 실제 배포 실행 뒤(§2-3 · §4-1)

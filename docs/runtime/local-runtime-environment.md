@@ -186,7 +186,7 @@ A-1의 전용 작업은 양 서비스가 같은 shared media의 `public-temp/a1-
 기존 서비스별 temp 설정을 바꾸지 않고 Recording과 Search의 실제 temp context에 연결한다.
 공개 모드의 설정·권한·작업 수락·예산·보관과 삭제는 [A-1 서버 연결](a1-public-readiness.md)을 참고한다.
 기본 모드 `a1`에서는 승인값이 있어야 분석을 허용한다. 운영 인계에 기록된 스키마는 `runtime_0008`이다.
-재기동 확인과 전체 복원의 검증 범위는 [공개 운영 인계](a1-public-readiness.md#제한적-외부-공개-운영-인계--2026-11-09-kst)를 참고한다.
+재기동 확인과 전체 복원의 검증 범위는 [최종 배포 복구 검증](a1-public-readiness.md#2026-11-10-최종-aws-공개-배포)을 참고한다.
 
 Compose의 같은 named volume `/media`를 API/Worker가 공유한다. 이미지가 UID/GID
 `10001:10001`, mode `0750`으로 `/media`, `/media/api-temp`, `/media/worker-temp`를 준비한다.
