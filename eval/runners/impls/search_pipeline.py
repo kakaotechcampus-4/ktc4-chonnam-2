@@ -14,7 +14,7 @@
 시점 표에 없는 이후 변경도 모든 시점에 함께 적용된다. 10/28 결과(실행 코드 `be362664`)
 이후 제품 Search에 들어온 것: Coarse 준비 영상 270p · crf28(media.py에 고정)과
 Coarse 프롬프트 coarse-brief-v1(후보 최대 5개). 지금 다시 돌리면 10/28 결과와
-같은 조건이 아니다. `meta`의 설정 버전 표기(gemini-search-v2~v4)는 시점 이름표이고,
+같은 조건이 아니다. `facts.config_version` 표기(gemini-search-v2~v4)는 시점 이름표이고,
 실제 Coarse 준비 조건은 실행 시점 코드를 따른다.
 
 s1의 Fine은 당시 2 fps·720p로 보냈지만 프록시가 1 fps·low로 처리했으므로

@@ -2,7 +2,7 @@
 
 ## 처음 실행과 검사
 
-저장소 루트에서 `npm ci` 후 `npm run dev:web`을 실행한다. 실제 흐름(`/`)과 공식 샘플(`?sample`)은 API 서버가 필요하다. API 없이 화면을 확인할 때는 `?demo` 또는 `?dev`를 사용한다.
+저장소 루트에서 `npm ci` 후 `npm run dev:web`을 실행한다. `/`는 API 서버의 접수 설정으로 공개 체험 또는 내부 흐름을 선택한다. 이전 `?sample` 링크도 같은 진입을 사용한다. API 없이 화면을 확인할 때는 `?demo` 또는 `?dev`를 사용한다.
 
 ```bash
 npm run test:web
@@ -52,9 +52,9 @@ React 19/Vite 6 제품 앱이다. 루트 npm workspace에서 설치·빌드·테
 
 | 주소 | 화면 |
 | --- | --- |
-| `/` | 실제 흐름(ApiFlow). 이 브라우저가 마지막으로 연 case가 있으면 이어 본다 |
-| `?case=<id>` | 그 case를 실제 흐름으로 이어 본다 |
-| `?sample` | 공식 샘플 체험(OfficialSampleEntry) |
+| `/` | 서버의 공개 접수 설정에 따라 공개 체험(OfficialSampleEntry) 또는 내부 흐름(ApiFlow)으로 진입한다. 마지막 case가 있으면 이어 본다 |
+| `?case=<id>` | 서버가 선택한 모드에서 해당 case를 이어 본다 |
+| `?sample` | 이전 링크 호환용. 쿼리를 지우고 `/`와 같은 진입을 사용한다 |
 | `?demo` | mock fixture 시연 흐름(DemoFlow) |
 | `?cases` | 시연에서 보여 줄 경우를 고르는 상자 |
 | `?dev` | 스냅샷을 하나씩 넘겨 보는 증빙 화면 |

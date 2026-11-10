@@ -116,10 +116,10 @@
 
 ### 3-1-3. 비율에는 신뢰구간을 함께 낸다
 
-**B tier 의 채점 대상 사건은 10건이고, `by_type` 은 유형당 2~6건이다.** 그래서 `recall_at` 한 값이
+**채점 대상 사건은 `b_youtube`에서 10건, `b_youtube_m4`에서 16건이다.** 따라서 manifest별로 `recall_at` 한 값이
 얼마나 흔들리는지를 결과가 스스로 말하지 않으면 사람들이 소수점을 믿는다.
 
-모든 사건을 맞히는 치트 구현(`fake:always_correct`)을 현행 정답지로 채점한 실측이다:
+아래는 모든 사건을 맞히는 치트 구현(`fake:always_correct`)을 `b_youtube` 정답지로 채점한 예다:
 
 | 지표 | 값 | 95% 구간 | 폭 |
 | --- | ---: | --- | ---: |
@@ -501,8 +501,8 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
   plate       { exact_accuracy, wrong_accept_rate, abstention_recall,
                 readable_abstention_rate, n_readable,
                 abstain_reasons, n_abstained_without_reason, n, coverage }
-   persistence { 차량 검출 지속성 지표 또는 not_run() }
-   pipeline    { Coarse → Fine 연결 지표 또는 not_run(); 실행 시
+   persistence { 차량 검출 지속성 지표 또는 null }
+   pipeline    { Coarse → Fine 연결 지표 또는 null; 실행 시
                  meta.pipeline_scorer_version 기록 }
   cost        { cost_per_case, cost_per_source_video_hour, total, currency,
                 latency_ms{p50,p90,max,n,n_missing}, latency_per_source_video_hour,
@@ -514,7 +514,7 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 정답지가 같아도 채점기가 다르면 다른 숫자이고, 다른 숫자는 다른 파일이어야 비교할 수 있다.
 
 `cost` 는 stage 와 무관하게 **항상** 계산된다(`UsageRecord` 가 없으면 `NO_USAGE_RECORDS`).
-이번 stage 에서 실행하지 않은 지표 블록은 `not_run()` 모양이다.
+`candidate`·`classification`·`plate` 중 실행하지 않은 블록은 `not_run()` 모양이다. `persistence`와 `pipeline`은 실행하지 않으면 `null`이다. `pipeline`은 candidate 예측에 Fine 판정이 있을 때만 채운다.
 
 **어떤 블록이든 먼저 `coverage` 를 읽는다.** 숫자만 보고 판단하지 않는다.
 
@@ -528,11 +528,11 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 | # | 항목 | 지표에 미치는 영향 |
 | --- | --- | --- |
 | F8 | `tolerance_sec = 2.0` 과 bbox IoU `0.5` 가 실험으로 정해지지 않았다 | 두 값은 **서로 무관**하다(1-D 시간 vs 2-D 공간). 같은 값인 것은 우연 |
-| F1 | C tier(실제 촬영 원본) 미확보 | plate 3종이 실데이터로 나오지 않는다. **촬영이 필요해 코드로 못 푼다** |
+| F1 | 실제 주행 영상의 번호판 정답 보강 | C tier 영상은 확보했다. 비공개 AI-Hub crop의 plate 진단과 실제 주행 영상의 판독 성능은 구분한다. 데이터 범위는 [데이터셋 목록](../datasets/README.md)을 따른다 |
 | F2 | 화면시각 라벨 없음 | Timestamp 지표 전체. **라벨링이 필요하다** |
 | F4 | hard-negative 대조쌍 없음 | Hard-negative FPR. **라벨링이 필요하다** |
-| F5 | `search` 실제 실행 대기 · `evidence` 구현 대기 | Gemini coarse 어댑터(`search:gemini-coarse-p3`)는 `feature/search-gemini-eval` 에 **완성돼 있고**, 유료 호출 없이 123클립 채점 경로가 도는 것을 확인했다. 남은 것은 **첫 실제 실행** — 그 결과가 W7 「개선 전」이다. Fine · E2E stage 는 여전히 미구현 |
-| F3 | B tier 에 **안전모 사건이 0건** | `by_type` 에 `MOTORCYCLE_HELMET_NON_USE` 행이 없다. 사건 10건은 `recall_at` 의 신뢰구간이 여전히 넓다 |
+| F5 | 제품 사용자 흐름 그대로의 E2E 평가 | Search 실측과 Coarse → Fine 채점(`pl1`)은 구현돼 있다. 상위 3개 후보에 Fine을 실행한 근사값을 사용자가 선택한 후보만 검증하는 제품 E2E와 구분한다. [실험 기록](../experiments/2026-10-28-search-points-pipeline.md) |
+| F3 | B tier의 작은 사건 표본 | `b_youtube`는 10건, 확장판 `b_youtube_m4`는 16건이다. 유형별 사건 수와 미포함 유형은 선택한 manifest의 GT와 결과 `by_type`을 확인한다 |
 | — | `NONE` 은 `a_aihub` 단독 채점에서 여전히 0 | manifest 선택이 곧 측정 범위다 (§4-3) |
 | — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
 | — | 독립적인 최종 일반화 성능 측정 없음 | 현재 수치는 보유 데이터의 개발 중 반복 측정이다. 최종 제품 성능으로 인용하지 않는다 |
