@@ -983,7 +983,6 @@ eval/
   runners/       # 모델/public capability 호출 → immutable prediction
   predictions/
   scorers/       # prediction + GT → metrics
-  locked_test/
   results/
 ```
 
@@ -1032,7 +1031,6 @@ Eval clip suite:
 - eval-only branch 금지.
 - 결과는 파일 기반으로 버전 추적 가능해야 한다.
 - Product UX 지표는 별도 사용자 테스트다.
-- locked test의 구체 개봉 횟수/승인 정책은 운영 정책으로 별도 확정한다.
 
 ---
 
@@ -1727,7 +1725,6 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 - plate tracker/detector 최종 조합
 - exact retention days
 - H.265/provider compatibility 실제 E2E
-- locked test 개봉 운영 규칙
 
 ---
 
@@ -1777,7 +1774,6 @@ case correction은 코드 import가 아니라 익명화 파일로 eval에 흘린
 - [ ]  standalone Fine/Classification public capability가 실제 A-tier 요구를 만족하는가
 - [ ]  runtime source-hour와 eval clip metric 병존에 문제 없는가
 - [x]  prediction immutable / re-score 구조에 필요한 최소 version fields 제안
-- [x]  locked test 개봉 운영안은 별도 운영 정책으로 제안
 
 ## 11-6. `evidence` / Runtime Ops — 김준영
 

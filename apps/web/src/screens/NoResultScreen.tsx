@@ -9,7 +9,7 @@ export function NoResultScreen(props: { view: CaseView }): JSX.Element {
   const { hints, manifest_summary } = props.view
   return (
     <Panel>
-      {/* 이 화면의 제목이다 — Panel 기본 제목(h3)이 아니라 h1으로 둔다(#509 #3) */}
+      {/* 이 화면의 제목이다 — Panel 기본 제목(h3)이 아니라 h1으로 둔다(접근성 점검 결함 3, docs/modules/web/experiments/a11y-check-2026-10-31.md) */}
       <h1 className="panel-title">말씀하신 장면을 찾지 못했어요.</h1>
       <div className="kv-src">영상은 잘 받았어요. 설명을 조금 바꿔 주시면 다시 찾아볼게요.</div>
       <div className="kv kv-rows">
@@ -42,9 +42,10 @@ export function NoResultScreen(props: { view: CaseView }): JSX.Element {
   )
 }
 
-// 결과 없음의 출구(와이어프레임 12 「기억 단서 고치기」). 단서를 다시 글로 받아 새 탐색을
-// 시작한다 — 홈과 같은 입력 방식이라 사용자가 새로 배울 것이 없다. 조건별 「넓히기」
-// 버튼은 단서를 항목으로 나누는 창구(#210)와 범위 확대 비용 표시(§22)가 생기면 붙인다.
+// 결과 없음의 출구(docs/design/wireframe/12-no-result.png 「기억 단서 고치기」). 단서를 다시 글로 받아 새 탐색을
+// 시작한다 — 홈과 같은 입력 방식이라 사용자가 새로 배울 것이 없다. 조건별 「넓히기」 버튼
+// (core-user-flow §22 「결과 없음 화면에서 지킬 것」)은 이 구현 범위 밖이다 — 단서를 항목별로 받는
+// 창구와 범위 확대 비용 표시가 없어, 버튼만 두면 비용을 미리 말할 수 없다.
 export function RetrySearch(props: {
   situation: string
   onSituation: (text: string) => void

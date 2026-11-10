@@ -11,5 +11,6 @@ VIOLATION_TYPES = (
     "MOTORCYCLE_HELMET_NON_USE",
 )
 
-# Classification confusion matrix는 4종 + NONE의 5×5다 (v4 §9-3).
+# Classification confusion matrix는 4종 + NONE의 5×5다
+# (docs/architecture/module-architecture.md §9-3).
 CLASS_LABELS = VIOLATION_TYPES + ("NONE",)

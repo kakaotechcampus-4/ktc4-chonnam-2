@@ -20,8 +20,9 @@ import { CandidateCompare, DetailsCheck, EditHint, PlateCheck, TimeEdit } from '
 import { DEPART_EXIT_MS, UploadScreen, type UploadState } from './UploadScreen'
 
 // 실제 HTTP API로 도는 흐름(기본 진입) — 시연(DemoFlow)과 같은 화면을 쓰고, 어느 화면인가는 CaseView가 정한다.
-// 로컬에 둔 것은 사용자가 고른 파일 · 입력한 설명 · 열어 둔 하위 화면뿐이다(web-stack.md 확정 4).
-// 화면 → command 연결은 `contract-case-command.md`를, 요청 · 재시도 규칙은 `contract-http-api.md` §6을 따른다.
+// 로컬에 둔 것은 사용자가 고른 파일 · 입력한 설명 · 열어 둔 하위 화면뿐이다(docs/modules/web/decisions/web-stack.md 「확정」 4).
+// 화면 → command 연결은 `docs/modules/case/contracts/contract-case-command.md`를,
+// 요청 · 재시도 규칙은 `docs/architecture/contracts/contract-http-api.md` §6을 따른다.
 
 type Sub = 'candidates' | 'plate' | 'plateEdit' | 'time' | 'details' | 'hint'
 const noop = () => {}
@@ -30,7 +31,7 @@ const RESULT_KINDS: ReadonlySet<string> = new Set(['AWAIT_RESPONSE', 'EVIDENCE',
 type NoticeAction = Extract<Command, { kind: 'RUN_NOTICE_ACTION' }>['payload']['action']
 
 // notice 버튼 중 command가 있는 것만 보낸다. 입력이 필요한 동작은 바로 보내지 않고 입력 화면을 연다 —
-// `EDIT_HINT`는 설명(#410), `MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME`은 번호판 · 시각(#449). 거기서 같은 이름의 command로 보낸다.
+// `EDIT_HINT`는 설명, `MANUAL_PLATE_INPUT` · `EDIT_EVENT_TIME`은 번호판 · 시각 입력 화면이다. 거기서 같은 이름의 command로 보낸다.
 const INPUT_SUB: Partial<Record<Action, Sub>> = { EDIT_HINT: 'hint', MANUAL_PLATE_INPUT: 'plateEdit', EDIT_EVENT_TIME: 'time' }
 const SENDABLE: ReadonlySet<string> = new Set<NoticeAction>([
   'GENERATE_REPORT_VIDEO',
@@ -178,7 +179,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
     <>
       <AppHeader onNewReport={newReport} />
       <main className="web-main rs-page" ref={mainRef}>
-        {/* 결과 화면은 신고자료 카드에서 영상 상태와 함께 안내한다 — 같은 안내를 두 번 띄우지 않는다(#676) */}
+        {/* 결과 화면은 신고자료 카드에서 영상 상태와 함께 안내한다 — 같은 안내를 두 번 띄우지 않는다 */}
         {deferredWork && !(isValidElement(page) && page.type === ResultScreen) && <p className="rs-banner" role="status">{noticeMessage(deferredWork.message_key)}</p>}
         {banner && !state.viewUnavailable && state.error?.code !== 'public.bundle_mismatch' && (
           // 요청 실패 알림 — 결과 화면 실패 안내(.res-notice.is-fail)와 같은 모양
@@ -240,7 +241,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
   function upload(): JSX.Element {
     const uploads = state.uploads
     // 이어받은 case에는 이번 화면에서 올린 기록이 없다 — 서버에 이미 있는 영상은 개수로 보인다(이름은 오지 않는다).
-    // `ok_file_count`만 본다. `failed_file_count`는 화면 판단에 쓰지 않는다(http-api §5.2).
+    // `ok_file_count`만 본다. `failed_file_count`는 화면 판단에 쓰지 않는다(docs/architecture/contracts/contract-http-api.md §5.2).
     const already = props.uploadBundle || uploads.length === 0 ? (view?.manifest_summary.ok_file_count ?? 0) : 0
     const uploading = uploads.some((u) => u.status === 'WAITING' || u.status === 'UPLOADING')
     const anyDone = already > 0 || uploads.some((u) => u.status === 'DONE')
@@ -292,7 +293,7 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
             pushIn={!!leaving}
             onStop={view.stage === 'SEARCHING' ? () => run({ kind: 'STOP_ANALYSIS', payload: {} }) : undefined}
             // 결과 화면에서 다시 준비하거나 창을 닫았다 오면 브라우저에 원본이 없다 — 고른 후보의 장면 이미지로 대신한다.
-            // 후보 썸네일이 없으면 근거 장면(evidence.preview_ref)을 쓴다 — 결과 화면 포스터·후보 카드와 같은 순서(#634 리뷰)
+            // 후보 썸네일이 없으면 근거 장면(evidence.preview_ref)을 쓴다 — 결과 화면 포스터·후보 카드와 같은 순서
             // 설명을 고쳐 다시 찾으면 후보가 비워진다 — 그동안은 이 case에서 마지막으로 보인 장면을 그대로 둔다
             fallbackSrc={lastThumb.current?.caseId === view.case_id ? lastThumb.current.src : null}
           />
@@ -303,12 +304,12 @@ export function ApiFlow(props: { api?: Api; caseId?: string | null; remembered?:
         return <FailedScreen {...playback} view={view} onAction={onAction} canRun={canRun} onSelect={reselect} onNewReport={newReport} />
       case 'NO_RESULT':
         // 시연과 같은 틀. case가 실은 동작(설명 고치기 · 같은 조건으로 다시 찾기)을 버튼으로 두고, 첫 버튼만 강조한다.
-        // 「처음으로」는 서버 action과 따로 언제나 둔다(#410)
+        // 「처음으로」는 서버 action과 따로 언제나 둔다
         return (
           <div className="rs rs-screen state-page noresult">
             <p className="state-context">신고자료</p>
             <NoResultScreen view={view} />
-            {/* 설명을 잘 이해하지 못해 넓게 찾았는데도 0건 — 「결과 없음」과 뜻이 달라 함께 보인다(#266) */}
+            {/* 설명을 잘 이해하지 못해 넓게 찾았는데도 0건 — 「결과 없음」과 뜻이 달라 함께 보인다 */}
             {view.notices
               .filter((n) => n.code === 'search.hint_unclear')
               .map((n) => (

@@ -1,5 +1,11 @@
 # eval
 
+## 저장소를 받은 뒤
+
+저장소 루트에서 `uv sync --extra test` → `uv run pytest tests/eval -q` 순서로 확인한다. 이후 새 run ID로 [실행 예시](../../../eval/README.md#빠른-확인)를 따른다. [Python CI](../../../.github/workflows/python-tests.yml)도 eval 테스트를 실행한다.
+
+커밋된 `eval/predictions/` JSON은 원본 영상이나 API 키 없이 재채점할 수 있다. 모델을 다시 실행하려면 커밋되지 않은 원본 미디어와 필요한 API 키가 별도로 필요하다. 이미 커밋된 결과와 같은 이름으로 다시 채점하면 덮어쓰기를 거부한다. MLflow는 도입하지 않았으며 `eval/results/` JSON과 Git이 실행 기록이다.
+
 **Owner:** 김대원
 
 AI 단계(Search 장면 찾기 · 번호판 판독)를 정답이 있는 데이터로 채점하는 **개발용 평가** 모듈의 문서 작업공간이다. 실행 코드는 루트 [`eval/`](../../../eval/README.md)에 있다. 경계는 `docs/architecture/module-architecture.md` §4-모듈7, 역할은 `docs/management/ownership.md`를 따른다.
@@ -9,9 +15,9 @@ AI 단계(Search 장면 찾기 · 번호판 판독)를 정답이 있는 데이�
 - **무엇을 하나:** 데이터셋(manifest) + 구현 이름표(`--impl`) → runner가 prediction을 만들고 → scorer가 정답지(GT)와 대조해 지표 JSON을 낸다.
 - **입력:** `eval/manifests/<이름>/`의 클립 목록·정답지, 로컬 데이터 루트의 영상(레포에 없음).
 - **출력:** `eval/predictions/<run_id>.json`(바꾸지 않음), `eval/results/<run_id>.<gt>.<scorer>-<cost>.json`.
-- **실행:** `python -m eval.run --impl <이름표> --manifest <manifest> --stage <stage> --run-id <id>` → `python -m eval.score --prediction <id>`. 자세한 것은 [`eval/README.md`](../../../eval/README.md).
-- **테스트:** `python -m pytest tests/eval/ -q`. 미디어가 없는 clone에서도 통과한다(미디어가 필요한 테스트는 skip).
-- **수치를 말하는 범위:** 잠근 평가셋은 쓰지 않기로 해서(2026-10-26) 모든 수치는 **개발 중 반복 측정**이다. 최종 일반화 성능으로 주장하지 않는다.
+- **실행:** `uv run python -m eval.run --impl <이름표> --manifest <manifest> --stage <stage> --run-id <새 id>` → `uv run python -m eval.score --prediction <id>`. 자세한 것은 [`eval/README.md`](../../../eval/README.md).
+- **테스트:** `uv run pytest tests/eval -q`. 미디어가 없는 clone에서도 실행한다(미디어가 필요한 테스트는 skip).
+- **수치를 말하는 범위:** 모든 수치는 **개발 중 반복 측정**이다. 최종 일반화 성능으로 주장하지 않는다.
 
 ## 어디부터 읽나
 
@@ -30,6 +36,8 @@ AI 단계(Search 장면 찾기 · 번호판 판독)를 정답이 있는 데이�
 | --- | --- |
 | A / B / C tier | 데이터 출처. A = AI-Hub 프레임 시퀀스·영상, B = 실제·YouTube 주행 영상 1분 클립, C = 팀원 블랙박스 원본. `ctier2` · `ctier3`는 C tier에서 만든 manifest다(구성은 `datasets/README.md` 표) |
 | S1 · S2 · S3 | Search가 바뀐 세 시점. S1 = 9/18 Flash 1배속, S2 = 10/01 Flash 느린 영상, S3 = 10/27 argon + Fine 분기부 문장(`fine-gore-v1`). [10/28 실험 기록](experiments/2026-10-28-search-points-pipeline.md) |
+| argon · gore | `argon`은 S3에서 쓴 Gemini 모델 이름의 일부(`gemini-4-argon`), `gore`는 S3의 Fine 판단 프롬프트 버전 이름(`fine-gore-v1`)이다 |
+| 트랙① · 트랙② | readout 실험의 두 입력 경로. ①은 차량 검출·지속성, ②는 잘라낸 번호판 이미지의 문자 인식이다. 제품 전체 성능을 뜻하지 않는다 |
 | O1 · O2 · O3 · O4 | 번호판 판독이 바뀐 시점. O1 = 사전학습 그대로, O2 = 판독 규칙(공백 정리·형식 검사·2줄 반쪽 보류), O3 = 프레임 다수결(crop 한 장으로는 잴 수 없어 표에서 빠짐), O4 = 파인튜닝 인식기(제품 미반영). [10/28 OCR 기록](experiments/2026-10-28-ocr-points.md) |
 | Coarse · Fine | Search의 두 단계. Coarse = 영상 전체에서 후보 구간 찾기, Fine = 후보 구간을 자세히 보고 `OBSERVED` · `UNCERTAIN` · `NOT_OBSERVED` 판정 |
 | Recall@3 | 정답 사건이 상위 3개 후보 안에 시작 시각 ±2초로 들어온 비율 |

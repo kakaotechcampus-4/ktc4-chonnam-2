@@ -1,5 +1,7 @@
 # Evaluation Harness v1 Implementation Plan
 
+> 당시 계획 기록입니다. 현재 구현·수치·명령과 다를 수 있습니다. 실행 방법은 [eval README](../../../eval/README.md), 결과 해석은 [eval 문서](README.md)를 따르세요.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `python -m eval.run --impl <이름표>`와 `python -m eval.score`로 가짜 구현을 채점해 결과 JSON을 내는 오프라인 채점 하니스를 만든다.

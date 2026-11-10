@@ -35,13 +35,6 @@
 - **WARN에서도 제출 경로가 열린다** — `unknown_abstain_partial #2`는 `requirements_package.readiness=WARN`인데 capabilities 3종 버튼이 그대로 뜬다(값 상태 표시 규칙 §3-7)
 - **`stale_revision_label_key`로 문구를 고른다** — `relative_rebase #2`에서만 뜨고 boolean으로 문구를 만들지 않는다
 
-## 아직 증빙하지 못한 것
-
-- **같은 `job_id`의 attempt 대표 선택** — `representativeJobs()`로 구현했으나 **v5 fixture에 중복 `job_id`도 `attempt` 필드도 없어** 목데이터로 눌러볼 수 없다. 코드만 있고 화면 증빙이 없는 상태다.
-- **`at_provenance` 출처 문구** — `case-view/v1.4`의 `at_provenance_label_key` 확정 대기. 지금은 raw 값을 mono로 그대로 보여준다.
-- **위치 미확보 notice 문구**(이슈 #48 Q3) — 값 등재 후 매핑 추가.
-- **PNG 화면 캡처 3장** — 회의 자료용으로 별도 확보 필요.
-
 ## 부수 발견 — fixture 불일치 1건
 
 `notices[].code`는 12종인데 `message_key`는 13종이다. `evidence.time_post_stamp_required` 하나가 두 키로 내려온다 — `notice.post_stamp_required`(correction_rerun #2)와 `notice.time_post_stamp_required`(unknown_abstain_partial #1·#2). 같은 뜻이라 web은 같은 문구를 매핑해 두었으나, 한쪽으로 통일하는 편이 맞다(fixture 반영: 유소연).

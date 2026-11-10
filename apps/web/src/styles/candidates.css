@@ -1,9 +1,9 @@
 /* ============================================================
-   후보 비교 그리드 (A-1)
+   후보 비교 그리드
    DESIGN-stage1-mockups.html 「화면 5 — 후보와 원본 영상 비교」에서 포팅.
 
    global.css가 이미 옮겨 둔 `.cand`·`.cand.sel` 위에 얹는다. 그 두 규칙은
-   다시 정의하지 않는다 — 공통 토큰·공통 스타일 파일은 web Owner 소유다.
+   다시 정의하지 않는다 — 공통 토큰·공통 스타일은 tokens.css · global.css에 둔다.
    색·그림자·반경은 전부 tokens.css의 var()를 참조한다.
    ============================================================ */
 
@@ -141,7 +141,7 @@
 
 .hint-none { font-size: calc(13px * var(--font-scale)); color: var(--slate); font-weight: 600; }
 
-/* 「다른 후보 보기」 — 결과 화면에서 여는 선택 경로(§8-1). 접힌 채로 시작한다. */
+/* 「다른 후보 보기」 — 결과 화면에서 여는 선택 경로(core-user-flow §8-1). 접힌 채로 시작한다. */
 .other-cands { border: 1px solid var(--border); border-radius: var(--R); background: var(--panel); }
 .other-cands > summary {
   cursor: pointer; padding: 12px 14px;

@@ -25,9 +25,9 @@ def load_sequences(manifest_name):
 
 
 def load_manifest_meta(manifest_name):
-    """manifest 의 meta 블록. clips.json 이 없으면 sequences.json 에서 읽는다.
+    """manifest 의 meta 블록. clips.json → samples.json → sequences.json 순으로 읽는다.
 
-    B tier 는 clip 단위(clips.json), A tier 는 시퀀스 단위(sequences.json)라
+    B tier 는 clip 단위, 이미지 표본은 sample 단위, A tier 는 시퀀스 단위라
     파일 이름이 다르다. 없는 필드는 여기서 지어내지 않는다 — sequences.json
     에는 clip 개념 자체가 없어 clip_rule_version 이 없고, 호출부에서 null 이
     된다. 그것이 「clip 규칙 버전이 c1 이다」라고 거짓말하는 것보다 낫다.
@@ -135,7 +135,8 @@ def validate_sequences(sequences, gt):
     """시퀀스 manifest 와 classification 정답지의 불변식. 위반 메시지 목록.
 
     validate() 는 clip 과 span 을 전제해 A tier·ab_mixed 에서 돌지 않는다 —
-    시퀀스 manifest 에는 clip 도 span 도 없다 (F13). 이 함수는 시퀀스 쪽
+    시퀀스 manifest 에는 clip 도 span 도 없다
+    (docs/modules/eval/harness-v1-design.md §9의 F13). 이 함수는 시퀀스 쪽
     불변식만 본다.
 
     라벨 공간은 4종이 아니라 CLASS_LABELS(4종 + NONE)다. ab_mixed 의 NONE

@@ -166,7 +166,6 @@
 - [x] **팀 목데이터 파이프라인 결과** — `eval/results/mock_e2e.mp0.json` (커밋됨)
 - [x] Consumer 검수 의견 전달 — **PR #11 본문**(https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/11). 담당자별로 묶어 6건. 회의에서 구두 보강 예정
 
-> 화면 캡처·API·로그는 이 모듈에 해당 없음. 비용/Latency 측정 파일은 v1 범위 밖.
 
 ---
 

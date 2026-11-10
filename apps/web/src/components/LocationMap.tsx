@@ -115,7 +115,7 @@ export function LocationMap(props: { coord: { lat: number; lon: number } | null;
       resize?.disconnect()
       resetPin.current = null
     }
-  }, [key, spot?.lat, spot?.lon]) // eslint-disable-line react-hooks/exhaustive-deps -- 좌표가 바뀔 때만
+  }, [key, spot?.lat, spot?.lon]) // 의존성은 일부러 좌표 값만 둔다: spot 객체가 새로 와도 좌표가 같으면 지도를 다시 만들지 않는다
 
   useEffect(() => {
     if (!returning.current || movedNow) return

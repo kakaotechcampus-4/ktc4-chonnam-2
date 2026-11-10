@@ -8,7 +8,7 @@
 
    Every color/shadow references a var() from tokens.css. Where the mockup's
    CSS used a hardcoded color that differs from a token, the token wins
-   (PROTOTYPE-SPEC.md §2). A few cases have no matching token at all — see
+   (docs/design/PROTOTYPE-SPEC.md §2). A few cases have no matching token at all — see
    inline notes at each such spot.
 
    Naming: DESIGN-stage1-mockups.html uses short class names (`.btn.pri`,
@@ -108,7 +108,7 @@ body {
   border-radius: var(--R); font-family: inherit; font-size: calc(17px * var(--font-scale));
   font-weight: 600; box-shadow: var(--sh-soft);
 }
-/* outline은 투명으로 남긴다 — 강제 색상(고대비) 모드에서 초점 테두리로 보인다(#509 #9) */
+/* outline은 투명으로 남긴다 — 강제 색상(고대비) 모드에서 초점 테두리로 보인다(접근성 점검 결함 9 — docs/modules/web/experiments/a11y-check-2026-10-31.md) */
 .field:focus, .field:focus-within { border-color: var(--green); box-shadow: 0 0 0 4px rgba(16, 147, 63, .09); outline: 2px solid transparent; }
 .field::placeholder { color: var(--muted-2); }
 
@@ -256,7 +256,7 @@ body {
 .action-intent { border-left: 4px solid var(--slate); }
 
 /* ============================================================
-   DEMO FLOW — Figma 하단 작업 영역(Main·Details·Failed) 틀만 옮긴 것
+   DEMO FLOW — 팀 Figma(비공개) 하단 작업 영역(Main·Details·Failed) 틀만 옮긴 것. 저장소 사본: docs/design/wireframe/
    ============================================================ */
 .app-header { padding: 14px 28px; background: var(--panel); border-bottom: 1px solid var(--border); }
 .brand { display: flex; flex-direction: column; }

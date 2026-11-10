@@ -62,7 +62,6 @@ case:
 | 지표 | 계산 | 단위 |
 | --- | --- | --- |
 | `label_acc` | 5×5 혼동행렬. 종별 분리 + macro 평균 | case |
-| `onset_frame_error` | `\|pred − onset_frame\|`. median / p90 / ±2프레임 이내 비율 | 맞힌 case |
 | `target_correct` | 예측 대상이 `violation_target_bbox`와 일치 | 맞힌 case |
 
 **절대 금지**: 이 정확도를 제품 성능으로 발표. 위반 시퀀스만 모은 폴더라 base rate가 인위적이다.
@@ -89,18 +88,16 @@ case:
 
 ### 2-1. 이름이 바뀐 것 — 원문대로 쓰면 어긋난다
 
-| v0.2 | 현행(`g1`) | 비고 |
-| --- | --- | --- |
-| `gt_label: ... LANE_CHANGE ...` | **`SOLID_LINE_LANE_CHANGE`** | baseline enum은 `module-architecture.md` §3-5의 4종(사본 `eval/enums.py`). `LANE_CHANGE`로 쓰면 **5×5 혼동행렬이 조용히 어긋난다** |
-| `case_id` | `sequence_id` | `sequences.json`·`gt_classification.json` 양쪽 동일 |
-| `gt_label` | `label` | |
-| `violation_target_bbox` | `target_bbox` | 원본 라벨에 위반 차량 bbox가 없는 시퀀스 5건은 `null`이고 채점 분모에서 제외한다 |
-| `n_normal_targets` | `distractor_count` | |
-| (없음) | `target_frame` | bbox를 딴 프레임의 **파일명**. v0.2의 `onset_frame`(정수 인덱스)과 다른 개념이다 |
-| `weather` / `daynight` / `road_type` 평면 | `condition: {weather, day_night, road_type}` 중첩 | |
-| `subtype_code: SIG_RED_LEFT` | `sub_type: 중앙선주황색실선위반` | 원본 한글 폴더명을 그대로 쓴다. 코드화하지 않았다 |
-| `source_path` · `frames[]` · `n_frames` | `archive` · `archive_path` · `frame_count` (`sequences.json`) | 프레임 목록은 zip 인덱스에서 매번 푼다. 정답지가 파일명을 복제하지 않는다 |
-| (없음) | `source_tier: A` | 해상도·재인코딩 특성이 다르다는 사실을 결과가 스스로 말하게 한다 |
+- v0.2: `gt_label: ... LANE_CHANGE ...` · 현행(`g1`): **`SOLID_LINE_LANE_CHANGE`** · 비고: baseline enum은 `module-architecture.md` §3-5의 4종(사본 `eval/enums.py`). `LANE_CHANGE`로 쓰면 **5×5 혼동행렬이 조용히 어긋난다**
+- v0.2: `case_id` · 현행(`g1`): `sequence_id` · 비고: `sequences.json`·`gt_classification.json` 양쪽 동일
+- v0.2: `gt_label` · 현행(`g1`): `label`
+- v0.2: `violation_target_bbox` · 현행(`g1`): `target_bbox` · 비고: 원본 라벨에 위반 차량 bbox가 없는 시퀀스 5건은 `null`이고 채점 분모에서 제외한다
+- v0.2: `n_normal_targets` · 현행(`g1`): `distractor_count`
+- v0.2: (없음) · 현행(`g1`): `target_frame` · 비고: bbox를 딴 프레임의 **파일명**. v0.2의 `onset_frame`(정수 인덱스)과 다른 개념이다
+- v0.2: `weather` / `daynight` / `road_type` 평면 · 현행(`g1`): `condition: {weather, day_night, road_type}` 중첩
+- v0.2: `subtype_code: SIG_RED_LEFT` · 현행(`g1`): `sub_type: 중앙선주황색실선위반` · 비고: 원본 한글 폴더명을 그대로 쓴다. 코드화하지 않았다
+- v0.2: `source_path` · `frames[]` · `n_frames` · 현행(`g1`): `archive` · `archive_path` · `frame_count` (`sequences.json`) · 비고: 프레임 목록은 zip 인덱스에서 매번 푼다. 정답지가 파일명을 복제하지 않는다
+- v0.2: (없음) · 현행(`g1`): `source_tier: A` · 비고: 해상도·재인코딩 특성이 다르다는 사실을 결과가 스스로 말하게 한다
 
 ### 2-2. 의미가 바뀐 것
 
@@ -117,13 +114,6 @@ case:
 | --- | --- |
 | `label_acc` (5×5 + macro) | `confusion`(5×5) · `recall_macro` · `precision_macro` · `recall_by_label` |
 | `target_correct` | `target_correctness` — bbox가 `null`인 GT 항목은 **분모에서 제외**(미탐으로 세지 않는다) |
-| `onset_frame_error` | 미구현 (위 ①) |
-
-### 2-3. 미채택·미구현으로 남은 것
-
-- **`label_folder`/`label_annotation` 병기 · `label_conflict` · `--polarity-rule`** — `g1`은 `label` 단일이다. 샘플링이 폴더 기준(type-stratified, seed `20260906`, 종당 30개)이라 두 출처가 갈리는 `_0000000003` 유형이 표본 120건에 들어오지 않았다. **원문의 문제의식은 유효하다** — 충돌 케이스를 표본에 넣는 순간 다시 필요해진다.
-- `group_key`(그룹 누수 방지) · `unjudgeable` / `unjudgeable_reason` · `split`의 `locked` 값(현재 전부 `DEV`).
-- `--frames-per-case` — 샘플러 인자는 `--per-type`·`--seed`뿐이다(`eval/tools/sample_aihub.py`).
 
 ### 2-4. 그대로 유효한 것
 
@@ -149,16 +139,6 @@ case:
 ```
 
 커버리지(`meta.coverage`): 120 시퀀스 · `target_bbox` 있는 항목 115건 · 샘플링 규칙 `s1` · seed `20260906`.
-
----
-
-## 4. 출처
-
-> **[작성 필요]** 원문 자료조사에 쓴 출처 링크를 여기에 남긴다 — 이번 정리의 목적이 출처 유실 방지다.
-
-- AI Hub 데이터셋 원본 페이지 — `[링크 필요]`
-- 데이터셋 라벨 명세/구축 가이드 — `[링크 필요]`
-- 위반 유형 정의의 근거(도로교통법 조문·경찰청 자료 등) — `[링크 필요]`
 
 ---
 

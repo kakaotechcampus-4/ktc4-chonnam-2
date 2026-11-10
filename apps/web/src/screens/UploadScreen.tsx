@@ -13,7 +13,7 @@ import { videoTime, videoTimeText, type VideoTime } from '../state/videoTime'
 
 const EXAMPLE = '6시 반쯤 미금역 근처에서 흰색 SUV가 실선을 넘어 제 앞으로 끼어들었어요.'
 // 원본 보관 안내 — 공유된 보관 정책(원본 최대 24시간)만 적는다. 공개 한도는 확정 전이라 숫자를 적지 않고,
-// 너무 긴 영상은 서버 안내(notice.analysis_range_too_long)가 알린다. 실제 삭제 확인은 공개 게이트(#606 철원 님 답)
+// 너무 긴 영상은 서버 안내(notice.analysis_range_too_long)가 알린다. 보관 시간이 지나면 지워지는지는 화면이 아니라 공개 배포 점검에서 확인한다
 const LIMIT_TEXT = '올린 영상은 최대 24시간 보관해요.'
 
 export type UploadState = 'idle' | 'uploading' | 'done' | 'fail'
@@ -122,7 +122,8 @@ function sceneTransform(view: View, width: number): string {
   return `translate(${width / 2 - f.x * s}px, ${SCENE_H / 2 - f.y * s}px) scale(${s})`
 }
 
-// Figma 01_Home_Upload · 01_Uploading · 01_UploadComplete · 01_UploadFail.
+// 팀 Figma(비공개) 프레임 01_Home_Upload · 01_Uploading · 01_UploadComplete · 01_UploadFail.
+// 저장소 사본은 docs/design/wireframe/03~06.
 // 업로드 칸 = 자동차 앞문. 커서나 파일이 칸에 들어오면 문이 열리고(접수 전만), 파일을 놓거나
 // 고르면 한 번 접수한다. 파일 고르기는 칸 안의 버튼 하나로만 키보드가 멈춘다 — 칸 클릭은 고르기
 // 전(idle)과 실패 때만 쓰는 마우스용 지름길이다. 버튼은 모든 상태에서 같은 요소로 남아(문구·모양만
@@ -168,7 +169,7 @@ export function UploadScreen(props: {
     consentBox.current?.close?.()
     consentBox.current?.removeAttribute('open')
     setPending(null)
-    // 닫힌 모달 안에 포커스가 남지 않게 「파일 선택」으로 돌려준다(#606 리뷰). 동의 뒤에도 같은 버튼이 남는다
+    // 닫힌 모달 안에 포커스가 남지 않게 「파일 선택」으로 돌려준다. 동의 뒤에도 같은 버튼이 남는다
     pickButton.current?.focus()
     if (agree && files) send(files)
   }
@@ -186,7 +187,7 @@ export function UploadScreen(props: {
   const pick = (files: FileList | null) => {
     if (props.selectionDisabled) return
     if (!files?.length) return
-    // 올리는 중에 고른 파일은 받지 않으므로 동의도 묻지 않는다(#606 리뷰)
+    // 올리는 중에 고른 파일은 받지 않으므로 동의도 묻지 않는다
     if (props.consent) {
       if (props.state !== 'uploading') setPending([...files])
     } else send([...files])
@@ -215,7 +216,7 @@ export function UploadScreen(props: {
     return () => {
       live = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 목록은 내용(uploadedKey)이 바뀔 때만
+    // 의존성에 파일 배열 대신 내용 문자열(uploadedKey)을 둔다: 배열은 렌더마다 새로 만들어져 매번 다시 읽게 된다
   }, [state, uploadedKey, props.departing])
   const timeText = vtime && videoTimeText(vtime)
 
@@ -410,7 +411,7 @@ export function UploadScreen(props: {
                     {names}
                   </span>
                 )}
-                {/* 원인은 서버가 알려 준 것만 쓴다 — 화면이 형식·손상·네트워크를 짐작하지 않는다(#224 recording 리뷰) */}
+                {/* 원인은 서버가 알려 준 것만 쓴다 — 화면이 형식·손상·네트워크를 짐작하지 않는다 */}
                 {state === 'fail' && (
                   <span className="rs-drop-note" role={props.officialBundle ? 'alert' : undefined}>{props.failReason ?? '파일을 올리지 못했어요. 다시 골라 주세요.'}</span>
                 )}
@@ -504,11 +505,11 @@ export function UploadScreen(props: {
             describedBy={`${situationId}-hint`}
           />
         </label>
-        {/* 버튼은 label 밖(#509) */}
+        {/* 버튼은 label 밖에 둔다 — label 안에 두면 버튼 글자가 입력칸 이름에 섞인다 */}
         <ExampleButton example={EXAMPLE} value={props.situation} onChange={props.onSituation} inputId={situationId} />
 
         {props.consent && (
-          // 공개 운영 정책 §4 — 파일을 고르는 순간 서버로 올라가므로 고른 직후·보내기 전에 동의를 받는다(#606 리뷰).
+          // 공개 운영 정책 — 파일을 고르는 순간 서버로 올라가므로 고른 직후·보내기 전에 동의를 받는다.
           // Esc는 cancel 이벤트 → 취소와 같다(업로드하지 않음)
           <dialog
             ref={consentBox}
@@ -539,7 +540,7 @@ export function UploadScreen(props: {
         )}
 
         <div className="rs-actions">
-          {/* disabled 대신 aria-disabled — Tab으로 닿아 못 누르는 이유가 읽힌다(#509 #5). 화면에는 업로드 칸이 상태를 보인다 */}
+          {/* disabled 대신 aria-disabled — Tab으로 닿아 못 누르는 이유가 읽힌다(접근성 점검 결함 5, docs/modules/web/experiments/a11y-check-2026-10-31.md). 화면에는 업로드 칸이 상태를 보인다 */}
           <button
             type="button"
             className="rs-btn pri lg"
@@ -574,7 +575,7 @@ export function SituationInput(props: {
   /** 칸 아래 안내 — 화면 낭독기가 칸과 함께 읽는다 */
   describedBy?: string
 }): JSX.Element {
-  // Tab은 초점 이동에만 쓴다. 예시 문장은 ExampleButton으로 넣는다(#509 #4)
+  // Tab은 초점 이동에만 쓴다. 예시 문장은 ExampleButton으로 넣는다(접근성 점검 결함 4, docs/modules/web/experiments/a11y-check-2026-10-31.md)
   return (
     <textarea
       id={props.id}

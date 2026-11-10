@@ -62,5 +62,5 @@ API는 `uv run --no-sync python -m daesingo.api --revision <revision> --host 127
 
 후보 비교 영상 미리보기는 현재 세대 rank 1~3을 대상으로 첫 요청 때 구간 MP4를 준비한다. 재생은 후보 선택과 분리되며 `GET /cases/{case_id}/candidate-videos/{clip_ref}`의 inline·Range 응답을 사용한다. 구현 범위·상태·검증 한계는 [후보 영상 미리보기 결정](../docs/modules/case/decisions/candidate-video-preview.md)을 확인한다.
 
-실제 웹 앱의 화면 구조와 프로토타입과의 관계는 [웹 앱 README](../apps/web/README.md)와 [Web 문서](../docs/modules/web/)에서 확인한다.
+실제 웹 앱의 화면 구조, 프로토타입과의 관계, 공개 체험·목데이터 시연의 실행 범위와 검사는 [웹 앱 README](../apps/web/README.md)와 [Web 문서](modules/web/README.md)를 따른다.
 

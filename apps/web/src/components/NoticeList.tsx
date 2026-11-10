@@ -6,7 +6,7 @@ import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
 import { DevExtra } from './DevExtra'
 
 // notices[].actions[]는 닫힌 7종이고 미등록 값은 버튼을 렌더하지 않는다
-// (계약 B절 §7 — label_key와 달리 fallback을 두지 않는다. 실행 경로가 없는
+// (`contract-job-record-case-view.md` B절 §7 — label_key와 달리 fallback을 두지 않는다. 실행 경로가 없는
 // 액션을 잘못 노출하는 쪽이 더 위험하다).
 function ActionButtons(props: { actions: string[]; onAction: (action: Action) => void }): JSX.Element | null {
   const known = props.actions.filter(isAction)

@@ -20,7 +20,7 @@ function retentionNotice(seconds: number) {
   return `체험을 시작한 뒤 ${duration}부터 이 체험의 영상·분석 결과·신고자료를 서버에서 자동으로 정리해요. 정리된 자료는 다시 볼 수 없어요.`
 }
 
-/** A-1 intake only; existing CaseView-driven results/downloads remain in ApiFlow. */
+/** 공개 체험(A-1: 서버가 공식 샘플 · 공식 업로드만 받는 모드)의 접수만 맡는다. 결과 · 다운로드는 ApiFlow가 CaseView로 그린다. */
 export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?: string | null; remembered?: boolean; upload?: boolean; retentionSeconds: number }) {
   const [client] = useState(() => props.client ?? createPublicSamplesApi())
   const [samples, setSamples] = useState<OfficialSample[] | null>(null)
@@ -91,7 +91,7 @@ export function OfficialSampleEntry(props: { client?: PublicSamplesApi; caseId?:
       const result = await client.cases.sendCommand(caseId, view.case_rev, { kind: 'START_ANALYSIS', payload: { description } })
       if (result.ok) return setView(result.data)
       if (result.caseView) setView(result.caseView)
-      // Unknown outcome: read only. Never automatically repeat a paid command.
+      // 결과를 모르는 실패: 다시 읽기만 한다. 비용이 드는 command를 자동으로 다시 보내지 않는다.
       if (result.status === 0 || (result.status >= 500 && result.status !== 503)) {
         const latest = await client.cases.getView(caseId)
         if (latest.ok) {

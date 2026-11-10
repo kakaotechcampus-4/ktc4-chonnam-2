@@ -29,7 +29,7 @@ export function CandidateVideo(props: {
   const message = preparing ? '영상 준비 중' : browserFailed ? '영상을 재생할 수 없어요.'
     : status === 'FAILED' ? '영상을 준비하지 못했어요.'
       : status === 'UNAVAILABLE' || !props.onRequest ? '이 후보의 미리보기를 볼 수 없어요.' : null
-  // 버튼 · 문구가 사라지거나 플레이어로 바뀌면 초점이 body로 빠진다(#554 리뷰). 상태가 바뀔 때 초점이 빠져 있으면
+  // 버튼 · 문구가 사라지거나 플레이어로 바뀌면 초점이 body로 빠진다. 상태가 바뀔 때 초점이 빠져 있으면
   // 준비 중엔 문구로, 그 밖엔 영상 → 버튼 → 문구 순으로 옮긴다. 다른 곳을 보던 사용자는 끌어오지 않는다.
   const phase = playable ? 'PLAYING' : browserFailed ? 'BROWSER_FAILED' : status
   const msgRef = useRef<HTMLSpanElement>(null)
