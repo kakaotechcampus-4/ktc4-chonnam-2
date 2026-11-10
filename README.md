@@ -10,18 +10,7 @@
 
 <img src="docs/images/readme/cover.png" alt="대신고 — 기억 속 한 장면이 더 안전한 길의 시작" width="800">
 
-## 목차
-
-1. [서비스 소개](#서비스-소개)
-2. [주요 기능](#주요-기능)
-3. [공개 체험](#공개-체험)
-4. [아키텍처](#아키텍처)
-5. [기술 스택](#기술-스택)
-6. [평가 결과](#평가-결과)
-7. [저장소 구조](#저장소-구조)
-8. [빠른 시작](#빠른-시작)
-9. [문서](#문서)
-10. [팀](#팀)
+[서비스 흐름](#주요-기능) · [아키텍처](#아키텍처) · [기술 스택](#기술-스택) · [평가 결과](#평가-결과)
 
 ---
 
@@ -35,45 +24,29 @@
 <details>
 <summary>대신고가 맡는 일</summary>
 
-<table><tr><td>
-
 <img src="docs/images/readme/workflow.png" alt="자료 준비를 자동화하고 사용자 확인과 제출로 연결하는 흐름" width="800">
-
-</td></tr></table>
 
 </details>
 
-## 주요 기능
+<a id="주요-기능"></a>
 
-### 1. 영상과 상황 입력
+## 기억에서 신고자료까지
 
-블랙박스 영상을 올리고 기억나는 시간·차량·상황을 적습니다. 입력한 내용을 탐색 단서로 정리합니다.
+<img src="docs/images/readme/step-1-input.png" alt="STEP 1. 정확한 시각보다 기억나는 장면부터 — 영상과 상황 입력" width="800">
 
-<table><tr><td>
+영상을 올리고 기억나는 상황을 적으면, 시간·차량·상황 단서를 정리합니다.
 
-<img src="docs/images/readme/step-1-input.png" alt="영상 업로드와 상황 입력 화면" width="600">
+<br>
 
-</td></tr></table>
+<img src="docs/images/readme/step-2-analysis.png" alt="STEP 2. 장면을 찾고 필요한 도구 연결 — 탐색과 번호판 판독" width="800">
 
-### 2. 분석 진행 확인
+장면 탐색부터 후보 확인·번호판 판독·증거 정리까지, 지금 진행하는 작업을 보여줍니다.
 
-장면 탐색 → 후보 확인 → 번호판·시각 판독 → 증거 정리 순서로 진행 상황을 보여줍니다.
+<br>
 
-<table><tr><td>
+<img src="docs/images/readme/step-3-report.png" alt="STEP 3. 확인하고 필요한 것만 수정 — 신고자료 확인과 내보내기" width="800">
 
-<img src="docs/images/readme/step-2-analysis.png" alt="장면 탐색과 번호판 판독 진행 화면" width="800">
-
-</td></tr></table>
-
-### 3. 신고자료 확인과 내보내기
-
-출처와 확인이 필요한 정보를 보여줍니다. 필요한 값을 수정하고 신고 내용 복사·영상 다운로드 후 안전신문고로 이동합니다.
-
-<table><tr><td>
-
-<img src="docs/images/readme/step-3-report.png" alt="신고자료 확인, 위치 수정, 내용 복사와 안전신문고 이동 화면" width="600">
-
-</td></tr></table>
+확인이 필요한 값을 보완하고 영상과 신고 내용을 가져갑니다. 최종 제출은 안전신문고에서 직접 합니다.
 
 ## 공개 체험
 
@@ -85,11 +58,7 @@
 
 ## 아키텍처
 
-<table><tr><td>
-
 <img src="docs/images/readme/architecture.png" alt="React Web, FastAPI, MySQL, Worker와 도메인 모듈 구성" width="900">
-
-</td></tr></table>
 
 - API는 요청·조회를, Worker는 영상 분석·파일 생성을 담당하며 MySQL 기반 DB Queue로 연결합니다.
 - `case`가 진행을 관리하고 `search`·`readout`의 관찰 결과를 `evidence`가 신고자료로 구성합니다.
@@ -98,11 +67,7 @@
 <details>
 <summary>후보 탐색과 정밀 검증</summary>
 
-<table><tr><td>
-
 <img src="docs/images/readme/coarse-fine.png" alt="넓은 범위의 Coarse 탐색과 선택한 후보의 Fine 검증" width="800">
-
-</td></tr></table>
 
 전체 범위에서 후보를 찾고 선택한 장면을 자세히 확인합니다. 다른 후보를 선택하면 해당 장면을 검증하며 기존 결과는 재사용합니다.
 
@@ -135,17 +100,9 @@
 <details>
 <summary>평가 그래프와 비용·오탐 비교</summary>
 
-<table><tr><td>
-
 <img src="docs/images/readme/evaluation.png" alt="설정별 사건 탐색 결과와 영상 유형 적중률" width="800">
 
-</td></tr></table>
-
-<table><tr><td>
-
 <img src="docs/images/readme/evaluation-tradeoffs.png" alt="탐지 증가에 따른 비용과 오탐 변화" width="800">
-
-</td></tr></table>
 
 </details>
 
