@@ -1083,6 +1083,8 @@ coverage는 미검증 경로를 찾는 보조지표로 사용하며 근거 없�
 
 상세 security checklist는 [`docs/management/pre-deploy-security-review.md`](../management/pre-deploy-security-review.md)를 따른다.
 
+<a name="21-1-공개-모드-gono-go-2026-11-05-정책-현재-미검증"></a>
+
 ### 21-1. 공개 모드 Go/No-Go (2026-11-05 정책)
 
 **정책 확정은 배포 승인·acceptance PASS가 아니다.** 실제 배포 revision, 실행 일시, 결과·증거 링크와 담당자 판단을 기록한 후 PM이 공개 모드를 승인한다.
