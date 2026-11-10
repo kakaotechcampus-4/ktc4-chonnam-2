@@ -1,140 +1,40 @@
-# eval — Offline Evaluation Harness
+# eval — 오프라인 평가
 
-**Owner:** 김대원 (`docs/management/ownership.md`) · **경계:** `docs/architecture/module-architecture.md` §4-모듈7 · §9 · **문서 작업공간:** `docs/modules/eval/` (`initial-evaluation-plan.md` · `experiment-guide.md`)
+제품 실행과 분리된 개발용 평가 도구다. 실행 코드는 이 폴더에, 데이터셋 설명과 결과 해석은 [평가 문서](../docs/modules/eval/README.md)에 있다. 모든 점수는 보유 데이터로 반복 측정한 **개발 평가**이며, 최종 일반화 성능을 뜻하지 않는다.
 
-제품 런타임이 아닌 **개발용 패키지**다. 그래서 `src/daesingo/` 안이 아니라 루트에 독립으로 둔다 — Owner가 제품 코드와 분리해 혼자 굴릴 수 있어야 하고, `search`/`readout`은 eval의 존재를 몰라야 한다(§4-모듈7 ⑥).
+## 빠른 확인
 
-## 구조 (§4-모듈7 ②)
-
-| 폴더 | 들어오는 것 | 나가는 것 | git |
-| --- | --- | --- | --- |
-| `datasets/` | 원본 미디어·frame sequence (A/B/C tier) | — | **원본 미디어는 커밋하지 않는다** (`.gitignore`). README와 목록 파일만 |
-| `manifests/` | 정답지(GT)·manifest 버전·초기 12개 테스트 케이스 | — | 커밋 |
-| `runners/` | dataset + 구현 이름표(`--impl`) | **immutable prediction** | 커밋 (코드) |
-| `predictions/` | runner 출력 | scorer 입력 | 커밋 (JSON). 유료 API 결과라 다시 만들지 않는다. 단 AI-Hub 실험 원본(`aihub_*.json`)은 너무 커서 커밋하지 않고(`.gitignore`) 채점 결과만 `results/`에 둔다 |
-| `scorers/` | prediction + GT version + metric version | metrics | 커밋 (코드) |
-| `locked_test/` | (쓰지 않음) | — | 2026-10-26에 잠근 평가셋을 쓰지 않기로 했다. 모든 수치는 보유 데이터로 잰 「개발 중 반복 측정」이다(`docs/modules/eval/initial-evaluation-plan.md` §3) |
-| `results/` | scorer 출력 | 집계 JSON | **커밋** — 「Eval result: JSON + git」(§10-2). MLflow는 보조 |
-
-**Runner / Scorer를 분리한다**(§9-2). GT나 metric 정의가 바뀌어도 prediction을 다시 만들지 않는다.
-
-## 호출 규칙
-
-- `eval → { search, readout, recording }`의 **public capability만** 부른다 (§6-1). 프롬프트 파일·파서를 import하지 않는다. 예외: `runners/impls/search_pipeline.py`(S1~S3 시점 비교)와 `tools/evaluate_aihub_*`는 시점별 설정을 바꿔 끼우려고 Search의 설정·프롬프트·provider를 직접 import한다.
-- `case`·`evidence`·`web`을 모른다. 최종 source 선택 규칙은 `evidence`의 unit test가 검증한다 (§9-3).
-- A tier(candidate 없는 frame sequence)는 `search.verify_visual(input_ref)`를 직접 부른다 (§4-모듈7 ④). `eval_mode` 분기를 만들지 않는다.
-- 비용은 **runtime(source-video-hour) / eval(clip + processed_duration_sec)**을 섞지 않는다 (§4-모듈7 ⑤).
-
-## 첫 산출물 (`docs/management/ownership.md` §3 김대원 ⑤)
-
-`python -m eval.run --impl <이름표> --manifest <manifest> --stage <stage>`로 도는 상태 → 정답지 10~20건 → 항상 정답/항상 오답 가짜 구현으로 지표 검증 → 4종별 점수 + Classification 지표.
-
-## 지금 도는 것 (v1 harness)
-
-설계 원문은 `docs/modules/eval/harness-v1-design.md`다. 여기에는 쓰는 법만 적는다.
+저장소 루트에서 실행한다. Python 환경을 먼저 설치해야 `eval` 모듈을 찾을 수 있다.
 
 ```bash
-# 1) 실행 → predictions/<run_id>.json  (immutable · 덮어쓰지 않는다)
-python -m eval.run --impl fake:always_correct --manifest b_youtube --stage candidate --run-id demo_correct
-
-# 2) 채점 → results/<run_id>.<gt_version>.json
-python -m eval.score --prediction demo_correct
+uv sync --extra test
+uv run pytest tests/eval -q
+uv run python -m eval.run --help
 ```
 
-`--impl`·`--manifest`·`--stage`는 모두 필수다. `--stage` 는 `candidate`(B tier · `b_youtube`) · `classification`(A tier · `a_aihub`, AB tier · `ab_mixed`) · `plate`(MOCK tier · `mock_pack`, 번호판 crop) · `persistence`(차량 검출 지속성) 네 가지다(`run.py`). `--impl` 이름표는 `runners/registry.py` 가 소유한다.
-
-`ab_mixed` manifest 는 A tier 시퀀스 120개와 B tier negative 클립 30개를 이어 붙인 것이다. **5×5 confusion 의 `NONE` 행·열은 이 manifest 로만 채워진다** — AI-Hub 시퀀스는 전부 4종 중 하나여서 「아무 위반도 아닌 것」이 없기 때문이다. `python -m eval.tools.build_ab_mixed` 로 재생성하며 뽑은 클립은 `meta.coverage.sampling`(rule_version·seed)에 기록된다. 항목마다 `source_tier` 가 있다 — A 는 AI-Hub 원본 프레임, B 는 YouTube 재인코딩 영상이라 해상도·압축 특성이 다르다.
-
-### AI-Hub 선별 MP4 분류 평가
-
-전체 데이터셋 구성과 해석 한계는 [`docs/modules/eval/datasets/README.md`](../docs/modules/eval/datasets/README.md)에 정리했다. 로컬 `D:/카테캠/데이터/AIHub_traffic_videos_best_100_each/manifest.csv`에는 유형별 100개씩 400개가 있다. `a_aihub_best100_all`은 전체 400개 개발 진단용이고, `a_aihub_best100_val`은 원본 Validation 129개에서 기존 A tier manifest와 겹치는 12개를 제외한 **117개 양성 영상**이다. MP4는 저장소에 넣지 않는다.
+`demo_correct`의 예측과 채점 결과는 이미 커밋돼 있다. 같은 버전의 결과를 다시 저장하려고 하면 채점기가 종료 코드 3으로 덮어쓰기를 거부한다. 새 실행을 확인하려면 **새 run ID**를 사용한다.
 
 ```bash
-uv run python -m eval.tools.evaluate_aihub_best100 build --source D:/카테캠/데이터/AIHub_traffic_videos_best_100_each
-uv run python -m eval.tools.evaluate_aihub_best100 run --source D:/카테캠/데이터/AIHub_traffic_videos_best_100_each --run-id <새_run_id>
-uv run python -m eval.score --prediction <새_run_id>
-
-# 유형별 100개 전부: Training 포함 개발 진단으로 별도 집계
-uv run python -m eval.tools.evaluate_aihub_best100 build --set all
-uv run python -m eval.tools.evaluate_aihub_best100 run --set all --run-id <다른_run_id>
-uv run python -m eval.score --prediction <다른_run_id>
+uv run python -m eval.run --impl fake:always_correct --manifest b_youtube --stage candidate --run-id my_demo_001
+uv run python -m eval.score --prediction my_demo_001
 ```
 
-`build`는 manifest가 이미 있으면 덮어쓰지 않는다. `run`도 prediction을 덮어쓰지 않는다. 실제 실행은 Search S3 시점(`gemini-4-argon`, coarse 2 fps — S1~S3 정의는 [10/28 실험 기록](../docs/modules/eval/experiments/2026-10-28-search-points-pipeline.md))의 공개 `search_candidates`를 각 영상 전체에 적용하고 **최상위 후보의 위반 유형**을 영상 단위 예측으로 쓴다. 후보가 없거나 유형이 없으면 `NONE`이다. 따라서 이 수치는 **Search의 후보 찾기까지 포함한 영상 단위 유형 적중률**이며 독립 분류기 정확도가 아니다. 위반 시점·정상 영상·대상 bbox 정답은 없어서 해당 지표는 내지 않는다. 유료 호출 전에 원천 파일의 SHA-256을 manifest와 대조한다.
+실행 결과는 `eval/predictions/<run_id>.json`, 채점 결과는 `eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json`이다. 예: `my_demo_001.g3.s5-c3.json`처럼 버전은 실제 입력과 채점기에 따라 정해진다. 같은 run ID의 예측과 결과는 덮어쓰지 않는다.
 
-같은 AI-Hub 영상 8개를 검토된 C tier 2 정상 블박 8개 사이에 삽입한 개발용 진단도 있다. `uv run python -m eval.tools.evaluate_aihub_mixed build` 후 `uv run python -m eval.tools.evaluate_aihub_mixed run --run-id <새_run_id>`로 후보를 평가하고, `--fine`을 붙인 **별도 새 run ID**로 Fine까지 평가한다. 생성된 MP4는 `eval/datasets/aihub_mixed_pilot/`에만 남고, manifest `aihub_mixed_pilot_mp2`는 삽입 시작·끝과 실제 인코딩 길이·해시를 기록한다. 산출물과 결과 해석은 [10/30 실험 기록](../docs/modules/eval/experiments/2026-10-30-aihub-best100-video-and-mixed.md)을 본다. 이 점수는 합성 영상 진단이며 실제 장시간 블박 성능으로 일반화하지 않는다.
+## 입력과 재현 범위
 
-확장 진단 `aihub_mixed_100_v1`은 서로 다른 정상 블박 100개와 AI-Hub 원본 100개(4종별 25개)를 사용한다. 삽입 100개와 대조 100개, 총 200개를 `uv run python -m eval.tools.build_aihub_mixed_100`으로 만들고 `uv run python -m eval.tools.evaluate_aihub_mixed run --dataset aihub_mixed_100_v1 --fine --run-id <새_run_id>`로 평가한다. 영상은 로컬 `eval/datasets/aihub_mixed_100_v1/`에만 남고, manifest·결과는 위 실험 기록에 연결했다.
-
-같은 AIHub 400개와 혼합 100쌍에 Search S1/S2/S3를 적용한 결과는 [10/31 시점별 비교](../docs/modules/eval/experiments/2026-10-31-aihub-video-search-points.md)를 본다. 두 평가 명령 모두 `--point s1|s2|s3`를 받으며, 400개 run에서 Validation 117개를 추출하려면 `evaluate_aihub_best100 derive-val --from-run-id <전체_run_id> --run-id <새_val_id>`를 사용한다.
-
-`mock_pack` manifest 는 팀 공용 Mock Pack(`data/mock/`) 산출물을 `mock_pack:contracts` impl 로 읽어 파이프라인이 끝까지 연결되는지 본다(`candidate`·`plate` 지원). 여기서 나오는 지표는 정답지가 채점 대상 fixture 에서 파생돼 순환적이다 — 성능 근거가 아니라 배관 확인용이다(결과의 `coverage` 경고 참조).
-
-### Gemini Coarse 공식 평가
-
-`search:gemini-coarse-p3`는 제품과 같은 `daesingo.search.search_candidates(scope)` 공개 경계를 사용해 `b_youtube` 123클립의 candidate stage를 실행한다. 같은 사전 검사(`gemini_preflight.py`)는 `b_youtube_m4` · `ctier2` · `ctier3`도 받으며, `search:s1`~`s3`(Coarse → Fine 전체 경로)도 이 검사를 쓴다. 개인 회귀 영상은 이 manifest나 GT에 추가하지 않는다.
-
-모든 설정은 저장소 루트의 `.env` 에서만 읽는다 (shell 환경변수는 쓰지 않는다). `.env.example` 을 `.env` 로 복사해 채운다.
-
-```bash
-uv sync --extra test --extra eval-gemini
-```
-```
-# repo 루트의 .env (예시는 .env.example)
-GEMINI_API_KEY=...
-DAESINGO_EVAL_DATA_ROOT=/absolute/data/root
-# 선택: 프록시 override. 미설정 시 지정 프록시가 기본값이다.
-# search:gemini-coarse-p3에만 적용된다. search:s1~s3와 evaluate_aihub_* 도구는
-# 시점별 프록시 주소를 코드에 고정해 쓴다(search_pipeline.py POINTS).
-# DAESINGO_GEMINI_BASE_URL=https://mlapi.run/<tenant>/v1
-```
-```bash
-uv run python -m eval.run \
-  --impl search:gemini-coarse-p3 \
-  --manifest b_youtube \
-  --stage candidate \
-  --run-id <run_id>
-uv run python -m eval.score --prediction <run_id>
-```
-
-`DAESINGO_EVAL_DATA_ROOT` 아래에 `clips.json`의 `file_path`를 그대로 붙여 파일을 찾는다. 값을 비우면 저장소 루트 기준으로 찾는다. runner는 유료 호출 전에 123개 파일의 존재·길이·SHA-256, `GEMINI_API_KEY`, `openai>=1.40`, `ffprobe`를 모두 검사한다. 하나라도 맞지 않으면 prediction을 만들지 않고 원인을 출력한다.
-
-평가는 담당자 로컬에서 돈다 — 데이터·`GEMINI_API_KEY`·프록시 접근은 각자의 로컬 `.env` 에 있다. 모든 Gemini 호출은 프록시 base URL(Bearer 인증, `GEMINI_API_KEY`)을 경유한다. 운영 baseline과 프록시 규칙은 `docs/modules/search/decisions/gemini-3.8-proxy-baseline-2026-09-18.md`.
-
-prediction의 `facts`에는 모델, Coarse 프롬프트 버전(실행 시점의 `COARSE_PROMPT.version` — 11/7 #609 이후 `coarse-p3+coarse-brief-v1`)과 SHA-256 fingerprint, 설정 버전과 fingerprint, SDK 버전, 처리 영상 길이, clip 목록, 토큰·비용 기록이 남는다. 최초 실제 실행 결과가 baseline이며 특정 Recall 값은 실행 전 인수 조건이 아니다.
-
-| 폴더 | 무엇이 들어 있나 |
+| 경로 | 내용 |
 | --- | --- |
-| `predictions/` | impl 이 낸 **원문(`raw`) + 정규화 뷰(`normalized`) + `meta`**. GT나 지표 정의가 바뀌어도 다시 만들지 않는다 — scorer 만 다시 돈다 |
-| `results/` | 지표 값. 낼 수 없는 지표는 `0` 이 아니라 `null` 이고, `coverage` 가 그 이유와 채점에서 제외한 것을 적는다 |
+| `manifests/` | 입력 목록과 정답지(GT) |
+| `runners/` | 구현 이름표(`--impl`)와 실행기 |
+| `scorers/` | 지표 계산기 |
+| `predictions/`, `results/` | 커밋된 예측과 채점 JSON |
+| `datasets/` | 로컬 미디어 안내. 원본 영상은 저장소에 없음 |
 
-**지표 계산이 맞는지는 치트 구현 두 개의 점수 차이로 확인한다.** `fake:always_correct` 는 GT 를 그대로 되돌려주고 `fake:always_wrong` 은 유형·구간·bbox 를 전부 틀리게 낸다. 커밋된 `demo_correct*` / `demo_wrong*` 산출물이 그 대조다 — 만점과 0점이 함께 있지 않으면 그 지표는 검증되지 않은 것이다. runner 는 impl 에 `{"manifest", "stage"}` 만 넘긴다(§2-5). GT 는 치트 구현이 스스로 읽는다.
+커밋된 예측은 원본 미디어나 유료 API 없이 **다시 채점**할 수 있다. 모델을 **다시 실행**하려면 manifest에 맞는 원본 미디어, 필요한 API 키와 실행 도구가 별도로 필요하다. 미디어가 없는 환경에서는 관련 테스트가 건너뛰어질 수 있다. 결과의 입력·코드·채점 버전은 JSON `meta`에서 확인한다. MLflow 추적은 도입하지 않았으며 결과 JSON과 Git이 기록이다.
 
-```bash
-python -m pytest tests/eval/ -q
-```
+`b_youtube`는 123개, `b_youtube_m4`는 179개 클립이다. `ctier2`, `ctier3`와 AI-Hub manifest도 있으며, 각각의 구성과 한계는 [데이터셋 문서](../docs/modules/eval/datasets/README.md)에 있다. A tier는 AI-Hub 프레임 시퀀스, B tier는 주행 영상 클립, C tier는 검토된 정상 블랙박스 클립이다.
 
-미디어가 없는 clone 에서도 전부 통과한다. B tier 클립 123개와 A tier 아카이브(`VL.zip`)가 필요한 테스트는 **실패가 아니라 skip** 이며, 무엇이 왜 건너뛰는지는 `datasets/README.md` 가 적어 둔다.
+실제 Gemini 실행에는 `uv sync --extra test --extra eval-gemini`와 루트 `.env`의 `GEMINI_API_KEY`, `DAESINGO_EVAL_DATA_ROOT`가 필요하다. 예를 들어 `--impl search:gemini-coarse-p3 --manifest b_youtube --stage candidate`를 새 run ID와 함께 실행한다. 시점별 전체 경로 비교의 등록 이름은 `search:s1-flash-1x`, `search:s2-flash-slow`, `search:s3-argon-gore`다. 실행 옵션은 `uv run python -m eval.run --help`를 본다.
 
-### readout 번호판 인식 평가 (비공개 manifest)
-
-`readout:paddle-crop`은 번호판 crop 이미지를 readout 공개 함수 `read_plate`와 `PaddleOcrProvider`로 판독한다. crop 한 장이 프레임 한 장이다. 검출 단계가 빠져 있어서 **인식(recognition)만** 잰다.
-
-정답과 예측에 실제 차량번호가 들어간다. 그래서 이름이 `private_`로 시작하는 manifest는 manifest·prediction·result를 전부 `.env`의 `DAESINGO_EVAL_PRIVATE_ROOT` 아래에 둔다(`eval/paths.py`). 레포에는 집계 수치만 `docs/modules/eval/experiments/`에 남긴다.
-
-```bash
-uv sync --extra test --extra readout-paddle
-# 1회: aihub172.py sample 산출물 → private manifest
-uv run python -m eval.tools.build_private_aihub172 --source <.../aihub172/track2_recognition>
-uv run python -m eval.run --impl readout:paddle-crop --manifest private_aihub172_plate --stage plate --run-id <run_id>
-uv run python -m eval.score --prediction <run_id>
-```
-
-트랙① 차량 검출 지속성은 `readout-exp:yolo11n`이다. readout 실험 설정(YOLO11n)을 옮긴 것이고 **제품 코드가 아니다**. readout에 검출 공개 함수가 생기면 그 함수로 바꾼다.
-
-```bash
-uv sync --extra test --extra eval-yolo
-uv run python -m eval.tools.build_private_aihub172 --track 1 --source <.../aihub172/track1_association>
-uv run python -m eval.run --impl readout-exp:yolo11n --manifest private_aihub172_track1 --stage persistence --run-id <run_id>
-uv run python -m eval.score --prediction <run_id>
-```
+CI의 [Python 테스트](../.github/workflows/python-tests.yml)는 eval 테스트를 포함한다. 로컬에서 실행한 점수의 해석과 조건은 [평가 결과](../docs/modules/eval/evaluation-results-2026-11-01.md) 및 [실험 기록](../docs/modules/eval/experiments/README.md)을 따른다.

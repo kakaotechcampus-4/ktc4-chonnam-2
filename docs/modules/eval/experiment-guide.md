@@ -70,7 +70,7 @@ AI 시스템은 모델뿐 아니라 프롬프트, 입력 데이터, FPS, 해상�
 | Baseline | 기존 설정 또는 Run |
 | 변경 사항 | FPS만 1 → 2 |
 | Git Commit | `a31f...` |
-| MLflow Run | Run ID 또는 링크 |
+| 결과 JSON | `eval/results/<run_id>.*.json` |
 
 ### 왜 필요한가?
 
@@ -527,7 +527,7 @@ timestamp source가 허용 enum인가
 존재하는 video_id인가
 ```
 
-이런 검사는 가능하면 `pytest`로 매 변경마다 실행한다. CI 추가는 가능하지만(`management/ownership.md` §6) 아직 붙이지 않았으므로 **당장은 로컬에서 돌린다**.
+이런 검사는 `pytest`로 매 변경마다 실행한다. [Python CI](../../../.github/workflows/python-tests.yml)도 eval 테스트를 포함한다.
 
 책에서도 **코드로 결정론적으로 검사할 수 있는 것은 LLM 평가에 맡기지 않는 것**을 원칙으로 둔다.
 
@@ -543,23 +543,22 @@ timestamp source가 허용 enum인가
 
 를 빠르게 확인하기 위한 용도다.
 
-본격적인 Recall@K, FP/hour, OCR 정확도 등의 성능 평가는 별도의 고정된 실제 평가 데이터셋에서 진행한다.
+Recall@K, FP/hour, OCR 정확도는 각 manifest의 정답과 coverage가 허용하는 범위에서만 해석한다. 현재 결과는 개발 중 반복 측정이다.
 
 ---
 
-## 16. MLflow / Git / Notion 역할
+## 16. Git과 실험 기록의 역할
 
-세 곳에 같은 내용을 중복해서 작성하지 않는다.
+MLflow는 아직 도입하지 않았다. 실행 결과의 정본은 Git으로 추적하는 JSON이다.
 
 | 도구 | 역할 |
 | --- | --- |
-| **Git** | Code / Prompt / Config / 평가 코드 |
-| **MLflow** | Run / Parameter / Metric / Artifact |
-| **Notion** | 실험 목적 / 결과 해석 / 실패 원인 / 다음 결정 |
+| **Git** | Code / Prompt / Config / 평가 코드 / `eval/predictions/` / `eval/results/` |
+| **실험 문서** | 실험 목적 / 결과 해석 / 실패 원인 / 다음 결정 |
 
-집계 결과 JSON은 MLflow와 별개로 `eval/results/`에 git으로도 남긴다 — 결과는 파일 기반으로 버전 추적 가능해야 한다(`architecture/module-architecture.md` §4-모듈7 ⑥ · §10-2 「Eval result: JSON + git」).
+집계 결과 JSON은 `eval/results/`에 남긴다(`docs/architecture/module-architecture.md` §4-모듈7 ⑥ · §10-2 「Eval result: JSON + git」).
 
-예를 들어 Notion에는 다음 정도만 남겨도 충분하다.
+예를 들어 실험 문서에는 다음 정도를 남긴다.
 
 ```
 실험 목적
@@ -567,7 +566,7 @@ timestamp source가 허용 enum인가
 Baseline
 변경 사항
 
-MLflow Run
+결과 JSON 경로
 
 핵심 결과
 
@@ -578,13 +577,13 @@ MLflow Run
 다음 실험
 ```
 
-세부 파라미터와 Raw Result는 MLflow와 Git에서 확인한다.
+세부 파라미터와 원본 예측은 Git에 남긴 JSON에서 확인한다.
 
 ---
 
 ## 17. Trace는 파이프라인 연결 이후 적용
 
-실험 단위의 비교는 MLflow로 할 수 있지만, **개별 사건이 어느 단계에서 실패했는지**를 확인하려면 Trace가 필요하다.
+실험 단위의 비교는 결과 JSON으로 할 수 있지만, **개별 사건이 어느 단계에서 실패했는지**를 확인하려면 Trace가 필요하다.
 
 예:
 
@@ -623,9 +622,9 @@ Final Top-3
 ```
 1. Git 기반 Code / Prompt / Config Versioning
 
-2. 고정 평가 Dataset + Ground Truth Versioning
+2. Manifest와 Ground Truth Versioning
 
-3. MLflow Experiment Tracking
+3. 평가 결과 JSON과 Git 기록
 
 4. 실패 사례 및 Failure Taxonomy
 

@@ -154,7 +154,7 @@ Runtime/Ops 문서 역시 이 항목들을 recording 실측 이후 닫도록 남
 | `evidence` | `recording → evidence` | `TimeSourceCandidate[]`, GPS observation, asset/derived refs | `creation_time`은 없을 수 있고 시각 후보가 충돌할 수 있음. GPS도 없을 수 있음 | source enum 확장 방식, UNKNOWN 표현, 후보 provenance 필드, timestamp 최종 판정은 evidence에 유지할지 |
 | `case` | `recording ↔ case` | Timeline reference, requested time range, deletion trigger | `recording`만 timeline을 수정해야 하고 사용자 원본 삭제 금지 | `rebase_timeline`을 누가 요청할 수 있는지, case 삭제 시 reference 삭제와 managed file 삭제 구분 |
 | geocoder adapter | `recording → geocoder` | GPS `lat/lon` observation | GPS 없는 경우 정상. 주소 변환 실패해도 좌표는 유지돼야 함 | 좌표 상태와 geocoder 실패 상태를 별도로 표현할지, 주소 결과 provenance |
-| `eval` | `recording → eval` | timeline/resolve 결과, 실제 media fixture 처리 결과 | mock만으로는 경계·codec·stream 구조를 평가하기 어려움 | 어떤 recording 값/fixture를 locked test에 보존할지 |
+| `eval` | `recording → eval` | timeline/resolve 결과, 실제 media fixture 처리 결과 | mock만으로는 경계·codec·stream 구조를 평가하기 어려움 | 어떤 recording 값/fixture를 평가셋에 보존할지 |
 | Runtime/Ops | `recording ↔ Worker/Storage` | source/proxy/remote/derived reference, bytes, expiry, deletion result | 긴 ffmpeg/proxy 작업은 HTTP 동기 처리에 부적합; storage/upload 전략 미결 | 어떤 작업을 Job으로 정의할지, purge 부분 성공 결과를 어떻게 저장할지, 실제 bytes/latency 측정 위치 |
 
 현재 전체 계약 목록에서도 `RecordingTimeline / AssetSpan / TimeSourceCandidate`는 `recording`이 생산하고 여러 모듈이 소비하는 핵심 계약으로 정의돼 있다.

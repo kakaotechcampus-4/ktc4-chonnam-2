@@ -5,7 +5,7 @@ import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
 import { CandidatesScreen } from './CandidatesScreen'
 import { HintForm } from './SubScreens'
 
-// 음성 결과(#168 [A]) — 가장 유력한 후보에서 위반이 관찰되지 않았다. 결과 화면의
+// 음성 결과 — 가장 유력한 후보에서 위반이 관찰되지 않았다. 결과 화면의
 // 변형이라 값 칸은 그리지 않는다. 다음 후보를 자동으로 확인하지 않고, 남은 후보를
 // 바로 펼쳐 사용자가 고르게 한다. onSelect가 없으면(개발용 화면) 후보를 펼치지 않는다.
 //
@@ -15,9 +15,9 @@ export function NotObservedScreen(props: {
   view: CaseView
   onSelect?: (candidateId: string) => void
   restyled?: boolean
-  /** 처음부터 다시 — 서버 action과 따로 언제나 두는 고정 출구다(#410) */
+  /** 처음부터 다시 — 서버 action과 따로 언제나 두는 고정 출구다 */
   onNewReport?: () => void
-  /** notice가 실은 동작(`설명 고치기` = `EDIT_HINT`, #431)을 연다. 없으면(시연) 버튼을 그리지 않는다 */
+  /** notice가 실은 동작(`설명 고치기` = `EDIT_HINT`)을 연다. 없으면(시연) 버튼을 그리지 않는다 */
   onAction?: (noticeCode: string, action: Action) => void
   canRun?: (action: Action) => boolean
   /** 다른 후보가 없으면 설명 입력란을 화면에 바로 두고, 여기로 고친 설명을 보낸다 */
@@ -38,7 +38,7 @@ export function NotObservedScreen(props: {
     <div className="stack">
       {/* 기존 모양일 때 감싸는 div는 display: contents라 .stack 간격이 그대로다 */}
       <div className={r ? 'rs rs-screen state-page notobs' : 'notobs-legacy'}>
-        {/* 새 모양은 분석 중단 화면처럼 상태 문구가 h1이다(#509 #3). 기존 모양은 그대로 둔다 */}
+        {/* 새 모양은 분석 중단 화면처럼 상태 문구가 h1이다(접근성 점검 결함 3, docs/modules/web/experiments/a11y-check-2026-10-31.md). 기존 모양은 그대로 둔다 */}
         {r ? <p className="state-context">신고자료</p> : <h1 className="page-title">신고자료</h1>}
         <section className={r ? 'state-card' : 'panel panel-p stack'}>
           {r ? (

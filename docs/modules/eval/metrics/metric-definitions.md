@@ -501,6 +501,9 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
   plate       { exact_accuracy, wrong_accept_rate, abstention_recall,
                 readable_abstention_rate, n_readable,
                 abstain_reasons, n_abstained_without_reason, n, coverage }
+   persistence { 차량 검출 지속성 지표 또는 not_run() }
+   pipeline    { Coarse → Fine 연결 지표 또는 not_run(); 실행 시
+                 meta.pipeline_scorer_version 기록 }
   cost        { cost_per_case, cost_per_source_video_hour, total, currency,
                 latency_ms{p50,p90,max,n,n_missing}, latency_per_source_video_hour,
                 n_rows, n_unknown_cost, scenarios, coverage, scorer_version }
@@ -511,7 +514,7 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 정답지가 같아도 채점기가 다르면 다른 숫자이고, 다른 숫자는 다른 파일이어야 비교할 수 있다.
 
 `cost` 는 stage 와 무관하게 **항상** 계산된다(`UsageRecord` 가 없으면 `NO_USAGE_RECORDS`).
-나머지 세 블록 중 이번 stage 가 아닌 것은 `not_run()` 모양이다.
+이번 stage 에서 실행하지 않은 지표 블록은 `not_run()` 모양이다.
 
 **어떤 블록이든 먼저 `coverage` 를 읽는다.** 숫자만 보고 판단하지 않는다.
 
@@ -532,8 +535,8 @@ eval/results/<run_id>.<gt_version>.<scorer_version>-<cost_scorer_version>.json
 | F3 | B tier 에 **안전모 사건이 0건** | `by_type` 에 `MOTORCYCLE_HELMET_NON_USE` 행이 없다. 사건 10건은 `recall_at` 의 신뢰구간이 여전히 넓다 |
 | — | `NONE` 은 `a_aihub` 단독 채점에서 여전히 0 | manifest 선택이 곧 측정 범위다 (§4-3) |
 | — | **산출물 드리프트를 아무도 안 잡는다** | 채점 코드를 고치고 `results/` 재생성을 빠뜨려도 통과한다. 커밋된 예측을 재채점해 결과와 대조하는 검사가 필요하다 (CI 또는 테스트) |
-| — | `locked_test/` 가 비어 있다 | 「최종 제품 성능 주장은 locked test 에서만 한다」(`initial-evaluation-plan.md` §3)의 **근거가 아직 없다.** 개봉 횟수·승인 정책도 미결(v4 §10-3) |
-| — | pytest 가 CI 에서 안 돈다 | 테스트 255개가 로컬 실행 증빙으로만 선다. CI 는 `check_boundaries.py`·`check_contract_fixtures.py` 두 개뿐이다 |
+| — | 독립적인 최종 일반화 성능 측정 없음 | 현재 수치는 보유 데이터의 개발 중 반복 측정이다. 최종 제품 성능으로 인용하지 않는다 |
+| — | 자동 검증 범위 | `python-tests.yml`이 eval 테스트를 실행한다. 원본 영상과 API 키가 필요한 실험 재실행까지 CI가 보장하지는 않는다 |
 | — | **plate 텍스트 정규화 규칙이 없다** | `exact_accuracy` 는 지금 `value == true_text` 문자열 **완전 일치**다(§5). 공백·하이픈·전각/반각을 어떻게 다룰지가 정의돼 있지 않다. eval 소유이고 eval 이 닫되, C tier 가 없어 실데이터 번호판 정답지가 0건이라 **실측 없이 정하지 않는다.** **기록 요건은 먼저 닫았다**(§5-3) — 규칙이 없어도 「어떤 정규화 위에서 잰 값인가」를 적게 하면 수치가 조용히 어긋나지는 않는다 |
 | — | **`legibility` 라벨이 eval 정답지에만 있다** | `wrong_accept_rate`·`abstention_recall` 은 분모가 **GT 의 legibility** 다(§5-1). readout 의 baseline 측정에는 이 라벨이 없어 **계산 자체가 불가능**하고, 그쪽 「틀리게 확정 / 제대로 포기」는 분모가 **예측 기준**이라 이름이 비슷해도 다른 값이다(readout PR [#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120)). C tier 정답지를 만들 때 `legibility` 를 같이 라벨링해야 두 축이 이어진다 |
 | — | **plate 천장은 전처리로 올라가지 않는다** | 같은 AI-Hub `172` crop 에서 **학습 모델 CER 0.76% vs pretrained 55.3%** 다 (Sensors 2026 · readout PR [#120](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/pull/120) §4). plate 실측이 낮게 나올 때 **원인을 전처리에서 찾지 않는다** — 파인튜닝 전까지의 천장이다 |
@@ -568,10 +571,10 @@ F13(시퀀스 불변식 검사기) · F10(유형별 대상 객체) · F6(plate �
 **말하면 안 되는 것**
 
 - mock tier 의 점수를 성능 근거로 쓰는 것 — 정답이 채점 대상과 같은 fixture 에서 나왔다(순환).
-- plate 지표 — 실데이터가 없다.
-- `NONE` 을 포함한 5×5 성능 — 그 행·열은 비어 있다.
+- plate 지표를 공개 제품 성능으로 일반화하는 것 — 공개 manifest에는 실번호판 정답이 없다. 비공개 crop 진단은 별도 범위다.
+- `a_aihub` 단독 결과로 `NONE` 을 포함한 5×5 성능을 주장하는 것 — `NONE` 행·열은 `ab_mixed`에서만 채워진다.
 - `Top-3 Recall 90%` 같은 임의 숫자를 stage gate 로 쓰는 것(`initial-evaluation-plan.md` §3).
-- 최종 제품 성능 주장 — **locked real long-dashcam test 에서만** 한다.
+- 보유 데이터로 반복 측정한 결과를 최종 제품 성능으로 주장하는 것.
 
 ---
 

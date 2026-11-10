@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react'
 
-// 화면 전환 초점(#509 #2). 화면이 바뀌면 누른 버튼이 사라지면서 초점이 body로 떨어져
+// 화면 전환 초점(접근성 점검 결함 2, docs/modules/web/experiments/a11y-check-2026-10-31.md). 화면이 바뀌면 누른 버튼이 사라지면서 초점이 body로 떨어져
 // 화면 낭독기가 아무것도 알리지 않는다. 그래서
 // - 새 화면이 열리면 그 화면 제목(h1)에 초점을 준다.
 // - 하위 화면에서 뒤로 오면 그 화면을 연 버튼(같은 글자 · 같은 class)으로 돌려준다.
@@ -24,7 +24,7 @@ export function useScreenFocus(main: RefObject<HTMLElement | null>, screenKey: s
     if (!target) return
     if (target.tagName === 'H1' && !target.hasAttribute('tabindex')) target.tabIndex = -1
     target.focus({ preventScroll: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 화면이 바뀔 때만
+    // 의존성은 일부러 screenKey · depth만 둔다: 화면이 바뀔 때만 초점을 옮긴다. main은 ref라 넣지 않는다
   }, [screenKey, depth])
   return () => {
     const a = document.activeElement

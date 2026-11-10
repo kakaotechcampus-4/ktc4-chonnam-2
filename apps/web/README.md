@@ -1,5 +1,37 @@
 # web — 브라우저 앱
 
+## 처음 실행과 검사
+
+저장소 루트에서 `npm ci` 후 `npm run dev:web`을 실행한다. 실제 흐름(`/`)과 공식 샘플(`?sample`)은 API 서버가 필요하다. API 없이 화면을 확인할 때는 `?demo` 또는 `?dev`를 사용한다.
+
+```bash
+npm run test:web
+cd apps/web
+npx tsc -b
+cd ../..
+npm run build --workspace=daesingo-web
+npm run preview:web
+```
+
+`apps/web/package.json`에는 lint 명령이 없다. 빌드 명령에는 타입 검사(`tsc -b`)가 포함된다. [web-tests.yml](../../.github/workflows/web-tests.yml)이 타입 검사·Vitest·Playwright를 실행한다. E2E는 현재 `e2e/a11y.e2e.ts` **한 파일의 접근성·키보드 흐름**을 다룬다. 전체 API 연동 시나리오를 검증한 결과로 읽지 않는다. 로컬 E2E는 Chromium 설치 후 `npm run test:e2e --workspace=daesingo-web`로 실행한다.
+
+## 화면에서 나가는 결과
+
+사용자는 신고 문구를 복사하고 신고용 영상을 다운로드한 뒤 안전신문고로 이동한다. 신고 제출은 사용자가 안전신문고에서 직접 한다.
+
+## 폴더 지도
+
+| 경로 | 역할 |
+| --- | --- |
+| `src/screens/` | 업로드·진행·후보·결과와 하위 화면 |
+| `src/components/` | 화면 공용 UI |
+| `src/styles/` | 화면 스타일과 디자인 토큰 |
+| `src/contracts/` | CaseView 타입과 표시 문구 |
+| `src/api/`, `src/state/` | API 요청과 흐름 상태 |
+| `e2e/` | Playwright 검사 |
+
+화면 설계 문서는 [web 모듈 README](../../docs/modules/web/README.md)에 모았다.
+
 **Owner:** 신유민 (공동 개발: 김대원 — 후보 카드·타임라인·번호판 확대) · **경계:** `docs/architecture/module-architecture.md` §4-모듈6 · **문서 작업공간:** `docs/modules/web/`
 
 ## 지금 상태

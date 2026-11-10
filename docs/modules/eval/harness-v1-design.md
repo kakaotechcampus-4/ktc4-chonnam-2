@@ -248,6 +248,8 @@ eval/manifests/**/events_draft.json
 
 ## 9. 후속 항목
 
+아래 F1~F13은 이 문서의 하니스 후속 항목 ID다. 해소 근거는 각 항목 아래 설명과 [지표 정의](metrics/metric-definitions.md) §10에 기록했다.
+
 | # | 항목 | 열리는 지표 | 필요한 것 | 담당 |
 | --- | --- | --- | --- | --- |
 | F1 | **C tier 확보**(팀원 SD 원본) | Plate 3종 · Timestamp source agreement | 실제 촬영 원본. 주차 차량 20~30장이면 Exact Accuracy·Abstention 검증 착수 가능 | 김대원 + 신유민(`readout`) |
@@ -311,7 +313,6 @@ F13 **해소됨** (2026-09-16). `a_aihub`에는 `clips.json`이 없어 `manifest
 | `verify_visual(input_ref, target_hint?)` 시그니처 | `ownership.md` 서어진 ⑤의 미제출 산출물 | 서어진 |
 | `input_ref`의 실제 모양 | recording 계약 2건 미작성(B06~B09) | 정철원 |
 | A tier fixture의 impl 호출부 스키마 | 위 둘에 의존 | 서어진 · 정철원 |
-| `locked_test` 개봉 횟수·승인 정책 | v4 §10-3 미결 | 김대원(운영 정책 제안) |
 
 이 항목들은 **경로와 자리만** 스펙에 반영했다. 값을 채우지 않는다.
 

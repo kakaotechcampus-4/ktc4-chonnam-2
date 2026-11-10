@@ -1,7 +1,7 @@
 """Candidate 단계 지표.
 
-지표 정의의 원문은 module-architecture.md §9-3 과
-modules/eval/initial-evaluation-plan.md §2 다. 여기서 새로 만들지 않는다.
+지표 정의의 원문은 `docs/architecture/module-architecture.md` §9-3 과
+`docs/modules/eval/initial-evaluation-plan.md` §2 다. 여기서 새로 만들지 않는다.
 
 단, onset_error_sec 는 두 문서 모두 이름만 있고 정의가 없어 여기서 정한다:
 recall_at[max(ks)] 계산에서 실제로 적중(matched)한 예측만을 대상으로,
@@ -27,7 +27,7 @@ type_accuracy_given_localized 는 시간이 맞은 사건 중 유형까지 맞�
 type_accuracy_given_localized 의 곱이 아니다. 곱으로 검산하지 않는다.
 
 **비율 지표에는 95% 신뢰구간(`*_ci95`)을 함께 낸다** (2026-09-21). B tier 의
-채점 대상 사건이 10건이고 by_type 은 유형당 2~6건이다 — SIGNAL 2건에서 나올
+채점 대상 사건 수는 manifest마다 다르고 유형별 표본은 작다 — 2건이면 나올
 수 있는 recall 은 0 · 0.5 · 1 셋뿐인데 결과 파일은 `0.5` 라고만 적어 소수점이
 정밀해 보인다. 방법과 Wald 를 쓰지 않는 이유는 `interval.py`.
 """
@@ -56,7 +56,8 @@ def _assign(cands, targets, k, tolerance_sec, require_type=True):
     localization 축이 쓴다. 이때도 같은 거리라면 유형이 맞는 후보를 먼저
     본다. 아니면 유형 정확도가 동률 배정 운에 휘둘린다.
 
-    예측 하나가 두 사건의 적중으로 중복 계수되지 않게 한다 (F7).
+    예측 하나가 두 사건의 적중으로 중복 계수되지 않게 한다
+    (docs/modules/eval/harness-v1-design.md §9의 F7).
 
     탐욕이 아니라 최대 매칭(Kuhn)을 쓴다. 탐욕은 먼저 나온 사건이 후보를
     삼켜 뒤의 사건이 굶을 수 있고, 그러면 recall 이 정답지의 사건 나열

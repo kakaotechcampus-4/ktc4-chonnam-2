@@ -6,8 +6,8 @@ import { ACTION_LABELS, noticeMessage } from '../contracts/labels'
 import { CandidatesScreen } from './CandidatesScreen'
 
 // 시스템 실패(core-user-flow §23). AI의 낮은 확신과 다르다 — 「후보 없음」으로 보여 주지
-// 않는다(#197). 다시 시도는 처음부터가 아니라 실패한 단계부터 이어서 한다. 다시 시도가 없는 실패
-// (분석 범위 초과 · 클립 · Fine, #481 · #482)는 다른 후보와 「처음으로」가 출구다.
+// 않는다. 다시 시도는 처음부터가 아니라 실패한 단계부터 이어서 한다. 다시 시도가 없는 실패
+// (분석 범위 초과 · 사건 클립 준비 실패 · 정밀 확인(Fine) 실패)는 다른 후보와 「처음으로」가 출구다.
 // 빨강은 오류 아이콘과 짧은 핵심 안내에만 쓴다. 원인(notice 문구)과 다시 시도 안내는
 // 기본 글자색으로 둔다.
 export function FailedScreen(props: {
@@ -15,7 +15,7 @@ export function FailedScreen(props: {
   onAction: (noticeCode: string, action: Action) => void
   /** 지금 연결된 동작만 버튼으로 연다 — 나머지는 사용 불가와 이유를 보인다 */
   canRun: (action: Action) => boolean
-  /** 다시 하기가 없는 실패(클립 · Fine)의 출구 — 다른 후보로 옮긴다. 없으면(시연) 후보를 두지 않는다 */
+  /** 다시 하기가 없는 실패(사건 클립 · 정밀 확인(Fine))의 출구 — 다른 후보로 옮긴다. 없으면(시연) 후보를 두지 않는다 */
   onSelect?: (candidateId: string) => void
   /** 처음부터 다시 — 분석 범위 초과처럼 다른 출구가 없을 때 막다른 화면을 피한다 */
   onNewReport?: () => void
