@@ -103,8 +103,9 @@ def _plate_value(record: Contract) -> str | None:
 def _plate_readout_performed(record: Contract) -> bool:
     """ADR-EVIDENCE-008 §5.1: a PlateReadout was an assembly input for this selection.
 
-    Separates "read but not identified" (plate-less Package allowed) from an execution
-    failure (`PlateReadout=None`), which must never reach a WARN Package.
+    When the record has no plate value, this distinguishes an unidentified plate from
+    a missing readout. The former allows plate-less rendering. A valid manual plate
+    value can be used even without a readout.
     """
     return any(
         isinstance(ref, dict) and ref.get("kind") == "plate_readout"

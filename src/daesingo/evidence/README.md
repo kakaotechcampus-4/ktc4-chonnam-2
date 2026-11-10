@@ -1,76 +1,81 @@
-# `evidence` — 증거 확정 / 신고 정책 / Package
+# `evidence` — 증거 확정과 신고 준비
 
-**Owner:** 김준영 (`docs/management/ownership.md`) · **경계:** `docs/architecture/module-architecture.md` §4-모듈4 · **문서 작업공간:** `docs/modules/evidence/`
+**Owner** 김준영 · [모듈 문서](../../../docs/modules/evidence/README.md)
 
-## 이 폴더가 하는 일 (요약 — 원문은 §4-모듈4)
+Evidence는 Case가 전달한 사건 후보, 영상 관찰, 번호판·시각 판독, 원본의 시각 후보·GPS, 사용자 정정을 받아 확정값과 출처를 조립한다. 신고 유형을 매핑하고, 추가 판독이 필요한지와 신고 요건을 판단한다.
 
-Observation → confirmed Evidence·Timestamp 최종 resolution·사용자 correction 적용·`EvidenceNeeds`·Visual Event → Report Type 매핑·신고 요건 검사(PASS/WARN/BLOCK)·신고문 Template·`ReportPackage`·handoff
+Search는 사건 후보와 관찰, Readout은 OCR 판독, Recording은 원본·GPS·시간축과 신고용 자산 생성을 맡는다. Case는 후보 선택, 정정 기록 저장, 작업 발주, 화면 진행·검토 상태를 관리한다. Worker는 작업을 실행한다. Evidence는 전달받은 값과 정책으로 판단을 반환한다. 책임 경계의 원문은 [모듈 아키텍처의 Evidence 절](../../../docs/architecture/module-architecture.md#모듈-4-evidence--증거-확정--신고-정책--package)을 참고한다.
 
-## 이 폴더가 알면 안 되는 것 (§4-모듈4 「알면 안 되는 것」)
+## 증거 확정
 
-AI model/prompt / OCR library / ffmpeg / Worker lease·heartbeat / 사용자가 어느 화면에 있는지 / 외부 시스템에 직접 작업 발주. **순수 함수 모듈** — 다른 도메인 모듈을 호출하지 않는다
+- **사건 상황.** Fine은 후보 사건을 상세 확인하는 Search 단계다. Fine 결과가 `OBSERVED`이면 조립한다. `UNCERTAIN`은 `USER_UNSURE`(“잘 모르겠어요”)일 때만 조립하고, 그 외에는 `AWAIT_SITUATION_RESPONSE`를 반환한다. 대기 중에도 발생시각·번호판·위치는 별도로 계산해 Case가 표시할 수 있다. `NOT_OBSERVED`는 정상적인 `NOT_ASSEMBLED` 결과다.
+- **발생시각.** 명시적인 사건시각 정정이 우선이다. 다음으로 같은 IncidentClip과 시간축 revision에서, 사건과 같은 원본 구간에 있고 시각 흐름이 일치하는 실제 OCR 프레임 표본 두 개 이상이 덮는 범위에 사건 대표 시점이 있어야 검증된 화면 시계를 쓸 수 있다. 가장 가까운 표본 시각을 사건 시점까지 보정한다. 이 경로와 명시적 사건시각 정정은 `OK`로 기록한다. 표본 범위 밖이나 원본 경계·공백을 넘겨 계산하지 않는다. 그다음 사건이 속한 원본의 파일명·메타데이터 후보를 검토한다. 파일명 후보가 있으면 우선하며, 후보 값이 충돌하면 그 근거를 남긴다. 파일 계열 값은 `NEEDS_REVIEW`, 쓸 수 있는 근거가 없으면 `UNKNOWN`이다. 클립 없는 호출의 파일 계열 계산은 원본 하나가 시간축 0초에서 시작한다고 가정한다. 상세 조건은 [TimeResolution 계약 §17–18](../../../docs/architecture/contracts/contract-time-resolution.md#18-검증된-overlay-시계를-사건-대표-시점에-대응시키기)에 있다.
+- **번호판.** 판독값의 형식이 의심스러우면 원래 문자열을 보존하고 `needs_review=true`를 붙인다. 유효한 직접 입력은 판독 결과가 없어도 사용할 수 있다. 값이 없고 조립에 사용한 `PlateReadout`이 있으면 식별 실패로 보고 번호판 없는 문구를 허용한다. 값과 판독 결과가 모두 없으면 초안은 보류되고 최종 평가의 신고문 입력은 `UNKNOWN`이다.
+- **위치.** 확보한 좌표·주소·장소명·사용자 단서는 출처와 함께 보존한다. 신고문 장소는 주소 → 장소명 → 사용자 단서 순서로 선택한다. 표시할 문자열이 없으면 장소 문구를 생략하고 최종 평가에서 `WARN`으로 남긴다. 좌표만 있는 경우에도 같은 원칙을 적용한다.
+
+## 초안, 요건 평가, 신고 묶음
+
+1. **`EvidenceRecord` 조립.** 선택된 사건의 확정값과 입력 참조를 담는다. [EvidenceRecord·EvidenceNeeds 계약](../../../docs/architecture/contracts/contract-evidence-record-needs.md)을 따른다.
+2. **신고문 초안.** 조립한 Record로 자산 준비와 독립적으로 제목과 본문을 만든다. 구체적인 유형은 `CONFIRMED`(확인), `CORRECTED`(정정), 또는 현재 Fine 관찰에 근거한 무응답일 때 허용한다. 구체적인 유형에 `USER_UNSURE`로 답하면 보류한다. 유형이 없는 `USER_UNSURE`는 일반 신고문으로 렌더링한다. 발생시각·번호판 입력 조건과 본문 길이 기준을 만족해야 하며, 본문 시각은 한국 시간으로 표시한다. [관찰된 유형의 무응답 처리 결정(#597)](../../../docs/modules/evidence/decisions/observed-report-draft.md)을 참고한다.
+3. **`RequirementReport` 평가.** `EVIDENCE`는 증거 값, `FINAL_PACKAGE`는 신고문·기한·첨부 등 최종 요건을 검사한다. `PASS`는 충족, `WARN`은 고지나 확인이 필요한 상태로 진행 가능, `BLOCK`은 정책상 진행 불가, `UNKNOWN`은 정보 부족으로 판정 보류다. 종합 결과는 가장 높은 우선순위인 `BLOCK > UNKNOWN > WARN > PASS`를 따른다. 최종 영상의 번호판·시각 가시성 재검사는 v6에서 제거했고 v7도 이 결정을 유지한다. 필요한 시각 분기에서는 Recording이 남긴 사후 각인 적용 사실을 계속 검사한다. [가시성 재검사 제거 결정(#280)](../../../docs/modules/evidence/adr/adr-i4-report-video-visibility-rules-removal.md)을 참고한다.
+4. **`ReportPackage` 발행.** 같은 Record에 대한 유효한 `FINAL_PACKAGE` 평가가 `PASS` 또는 `WARN`이고, 사용 가능한 신고영상의 크기를 알고 있으며, 묶을 자산이 평가에 포함돼 있고 조립에 성공해야 발행한다. 평가에 템플릿 참조가 있으면 실제 렌더링 결과와 일치해야 한다. 번호판 이미지 첨부는 선택이다. 번호판 없는 신고문도 같은 발행 조건을 충족해야 한다. 묶음 자체에 `READY` 상태 필드는 없으며 화면의 진행·검토 상태는 Case가 관리한다. [요건·묶음 계약 §8.1](../../../docs/architecture/contracts/contract-requirement-report-package.md#81-ready-only-object)을 참고한다.
+
+현재 저장 자산 경로에서는 Case가 신고영상의 변환 기록에서 각인 적용 사실을 읽어 요건 평가에 전달하고, 조립된 Record의 초안을 CaseView에 투영한다. 연결 지점은 [저장 자산 어댑터](../case/stored_observation.py)와 [CaseView](../case/view.py)에 있다.
 
 ## 공개 함수
 
-`daesingo.evidence`는 Final Contract 값을 받거나 반환하는 순수 함수 경계다. 인수는 Contract JSON을 역직렬화한 `dict`이며, `scenario_id`나 Mock 파일명은 공개 입력이 아니다.
+`daesingo.evidence`에서 가져온다. 아래 시그니처는 필수 인자를 먼저 보여준다. 생략한 선택 인자와 타입은 각 함수 정의에 있다. 계약 객체는 `dict`로 전달한다.
 
-- `resolve_time(..., incident_clip=None) -> TimeResolution`: 원본 시각 + offset으로 계산할 때 `incident_clip`의 AssetSpan으로 사건 대표 순간이 담긴 원본을 찾아, 그 원본의 시간 후보와 원본 안 위치만 쓴다(`contract-time-resolution.md` §17). `incident_clip`을 빼면 timeline 위치를 그대로 offset으로 쓰므로 원본 하나가 timeline 0초에서 시작할 때만 맞다 — 운영 경로(case)는 항상 넘긴다.
-- `classify_visual_evidence(visual_evidence, situation_response=None) -> VisualEvidenceDisposition`: `EvidenceRecord` 조립 이전에 VisualEvidence 하나의 결말을 정한다(`ASSEMBLE` / `AWAIT_SITUATION_RESPONSE` / `NOT_ASSEMBLED`). `verification=NOT_OBSERVED`는 예외가 아니라 안정적인 비조립 결과다 — 후보 선택·순회는 여기 없다.
-- `resolve_independent_facts(*, case_id, selection_rev, time_resolution, plate_readout, location_hint=None, gps_observation=None, correction_records=None) -> dict`: EvidenceRecord의 **상황 독립 필드** `occurred_at` · `vehicle_number` · `location`만 계산한다(#239). 각 값은 EvidenceRecord의 같은 필드와 모양이 같고, 결정할 수 없으면 키를 두지 않는다. 해당 필드의 CorrectionRecord도 같은 규칙으로 반영한다. **EvidenceRecord 생성 API가 아니다.** `record_ref` · `basis` · `event` · `provenance` · `situation_response`가 없고, RequirementReport · ReportPackage로 이어지지 않는다. Fine `UNCERTAIN` 응답 대기(`AWAIT_SITUATION_RESPONSE`)에서도 부를 수 있다. case가 이 결과로 `record_id=null` 부분 투영을 만든다. 응답 전에 최종 Record를 만들지 않는다는 원칙(ADR-EVIDENCE-009 §2.1)은 그대로다. 시각은 `resolve_time()`이 만든 `TimeResolution`을 받는다.
-- `assemble_evidence(...) -> EvidenceRecord`: 위 세 필드는 `resolve_independent_facts()`와 같은 계산으로 채운다. 그래서 응답 전 부분 투영과 응답 후 Record가 같은 규칙을 따른다.
-- `calculate_evidence_needs(...) -> EvidenceNeeds | None`
-- `evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution, asset_facts=(), observation_facts=None, supersedes_id=None) -> RequirementReport`
-- `build_report_package(...) -> ReportPackage`
-- `render_report_draft(evidence_record) -> dict[str, str] | None` — 조립된 EvidenceRecord에서 자산과 독립적으로 `title`·`description`을 렌더링한다. 렌더링이 보류되면 `None`을 반환하고 계약·정책 오류는 호출자에게 전달한다.
-- `render_report(...) -> dict`: `safety-report-policy/v1.2`의 결정론적 renderer. specific은 `CONFIRMED`/`CORRECTED` 또는 Fine이 관찰한 유형의 무응답(`observed=True`)에서 허용하고, generic은 유형이 없는 `USER_UNSURE`에 적용한다. 위치가 없으면 장소 슬롯 없는 template을, `vehicle_number=None`이면 차량번호 슬롯 없는 template을 고른다. 번호판 없는 신고문이 허용되는지는 호출자가 정한다.
-- `correction_heads(...) -> dict`: evidence가 소비하는 CorrectionRecord chain head 검증. `correction-record/v1.2`의 `previous_value=null`(값이 없던 상태의 첫 입력)을 받는다 — `contract_version`이 v1.2인 기록에만 적용하고 v1.1 기록에는 소급하지 않는다. 이미 기록된 위반 정정은 건너뛰지 않고 `ContractInputError`다.
-- `validate_correction_append(correction, *, existing_records) -> None`: case가 CorrectionRecord를 append하기 **전에** 부르는 검사(#235 E-3, ADR-EVIDENCE-011). `existing_records + [correction]`에 `correction_heads()`와 같은 검사를 돌린다 — 값 형식 + supersede chain 연속성. `new_value`만 값 공간 밖이면 `InvalidCorrectionValue`(사용자가 다시 입력해 고칠 수 있음, `target_field` 속성), case가 채운 나머지나 기존 기록의 위반이면 그 밖의 `ContractInputError`(내부 배선 오류)다. `InvalidCorrectionValue`는 `ContractInputError`의 하위 타입이므로 먼저 잡는다. case 네임스페이스 target은 검사하지 않는다.
-- `validate_contract(contract) -> list[str]`: 다섯 출력 Contract의 최소 경계 검사
-- `attachment_constraint(derived_role: str) -> AttachmentConstraint`: 현재는 `"PLATE_IMAGE"`만 지원한다. 활성 attachment policy에서 읽은 개별 파일 최대 정수 byte `max_byte_size`와 정책 식별자 `policy_ref`만 담은 dict를 반환한다. 다른 role은 `ContractInputError`, 잘못된 정책 구성은 `PolicyConfigurationError`다. 전체 정책 객체나 합산·개수 제한은 공개하지 않는다.
+| 함수와 필수 인자 | 반환과 역할 |
+| --- | --- |
+| [`resolve_time(*, time_source_candidates, overlay_time_readout, candidate_event, case_id, selection_rev, resolution_id)`](time_resolution.py) | `TimeResolution`. 운영 경로는 `incident_clip`을 넘긴다. `correction_records`로 명시적 사건시각 정정을 전달한다. |
+| [`classify_visual_evidence(visual_evidence, situation_response=None)`](disposition.py) | `VisualEvidenceDisposition`. 조립, 응답 대기, 비조립을 구별한다. 잘못된 관찰 상태나 유형 조합은 `ContractInputError`다. |
+| [`resolve_independent_facts(*, case_id, selection_rev, time_resolution, plate_readout)`](assembly.py) | `dict`. 응답 대기 중에도 결정할 수 있는 `occurred_at`, `vehicle_number`, `location`만 반환한다. 위치·정정 입력을 선택적으로 받으며 Case는 이 결과를 Record ID 없이 표시할 수 있다. [#239](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/239) |
+| [`assemble_evidence(*, case_id, selection_rev, candidate_event, visual_evidence, time_resolution, plate_readout, incident_clip, record_id)`](assembly.py) | `EvidenceRecord`. 위치·상황 응답·정정은 선택 인자로 받는다. `NOT_OBSERVED`를 직접 넘기면 `VisualEventNotAssembled`가 발생한다. |
+| [`calculate_evidence_needs(evidence_record, plate_readout, *, emit_empty=True)`](assembly.py) | `EvidenceNeeds` 또는 `None`. 계약은 `OVERLAY_TIME_OCR`와 `PLATE_REREAD`를 허용한다. 현행 함수는 번호판 판독이 보류됐고 확정값이 없을 때 `PLATE_REREAD`를 만든다. 요청이 없고 `emit_empty=False`이면 `None`을 반환한다. |
+| [`render_report_draft(evidence_record)`](requirements.py) | `title`·`description` 또는 `None`. 렌더 입력이 부족하거나 본문 길이가 범위를 벗어나면 보류한다. 계약·정책 오류는 호출자에게 전달한다. |
+| [`render_report(*, visual_event_type, situation_response, occurred_at, location_display, vehicle_number, violation_expression, observed=False)`](policy.py) | 고정 템플릿으로 만든 제목·본문·템플릿 참조·글자 수. 입력이 잘못됐거나 길이가 범위를 벗어나면 `ContractInputError` 계열 예외가 발생한다. |
+| [`evaluate_requirements(evidence_record, *, scope, report_id, evaluated_at, time_resolution)`](requirements.py) | `RequirementReport`. 활성 정책이 검사 항목을 고른다. `asset_facts`로 자산 정보, `observation_facts`로 필요한 각인 적용 사실을 받는다. 잘못된 정책 구성은 `PolicyConfigurationError`다. |
+| [`aggregate_outcomes(checks)`](requirements.py) | 종합 결과 문자열. 빈 검사 목록이나 허용되지 않은 결과값은 `ContractInputError`다. |
+| [`build_report_package(evidence_record, requirement_report, *, package_id, created_at, asset_facts)`](requirements.py) | `ReportPackage`. 발행 조건 미충족은 `PackageNotReady`로 알린다. |
+| [`correction_heads(records, *, case_id, selection_rev)`](corrections.py) | Evidence가 소비하는 필드별 최신 정정 기록. 저장된 정정값이나 기록 연결이 잘못되면 `ContractInputError`다. |
+| [`validate_correction_append(correction, *, existing_records)`](corrections.py) | 저장 전 검사. 통과하면 `None`을 반환한다. 허용 범위를 벗어난 새 값은 `InvalidCorrectionValue`로, 기록 구조·이전 값·연결 또는 기존 기록의 오류는 그 밖의 `ContractInputError`로 알린다. |
+| [`validate_contract(value)`](validation.py) | 출력 계약의 오류 목록. 통과하면 빈 목록이다. 현재 `time-resolution/v1`, `evidence-record/v1.3`, `evidence-needs/v1`, `requirement-report/v1`, `report-package/v1.2`와 과거 Package v1·v1.1을 검사한다. |
+| [`attachment_constraint(derived_role)`](attachments.py) | `PLATE_IMAGE` 개별 파일의 최대 바이트(`max_byte_size`)와 `policy_ref`. 다른 역할은 `ContractInputError`, 잘못된 정책 구성은 `PolicyConfigurationError`다. |
 
-`evaluate_requirements`의 rule 목록은 호출자가 전달하지 않고 활성 catalog가 선택한다. `time_resolution`은 시각 표시 조건부 rule selector이며, `observation_facts`는 사후 각인(`post_stamp_applied`)의 upstream 관찰을 명시적으로 주입하는 Python 호출 인수다(최종 영상 번호판·시각 표시 관찰은 v6에서 읽지 않는다 — ADR-EVIDENCE-010). 둘 다 새 Runtime wire schema가 아니다. `PackageNotReady`는 ready-only Package가 발행되지 않았음을 나타내며 Contract에 새 status를 추가하지 않는다. `VisualEventNotAssembled`는 `assemble_evidence()`가 `NOT_OBSERVED`로 직접 호출됐을 때 가짜 Record 대신 멈추는 경계이며, producer 계약 위반이 아니라 호출자가 분류를 건너뛴 경우다(`ADR-EVIDENCE-007`).
+`correction-record/v1.2`에서는 값이 없던 상태의 첫 정정에 `previous_value=null`을 허용한다. 이 버전에서 추가로 허용한 경로는 발생시각·차량번호·좌표다. v1.1 기록의 이 세 경로에는 소급하지 않는다. v1.1에서 이미 `null`을 허용한 경로와 각 경로의 `new_value` 규칙은 그대로 적용한다. Case 전용 경로는 Evidence의 정정값 검사 대상에서 제외된다. [정정 기록 계약](../../../docs/architecture/contracts/contract-correction-record.md)과 [저장 전 검사 결정(#235)](../../../docs/modules/evidence/adr/adr-correction-append-precheck.md)을 참고한다.
 
 ### 제출 자산 제약의 책임 경계 (#47 P-1)
 
-Evidence는 제출 요구조건을 소유한다. Recording은 그 요구조건을 만족시키는 생성 전략을 소유한다. Case는 제약을 중계하며 정책값을 해석하지 않는다. Evidence는 생성 이후 실제 자산 사실로 정책 충족 여부를 독립적으로 다시 판정한다.
+Evidence가 제출 제약을 정하고, Case가 전달하며, Recording이 크기 조정·인코딩 등 생성 방식을 정한다. Evidence는 생성된 자산 정보로 정책 충족 여부를 다시 평가한다.
 
-`attachment_constraint()`는 resize·JPEG quality·codec/format·압축 방식·재시도 횟수를 정하지 않는다. 제한은 `attachment_policy_v1.json`의 `limits.image_each_bytes`, 식별자는 같은 정책의 `policy_ref`에서 읽으며 공개 API에 별도 기본값이나 상수를 두지 않는다. 근거는 [#47 RT-10(b) P-1 제안](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6476963858), [Case 조건부 동의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6488537839), [Evidence 동의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6494921087)다.
-
-API/Worker composition은 이 공개 경계에서 받은 `max_byte_size`를 기존 `stored_adapter_factory(export_max_byte_size=...)`에 그대로 넣는다. Case의 export request와 fingerprint는 현재 이 byte 제한을 포함한다. **후속 wiring:** `policy_ref`도 Case 요청/fingerprint에 포함하는 것이 P-1 합의 방향이지만, 현재 `PlateImageRequest`는 이 필드 없이 `extra="forbid"`이고 `export_plate_image()`도 이를 받지 않는다. 이번 변경은 공개 API의 반환까지만 제공하며 Case/Recording 요청 계약 및 provenance schema를 확장하지 않는다. ref만 바뀌고 byte 제한이 같을 때 새 발주를 구분하는 일은 이 후속 연결이 완료된 뒤 보장된다. Recording RT-10(b)의 생성 전략·실패 taxonomy 등재도 별도 범위다.
+API·Worker는 `attachment_constraint()`에서 받은 최대 바이트를 Case 어댑터에 전달한다. Case의 내보내기 요청과 재사용 판단에는 이 제한값이 반영된다. `policy_ref`를 내보내기 요청과 재사용 판단에 포함하는 연결은 후속 범위다. [#47 제안](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6476963858) · [Case 동의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6488537839) · [Evidence 동의](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/47#issuecomment-6494921087)
 
 ## 정책 데이터
 
-- `attachment_policy_v1.json` — K1의 decimal byte 용량 상한과 첨부 개수 상한, outcome 매핑.
-- `deadline_policy_v1.json` — K2의 2개 달력일 계산, 결과 매핑, 2026·2027 대한민국 공휴일 snapshot. 외부 공휴일 API를 사용하지 않는다.
-- `requirement_rules_v2.json` — K3에서 채택됐으나 D1 반영으로 첫 실행 전에 대체된 보존 revision. 수정하거나 활성화하지 않는다.
-- `requirement_rules_v3.json` — D1 반영 후 실제 실행됐으나 ADR-EVIDENCE-005 D2로 대체된 보존 revision. 수정하거나 활성화하지 않는다.
-- `requirement_rules_v4.json` — ADR-EVIDENCE-005 D2로 사건 장면·전후 상황 세 rule을 제거한 revision. 실제 실행됐으나 ADR-EVIDENCE-008(#172 D-3)로 대체된 보존 revision. 수정하거나 활성화하지 않는다.
-- `requirement_rules_v5.json` — ADR-EVIDENCE-008(#172 D-3)의 revision. 실제 실행됐으나 ADR-EVIDENCE-010(#280)으로 대체된 보존 revision. 수정하거나 활성화하지 않는다. `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 12개와 시각 표시 조건부 3개 중 정확히 1개를 선택했다. v4에서 번호판 두 rule만 바꿨다 — `evidence.vehicle_number.present`는 값이 없을 때 `PlateReadout` 존재 여부로 `WARN`(판독 후 못 읽음)/`UNKNOWN`(판독 결과 없음·실행 실패)을 나누고, `package.vehicle.plate_visible_in_report_video`의 관찰 `false`는 `BLOCK` → `WARN`이다. `package.report.content_length`에는 번호판 없는 렌더 mode 두 개(`*_without_plate`, `plate_readout_performed` 필수)를 더했고, 신고문 policy는 `safety-report-policy/v1.2`를 참조한다. 나머지는 v4에서 그대로 계승한다.
-- `requirement_rules_v7.json` — **활성 catalog.** [#597 B안](../../../docs/modules/evidence/decisions/observed-report-draft.md)의 유형 관찰 무응답 조건과 렌더 입력 검사를 반영한다.
-- `requirement_rules_v6.json` — #280 개정본. `EVIDENCE` 기본 4개, `FINAL_PACKAGE` 무조건 11개와 시각 표시 4갈래 중 정확히 1갈래를 선택한다. v5에서 최종 신고용 영상 재관찰(I4) rule 두 개만 뺐다 — `package.vehicle.plate_visible_in_report_video`를 무조건 목록에서 지웠고, `OK` · `time.verified_overlay_already_present` 갈래는 선택되지만 rule을 추가하지 않는다(`no_rule`, 이전 `package.time.overlay_visible`). 따라서 `observation_facts`의 `plate_visible_in_report_video` · `time_overlay_visible`은 읽지 않는다. 나머지는 v5에서 그대로 계승한다(ADR-EVIDENCE-010).
-- `safety_report_policy_v1_1.json` — 위치 유무에 따른 네 deterministic template과 신고유형 매핑. v1.2로 대체된 보존 revision.
-- `safety_report_policy_v1_2.json` — **활성 신고문 policy.** v1.1의 네 template을 그대로 두고, 판독 후 번호판을 식별하지 못한 경우의 차량번호 슬롯 없는 네 template을 더했다(`docs/modules/evidence/decisions/safety-report-policy-v1.2.md`).
+| 활성 파일 | 적용 내용 |
+| --- | --- |
+| [`requirement_rules_v7.json`](requirement_rules_v7.json) | `policy/requirement-rules-v7`. 증거·최종 묶음 요건을 선택한다. |
+| [`safety_report_policy_v1_2.json`](safety_report_policy_v1_2.json) | `safety-report-policy/v1.2`. 신호위반·중앙선 침범·실선 차로 변경은 교통위반, 이륜차 안전모 미착용은 이륜차 위반으로 매핑한다. 위치와 번호판의 유무에 맞춰 템플릿을 선택한다. 본문은 5~900자다. |
+| [`attachment_policy_v1.json`](attachment_policy_v1.json) | `policy/safety-report-attachment-size/v1`. 파일당 이미지 30,000,000바이트, 영상 130,000,000바이트, 전체 180,000,000바이트다. 이미지·영상은 종류별 최대 4개이며 합계도 최대 4개다. |
+| [`deadline_policy_v1.json`](deadline_policy_v1.json) | `policy/safety-report-deadline/v1`. 한국 시간의 사건일 다음 날부터 2달력일을 센다. 말일이 주말·공휴일이면 그다음 평일 중 공휴일이 아닌 날로 연장한다. 기한 초과는 `WARN`이다. 공휴일은 2026~2027년 내장 자료를 사용한다. |
+| [`plate_format_rules_kr_v1.json`](plate_format_rules_kr_v1.json) | `plate-format/kr-v1`. OCR 번호판 문자열을 형식 규칙으로 확인해 검토가 필요한 값을 표시한다. 사용자 직접 입력에는 이 형식 검사를 적용하지 않는다. |
 
-- `plate_format_rules_kr_v1.json` — **번호판 형식 rule** `plate-format/kr-v1`(ADR-EVIDENCE-006, #487). `plate_format.py`의 `assess_plate_format()`이 이 파일만 읽는다. readout이 `OK`로 준 번호판 값이 알려진 profile로 설명되지 않거나 고시 밖 조합이면 값을 그대로 두고 `needs_review=true`로 조립한다. 거부·삭제하지 않고, 사용자 수정값에는 적용하지 않는다. 이 검사를 적용하는 조립 policy는 `policy/evidence-assembly-v2`다. 고시가 바뀌면 새 revision 파일을 추가한다.
+활성 버전의 선택과 검증은 [정책 로더](policy_catalog.py)와 [번호판 규칙 로더](plate_format.py)에 있다. 요건 v2~v6과 신고문 v1.1은 과거 정책으로 보존한다. 개정 이유는 [결정 목록](../../../docs/modules/evidence/decisions/README.md)과 [ADR 목록](../../../docs/modules/evidence/adr/README.md)에 있다.
 
-활성 requirement catalog 선택점은 `policy_catalog.py`의 `_ACTIVE_REQUIREMENT_CATALOG_FILE` 한 곳이며 현재 `requirement_rules_v7.json`이다. 출력 `policy_ref`는 이 파일에서 읽는다.
+## 테스트
 
-번호판 판독을 수행했지만 식별하지 못한 기록은 번호판 없는 신고문으로 `ReportPackage`(`report-package/v1.2`, `vehicle_number=null`)가 발행된다. 판독 결과 자체가 없는 기록(실행 실패)은 렌더 입력이 불완전해 Package가 없다. 두 경우를 가르는 판별은 `requirements.py`의 `_plate_readout_performed()` 한 곳이다(ADR-EVIDENCE-008 §6).
-
-loader는 각 정책의 식별자·필수 구조·공휴일 coverage·catalog rule 구성을 검증한다. 깨진 구성은 `PolicyConfigurationError`로 정상 `RequirementReport` 발행 전에 중단하고, 관찰 사실 부족은 check의 `UNKNOWN`으로 남긴다.
-
-## 재현
-
-저장소 루트의 PowerShell에서 실행한다.
+테스트 의존성을 준비한 뒤 저장소 루트에서 실행한다. 테스트는 [`tests/evidence/`](../../../tests/evidence/)에 있다.
 
 ```powershell
-$env:PYTHONPATH='src'
-python -m unittest discover -s tests/evidence -p 'test_*.py'
-python -m daesingo.evidence.mock_integration
+uv run --no-sync pytest tests/evidence/ -q
 ```
 
-두 번째 명령은 공용 H/U/P/R upstream JSON을 로딩하되 실제 baseline 순수 함수를 호출하고, 결과를 `docs/modules/evidence/artifacts/first-completion/`에 기록한다. 이 adapter와 그 Consumer reader는 테스트 도구이며 실제 `case` projection이 아니다.
+### 과거 Mock 시나리오 재현
 
-## 상태
+[1차 Mock 통합 기록](../../../docs/modules/evidence/first-completion-result.md)은 당시의 가상 입력과 실행 결과를 보존한다. 아래 명령은 같은 종류의 가상 입력을 현재 Evidence 함수로 실행한다. 임시 디렉터리를 지정해 결과를 따로 저장한다.
 
-**ADR-EVIDENCE-002(K1~K4)·003(D1)·005(D2)·008(#172 D-3) 정책 엔진 반영 완료.** 공용 H/U Mock에서 각각 `PASS`·`WARN` FINAL_PACKAGE와 Package 발행을 확인했다. 다만 번호판·시각 관찰은 여전히 `mock_only` 입력이므로 실제 Runtime의 I4 배선, 실제 영상 생성, `case`의 CaseView projection과 외부 제출은 포함하지 않는다. 현재 검증 범위와 후속 항목은 [`first-completion-result.md`](../../../docs/modules/evidence/first-completion-result.md)를 따른다.
+```powershell
+$mockOutput = Join-Path ([System.IO.Path]::GetTempPath()) ('daesingo-evidence-mock-' + [guid]::NewGuid())
+uv run --no-sync python -m daesingo.evidence.mock_integration --output-dir $mockOutput
+```

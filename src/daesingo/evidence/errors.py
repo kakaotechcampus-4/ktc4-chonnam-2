@@ -2,11 +2,11 @@
 
 
 class EvidenceError(ValueError):
-    """Base error for invalid inputs or unavailable policy data."""
+    """Base for input and policy errors, non-assembly, and package readiness failures."""
 
 
 class ContractInputError(EvidenceError):
-    """An upstream value does not satisfy the consumed contract."""
+    """An input or report rendering violates a boundary constraint."""
 
 
 class ReportContentLengthError(ContractInputError):
@@ -34,7 +34,7 @@ class InvalidCorrectionValue(ContractInputError):
 
 
 class PolicyConfigurationError(EvidenceError):
-    """A requested rule has no versioned policy value."""
+    """Policy data or the facts used to select or evaluate a rule are invalid."""
 
 
 class VisualEventNotAssembled(EvidenceError):
