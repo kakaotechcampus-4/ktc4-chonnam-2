@@ -7,6 +7,8 @@ Worker는 실행 결과와 종료 상태를 저장한 뒤(T1), 별도 트랜잭�
 시작할 때와 실행 중 주기적으로 만료된 실행을 정리하고, Case 반영이 끝나지 않은 결과를 재전달한다(RT-06).
 임시 파일 정리도 첫 작업을 가져오기 전에 시작한다. [임시 파일 정리 범위](../../../docs/runtime/rt12a-cleanup.md)를 참고한다.
 
+공개 체험의 자동 내보내기가 동시 작업 한도로 보류되면 Worker는 T2 커밋으로 슬롯을 반환한 뒤 별도 트랜잭션에서 발주를 다시 시도한다. 재발주가 거부되거나 실패해도 이미 반영한 결과는 유지한다. 신고영상과 선택 항목인 번호판 이미지를 함께 발주할 수 없으면 신고영상만 다시 발주할 수 있는지 확인한다. [재발주 변경 #674](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/674) · [신고영상 우선 발주 #675](https://github.com/kakaotechcampus-4/ktc4-chonnam-2/issues/675)
+
 **Owner:** 김준영 (공통 기반/운영) · **경계:** `docs/architecture/module-architecture.md` §1-5 · §6-2 · §8-2
 
 - 배포 단위 「Worker 1」. `common/jobs`에서 row를 claim → RUNNING + heartbeat → 도메인 모듈의 **public capability**를 dispatch → 결과 ref + usage 기록.

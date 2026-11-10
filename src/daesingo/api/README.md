@@ -17,7 +17,7 @@ DB connection을 보유하지 않는다. [구현·검증·제약](../../../docs/
 
 - 배포 단위 「API 1」. 긴 작업은 HTTP 요청 안에서 끝내지 않는다 — `case`가 만든 `JobRecord`를 queue에 넣고 `202 Accepted`를 반환한다.
 - 즉시 처리하는 것(§8-1): `CaseView` 조회 · hint 수정 · candidate 선택 · pure evidence recompute · requirement recompute · 상태 전이.
-- 인증은 MVP 최소 수준이며 방식은 미결(§1-7 A2).
+- A-1 공개 체험은 서버가 발급한 익명 세션 쿠키로 Case와 미디어의 소유권을 확인한다.
 - `web`이 읽는 상태는 `case.get_view()`를 노출하는 CaseView 하나다 (§4-모듈6 ③). 그 밖의 read는 CaseView가 가리키는 FrameRef · 신고용 artifact의 바이너리 조회뿐이다. HTTP surface 결정은 `docs/runtime/runtime-tech-spec.md` §13(RD-05, #247), 경로 · status · body는 HTTP API Contract `docs/architecture/contracts/contract-http-api.md`(`http-api/v1`, Final — Accepted)다. route 구현 전 선행 조건은 그 문서 §9.1이다.
 
 ## 현재 작업 실행 연결
@@ -25,6 +25,8 @@ DB connection을 보유하지 않는다. [구현·검증·제약](../../../docs/
 `POST /cases/{case_id}/commands`는 Case 변경과 작업 등록 또는 중단 요청을 같은 DB 트랜잭션에서 처리한다.
 `START_ANALYSIS`에 필요한 시간축은 요청에 연결한 Recording 서비스에서 읽는다.
 처리기 실행과 결과 반영은 [Worker](../worker/README.md)가 맡는다.
+
+A-1의 `upload_bundle` 모드는 `POST /cases/{case_id}/official-uploads`에서 공식 묶음 하나에 속하는 MP4를 하나 이상 받는다. 파일 크기와 SHA-256으로 허용 목록을 확인하고 목록 순서대로 등록한다. `server_sample` 모드는 `POST /cases/{case_id}/official-samples`에서 서버에 준비된 샘플 ID를 받는다. [공개 체험 HTTP 계약](../../../docs/runtime/a1-public-readiness.md#http-연결-계약)을 참고한다.
 
 ## 구현 이력
 
