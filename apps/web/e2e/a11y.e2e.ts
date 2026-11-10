@@ -107,7 +107,7 @@ test('파일을 고르기 전 「영상에서 찾아보기」는 못 누르는 �
   await expect(search).toHaveAccessibleDescription(/.+/)
 })
 
-test('공개 체험은 보관 기한과 업로드 동의만 보여주고 직접 삭제를 제공하지 않는다', async ({ page }) => {
+test('공개 체험은 자동 정리 안내와 업로드 동의를 보여주고 직접 삭제를 제공하지 않는다', async ({ page }) => {
   const happy = JSON.parse(readFileSync(new URL('../../../data/mock/case/scenario_happy_001.json', import.meta.url), 'utf8'))
   const view = { ...happy.case_views[0], case_id: 'owned', stage: 'INTAKE', running_jobs: [],
     manifest_summary: { ...happy.case_views[0].manifest_summary, file_count: 0, ok_file_count: 0 } }

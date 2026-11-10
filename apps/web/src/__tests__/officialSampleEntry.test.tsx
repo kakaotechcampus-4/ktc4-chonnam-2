@@ -100,7 +100,7 @@ it.each([
   expect(fetcher).toHaveBeenCalledTimes(1)
 })
 
-it('샘플 준비 전에 10분 한도와 설정된 보관 기한을 알리고 아직 요청하지 않는다', async () => {
+it('샘플 준비 전에 10분 한도와 설정에 따른 자동 정리 시점을 알리고 아직 요청하지 않는다', async () => {
   const { seen } = setup()
   await screen.findByRole('radio', { name: /시험 샘플/ })
   expect(screen.getByText(/한 번에 합계 10분까지/)).toBeTruthy()
