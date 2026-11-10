@@ -59,8 +59,8 @@ class PublicResultReflector(_PublicJobAdmission):
                 raise ValueError('automatic export identity changed')
             self.admit(conn, incoming.case_id, "followup:" + incoming.execution_id,
                        [r for r in records if r['job_id'] not in admitted])
-        # Called inside reflect_terminal's transaction, BEFORE child enqueue.
-        # Refusal leaves T1/usage intact and T2 unapplied on every delivery path.
+        # 일반 후속 작업의 수락 거부는 T2를 중단하고 T1과 사용량 기록을 보존한다.
+        # 위 자동 내보내기 경로는 발주만 보류하고 T2 결과 반영을 계속한다.
         return result
 
     @staticmethod
