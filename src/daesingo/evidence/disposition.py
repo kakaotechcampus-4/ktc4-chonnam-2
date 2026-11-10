@@ -19,7 +19,7 @@ from ._contract import Contract, contract_ref, require
 
 #: The VisualEvidence supports an EvidenceRecord.
 ASSEMBLE = "ASSEMBLE"
-#: `UNCERTAIN` with no user answer yet — the existing v1 fallback still waits.
+#: `UNCERTAIN` waits for `USER_UNSURE`, the only response that permits generic assembly.
 AWAIT_SITUATION_RESPONSE = "AWAIT_SITUATION_RESPONSE"
 #: A valid negative Fine result — no Record, no report, no package, no error.
 NOT_ASSEMBLED = "NOT_ASSEMBLED"
