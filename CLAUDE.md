@@ -1,6 +1,6 @@
 # 대신고 (Daesingo) — 레포 읽기 라우터
 
-블랙박스 영상에서 교통위반 신고 자료를 준비해 주는 제품. 6명 팀, 10주 MVP. `apps/`에 실행 코드, `docs/`에 living document, `src/`·`eval/`에 코드 골격.
+블랙박스 영상에서 교통위반 신고 자료를 준비해 주는 제품. 6명 팀, 10주 MVP. `apps/`에 실행 코드, `docs/`에 living document, `src/`에 서버 구현, `eval/`에 평가 코드가 있다.
 
 **이 파일은 규칙을 담지 않는다. 어느 문서를 읽을지만 알려준다.** 규칙 원문은 아래 포인터의 문서에 있고, 여기에는 복제하지 않는다.
 
@@ -13,6 +13,8 @@
 | 모듈 경계 · 계약 · 금지사항 | `docs/architecture/module-architecture.md` — §1 → §2 → **§4 내 모듈** → §5 → §11 내 항목. 1,900줄이므로 전체를 읽지 않는다 |
 | 내 모듈의 조사·실험·결정 | `docs/modules/<module>/` |
 | Runtime 구현 (RT-xx) | `docs/runtime/runtime-implementation-plan.md` — §6 해당 Task → §12(PR 순서는 §12.8). 900줄이므로 전체를 읽지 않는다 |
+| 현재 공개 정책과 AWS 검증 | [Ops Spec](docs/runtime/ops-spec.md) · [최종 AWS 인계](docs/runtime/a1-public-readiness.md#2026-11-10-최종-aws-공개-배포) |
+| RC 결정 · 평가 결과 · CI | [11/5 RC 결정](docs/management/rc-scope-2026-11-05.md) · [Eval 결과](docs/modules/eval/evaluation-results-2026-11-01.md) · [CI 실행 구조](docs/runtime/ci-test-partitions.md) |
 | 누가 무엇을 맡는지 | `docs/management/ownership.md` |
 | 운영 결정(승인 경로·리뷰 담당) | `docs/management/cross-cutting-decisions.md` |
 | 문서 폴더 사용 규칙 · 충돌 시 우선순위 | `docs/README.md` |
